@@ -1,0 +1,376 @@
+/* WebQX™ Provider Panel Dashboard Styles */
+
+/* CSS Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Root Variables for Healthcare Theme */
+:root {
+    --primary-blue: #1e3a8a;
+    --secondary-blue: #3b82f6;
+    --accent-green: #10b981;
+    --warning-orange: #f59e0b;
+    --danger-red: #ef4444;
+    --light-gray: #f8fafc;
+    --medium-gray: #e2e8f0;
+    --dark-gray: #64748b;
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --white: #ffffff;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --border-radius: 8px;
+    --border-radius-lg: 12px;
+}
+
+/* Typography */
+body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Oxygen', 
+                 'Ubuntu', 'Cantarell', sans-serif;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background: linear-gradient(135deg, var(--light-gray) 0%, #e0f2fe 100%);
+    min-height: 100vh;
+}
+
+/* Container Layout */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header Styles */
+.header {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+    color: var(--white);
+    padding: 2rem;
+    border-radius: var(--border-radius-lg);
+    text-align: center;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tagline {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    font-weight: 300;
+}
+
+/* Dashboard Grid Layout */
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    flex: 1;
+    margin-bottom: 2rem;
+}
+
+/* Section Styles */
+.dashboard-section {
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--medium-gray);
+}
+
+.dashboard-section:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Section Headers */
+.section-header {
+    background: linear-gradient(135deg, var(--accent-green) 0%, #059669 100%);
+    color: var(--white);
+    padding: 1.5rem;
+    position: relative;
+}
+
+.section-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.section-header h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Section Content */
+.section-content {
+    padding: 1.5rem;
+}
+
+/* Feature Lists */
+.feature-list {
+    list-style: none;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.feature-list li {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--light-gray);
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--secondary-blue);
+    transition: all 0.2s ease;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.feature-list li:hover {
+    background: #e0f2fe;
+    border-left-color: var(--accent-green);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Specific Section Color Schemes */
+#daily-snapshot .section-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+#clinical-documentation .section-header {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+#care-coordination .section-header {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
+#orders-results .section-header {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+#education-licensing .section-header {
+    background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);
+}
+
+#billing-compliance .section-header {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+#bot-assistant .section-header {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+#security-infrastructure .section-header {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--medium-gray);
+    background: var(--white);
+    border-radius: var(--border-radius);
+    margin-top: auto;
+}
+
+/* Responsive Design */
+
+/* Large tablets and small desktops */
+@media (max-width: 1024px) {
+    .dashboard {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.25rem;
+    }
+    
+    .header h1 {
+        font-size: 2.2rem;
+    }
+    
+    .container {
+        padding: 15px;
+    }
+}
+
+/* Tablets */
+@media (max-width: 768px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .header h1 {
+        font-size: 2rem;
+    }
+    
+    .tagline {
+        font-size: 1.1rem;
+    }
+    
+    .section-header {
+        padding: 1.25rem;
+    }
+    
+    .section-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .section-content {
+        padding: 1.25rem;
+    }
+    
+    .feature-list li {
+        padding: 0.65rem;
+        font-size: 0.95rem;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .header {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    .header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .tagline {
+        font-size: 1rem;
+    }
+    
+    .dashboard {
+        gap: 0.75rem;
+    }
+    
+    .section-header {
+        padding: 1rem;
+    }
+    
+    .section-header h2 {
+        font-size: 1.2rem;
+    }
+    
+    .section-content {
+        padding: 1rem;
+    }
+    
+    .feature-list {
+        gap: 0.5rem;
+    }
+    
+    .feature-list li {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        flex-wrap: wrap;
+    }
+    
+    .footer {
+        padding: 1rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Small mobile phones */
+@media (max-width: 320px) {
+    .header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .tagline {
+        font-size: 0.9rem;
+    }
+    
+    .section-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .feature-list li {
+        font-size: 0.85rem;
+    }
+}
+
+/* High-contrast mode support */
+@media (prefers-contrast: high) {
+    .dashboard-section {
+        border-width: 2px;
+    }
+    
+    .feature-list li {
+        border-left-width: 6px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-section,
+    .feature-list li {
+        transition: none;
+    }
+    
+    .dashboard-section:hover {
+        transform: none;
+    }
+    
+    .feature-list li:hover {
+        transform: none;
+    }
+}
+
+/* Print styles */
+@media print {
+    body {
+        background: white;
+    }
+    
+    .container {
+        max-width: none;
+        padding: 0;
+    }
+    
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-section {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+    
+    .section-header {
+        background: #000 !important;
+        color: white !important;
+    }
+}
