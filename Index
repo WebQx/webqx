@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX™ Patient Portal – Essentials Canvas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        h2 {
+            margin-top: 30px;
+            color: #2c3e50;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        ul li {
+            margin: 10px 0;
+        }
+        .section {
+            padding: 15px 10px;
+            border-top: 1px solid #ccc;
+        }
+        .section:first-child {
+            border-top: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 WebQX™ Patient Portal</h1>
+        <p><strong>Tagline:</strong> Empowering Patients and Supporting Health Care Providers</p>
+        <div class="section">
+            <h2>🧭 Welcome Panel</h2>
+            <ul>
+                <li>🌍 Multilingual UX & Accessibility Settings</li>
+                <li>🧑‍⚕️ Personalized Care Overview</li>
+                <li>🧠 Mental Wellness Hub</li>
+                <li>👓🦷 Vision & Dental Records</li>
+                <li>🧭 Concierge Services</li>
+                <ul>
+                    <li>- Hospital Advocate</li>
+                    <li>- Long-Distance Family Support</li>
+                </ul>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>📅 Appointments & Scheduling</h2>
+            <ul>
+                <li>🗓️ Self-Scheduling & Rescheduling</li>
+                <li>🔔 Automated Reminders & Waitlist Notifications</li>
+                <li>📋 Pre-Visit Intake Forms & Questionnaires</li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>📬 Smart Data Import System</h2>
+            <ul>
+                <li>📧 Unique Patient Email (e.g., john.doe@webqx.health)</li>
+                <li>🔐 Encrypted Access Code</li>
+                <li>📥 Auto-routing of Labs, Imaging, Notes</li>
+                <li>🔔 Patient Notifications & Privacy Controls</li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>💬 Secure Messaging & Communication</h2>
+            <ul>
+                <li>🛡️ HIPAA-Compliant Messaging</li>
+                <li>🧑‍⚕️ Direct Provider Communication</li>
+                <li>🤖 Personal Health Bot</li>
+                <li>📚 Health Literacy Assistant (Glossary + Visuals)</li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>🧾 Health Records & Prescription Management</h2>
+            <ul>
+                <li>🧪 Lab Results Viewer</li>
+                <li>💊 Medication List & Refill Requests</li>
+                <li>🧬 Immunizations & Problem Lists</li>
+                <li>📝 Visit Summaries & SOAP Notes</li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>💳 Billing & Insurance</h2>
+            <ul>
+                <li>📄 View Statements & Claims</li>
+                <li>💰 Secure Online Payments</li>
+                <li>🧾 Coverage Eligibility & Grant Navigator</li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>🎯 Patient Empowerment Tools</h2>
+            <ul>
+                <li>✅ Care Goals Tracker</li>
+                <li>📈 Behavioral Nudging Engine</li>
+                <li>📚 Decision Aid Tools</li>
+                <li>📊 Longitudinal Health Charts</li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>🗺️ Social Determinants & Community Support</h2>
+            <ul>
+                <li>🧮 Needs Screening Module</li>
+                <li>🗺️ Local Resource Map</li>
+                <li>🤝 Cultural Liaison Access</li>
+                <li>🧑‍⚖️ Legal & Housing Aid Interfaces</li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>🔐 Security & Ethics</h2>
+            <ul>
+                <li>🔑 Biometric Access Controls</li>
+                <li>📋 Audit Logs & Data Sharing Permissions</li>
+                <li>🛡️ HIPAA+ & Global Privacy Compliance</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
