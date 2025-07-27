@@ -75,6 +75,41 @@ Modular workflows are designed for:
 | Compliance  | Vault, audit logging, RBAC       |
 | Interop     | HL7/FHIR + OHIF for PACS         |
 
+## 🚀 Deployment
+
+### Railway Deployment
+
+This project is ready for deployment on [Railway](https://railway.app) with zero-configuration:
+
+1. **Connect Repository**: Connect your GitHub repository to Railway
+2. **Auto-Deploy**: Railway will automatically detect the Node.js project and deploy
+3. **Environment Variables**: Configure required environment variables using the `.env.example` file as reference
+4. **Health Monitoring**: Built-in health check endpoint at `/health` for monitoring
+
+#### Quick Deploy to Railway
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template)
+
+#### Manual Deployment Steps
+1. Fork this repository
+2. Create a new project on Railway
+3. Connect your forked repository
+4. Add environment variables from `.env.example`
+5. Deploy automatically triggers
+
+#### Local Development
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+
+# Access the application
+open http://localhost:3000
+```
+
+The patient portal will be available at the root URL, and health checks at `/health`.
+
 ## 🤝 Contribution Guide  
 We welcome clinicians, developers, and researchers:
 
