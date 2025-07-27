@@ -1,0 +1,178 @@
+---
+# WebQX Healthcare Platform Configuration
+# Configuration for multilingual support and medical specialty templates
+
+# Supported Languages - 10 most commonly spoken languages globally
+supported_languages:
+  - code: "en"
+    name: "English"
+    native_name: "English"
+  - code: "zh"
+    name: "Mandarin Chinese"
+    native_name: "中文"
+  - code: "hi"
+    name: "Hindi"
+    native_name: "हिन्दी"
+  - code: "es"
+    name: "Spanish"
+    native_name: "Español"
+  - code: "ar"
+    name: "Arabic"
+    native_name: "العربية"
+  - code: "bn"
+    name: "Bengali"
+    native_name: "বাংলা"
+  - code: "fr"
+    name: "French"
+    native_name: "Français"
+  - code: "ru"
+    name: "Russian"
+    native_name: "Русский"
+  - code: "pt"
+    name: "Portuguese"
+    native_name: "Português"
+  - code: "ur"
+    name: "Urdu"
+    native_name: "اردو"
+
+# Medical Specialty Macros - Template phrases for clinical documentation
+specialty_macros:
+  internal_medicine:
+    name: "Internal Medicine"
+    templates:
+      - "Patient history suggests chronic hypertension with no current acute
+        exacerbations."
+      - "Comprehensive metabolic panel ordered to assess baseline organ
+        function."
+      - "Patient presents with complaints consistent with diabetes mellitus,
+        requiring further evaluation."
+      - "Blood pressure management protocol initiated with lifestyle
+        modifications."
+      - "Annual physical examination completed with recommendations for
+        preventive care."
+
+  family_medicine:
+    name: "Family Medicine"
+    templates:
+      - "Annual wellness visit completed without complications."
+      - "Patient counseled on age-appropriate preventive care measures."
+      - "Family history reviewed and updated in electronic health record."
+      - "Routine health maintenance visit with all vaccinations up to date."
+      - "Patient education provided regarding lifestyle modifications for
+        chronic disease management."
+
+  pediatrics:
+    name: "Pediatrics"
+    templates:
+      - "Child presents with symptoms consistent with viral infection."
+      - "Growth and development milestones assessed and within normal limits."
+      - "Immunization schedule reviewed and updated according to CDC
+        guidelines."
+      - "Well-child visit completed with age-appropriate developmental
+        screening."
+      - "Parent education provided regarding infant feeding and safety
+        measures."
+
+  general_surgery:
+    name: "General Surgery"
+    templates:
+      - "Procedure completed with no complications observed."
+      - "Post-operative monitoring initiated with stable vital signs."
+      - "Surgical site inspection reveals appropriate healing progression."
+      - "Pre-operative assessment completed with patient cleared for surgery."
+      - "Discharge planning initiated with appropriate follow-up
+        instructions."
+
+  emergency_medicine:
+    name: "Emergency Medicine"
+    templates:
+      - "Patient stabilized post-trauma with no immediate life-threatening
+        injuries."
+      - "Emergency department evaluation reveals acute condition requiring
+        immediate intervention."
+      - "Rapid assessment protocol initiated for time-sensitive
+        presentation."
+      - "Pain management strategy implemented for acute symptom relief."
+      - "Disposition planning completed with appropriate level of care
+        determined."
+
+  psychiatry:
+    name: "Psychiatry"
+    templates:
+      - "Initial assessment indicates moderate depression requiring
+        therapeutic intervention."
+      - "Mental status examination completed with cognitive function intact."
+      - "Medication adjustment made based on patient response and side
+        effect profile."
+      - "Psychotherapy session focused on coping strategies and behavioral
+        modifications."
+      - "Risk assessment performed with safety planning measures
+        implemented."
+
+  anesthesiology:
+    name: "Anesthesiology"
+    templates:
+      - "Anesthesia protocol adhered to with no adverse events."
+      - "Pre-operative assessment completed with anesthetic plan developed."
+      - "Intraoperative monitoring demonstrates stable hemodynamic
+        parameters."
+      - "Post-anesthesia care unit recovery proceeding without
+        complications."
+      - "Pain management strategy optimized for post-operative comfort."
+
+  obstetrics_gynecology:
+    name: "Obstetrics and Gynecology"
+    templates:
+      - "Ultrasound confirms normal fetal development at current gestational
+        age."
+      - "Prenatal visit completed with routine monitoring within normal
+        limits."
+      - "Gynecological examination reveals no acute abnormalities."
+      - "Contraceptive counseling provided with patient preferences
+        discussed."
+      - "Delivery planning initiated with birth preferences documented."
+
+  radiology:
+    name: "Radiology"
+    templates:
+      - "Disc herniation noted at L4-L5 level with mild spinal canal
+        narrowing."
+      - "Chest X-ray demonstrates clear lung fields with no acute
+        abnormalities."
+      - "MRI findings consistent with clinical presentation and examination."
+      - "CT scan results reviewed and preliminary report generated."
+      - "Imaging study completed with radiologist interpretation pending."
+
+  orthopedic_surgery:
+    name: "Orthopedic Surgery"
+    templates:
+      - "X-ray indicates a hairline fracture in the tibia requiring
+        immobilization."
+      - "Orthopedic evaluation reveals ligamentous injury with conservative
+        management recommended."
+      - "Post-surgical follow-up demonstrates appropriate bone healing
+        progression."
+      - "Physical therapy consultation initiated for rehabilitation
+        planning."
+      - "Joint examination completed with range of motion assessed."
+
+  primary_care:
+    name: "Primary Care"
+    templates:
+      - "Patient presents for routine check-up, no acute issues identified."
+      - "Preventive care measures discussed and updated according to
+        guidelines."
+      - "Chronic disease management reviewed with medication adherence
+        assessed."
+      - "Health maintenance visit completed with screening recommendations
+        provided."
+      - "Comprehensive care plan updated with patient goals and
+        preferences."
+
+# Default Configuration Settings
+default_settings:
+  default_language: "en"
+  enable_transcription: true
+  enable_ai_assistance: true
+  compliance_mode: "hipaa"
+  audit_logging: true
