@@ -1,29 +1,95 @@
-# WebQX™ — Modular, Open, Multilingual Healthcare Platform
+# 
+# 🌐 WebQX™: Modular Healthcare Platform  
+_A multilingual, specialty-aware, and privacy-first blueprint for global clinical care._
 
-Welcome to WebQX™, a collaborative open-source effort to democratize clinical transcription and workflow design. This repo includes foundational modules for radiology transcription, multilingual dictation, and batch transcription testing.
+## 🚀 Overview  
+WebQX™ is an open-source healthcare stack designed to support all 12 core medical specialties, including Primary Care, Radiology, Pediatrics, Oncology, Cardiology, Psychiatry, and more. Its modular design supports multilingual documentation, AI-powered assistance, and global interoperability—from remote clinics to urban hospitals.
 
-## 🚀 Features
-- Whisper-based transcription modules (English + multilingual)
-- PACS-integrated radiology workflow
-- ACI-simulated ambient capture layer
-- Batch queue manager for dictations
-- Role-based access system for provider verification
+## 🧩 Modular Architecture
 
-## 🧱 Modules
-- /transcription-core
-- /radiology-workflow
-- /multilingual-engine
-- /queue-manager
-- /samples (de-identified ICD-10 transcripts)
+### ✅ Patient Portal  
+Built with React, supporting user-friendly access to clinical services:
 
-## 🔐 Licensing & IP
-All contributors must sign:
-- NDA Template (see `/legal/nda.md`)
-- Contributor IP Assignment Addendum (`/legal/ip-addendum.md`)
+- 📅 **Appointments & Scheduling** → LibreHealth Toolkit / OpenEMR calendar  
+- 💊 **Pharmacy Access** → OpenEMR Rx + FDA APIs  
+- 🧪 **Lab Results Viewer** → HL7/FHIR integration via Mirth Connect  
+- 📬 **Secure Messaging** → Medplum or Matrix protocol with encryption  
+- 💵 **Billing & Insurance** → OpenMRS + Bahmni billing packages  
+- 📚 **Health Literacy Assistant** → Whisper + spaCy or Haystack NLP  
+- 🧭 **Care Navigation** → D3.js or Neo4j referral engine  
 
-## 🌱 Getting Started
-```bash
-git clone https://github.com/webqx-platform/core
-npm install
-npm run dev
+### 🩺 Provider Panel  
+Modular EHR engine enhancements via OpenEMR / OpenMRS:
 
+- 📋 **EHR Summary Dashboard** → React + GraphQL  
+- 💊 **Prescription Management** → RxNorm + SmartRx UI  
+- 📬 **Secure Messaging** → Scoped Matrix channels  
+- 📊 **Clinical Alerts / Decision Support** → OpenCDS or Drools rule engine  
+- 🧠 **CME Tracker** → Open Badges (BadgeOS/Moodle)  
+- 🤖 **Provider Assistant Bot** → LLM + private Whisper API  
+- 📝 **Transcription Suite** → Whisper + Google Cloud Speech-to-Text + specialty macros  
+
+### 🛠️ Admin Console  
+Role-based access and modular configuration for deployment:
+
+- 🔐 **Access Control** → Keycloak / Firebase Auth  
+- 🌐 **Localization Tools** → i18next + Whisper translation overlay  
+- 🎨 **UI Theming** → Tailwind or CSS-in-JS  
+- 📊 **Analytics** → Grafana / Metabase  
+- 🎛️ **AI Tuning** → YAML configs + admin webhooks  
+- 🔗 **Integration Engine** → HL7/FHIR via Mirth Connect + OHIF PACS viewer  
+- 💰 **Billing Logic** → JSON-based rule engine  
+- 🗄️ **Compliance Modules** → PostgreSQL + Vault + audit logging  
+
+## 🧬 Supported Specialties  
+Modular workflows are designed for:
+
+- Primary Care  
+- Radiology  
+- Cardiology  
+- Pediatrics  
+- Oncology  
+- Psychiatry  
+- Endocrinology  
+- Orthopedics  
+- Neurology  
+- Gastroenterology  
+- Pulmonology  
+- Dermatology  
+- OBGYN  
+
+## 🛡️ Security & Compliance  
+- TLS encryption for data in transit  
+- Audit-ready backend with IP protection options  
+- NDA & Contributor IP Assignment Addendum templates included  
+- BAA readiness for HIPAA-compatible deployments  
+
+## 🛠️ Build Stack  
+| Layer       | Technology                       |
+|-------------|----------------------------------|
+| Frontend    | React + TypeScript               |
+| Backend     | Node.js (Fastify) + Flask        |
+| Database    | PostgreSQL + Firebase Sync       |
+| Messaging   | Matrix / Medplum                 |
+| AI/NLP      | Whisper + spaCy / Haystack       |
+| Compliance  | Vault, audit logging, RBAC       |
+| Interop     | HL7/FHIR + OHIF for PACS         |
+
+## 🤝 Contribution Guide  
+We welcome clinicians, developers, and researchers:
+
+- Clone, fork, and suggest new specialty workflows  
+- Sign IP Addendum and NDA prior to PR submission  
+- Use branches like `feature/oncology-workflow-v1.0`  
+- Submit YAML logic + compliance notes with PR  
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`specialties.yaml`](./admin-console/ai-tuning/specialties.yaml)
+
+## 📜 License  
+Apache 2.0 — Includes contributor IP addendums for legal clarity and scalability  
+See [`LICENSE.md`](./LICENSE.md), [`nda-template.md`](./legal/nda-template.md), and [`ip-addendum.md`](./legal/ip-addendum.md)
+
+---
+
+Crafted with ❤️ by [@webqx-health](https://github.com/webqx-health)  
+_“Care equity begins with code equity.”_
