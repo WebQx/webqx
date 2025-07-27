@@ -68,12 +68,62 @@ Modular workflows are designed for:
 | Layer       | Technology                       |
 |-------------|----------------------------------|
 | Frontend    | React + TypeScript               |
+| Mobile      | React Native                     |
 | Backend     | Node.js (Fastify) + Flask        |
 | Database    | PostgreSQL + Firebase Sync       |
 | Messaging   | Matrix / Medplum                 |
 | AI/NLP      | Whisper + spaCy / Haystack       |
 | Compliance  | Vault, audit logging, RBAC       |
 | Interop     | HL7/FHIR + OHIF for PACS         |
+
+## 📱 Mobile Application  
+The WebQX™ Mobile Platform includes a React Native component that provides:
+
+### 🎙️ Provider Module
+- **Voice-to-Text Dictation** → Real-time transcription with Whisper integration
+- **Specialty-Aware Templates** → Configurable for 12+ medical specialties
+- **Privacy Controls** → HIPAA-compliant offline and privacy modes
+- **EMR Integration** → Direct submission to Electronic Medical Records
+
+### 🧐 Reviewer Module  
+- **Quality Review Queue** → Transcript validation and approval workflow
+- **Provider Oversight** → Multi-user review and flagging system
+- **Compliance Tracking** → Audit trail for all review actions
+
+### 📊 Admin Module
+- **Audit Logging** → Comprehensive user activity tracking
+- **Analytics Dashboard** → Specialty-specific usage metrics
+- **Role Management** → Provider, Reviewer, and Admin access controls
+
+### 🚀 Getting Started with Mobile Component
+The main mobile component is located at:
+```
+src/components/WebQXApp.js
+```
+
+To integrate the WebQXApp component into your React Native application:
+
+1. **Import the component:**
+   ```javascript
+   import WebQXApp from './src/components/WebQXApp';
+   ```
+
+2. **Use in your App.js:**
+   ```javascript
+   export default function App() {
+     return <WebQXApp />;
+   }
+   ```
+
+3. **Required React Native dependencies:**
+   - react-native
+   - React Native components: View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Switch
+
+### 🎯 Features
+- **Multi-Role Interface:** Provider, Reviewer, and Admin views
+- **Real-time Audio Processing:** Live transcript with timestamp synchronization
+- **Specialty Support:** Radiology, Cardiology, and 10+ other medical specialties
+- **Compliance Ready:** Privacy mode, offline capability, and audit logging
 
 ## 🤝 Contribution Guide  
 We welcome clinicians, developers, and researchers:
