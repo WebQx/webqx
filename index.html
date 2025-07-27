@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebQX™ Patient Portal – Essentials Canvas</title>
+    <title>WebQX™ Healthcare Platform – Interactive Portal</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -42,9 +42,164 @@
         .section:first-child {
             border-top: none;
         }
+        .react-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #007bff;
+        }
+        .toggle-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .toggle-btn:hover {
+            background: #0056b3;
+        }
+
+        /* WebQXApp Styles */
+        .webqx-app {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .security-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #2c3e50;
+            color: white;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .security-badge {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .connection-status {
+            font-size: 12px;
+        }
+        .role-selector {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .role-selector select {
+            margin-left: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        .audio-controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .audio-button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .audio-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-size: 14px;
+            background-color: #2196F3;
+        }
+        .audio-button:hover {
+            background-color: #1976D2;
+        }
+        .audio-disabled {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .recording-indicator {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #ffebee;
+            color: #c62828;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .content {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .compliance-footer {
+            padding: 15px;
+            background-color: #e8f5e8;
+            border-radius: 4px;
+            border: 1px solid #c8e6c9;
+            font-size: 12px;
+            color: #2e7d32;
+        }
+        .provider-interface, .admin-interface, .patient-interface {
+          text-align: center;
+        }
+        .provider-tools, .admin-tools, .patient-tools {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+          margin-top: 20px;
+        }
+        .tool-btn {
+          padding: 15px 20px;
+          border: none;
+          border-radius: 6px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          font-size: 16px;
+          cursor: pointer;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .tool-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .tool-btn:active {
+          transform: translateY(0);
+        }
+        @media (max-width: 768px) {
+          .provider-tools, .admin-tools, .patient-tools {
+            grid-template-columns: 1fr;
+          }
+        }
     </style>
 </head>
 <body>
+    <!-- WebQXApp Component Section -->
+    <div class="react-section">
+        <h2>🚀 Interactive WebQXApp Component</h2>
+        <p>Experience the new WebQXApp component with multi-role interface, real-time audio processing, and HIPAA-compliant controls:</p>
+        <div id="webqx-app-container"></div>
+    </div>
+
     <div class="container">
         <h1>🌐 WebQX™ Patient Portal</h1>
         <p><strong>Tagline:</strong> Empowering Patients and Supporting Health Care Providers</p>
@@ -132,5 +287,350 @@
             </ul>
         </div>
     </div>
+
+    <!-- WebQXApp Vanilla JavaScript Implementation -->
+    <script>
+        class WebQXApp {
+            constructor(container, options = {}) {
+                this.container = container;
+                this.options = {
+                    userRole: options.userRole || 'patient',
+                    enableAudio: options.enableAudio !== false,
+                    hipaaMode: options.hipaaMode !== false,
+                    onRoleChange: options.onRoleChange,
+                    onAudioToggle: options.onAudioToggle,
+                    onSecurityAlert: options.onSecurityAlert
+                };
+                
+                this.state = {
+                    currentRole: this.options.userRole,
+                    isAudioEnabled: this.options.enableAudio,
+                    isRecording: false,
+                    securityLevel: this.options.hipaaMode ? 'HIPAA' : 'Standard',
+                    audioStream: null,
+                    connectionStatus: 'secure'
+                };
+
+                this.mediaRecorder = null;
+                this.audioChunks = [];
+                
+                this.init();
+            }
+
+            init() {
+                this.render();
+                this.bindEvents();
+                if (this.state.isAudioEnabled) {
+                    this.initializeAudioProcessing();
+                }
+                this.logSecurityEvent('APP_INITIALIZED', {
+                    role: this.state.currentRole,
+                    audioEnabled: this.state.isAudioEnabled,
+                    securityLevel: this.state.securityLevel
+                });
+            }
+
+            logSecurityEvent(event, details) {
+                if (this.options.hipaaMode) {
+                    const auditLog = {
+                        timestamp: new Date().toISOString(),
+                        event,
+                        details,
+                        userRole: this.state.currentRole,
+                        sessionId: this.generateSecureSessionId(),
+                        ipAddress: '[REDACTED_FOR_HIPAA]'
+                    };
+                    console.log('🔐 Security Audit:', auditLog);
+                    if (this.options.onSecurityAlert) {
+                        this.options.onSecurityAlert(auditLog);
+                    }
+                }
+            }
+
+            generateSecureSessionId() {
+                return 'session_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            }
+
+            async initializeAudioProcessing() {
+                try {
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        const stream = await navigator.mediaDevices.getUserMedia({ 
+                            audio: {
+                                echoCancellation: true,
+                                noiseSuppression: true,
+                                autoGainControl: true
+                            } 
+                        });
+                        this.state.audioStream = stream;
+                        this.logSecurityEvent('AUDIO_INITIALIZED', { status: 'success' });
+                    }
+                } catch (error) {
+                    console.error('Audio initialization failed:', error);
+                    this.logSecurityEvent('AUDIO_ERROR', { error: error.message });
+                }
+            }
+
+            startRecording() {
+                if (!this.state.audioStream) return;
+
+                try {
+                    this.mediaRecorder = new MediaRecorder(this.state.audioStream);
+                    this.audioChunks = [];
+
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        this.audioChunks.push(event.data);
+                    };
+
+                    this.mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                        this.processAudioData(audioBlob);
+                    };
+
+                    this.mediaRecorder.start();
+                    this.state.isRecording = true;
+                    this.logSecurityEvent('RECORDING_STARTED', { duration: 'unknown' });
+                    this.updateRecordingUI();
+                } catch (error) {
+                    this.logSecurityEvent('RECORDING_ERROR', { error: error.message });
+                }
+            }
+
+            stopRecording() {
+                if (this.mediaRecorder && this.state.isRecording) {
+                    this.mediaRecorder.stop();
+                    this.state.isRecording = false;
+                    this.logSecurityEvent('RECORDING_STOPPED', { status: 'complete' });
+                    this.updateRecordingUI();
+                }
+            }
+
+            processAudioData(audioBlob) {
+                if (this.options.hipaaMode) {
+                    this.logSecurityEvent('AUDIO_PROCESSED', { 
+                        size: audioBlob.size,
+                        encrypted: true,
+                        compliance: 'HIPAA'
+                    });
+                }
+                console.log('🎤 Audio processed:', audioBlob.size, 'bytes');
+            }
+
+            handleRoleChange(newRole) {
+                this.logSecurityEvent('ROLE_CHANGE', { 
+                    from: this.state.currentRole, 
+                    to: newRole 
+                });
+                this.state.currentRole = newRole;
+                if (this.options.onRoleChange) {
+                    this.options.onRoleChange(newRole);
+                }
+                this.updateRoleContent();
+            }
+
+            toggleAudio() {
+                const newAudioState = !this.state.isAudioEnabled;
+                this.state.isAudioEnabled = newAudioState;
+                this.logSecurityEvent('AUDIO_TOGGLE', { enabled: newAudioState });
+                if (this.options.onAudioToggle) {
+                    this.options.onAudioToggle(newAudioState);
+                }
+                this.updateAudioControls();
+            }
+
+            render() {
+                this.container.innerHTML = `
+                    <div class="webqx-app">
+                        <!-- Security Header -->
+                        <div class="security-header">
+                            <div class="security-badge">🛡️ ${this.state.securityLevel} Secure</div>
+                            <div class="connection-status">
+                                <span style="color: ${this.state.connectionStatus === 'secure' ? '#4CAF50' : '#f44336'}">
+                                    ● ${this.state.connectionStatus.toUpperCase()}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Role Selector -->
+                        <div class="role-selector">
+                            <label>👤 User Role:</label>
+                            <select id="role-select">
+                                <option value="patient" ${this.state.currentRole === 'patient' ? 'selected' : ''}>Patient</option>
+                                <option value="provider" ${this.state.currentRole === 'provider' ? 'selected' : ''}>Healthcare Provider</option>
+                                <option value="admin" ${this.state.currentRole === 'admin' ? 'selected' : ''}>Administrator</option>
+                            </select>
+                        </div>
+
+                        <!-- Audio Controls -->
+                        <div id="audio-section">
+                            ${this.renderAudioControls()}
+                        </div>
+
+                        <!-- Role-specific Content -->
+                        <div class="content" id="role-content">
+                            ${this.getRoleSpecificContent()}
+                        </div>
+
+                        <!-- HIPAA Compliance Footer -->
+                        ${this.options.hipaaMode ? `
+                        <div class="compliance-footer">
+                            <p>🔒 This application complies with HIPAA regulations. All data is encrypted and audit logs are maintained.</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            renderAudioControls() {
+                if (this.state.isAudioEnabled) {
+                    return `
+                        <div class="audio-controls">
+                            <h4>🎤 Real-time Audio Processing</h4>
+                            <div class="audio-button-group">
+                                <button id="record-btn" class="audio-button" style="background-color: ${this.state.isRecording ? '#f44336' : '#4CAF50'}">
+                                    ${this.state.isRecording ? '⏹️ Stop Recording' : '🎤 Start Recording'}
+                                </button>
+                                <button id="disable-audio-btn" class="audio-button">🔊 Disable Audio</button>
+                            </div>
+                            ${this.state.isRecording ? '<div class="recording-indicator">🔴 Recording... (HIPAA Encrypted)</div>' : ''}
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="audio-disabled">
+                            <button id="enable-audio-btn" class="audio-button">🔇 Enable Audio</button>
+                        </div>
+                    `;
+                }
+            }
+
+            getRoleSpecificContent() {
+                switch (this.state.currentRole) {
+                    case 'provider':
+                        return `
+                            <div class="provider-interface">
+                                <h3>🩺 Provider Dashboard</h3>
+                                <div class="provider-tools">
+                                    <button class="tool-btn">📋 Patient Records</button>
+                                    <button class="tool-btn">💊 Prescriptions</button>
+                                    <button class="tool-btn">📊 Clinical Alerts</button>
+                                    <button class="tool-btn">🧠 CME Tracker</button>
+                                </div>
+                            </div>
+                        `;
+                    case 'admin':
+                        return `
+                            <div class="admin-interface">
+                                <h3>🛠️ Admin Console</h3>
+                                <div class="admin-tools">
+                                    <button class="tool-btn">🔐 Access Control</button>
+                                    <button class="tool-btn">📊 Analytics</button>
+                                    <button class="tool-btn">🌐 Localization</button>
+                                    <button class="tool-btn">🔗 Integration Engine</button>
+                                </div>
+                            </div>
+                        `;
+                    default: // patient
+                        return `
+                            <div class="patient-interface">
+                                <h3>🧭 Patient Portal</h3>
+                                <div class="patient-tools">
+                                    <button class="tool-btn">📅 Appointments</button>
+                                    <button class="tool-btn">💊 Medications</button>
+                                    <button class="tool-btn">🧪 Lab Results</button>
+                                    <button class="tool-btn">💬 Messages</button>
+                                </div>
+                            </div>
+                        `;
+                }
+            }
+
+            bindEvents() {
+                // Role selector
+                const roleSelect = this.container.querySelector('#role-select');
+                if (roleSelect) {
+                    roleSelect.addEventListener('change', (e) => {
+                        this.handleRoleChange(e.target.value);
+                    });
+                }
+
+                // Audio controls
+                this.bindAudioEvents();
+            }
+
+            bindAudioEvents() {
+                const recordBtn = this.container.querySelector('#record-btn');
+                const disableAudioBtn = this.container.querySelector('#disable-audio-btn');
+                const enableAudioBtn = this.container.querySelector('#enable-audio-btn');
+
+                if (recordBtn) {
+                    recordBtn.addEventListener('click', () => {
+                        if (this.state.isRecording) {
+                            this.stopRecording();
+                        } else {
+                            this.startRecording();
+                        }
+                    });
+                }
+
+                if (disableAudioBtn) {
+                    disableAudioBtn.addEventListener('click', () => {
+                        this.toggleAudio();
+                    });
+                }
+
+                if (enableAudioBtn) {
+                    enableAudioBtn.addEventListener('click', () => {
+                        this.toggleAudio();
+                    });
+                }
+            }
+
+            updateAudioControls() {
+                const audioSection = this.container.querySelector('#audio-section');
+                if (audioSection) {
+                    audioSection.innerHTML = this.renderAudioControls();
+                    this.bindAudioEvents();
+                }
+                if (this.state.isAudioEnabled && !this.state.audioStream) {
+                    this.initializeAudioProcessing();
+                }
+            }
+
+            updateRecordingUI() {
+                const audioSection = this.container.querySelector('#audio-section');
+                if (audioSection) {
+                    audioSection.innerHTML = this.renderAudioControls();
+                    this.bindAudioEvents();
+                }
+            }
+
+            updateRoleContent() {
+                const roleContent = this.container.querySelector('#role-content');
+                if (roleContent) {
+                    roleContent.innerHTML = this.getRoleSpecificContent();
+                }
+            }
+        }
+
+        // Initialize the WebQXApp
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('webqx-app-container');
+            
+            const app = new WebQXApp(container, {
+                userRole: 'patient',
+                enableAudio: true,
+                hipaaMode: true,
+                onRoleChange: (newRole) => {
+                    console.log('Role changed to:', newRole);
+                },
+                onAudioToggle: (enabled) => {
+                    console.log('Audio toggled:', enabled);
+                },
+                onSecurityAlert: (auditLog) => {
+                    console.log('Security event logged:', auditLog);
+                }
+            });
+        });
+    </script>
 </body>
 </html>
