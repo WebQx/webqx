@@ -22,6 +22,65 @@ Built with React, supporting user-friendly access to clinical services:
 - 📚 **Health Literacy Assistant** → Whisper + spaCy or Haystack NLP  
 - 🧭 **Care Navigation** → D3.js or Neo4j referral engine  
 
+### 🏥 Patient Portal EHR Components  
+Specialized EHR modules designed specifically for patient access and engagement:
+
+```
+webqx-ehr/
+├── modules/
+│   ├── transcription/
+│   └── specialty-primary-care/
+├── ehr-integrations/
+│   ├── openemr/
+│   ├── openmrs/
+│   └── librehealth/
+├── auth/
+│   ├── firebase/
+│   └── provider-verification/
+├── interoperability/
+│   ├── openEHR-layer/
+│   └── fhir-interfaces/
+└── docs/
+    ├── CONTRIBUTING.md
+    └── LICENSING.md
+```
+
+#### 📝 Transcription Module
+Patient-focused speech-to-text services for healthcare communication:
+- **Voice Notes** → Secure patient voice memos with medical terminology support
+- **Appointment Preparation** → Voice-guided symptom collection and history taking
+- **Multilingual Support** → Real-time translation for diverse patient populations
+
+#### 🩺 Specialty Primary Care
+Streamlined access to specialized primary care workflows:
+- **Symptom Checker** → AI-assisted preliminary assessment tools
+- **Care Pathways** → Guided patient journey through specialty-specific protocols
+- **Patient Education** → Interactive modules tailored to specific conditions
+
+#### 🔗 EHR Integrations
+Seamless connectivity with major open-source EHR systems:
+- **OpenEMR Integration** → Direct patient portal synchronization
+- **OpenMRS Connectivity** → Clinical data access and patient record management
+- **LibreHealth Toolkit** → Community-driven healthcare record solutions
+
+#### 🔐 Authentication & Access
+Secure patient identity management and provider verification:
+- **Firebase Authentication** → Multi-factor authentication for patient accounts
+- **Provider Verification** → Credential validation for healthcare professional access
+- **HIPAA-Compliant Access** → Audit trails and secure session management
+
+#### 🌐 Interoperability
+Standards-based data exchange for comprehensive patient care:
+- **openEHR Layer** → Standardized clinical data modeling and archetype support
+- **FHIR Interfaces** → HL7 FHIR R4 compliant patient data exchange
+- **Cross-Platform Sync** → Real-time synchronization across healthcare systems
+
+#### 📚 Documentation & Compliance
+Comprehensive guides and regulatory documentation:
+- **Contributing Guidelines** → Patient-focused development standards
+- **Licensing Information** → Open-source compliance and usage rights
+- **Privacy Policies** → HIPAA, GDPR, and healthcare data protection standards
+
 ### 🩺 Provider Panel  
 Modular EHR engine enhancements via OpenEMR / OpenMRS:
 
