@@ -22,6 +22,40 @@ Built with React, supporting user-friendly access to clinical services:
 - 📚 **Health Literacy Assistant** → Whisper + spaCy or Haystack NLP  
 - 🧭 **Care Navigation** → D3.js or Neo4j referral engine  
 
+#### 📁 WebQX-EHR Directory Structure
+```
+webqx-ehr/
+├── modules/
+│   ├── transcription/
+│   ├── specialty-primary-care/
+│   ├── specialty-radiology/
+│   ├── specialty-cardiology/
+│   ├── specialty-neurology/
+│   ├── specialty-pulmonology/
+│   └── specialty-oncology/
+├── ehr-integrations/
+│   ├── openemr/
+│   ├── openmrs/
+│   ├── librehealth/
+│   ├── gnuhealth/
+│   └── hospitalrun/
+├── auth/
+│   ├── firebase/
+│   ├── specialty-access-control/
+│   └── provider-verification/
+├── interoperability/
+│   ├── openEHR-layer/
+│   ├── terminology-maps/
+│   └── fhir-interfaces/
+├── messaging/
+│   └── matrix-overlay/
+└── docs/
+    ├── CONTRIBUTING.md
+    ├── LICENSING.md
+    ├── NDAs/
+    └── IP-assignment/
+```  
+
 ### 🩺 Provider Panel  
 Modular EHR engine enhancements via OpenEMR / OpenMRS:
 
@@ -32,6 +66,40 @@ Modular EHR engine enhancements via OpenEMR / OpenMRS:
 - 🧠 **CME Tracker** → Open Badges (BadgeOS/Moodle)  
 - 🤖 **Provider Assistant Bot** → LLM + private Whisper API  
 - 📝 **Transcription Suite** → Whisper + Google Cloud Speech-to-Text + specialty macros  
+
+#### 📁 WebQX-EHR Directory Structure
+```
+webqx-ehr/
+├── modules/
+│   ├── transcription/
+│   ├── specialty-primary-care/
+│   ├── specialty-radiology/
+│   ├── specialty-cardiology/
+│   ├── specialty-neurology/
+│   ├── specialty-pulmonology/
+│   └── specialty-oncology/
+├── ehr-integrations/
+│   ├── openemr/
+│   ├── openmrs/
+│   ├── librehealth/
+│   ├── gnuhealth/
+│   └── hospitalrun/
+├── auth/
+│   ├── firebase/
+│   ├── specialty-access-control/
+│   └── provider-verification/
+├── interoperability/
+│   ├── openEHR-layer/
+│   ├── terminology-maps/
+│   └── fhir-interfaces/
+├── messaging/
+│   └── matrix-overlay/
+└── docs/
+    ├── CONTRIBUTING.md
+    ├── LICENSING.md
+    ├── NDAs/
+    └── IP-assignment/
+```  
 
 ### 🛠️ Admin Console  
 Role-based access and modular configuration for deployment:
