@@ -1,6 +1,7 @@
 import React from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 import LiteracyAssistant from '../components/LiteracyAssistant';
+import { PrescriptionForm } from '../components/PrescriptionForm';
 
 /**
  * Home component - Main landing page for the WebQX Patient Portal
@@ -129,12 +130,11 @@ const Home: React.FC<HomeProps> = ({
                 </button>
               </li>
               <li>
-                <button 
-                  className="action-button"
-                  aria-label="Request prescription refill"
-                >
-                  💊 Refill Prescription
-                </button>
+                <PrescriptionForm
+                  onSuccess={(data) => console.log('Refill request submitted:', data)}
+                  onError={(error) => console.error('Refill request failed:', error)}
+                  className="portal-prescription-form"
+                />
               </li>
             </ul>
           </nav>

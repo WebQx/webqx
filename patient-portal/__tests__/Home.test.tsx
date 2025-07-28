@@ -24,6 +24,18 @@ jest.mock('../components/LiteracyAssistant', () => {
   };
 });
 
+jest.mock('../components/PrescriptionForm', () => {
+  return {
+    PrescriptionForm: function MockPrescriptionForm(props: any) {
+      return (
+        <div data-testid="prescription-form" className={props.className}>
+          Prescription Form Mock
+        </div>
+      );
+    }
+  };
+});
+
 describe('Home Component', () => {
   it('renders the main portal structure', () => {
     render(<Home />);
@@ -85,7 +97,7 @@ describe('Home Component', () => {
     expect(screen.getByRole('button', { name: /Schedule new appointment/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /View test results/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Send secure message to provider/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Request prescription refill/ })).toBeInTheDocument();
+    expect(screen.getByTestId('prescription-form')).toBeInTheDocument();
   });
 
   it('renders health overview section', () => {
@@ -171,8 +183,7 @@ describe('Home Component', () => {
     const buttons = [
       { text: '🗓️ Schedule Appointment', label: 'Schedule new appointment' },
       { text: '🧪 View Lab Results', label: 'View test results' },
-      { text: '💬 Message Provider', label: 'Send secure message to provider' },
-      { text: '💊 Refill Prescription', label: 'Request prescription refill' }
+      { text: '💬 Message Provider', label: 'Send secure message to provider' }
     ];
     
     buttons.forEach(button => {
@@ -180,5 +191,8 @@ describe('Home Component', () => {
       expect(buttonElement).toBeInTheDocument();
       expect(buttonElement).toHaveTextContent(button.text);
     });
+
+    // Check prescription form is rendered
+    expect(screen.getByTestId('prescription-form')).toBeInTheDocument();
   });
 });
