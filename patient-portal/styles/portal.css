@@ -86,7 +86,7 @@
   border-radius: 12px;
   border: 1px solid #e9ecef;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .appointments-section:hover,
@@ -95,7 +95,15 @@
 .literacy-section:hover,
 .emergency-section:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.appointments-section:focus-within,
+.quick-actions-section:focus-within,
+.health-overview-section:focus-within,
+.literacy-section:focus-within,
+.emergency-section:focus-within {
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
 }
 
 .section-title {
@@ -120,11 +128,19 @@
   border-radius: 8px;
   padding: 1rem;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .appointment-card:hover {
   border-color: #3498db;
-  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+  box-shadow: 0 4px 16px rgba(52, 152, 219, 0.25);
+  transform: translateY(-2px);
+}
+
+.appointment-card:focus,
+.appointment-card:focus-visible {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
 }
 
 .appointment-header {
@@ -181,17 +197,25 @@
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
+  position: relative;
 }
 
 .action-button:hover {
   background: linear-gradient(135deg, #229954, #1e8449);
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
 }
 
-.action-button:focus {
-  outline: 2px solid #3498db;
+.action-button:focus,
+.action-button:focus-visible {
+  outline: 3px solid #ffffff;
   outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+.action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
 }
 
 /* Health Overview */
@@ -206,6 +230,13 @@
   padding: 1rem;
   border-radius: 6px;
   border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.health-metric:hover,
+.health-alerts:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #dee2e6;
 }
 
 .health-metric h3,
@@ -246,16 +277,20 @@
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .literacy-toggle-btn:hover {
   background: #2980b9;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
 }
 
-.literacy-toggle-btn:focus {
-  outline: 2px solid #ffffff;
+.literacy-toggle-btn:focus,
+.literacy-toggle-btn:focus-visible {
+  outline: 3px solid #ffffff;
   outline-offset: -2px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8);
 }
 
 .literacy-assistant-content {
@@ -265,16 +300,22 @@
 .literacy-search-input {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ced4da;
+  border: 2px solid #ced4da;
   border-radius: 6px;
   font-size: 1rem;
   margin-bottom: 1rem;
+  transition: all 0.2s ease;
 }
 
-.literacy-search-input:focus {
+.literacy-search-input:hover {
+  border-color: #adb5bd;
+}
+
+.literacy-search-input:focus,
+.literacy-search-input:focus-visible {
   outline: none;
   border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
 }
 
 .literacy-terms {
@@ -287,6 +328,15 @@
   background: #f8f9fa;
   border-radius: 6px;
   border-left: 3px solid #3498db;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.literacy-term-item:hover {
+  background: #e9ecef;
+  border-left-color: #2980b9;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.15);
 }
 
 .literacy-term {
@@ -359,31 +409,51 @@
   color: #3498db;
   text-decoration: none;
   font-size: 0.9rem;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
 }
 
 .footer-links a:hover {
   color: #2980b9;
   text-decoration: underline;
+  background-color: rgba(52, 152, 219, 0.1);
 }
 
-.footer-links a:focus {
+.footer-links a:focus,
+.footer-links a:focus-visible {
   outline: 2px solid #3498db;
   outline-offset: 2px;
+  background-color: rgba(52, 152, 219, 0.15);
 }
 
 /* Responsive Design */
 @media (max-width: 767px) {
   .portal {
-    padding: 10px;
+    padding: 15px;
   }
   
   .portal-title {
     font-size: 2rem;
+    line-height: 1.2;
+  }
+  
+  .portal-tagline {
+    font-size: 1.1rem;
+  }
+  
+  .welcome-message {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
   }
   
   .portal-content {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.3rem;
   }
   
   .appointment-header {
@@ -392,9 +462,66 @@
     gap: 0.5rem;
   }
   
+  .action-button {
+    padding: 1rem;
+    font-size: 1.1rem;
+    min-height: 48px; /* Better touch target */
+  }
+  
+  .literacy-toggle-btn {
+    padding: 1.2rem;
+    font-size: 1.2rem;
+    min-height: 48px; /* Better touch target */
+  }
+  
+  .literacy-search-input {
+    padding: 1rem;
+    font-size: 1.1rem;
+    min-height: 48px; /* Better touch target */
+  }
+  
+  .literacy-term-item {
+    padding: 1rem;
+  }
+  
   .footer-links {
     flex-direction: column;
     gap: 1rem;
+  }
+  
+  .footer-links a {
+    padding: 0.5rem;
+    min-height: 44px; /* Better touch target */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .portal {
+    padding: 10px;
+  }
+  
+  .portal-title {
+    font-size: 1.8rem;
+  }
+  
+  .portal-header {
+    padding: 1.5rem 0;
+  }
+  
+  .appointments-section,
+  .quick-actions-section,
+  .health-overview-section,
+  .literacy-section,
+  .emergency-section {
+    padding: 1rem;
+  }
+  
+  .action-button {
+    font-size: 1rem;
+    padding: 1rem 0.8rem;
   }
 }
 

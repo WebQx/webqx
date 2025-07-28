@@ -116,4 +116,38 @@ describe('LiteracyAssistant Component', () => {
     expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('region', { name: /Medical terms glossary/ })).not.toBeInTheDocument();
   });
+
+  it('applies proper CSS classes for enhanced hover and focus states', () => {
+    const { container } = render(<LiteracyAssistant initiallyExpanded={true} />);
+    
+    // Check toggle button has correct class
+    const toggleButton = screen.getByRole('button', { name: /Health Literacy Assistant/ });
+    expect(toggleButton).toHaveClass('literacy-toggle-btn');
+    
+    // Check search input has correct class
+    const searchInput = screen.getByPlaceholderText('Search medical terms...');
+    expect(searchInput).toHaveClass('literacy-search-input');
+    
+    // Check term items have correct class
+    const termItems = container.querySelectorAll('.literacy-term-item');
+    expect(termItems.length).toBeGreaterThan(0);
+    termItems.forEach(item => {
+      expect(item).toHaveClass('literacy-term-item');
+    });
+  });
+
+  it('maintains focus accessibility for keyboard navigation', async () => {
+    const user = userEvent.setup();
+    render(<LiteracyAssistant initiallyExpanded={true} />);
+    
+    // Focus should work on toggle button
+    const toggleButton = screen.getByRole('button', { name: /Health Literacy Assistant/ });
+    await user.tab();
+    expect(toggleButton).toHaveFocus();
+    
+    // Focus should move to search input
+    await user.tab();
+    const searchInput = screen.getByPlaceholderText('Search medical terms...');
+    expect(searchInput).toHaveFocus();
+  });
 });

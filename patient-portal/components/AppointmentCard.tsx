@@ -29,6 +29,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
       className={`appointment-card ${className}`}
       role="article"
       aria-label={`Appointment: ${title}`}
+      tabIndex={0}
     >
       <div className="appointment-header">
         <h3>{title}</h3>
