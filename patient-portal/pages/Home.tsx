@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 import LiteracyAssistant from '../components/LiteracyAssistant';
 import Header from '../components/Header';
+import PrescriptionDosage from '../components/PrescriptionDosage';
+import SpecialtyPicker from '../components/SpecialtyPicker';
 import { SupportedLanguage } from '../types/localization';
 import { getTranslations } from '../utils/localization';
 
@@ -31,6 +33,8 @@ interface HomeProps {
   initialLanguage?: SupportedLanguage;
   /** Callback function when language is changed */
   onLanguageChange?: (language: SupportedLanguage) => void;
+  /** Whether to show the specialty picker section */
+  showSpecialtyPicker?: boolean;
 }
 
 /**
@@ -45,7 +49,8 @@ const Home: React.FC<HomeProps> = ({
   className = "",
   showLiteracyAssistant = true,
   initialLanguage = 'en',
-  onLanguageChange
+  onLanguageChange,
+  showSpecialtyPicker = true
 }) => {
   // State management for language selection
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(initialLanguage);
@@ -62,6 +67,33 @@ const Home: React.FC<HomeProps> = ({
     if (onLanguageChange) {
       onLanguageChange(newLanguage);
     }
+  };
+
+  // Sample dosage data for demonstration
+  const sampleDosages = [
+    {
+      id: '1',
+      amount: '250mg',
+      frequency: 'twice daily',
+      instructions: 'Take with food to reduce stomach upset',
+      recommended: true
+    },
+    {
+      id: '2',
+      amount: '500mg',
+      frequency: 'once daily',
+      instructions: 'Take on empty stomach, 1 hour before meals'
+    },
+    {
+      id: '3',
+      amount: '125mg',
+      frequency: 'three times daily',
+      instructions: 'Take at evenly spaced intervals'
+    }
+  ];
+
+  const handleDosageChoice = (dosage: any) => {
+    alert(`You selected: ${dosage.amount} ${dosage.frequency}\nInstructions: ${dosage.instructions || 'None'}`);
   };
   return (
     <main 
@@ -154,6 +186,31 @@ const Home: React.FC<HomeProps> = ({
           </nav>
         </section>
 
+        {/* Medical Specialty Selection */}
+        {showSpecialtyPicker && (
+          <section 
+            className="specialty-section"
+            role="region"
+            aria-labelledby="specialty-heading"
+          >
+            <h2 id="specialty-heading" className="section-title">
+              🏥 Medical Specialties
+            </h2>
+            <p className="section-description">
+              Select a medical specialty to find providers and schedule appointments
+            </p>
+            <SpecialtyPicker 
+              label="Choose a Medical Specialty"
+              showSelectedSpecialty={true}
+              className="portal-specialty-picker"
+              onSpecialtyChange={(specialtyId) => {
+                console.log('Selected specialty:', specialtyId);
+                // In a real app, this would navigate to specialty-specific content
+              }}
+            />
+          </section>
+        )}
+
         {/* Health Overview Section */}
         <section 
           className="health-overview-section"
@@ -182,6 +239,31 @@ const Home: React.FC<HomeProps> = ({
               </ul>
             </div>
           </div>
+        </section>
+
+        {/* Prescription Dosage Section */}
+        <section 
+          className="prescription-section"
+          role="region"
+          aria-labelledby="prescription-heading"
+        >
+          <h2 id="prescription-heading" className="section-title">
+            💊 Prescription Management
+          </h2>
+          <PrescriptionDosage
+            dosages={sampleDosages}
+            onChoose={handleDosageChoice}
+            title="Select Your Dosage"
+            className="portal-prescription-dosage"
+          />
+          
+          {/* Demo with empty dosages */}
+          <PrescriptionDosage
+            dosages={[]}
+            onChoose={handleDosageChoice}
+            title="Alternative Medication (Currently Unavailable)"
+            className="portal-prescription-dosage"
+          />
         </section>
 
         {/* Health Literacy Assistant */}

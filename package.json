@@ -22,7 +22,10 @@
   "license": "Apache-2.0",
   "dependencies": {
     "dotenv": "^16.3.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "i18next": "^25.3.2",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "react-i18next": "^15.6.1"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -35,6 +38,7 @@
     "@types/node": "^24.1.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "identity-obj-proxy": "^3.0.0",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "react": "^19.1.0",

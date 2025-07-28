@@ -1,0 +1,102 @@
+{
+  "portal": {
+    "title": "Welcome to WebQX™ Patient Portal",
+    "tagline": "Empowering Patients and Supporting Health Care Providers",
+    "description": "Your comprehensive healthcare management platform with multilingual support, appointment scheduling, secure messaging, and health record access.",
+    "welcomeBack": "Welcome back, {{name}}! 👋"
+  },
+  "navigation": {
+    "main": "Main Navigation",
+    "quickActions": "Quick actions menu",
+    "footer": "Footer navigation"
+  },
+  "sections": {
+    "appointments": "Your Appointments",
+    "quickActions": "Quick Actions",
+    "healthOverview": "Health Overview",
+    "healthEducation": "Health Education",
+    "emergency": "Emergency Information"
+  },
+  "appointments": {
+    "upcoming": "Upcoming Appointment",
+    "noAppointments": "No appointments scheduled",
+    "provider": "Provider:",
+    "annualCheckup": "Annual Checkup",
+    "followUp": "Follow-up Visit",
+    "annualCheckupDetails": "Annual physical examination and health screening",
+    "followUpDetails": "Follow-up for previous consultation",
+    "scheduledFor": "{{date}} at {{time}}"
+  },
+  "actions": {
+    "scheduleAppointment": "Schedule Appointment",
+    "viewLabResults": "View Lab Results",
+    "messageProvider": "Message Provider",
+    "refillPrescription": "Refill Prescription"
+  },
+  "health": {
+    "recentVitals": "Recent Vitals",
+    "healthAlerts": "Health Alerts",
+    "bloodPressure": "Blood Pressure: {{value}} mmHg",
+    "heartRate": "Heart Rate: {{value}} bpm",
+    "weight": "Weight: {{value}} lbs",
+    "lastUpdated": "Last Updated: {{date}}",
+    "fluShotDue": "Annual flu shot due",
+    "prescriptionRefill": "Prescription refill available",
+    "wellnessReminder": "Wellness check reminder"
+  },
+  "literacy": {
+    "assistant": "Health Literacy Assistant",
+    "searchPlaceholder": "Search medical terms...",
+    "searchHelp": "Type to search for medical terms and their definitions",
+    "noResults": "No medical terms found matching your search.",
+    "glossary": "Medical terms glossary",
+    "terms": {
+      "hypertension": {
+        "term": "Hypertension",
+        "definition": "High blood pressure"
+      },
+      "diabetes": {
+        "term": "Diabetes",
+        "definition": "A condition where blood sugar levels are too high"
+      },
+      "prescription": {
+        "term": "Prescription",
+        "definition": "A written order from a doctor for medication"
+      },
+      "laboratory": {
+        "term": "Laboratory",
+        "definition": "Medical tests performed on blood, urine, or other samples"
+      }
+    }
+  },
+  "emergency": {
+    "notice": "For medical emergencies, call 911 immediately",
+    "urgentCare": "For urgent but non-emergency healthcare needs:",
+    "nurseHotline": "Nurse Hotline: (555) 123-HELP",
+    "afterHours": "After-hours clinic: (555) 123-CARE",
+    "portalMessaging": "Patient portal messaging for non-urgent questions"
+  },
+  "footer": {
+    "copyright": "© 2024 WebQX Healthcare Platform. All rights reserved.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "helpSupport": "Help & Support",
+    "accessibility": "Accessibility"
+  },
+  "language": {
+    "selector": "Language",
+    "current": "Current language: {{language}}",
+    "changeLanguage": "Change language to {{language}}"
+  },
+  "aria": {
+    "dashboard": "WebQX Patient Portal Dashboard",
+    "personalizedWelcome": "Personalized welcome",
+    "appointmentCard": "Appointment: {{title}}",
+    "appointmentDateTime": "Date and time: {{datetime}}",
+    "vitalsSummary": "Vital signs summary",
+    "healthAlerts": "Health alerts and reminders",
+    "emergencyInfo": "Emergency contact information",
+    "expandAssistant": "Expand Health Literacy Assistant",
+    "collapseAssistant": "Collapse Health Literacy Assistant"
+  }
+}
