@@ -234,7 +234,7 @@ export const PrescriptionForm: React.FC<PrescriptionFormProps> = ({
       </div>
 
       {/* Footer */}
-      <footer className="prescription-form__footer">
+      <div className="prescription-form__footer">
         <div className="prescription-form__footer-content">
           <p className="prescription-form__disclaimer">
             <strong>Medical Disclaimer:</strong> This tool is for informational 
@@ -256,7 +256,7 @@ export const PrescriptionForm: React.FC<PrescriptionFormProps> = ({
             </button>
           )}
         </div>
-      </footer>
+      </div>
     </section>
   );
 };

@@ -192,7 +192,7 @@ describe('PrescriptionForm Component', () => {
       });
       
       // Click retry button
-      const retryButton = screen.getByRole('button', { name: /try again/i });
+      const retryButton = screen.getByRole('button', { name: /retry medication search/i });
       await user.click(retryButton);
       
       // Check that retry worked
@@ -219,22 +219,22 @@ describe('PrescriptionForm Component', () => {
       
       // First retry
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /retry medication search/i })).toBeInTheDocument();
       });
       
-      await user.click(screen.getByRole('button', { name: /try again/i }));
+      await user.click(screen.getByRole('button', { name: /retry medication search/i }));
       
       // Second retry
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /retry medication search/i })).toBeInTheDocument();
       });
       
-      await user.click(screen.getByRole('button', { name: /try again/i }));
+      await user.click(screen.getByRole('button', { name: /retry medication search/i }));
       
       // Should show max retries message
       await waitFor(() => {
         expect(screen.getByText(/maximum retry attempts/i)).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /try again/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /retry medication search/i })).not.toBeInTheDocument();
       });
     });
   });
@@ -423,7 +423,7 @@ describe('PrescriptionForm Component', () => {
       render(<PrescriptionForm />);
       
       // Check for live regions
-      expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument();
+      expect(screen.getByLabelText(/search medications in rxnorm database/i)).toBeInTheDocument();
       
       // Test loading announcement
       const mockMedications: MedicationItem[] = [];
@@ -441,7 +441,9 @@ describe('PrescriptionForm Component', () => {
       await user.click(searchButton);
       
       // Check loading status is announced
-      expect(screen.getByText(/searching for medications matching "test"/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/searching rxnorm database/i)).toBeInTheDocument();
+      });
       
       act(() => {
         resolveSearch!([]);
@@ -581,7 +583,7 @@ describe('ErrorMessage Component', () => {
     const onRetryMock = jest.fn();
     render(<ErrorMessage error="Test error" onRetry={onRetryMock} />);
     
-    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retry medication search/i })).toBeInTheDocument();
   });
 
   test('calls onRetry when retry button is clicked', async () => {
@@ -590,7 +592,7 @@ describe('ErrorMessage Component', () => {
     
     render(<ErrorMessage error="Test error" onRetry={onRetryMock} />);
     
-    const retryButton = screen.getByRole('button', { name: /try again/i });
+    const retryButton = screen.getByRole('button', { name: /retry medication search/i });
     await user.click(retryButton);
     
     expect(onRetryMock).toHaveBeenCalled();
