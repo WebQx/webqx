@@ -45,6 +45,50 @@ Role-based access and modular configuration for deployment:
 - 💰 **Billing Logic** → JSON-based rule engine  
 - 🗄️ **Compliance Modules** → PostgreSQL + Vault + audit logging  
 
+## 📁 WebQx-EHR Directory Structure  
+The WebQx-EHR project follows a modular directory structure designed for scalability and maintainability across healthcare specialties and integrations:
+
+```
+webqx-ehr/
+├── modules/
+│   ├── transcription/
+│   ├── specialty-primary-care/
+│   ├── specialty-radiology/
+│   ├── specialty-cardiology/
+│   ├── specialty-neurology/
+│   ├── specialty-pulmonology/
+│   └── specialty-oncology/
+├── ehr-integrations/
+│   ├── openemr/
+│   ├── openmrs/
+│   ├── librehealth/
+│   ├── gnuhealth/
+│   └── hospitalrun/
+├── auth/
+│   ├── firebase/
+│   ├── specialty-access-control/
+│   └── provider-verification/
+├── interoperability/
+│   ├── openEHR-layer/
+│   ├── terminology-maps/
+│   └── fhir-interfaces/
+├── messaging/
+│   └── matrix-overlay/
+└── docs/
+    ├── CONTRIBUTING.md
+    ├── LICENSING.md
+    ├── NDAs/
+    └── IP-assignment/
+```
+
+**Key Directories:**
+- 🧩 **modules/** → Specialty-specific clinical modules and transcription services
+- 🔗 **ehr-integrations/** → Ready-to-deploy integrations with popular open-source EHR systems
+- 🔐 **auth/** → Authentication and access control mechanisms including provider verification
+- 🌐 **interoperability/** → Standards-compliant data exchange layers (HL7 FHIR, openEHR)
+- 💬 **messaging/** → Secure communication infrastructure using Matrix protocol
+- 📚 **docs/** → Legal documentation, contribution guidelines, and IP management
+
 ## 🧬 Supported Specialties  
 Modular workflows are designed for:
 
