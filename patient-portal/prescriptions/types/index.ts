@@ -1,6 +1,9 @@
 /**
- * Type definitions for the prescription system
+ * Type declarations for WebQX Prescription System
+ * Includes browser API extensions and custom types
  */
+
+import React from 'react';
 
 export interface Medication {
   id: string;

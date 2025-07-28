@@ -14,6 +14,9 @@ export { default as PrescriptionForm } from './components/PrescriptionForm';
 export { default as LanguageToggle } from './components/LanguageToggle';
 export { default as FormField } from './components/FormField';
 export { default as Tooltip } from './components/Tooltip';
+export { default as ThemeProvider, ThemeToggle, useTheme } from './components/ThemeProvider';
+export { default as VoiceControl, useVoiceControl } from './components/VoiceControl';
+export { default as PrescriptionSystemDemo } from './components/PrescriptionSystemDemo';
 
 // Hooks
 export * from './hooks';
