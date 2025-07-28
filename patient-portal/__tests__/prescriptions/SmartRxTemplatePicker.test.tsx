@@ -130,7 +130,8 @@ describe('SmartRxTemplatePicker', () => {
       );
 
       const picker = screen.getByRole('region');
-      expect(picker).toHaveClass('smart-rx-picker', 'custom-class');
+      expect(picker).toHaveClass('smart-rx-picker');
+      expect(picker).toHaveClass('custom-class');
     });
 
     test('calls onTemplateSelect callback when provided', async () => {

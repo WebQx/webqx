@@ -50,7 +50,8 @@ describe('PrescriptionForm', () => {
       );
 
       const formContainer = screen.getByRole('region');
-      expect(formContainer).toHaveClass('prescription-form', 'custom-form-class');
+      expect(formContainer).toHaveClass('prescription-form');
+      expect(formContainer).toHaveClass('custom-form-class');
     });
   });
 

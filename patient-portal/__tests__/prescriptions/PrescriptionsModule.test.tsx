@@ -84,14 +84,16 @@ describe('PrescriptionsModule', () => {
       render(<PrescriptionsModule className="custom-module-class" />);
 
       const moduleContainer = screen.getByRole('main');
-      expect(moduleContainer).toHaveClass('prescriptions-module', 'custom-module-class');
+      expect(moduleContainer).toHaveClass('prescriptions-module');
+      expect(moduleContainer).toHaveClass('custom-module-class');
     });
 
     test('applies compact mode class when enabled', () => {
       render(<PrescriptionsModule compact={true} />);
 
       const moduleContainer = screen.getByRole('main');
-      expect(moduleContainer).toHaveClass('prescriptions-module', 'compact');
+      expect(moduleContainer).toHaveClass('prescriptions-module');
+      expect(moduleContainer).toHaveClass('compact');
     });
   });
 
@@ -256,8 +258,10 @@ describe('PrescriptionsModule', () => {
       const navigation = screen.getByRole('navigation', { name: 'Prescription module navigation' });
       expect(navigation).toBeInTheDocument();
 
-      const navLinks = screen.getAllByRole('button', { name: /History|Help|Settings/ });
-      expect(navLinks).toHaveLength(3);
+      // Test each navigation button individually
+      expect(screen.getByLabelText('View prescription history')).toBeInTheDocument();
+      expect(screen.getByLabelText('Access prescription help and documentation')).toBeInTheDocument();
+      expect(screen.getByLabelText('Module settings and preferences')).toBeInTheDocument();
     });
 
     test('module information has proper accessibility grouping', () => {
