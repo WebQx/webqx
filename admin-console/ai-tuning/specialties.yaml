@@ -1,0 +1,235 @@
+# WebQX Healthcare Platform - Medical Specialties Configuration
+# This file defines the medical specialties and areas of expertise that contributors
+# can specify when submitting approval requests for the WebQX platform.
+
+version: "1.0"
+description: "Medical specialties and areas of expertise for WebQX healthcare platform contributors"
+
+specialties:
+  primary_care:
+    name: "Primary Care"
+    description: "General medical care for patients of all ages, including preventive care, health maintenance, diagnosis and treatment of common conditions, and coordination of care with specialists."
+    focus_areas:
+      - "Preventive medicine"
+      - "Chronic disease management"
+      - "Family medicine"
+      - "Internal medicine"
+      - "Health screenings and wellness"
+
+  radiology:
+    name: "Radiology"
+    description: "Medical imaging and interpretation including X-rays, CT scans, MRI, ultrasound, and nuclear medicine for diagnosis and treatment guidance."
+    focus_areas:
+      - "Diagnostic imaging"
+      - "Interventional radiology"
+      - "Medical imaging workflows"
+      - "PACS integration"
+      - "Image analysis and reporting"
+
+  cardiology:
+    name: "Cardiology"
+    description: "Diagnosis and treatment of heart and cardiovascular system disorders, including heart disease, hypertension, and vascular conditions."
+    focus_areas:
+      - "Heart disease management"
+      - "Cardiac imaging"
+      - "Electrophysiology"
+      - "Interventional cardiology"
+      - "Cardiovascular prevention"
+
+  pediatrics:
+    name: "Pediatrics"
+    description: "Medical care for infants, children, and adolescents, including growth and development monitoring, pediatric diseases, and preventive care."
+    focus_areas:
+      - "Child development"
+      - "Pediatric diseases"
+      - "Immunizations"
+      - "Adolescent medicine"
+      - "Family-centered care"
+
+  oncology:
+    name: "Oncology"
+    description: "Diagnosis, treatment, and management of cancer and malignant tumors, including chemotherapy, radiation therapy, and supportive care."
+    focus_areas:
+      - "Cancer diagnosis and staging"
+      - "Chemotherapy protocols"
+      - "Radiation therapy"
+      - "Palliative care"
+      - "Cancer survivorship"
+
+  psychiatry:
+    name: "Psychiatry"
+    description: "Diagnosis, treatment, and prevention of mental health disorders, including mood disorders, anxiety, psychosis, and behavioral conditions."
+    focus_areas:
+      - "Mental health assessment"
+      - "Psychopharmacology"
+      - "Psychotherapy"
+      - "Crisis intervention"
+      - "Behavioral health integration"
+
+  endocrinology:
+    name: "Endocrinology"
+    description: "Diagnosis and treatment of hormone-related disorders, including diabetes, thyroid conditions, and metabolic disorders."
+    focus_areas:
+      - "Diabetes management"
+      - "Thyroid disorders"
+      - "Hormone therapy"
+      - "Metabolic disorders"
+      - "Endocrine system diseases"
+
+  orthopedics:
+    name: "Orthopedics"
+    description: "Diagnosis and treatment of musculoskeletal system disorders, including bones, joints, muscles, ligaments, and tendons."
+    focus_areas:
+      - "Bone and joint surgery"
+      - "Sports medicine"
+      - "Trauma care"
+      - "Joint replacement"
+      - "Musculoskeletal rehabilitation"
+
+  neurology:
+    name: "Neurology"
+    description: "Diagnosis and treatment of nervous system disorders, including brain, spinal cord, and peripheral nerve conditions."
+    focus_areas:
+      - "Neurological assessment"
+      - "Stroke care"
+      - "Epilepsy management"
+      - "Neurodegenerative diseases"
+      - "Movement disorders"
+
+  gastroenterology:
+    name: "Gastroenterology"
+    description: "Diagnosis and treatment of digestive system disorders, including stomach, intestines, liver, and related organs."
+    focus_areas:
+      - "Digestive system diseases"
+      - "Endoscopic procedures"
+      - "Liver disease management"
+      - "Inflammatory bowel disease"
+      - "Gastrointestinal oncology"
+
+  pulmonology:
+    name: "Pulmonology"
+    description: "Diagnosis and treatment of respiratory system disorders, including lungs, airways, and breathing-related conditions."
+    focus_areas:
+      - "Respiratory disease management"
+      - "Pulmonary function testing"
+      - "Sleep medicine"
+      - "Critical care"
+      - "Lung cancer screening"
+
+  dermatology:
+    name: "Dermatology"
+    description: "Diagnosis and treatment of skin, hair, and nail disorders, including medical dermatology and cosmetic procedures."
+    focus_areas:
+      - "Skin disease diagnosis"
+      - "Dermatologic surgery"
+      - "Cosmetic dermatology"
+      - "Pediatric dermatology"
+      - "Dermatopathology"
+
+  obgyn:
+    name: "Obstetrics and Gynecology"
+    description: "Women's reproductive health care, including pregnancy care, childbirth, gynecological disorders, and reproductive medicine."
+    focus_areas:
+      - "Prenatal and postnatal care"
+      - "Gynecological surgery"
+      - "Reproductive endocrinology"
+      - "Family planning"
+      - "Women's health screening"
+
+# Technical specialties for platform development
+technical_areas:
+  frontend_development:
+    name: "Frontend Development"
+    description: "User interface and user experience development for healthcare applications, including patient portals and provider interfaces."
+    focus_areas:
+      - "React/TypeScript development"
+      - "Healthcare UI/UX design"
+      - "Accessibility compliance"
+      - "Mobile responsiveness"
+      - "Patient experience optimization"
+
+  backend_development:
+    name: "Backend Development" 
+    description: "Server-side development, API design, and database management for healthcare systems."
+    focus_areas:
+      - "Node.js/Express development"
+      - "Healthcare API design"
+      - "Database architecture"
+      - "Integration services"
+      - "Performance optimization"
+
+  devops:
+    name: "DevOps and Infrastructure"
+    description: "Deployment, monitoring, and infrastructure management for healthcare platforms with emphasis on security and compliance."
+    focus_areas:
+      - "Cloud deployment"
+      - "HIPAA compliance"
+      - "Security implementation"
+      - "Monitoring and logging"
+      - "CI/CD pipelines"
+
+  machine_learning:
+    name: "Machine Learning and AI"
+    description: "Artificial intelligence and machine learning applications in healthcare, including clinical decision support and predictive analytics."
+    focus_areas:
+      - "Clinical AI models"
+      - "Natural language processing"
+      - "Predictive analytics"
+      - "Computer vision for medical imaging"
+      - "AI ethics in healthcare"
+
+  data_science:
+    name: "Data Science and Analytics"
+    description: "Healthcare data analysis, population health analytics, and clinical research support."
+    focus_areas:
+      - "Clinical data analysis"
+      - "Population health metrics"
+      - "Research methodology"
+      - "Statistical analysis"
+      - "Data visualization"
+
+  interoperability:
+    name: "Healthcare Interoperability"
+    description: "Standards-based healthcare data exchange, including HL7 FHIR, and system integration."
+    focus_areas:
+      - "HL7 FHIR implementation"
+      - "Health information exchange"
+      - "EHR integration"
+      - "Standards compliance"
+      - "Data mapping and transformation"
+
+  security:
+    name: "Healthcare Security and Privacy"
+    description: "Information security, privacy protection, and compliance for healthcare systems."
+    focus_areas:
+      - "HIPAA compliance"
+      - "Data encryption"
+      - "Access control systems"
+      - "Audit logging"
+      - "Risk assessment"
+
+# Metadata
+metadata:
+  last_updated: "2024-07-28"
+  version_history:
+    - version: "1.0"
+      date: "2024-07-28"
+      changes: "Initial creation with 13 medical specialties and 7 technical areas"
+  maintainers:
+    - "WebQX Development Team"
+  contact: "admin@webqx.health"
+
+# Usage guidelines
+usage_guidelines:
+  contributor_selection:
+    description: "Contributors should select specialties that match their expertise and experience"
+    multiple_selection: true
+    validation_required: false
+  
+  review_assignment:
+    description: "Reviews should be assigned based on specialty alignment when possible"
+    fallback_strategy: "General review when specialty expertise not available"
+  
+  future_extensions:
+    description: "New specialties can be added by extending the specialties section"
+    format: "Follow existing YAML structure with name, description, and focus_areas"
