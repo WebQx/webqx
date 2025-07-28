@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SupportedLanguage, LocalizationTexts } from '../types/localization';
 import { languageOptions, getLanguageOption } from '../utils/localization';
 
@@ -26,30 +26,63 @@ interface HeaderProps {
  * language selection dropdown with full accessibility support.
  * 
  * Features:
- * - Multilingual support with language selector
- * - Accessibility-compliant design with ARIA labels
+ * - Multilingual support with simplified language selector
+ * - Accessibility-compliant design with ARIA labels and live announcements
  * - Responsive layout for various screen sizes
+ * - Performance optimized with React.memo
+ * - Visual feedback for language changes
  * - Proper semantic HTML structure
  */
-const Header: React.FC<HeaderProps> = ({
+const Header: React.FC<HeaderProps> = React.memo(({
   patientName = "Patient",
   language,
   onLanguageChange,
   texts,
   className = ""
 }) => {
+  const [isLanguageChanging, setIsLanguageChanging] = useState(false);
+
   /**
-   * Handle language selection change
+   * Handle language selection change with visual feedback
    */
-  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLanguageChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newLanguage = event.target.value as SupportedLanguage;
-    onLanguageChange(newLanguage);
+    setIsLanguageChanging(true);
+    
+    // Add small delay for visual feedback
+    setTimeout(() => {
+      onLanguageChange(newLanguage);
+      setIsLanguageChanging(false);
+    }, 150);
   };
 
   /**
    * Get the current language option for display purposes
    */
   const currentLanguageOption = getLanguageOption(language);
+
+  // Announce language changes to screen readers
+  useEffect(() => {
+    const announcement = document.createElement('div');
+    announcement.setAttribute('aria-live', 'polite');
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.className = 'sr-only';
+    announcement.textContent = `Interface language changed to ${currentLanguageOption.nativeName}`;
+    document.body.appendChild(announcement);
+    
+    const timer = setTimeout(() => {
+      if (document.body.contains(announcement)) {
+        document.body.removeChild(announcement);
+      }
+    }, 1000);
+
+    return () => {
+      clearTimeout(timer);
+      if (document.body.contains(announcement)) {
+        document.body.removeChild(announcement);
+      }
+    };
+  }, [language, currentLanguageOption.nativeName]);
 
   return (
     <header className={`portal-header ${className}`} role="banner">
@@ -62,50 +95,63 @@ const Header: React.FC<HeaderProps> = ({
         >
           {texts.languageLabel}
         </label>
-        <select
-          id="language-selector"
-          className="language-selector"
-          value={language}
-          onChange={handleLanguageChange}
-          aria-labelledby="language-selector-label"
-          aria-describedby="language-selector-description"
-        >
-          {languageOptions.map((option) => (
-            <option key={option.code} value={option.code}>
-              {option.nativeName} ({option.name})
-            </option>
-          ))}
-        </select>
+        <div className="language-selector-wrapper">
+          <select
+            id="language-selector"
+            className={`language-selector ${isLanguageChanging ? 'changing' : ''}`}
+            value={language}
+            onChange={handleLanguageChange}
+            aria-labelledby="language-selector-label"
+            aria-describedby="language-selector-description"
+            disabled={isLanguageChanging}
+          >
+            {languageOptions.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.nativeName}
+              </option>
+            ))}
+          </select>
+          {isLanguageChanging && (
+            <div className="language-change-indicator" aria-hidden="true">
+              <span className="spinner"></span>
+            </div>
+          )}
+        </div>
         <div id="language-selector-description" className="sr-only">
-          Select your preferred language for the patient portal interface. 
-          Current selection: {currentLanguageOption.nativeName}
+          {texts.languageLabel}. Current selection: {currentLanguageOption.nativeName}
         </div>
       </div>
 
-      {/* Main Portal Title */}
-      <h1 className="portal-title">
-        {texts.portalTitle}
-      </h1>
-      
-      {/* Portal Tagline */}
-      <p className="portal-tagline" aria-describedby="portal-description">
-        {texts.portalTagline}
-      </p>
-      
-      {/* Screen reader description */}
-      <div id="portal-description" className="sr-only">
-        Your comprehensive healthcare management platform with multilingual support,
-        appointment scheduling, secure messaging, and health record access.
-      </div>
-      
-      {/* Personalized Greeting */}
-      <div className="welcome-message" role="region" aria-label="Personalized welcome">
-        <p>
-          {texts.welcomeBack}, <strong>{patientName}</strong>! 👋
+      {/* Main Content Container */}
+      <div className="header-content">
+        {/* Main Portal Title */}
+        <h1 className="portal-title">
+          {texts.portalTitle}
+        </h1>
+        
+        {/* Portal Tagline */}
+        <p className="portal-tagline" aria-describedby="portal-description">
+          {texts.portalTagline}
         </p>
+        
+        {/* Screen reader description */}
+        <div id="portal-description" className="sr-only">
+          Your comprehensive healthcare management platform with multilingual support,
+          appointment scheduling, secure messaging, and health record access.
+        </div>
+        
+        {/* Personalized Greeting */}
+        <div className="welcome-message" role="region" aria-label="Personalized welcome">
+          <p>
+            {texts.welcomeBack}, <strong>{patientName}</strong>! 👋
+          </p>
+        </div>
       </div>
     </header>
   );
-};
+});
+
+// Add display name for debugging
+Header.displayName = 'Header';
 
 export default Header;

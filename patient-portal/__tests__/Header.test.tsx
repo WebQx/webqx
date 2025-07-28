@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Header from '../components/Header';
 import { SupportedLanguage } from '../types/localization';
@@ -73,8 +73,11 @@ describe('Header Component', () => {
       expect(select).toHaveAttribute('aria-labelledby', 'language-selector-label');
       expect(select).toHaveAttribute('aria-describedby', 'language-selector-description');
       
-      // Check screen reader description
-      expect(screen.getByText(/Select your preferred language for the patient portal interface/)).toBeInTheDocument();
+      // Check screen reader description contains the language label text
+      const description = screen.getByText((content, element) => {
+        return element?.id === 'language-selector-description' && content.includes(mockTexts.languageLabel);
+      });
+      expect(description).toBeInTheDocument();
     });
 
     it('displays all available language options', () => {
@@ -82,12 +85,12 @@ describe('Header Component', () => {
       
       const select = screen.getByRole('combobox');
       
-      // Check that all language options are present
-      expect(screen.getByRole('option', { name: /English \(English\)/ })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: /Español \(Spanish\)/ })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: /Français \(French\)/ })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: /Deutsch \(German\)/ })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: /中文 \(Chinese\)/ })).toBeInTheDocument();
+      // Check that all language options are present (simplified - native names only)
+      expect(screen.getByRole('option', { name: 'English' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Español' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Français' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Deutsch' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: '中文' })).toBeInTheDocument();
     });
 
     it('shows the current language as selected', () => {
@@ -111,6 +114,11 @@ describe('Header Component', () => {
       // Change language to Spanish
       await user.selectOptions(select, 'es');
       
+      // Wait for the timeout delay using act
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      });
+      
       expect(mockOnLanguageChange).toHaveBeenCalledWith('es');
       expect(mockOnLanguageChange).toHaveBeenCalledTimes(1);
     });
@@ -123,15 +131,51 @@ describe('Header Component', () => {
       
       const select = screen.getByRole('combobox');
       
-      // Change to different languages
+      // Change to different languages with delays
       await user.selectOptions(select, 'fr');
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      });
+      
       await user.selectOptions(select, 'de');
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      });
+      
       await user.selectOptions(select, 'zh');
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      });
       
       expect(mockOnLanguageChange).toHaveBeenCalledTimes(3);
       expect(mockOnLanguageChange).toHaveBeenNthCalledWith(1, 'fr');
       expect(mockOnLanguageChange).toHaveBeenNthCalledWith(2, 'de');
       expect(mockOnLanguageChange).toHaveBeenNthCalledWith(3, 'zh');
+    });
+
+    it('shows loading state during language change', async () => {
+      const user = userEvent.setup();
+      const mockOnLanguageChange = jest.fn();
+      
+      render(<Header {...defaultProps} onLanguageChange={mockOnLanguageChange} />);
+      
+      const select = screen.getByRole('combobox');
+      
+      // Change language
+      await user.selectOptions(select, 'es');
+      
+      // Check that select is disabled during change
+      expect(select).toBeDisabled();
+      expect(select).toHaveClass('changing');
+      
+      // Wait for the timeout delay using act
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      });
+      
+      // After delay, select should be enabled again
+      expect(select).not.toBeDisabled();
+      expect(select).not.toHaveClass('changing');
     });
   });
 
@@ -211,8 +255,11 @@ describe('Header Component', () => {
       // Check portal description
       expect(screen.getByText(/Your comprehensive healthcare management platform/)).toBeInTheDocument();
       
-      // Check language selector description
-      expect(screen.getByText(/Select your preferred language for the patient portal interface/)).toBeInTheDocument();
+      // Check language selector description contains the language label text
+      const description = screen.getByText((content, element) => {
+        return element?.id === 'language-selector-description' && content.includes(mockTexts.languageLabel);
+      });
+      expect(description).toBeInTheDocument();
     });
 
     it('uses appropriate ARIA attributes for language selector', () => {
@@ -259,6 +306,9 @@ describe('Header Component', () => {
       
       // Change language
       await user.selectOptions(select, 'es');
+      
+      // Wait for the timeout delay
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       // Verify callback was called
       expect(mockOnLanguageChange).toHaveBeenCalledWith('es');
