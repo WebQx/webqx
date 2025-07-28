@@ -2,6 +2,11 @@
 # 🌐 WebQX™: Modular Healthcare Platform  
 _A multilingual, specialty-aware, and privacy-first blueprint for global clinical care._
 
+---
+**© 2024 WebQx Health. All Rights Reserved. Proprietary and Confidential.**  
+**Unauthorized use, reproduction, or distribution is strictly prohibited.**
+---
+
 ## 🚀 Overview  
 WebQX™ is an open-source healthcare stack designed to support all 12 core medical specialties, including Primary Care, Radiology, Pediatrics, Oncology, Cardiology, Psychiatry, and more. Its modular design supports multilingual documentation, AI-powered assistance, and global interoperability—from remote clinics to urban hospitals.
 
@@ -111,18 +116,36 @@ open http://localhost:3000
 The patient portal will be available at the root URL, and health checks at `/health`.
 
 ## 🤝 Contribution Guide  
-We welcome clinicians, developers, and researchers:
+**IMPORTANT**: This is proprietary software owned by WebQx Health. All contributions require:
 
-- Clone, fork, and suggest new specialty workflows  
-- Sign IP Addendum and NDA prior to PR submission  
+- **Signed Contributor License Agreement (CLA)** before any code submissions
+- **Non-Disclosure Agreement (NDA)** for access to proprietary information  
+- **Intellectual Property Assignment** for all contributed code and ideas
+- Prior written approval from WebQx legal team for any contributions
+
+**Contribution Process**:
+1. Contact legal@webqx.health to request contribution authorization
+2. Sign required legal agreements (CLA, NDA, IP Assignment)
+3. Receive approval and contribution guidelines
+4. Submit contributions via approved channels only
+
+**Authorized Contributors Only**: 
 - Use branches like `feature/oncology-workflow-v1.0`  
-- Submit YAML logic + compliance notes with PR  
+- Include compliance documentation with all submissions
+- All contributions become exclusive property of WebQx Health
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`specialties.yaml`](./admin-console/ai-tuning/specialties.yaml)
+Contact legal@webqx.health for contribution inquiries and legal documentation.
 
 ## 📜 License  
-Apache 2.0 — Includes contributor IP addendums for legal clarity and scalability  
-See [`LICENSE.md`](./LICENSE.md), [`nda-template.md`](./legal/nda-template.md), and [`ip-addendum.md`](./legal/ip-addendum.md)
+**PROPRIETARY - ALL RIGHTS RESERVED**
+
+This software is proprietary to WebQx Health and is protected by copyright and other intellectual property laws. Unauthorized use, reproduction, or distribution is strictly prohibited.
+
+For licensing inquiries and commercial use permissions, please contact:
+- Email: legal@webqx.health  
+- Website: https://webqx.health
+
+See [`LICENSE`](./LICENSE) for complete terms and conditions.
 
 ---
 
