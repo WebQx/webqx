@@ -1,6 +1,7 @@
 import React from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 import LiteracyAssistant from '../components/LiteracyAssistant';
+import SpecialtyPicker from '../components/SpecialtyPicker';
 
 /**
  * Home component - Main landing page for the WebQX Patient Portal
@@ -24,6 +25,8 @@ interface HomeProps {
   className?: string;
   /** Whether to show the literacy assistant expanded by default */
   showLiteracyAssistant?: boolean;
+  /** Whether to show the specialty picker section */
+  showSpecialtyPicker?: boolean;
 }
 
 /**
@@ -36,7 +39,8 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({
   patientName = "Patient",
   className = "",
-  showLiteracyAssistant = true
+  showLiteracyAssistant = true,
+  showSpecialtyPicker = true
 }) => {
   return (
     <main 
@@ -139,6 +143,31 @@ const Home: React.FC<HomeProps> = ({
             </ul>
           </nav>
         </section>
+
+        {/* Medical Specialty Selection */}
+        {showSpecialtyPicker && (
+          <section 
+            className="specialty-section"
+            role="region"
+            aria-labelledby="specialty-heading"
+          >
+            <h2 id="specialty-heading" className="section-title">
+              🏥 Medical Specialties
+            </h2>
+            <p className="section-description">
+              Select a medical specialty to find providers and schedule appointments
+            </p>
+            <SpecialtyPicker 
+              label="Choose a Medical Specialty"
+              showSelectedSpecialty={true}
+              className="portal-specialty-picker"
+              onSpecialtyChange={(specialtyId) => {
+                console.log('Selected specialty:', specialtyId);
+                // In a real app, this would navigate to specialty-specific content
+              }}
+            />
+          </section>
+        )}
 
         {/* Health Overview Section */}
         <section 

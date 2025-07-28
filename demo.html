@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX SpecialtyPicker Demo</title>
+    <link rel="stylesheet" href="patient-portal/styles/portal.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .demo-title {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .demo-subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <header class="demo-header">
+            <h1 class="demo-title">🏥 WebQX SpecialtyPicker Component</h1>
+            <p class="demo-subtitle">Interactive Demo with All Features</p>
+        </header>
+
+        <main>
+            <!-- Demo Section -->
+            <section class="specialty-section">
+                <h2 id="specialty-heading" class="section-title">
+                    🏥 Medical Specialties
+                </h2>
+                <p class="section-description">
+                    Select a medical specialty to find providers and schedule appointments
+                </p>
+                
+                <!-- Manual HTML implementation for demo -->
+                <div class="specialty-picker portal-specialty-picker" role="group" aria-labelledby="specialty-picker-label">
+                    <label id="specialty-picker-label" for="specialty-picker-select" class="specialty-picker-label">
+                        Choose a Medical Specialty
+                    </label>
+                    <select id="specialty-picker-select" class="specialty-picker-select" aria-label="9 specialty options available">
+                        <option value="" disabled selected>Choose a medical specialty...</option>
+                        <option value="general" title="Primary care and general health services">General Medicine</option>
+                        <option value="cardiology" title="Heart and cardiovascular system care">Cardiology</option>
+                        <option value="dermatology" title="Skin, hair, and nail conditions">Dermatology</option>
+                        <option value="endocrinology" title="Hormones and metabolic disorders">Endocrinology</option>
+                        <option value="gastroenterology" title="Digestive system disorders">Gastroenterology</option>
+                        <option value="neurology" title="Brain and nervous system conditions">Neurology</option>
+                        <option value="orthopedics" title="Bone, joint, and muscle care">Orthopedics</option>
+                        <option value="pediatrics" title="Children and adolescent healthcare">Pediatrics</option>
+                        <option value="psychiatry" title="Mental health and behavioral disorders">Psychiatry</option>
+                    </select>
+                    <div id="selected-specialty-display" class="specialty-picker-selected" role="status" aria-live="polite">
+                        <span class="no-specialty-selected">No specialty selected</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features List -->
+            <section style="margin-top: 2rem; padding: 1.5rem; background: #e8f4fd; border-radius: 8px;">
+                <h3 style="color: #2c3e50; margin-bottom: 1rem;">✨ Component Features</h3>
+                <ul style="color: #555; line-height: 1.8;">
+                    <li><strong>Accessibility:</strong> Full ARIA support, proper label associations, keyboard navigation</li>
+                    <li><strong>Dynamic Options:</strong> Fetches specialties from configuration/API with loading states</li>
+                    <li><strong>Selected Display:</strong> Shows currently selected specialty with description</li>
+                    <li><strong>Responsive Design:</strong> Mobile-friendly with touch-optimized interactions</li>
+                    <li><strong>Error Handling:</strong> Graceful fallbacks for loading failures</li>
+                    <li><strong>Comprehensive Testing:</strong> 23 unit tests covering all functionality</li>
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Add interactivity to the demo
+        document.getElementById('specialty-picker-select').addEventListener('change', function(e) {
+            const selectedValue = e.target.value;
+            const selectedOption = e.target.selectedOptions[0];
+            const displayDiv = document.getElementById('selected-specialty-display');
+            
+            if (selectedValue) {
+                const specialtyName = selectedOption.textContent;
+                const specialtyDescription = selectedOption.title;
+                
+                displayDiv.innerHTML = `
+                    <div class="selected-specialty-info">
+                        <strong>Selected Specialty:</strong>
+                        <span class="selected-specialty-name">${specialtyName}</span>
+                        <span class="selected-specialty-description">${specialtyDescription}</span>
+                    </div>
+                `;
+            } else {
+                displayDiv.innerHTML = '<span class="no-specialty-selected">No specialty selected</span>';
+            }
+        });
+    </script>
+</body>
+</html>
