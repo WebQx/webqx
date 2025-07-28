@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 WebQx. All rights reserved.
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+
 /**
  * EHR Exporter Service for export and reporting functionality
  * Provides multiple format exports and prescription summaries

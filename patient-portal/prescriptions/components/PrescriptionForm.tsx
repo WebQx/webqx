@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 WebQx. All rights reserved.
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { PrescriptionForm as PrescriptionFormData, Medication, ValidationResult, TooltipContent } from '../types';
 import MedicationSearch from './MedicationSearch';

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 WebQx. All rights reserved.
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+
 // PrescriptionsModule - Main exports
 export { default as PrescriptionsModule } from './PrescriptionsModule';
 export { default as SmartRxTemplatePicker } from './SmartRxTemplatePicker';

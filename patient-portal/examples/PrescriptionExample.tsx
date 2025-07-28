@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 WebQx. All rights reserved.
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+
 /**
  * Example usage of PrescriptionDashboard component
  * This file shows how to integrate the component into a React application

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 WebQx. All rights reserved.
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+
 /**
  * Theme Provider for Dark Mode and UI Theme Management
  * Provides comprehensive theming with light/dark mode support

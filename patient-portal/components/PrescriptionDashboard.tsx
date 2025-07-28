@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 WebQx. All rights reserved.
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+
 import React, { useState, useMemo, useCallback } from 'react';
 import { PrescriptionDashboardProps, Medication } from '../types/prescription';
 import MedCard from './MedCard';
