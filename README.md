@@ -11,39 +11,92 @@ At the heart of WebQX™ is our commitment to accessibility, collaborative care,
 
 ## 🧩 Modular Architecture
 
-### ✅ Patient Portal  
-Built with React, supporting user-friendly access to clinical services:
+WebQX™ leverages a **modular architecture** designed to provide maximum flexibility, scalability, and maintainability for healthcare organizations. This approach allows institutions to adopt components incrementally, customize functionality to their specific needs, and scale their digital health infrastructure as they grow.
 
-- 📅 **Appointments & Scheduling** → LibreHealth Toolkit / OpenEMR calendar  
-- 💊 **Pharmacy Access** → OpenEMR Rx + FDA APIs  
-- 🧪 **Lab Results Viewer** → HL7/FHIR integration via Mirth Connect  
-- 📬 **Secure Messaging** → Medplum or Matrix protocol with encryption  
-- 💵 **Billing & Insurance** → OpenMRS + Bahmni billing packages  
-- 📚 **Health Literacy Assistant** → Whisper + spaCy or Haystack NLP  
-- 🧭 **Care Navigation** → D3.js or Neo4j referral engine  
+### 🎯 **Architecture Benefits**
 
-### 🩺 Provider Panel  
-Modular EHR engine enhancements via OpenEMR / OpenMRS:
+- **🔧 Scalability**: Individual modules can be scaled independently based on demand and usage patterns
+- **⚡ Maintainability**: Isolated components reduce complexity and enable focused development and updates  
+- **🎨 Flexibility**: Healthcare organizations can customize, extend, or replace modules without affecting the entire system
+- **💰 Cost Efficiency**: Deploy only the modules you need, reducing infrastructure costs and complexity
+- **🛡️ Security**: Modular isolation limits the blast radius of security incidents and enables granular access controls
+- **🌍 Interoperability**: Standardized APIs and protocols ensure seamless integration with existing healthcare systems
 
-- 📋 **EHR Summary Dashboard** → React + GraphQL  
-- 💊 **Prescription Management** → RxNorm + SmartRx UI  
-- 📬 **Secure Messaging** → Scoped Matrix channels  
-- 📊 **Clinical Alerts / Decision Support** → OpenCDS or Drools rule engine  
-- 🧠 **CME Tracker** → Open Badges (BadgeOS/Moodle)  
-- 🤖 **Provider Assistant Bot** → LLM + private Whisper API  
-- 📝 **Transcription Suite** → Whisper + Google Cloud Speech-to-Text + specialty macros  
+### 📁 **Project Structure**
 
-### 🛠️ Admin Console  
-Role-based access and modular configuration for deployment:
+```
+webqx/
+├── 📂 patient-portal/          # React-based patient interface
+│   ├── components/             # Reusable UI components
+│   ├── pages/                  # Main application pages
+│   ├── services/               # API and business logic
+│   ├── i18n/                   # Internationalization support
+│   ├── prescriptions/          # Prescription management module
+│   ├── types/                  # TypeScript type definitions
+│   └── utils/                  # Shared utilities
+├── 📂 admin-console/           # Administrative configuration
+│   └── ai-tuning/              # AI/ML model configurations
+├── 📂 services/                # Core platform services
+│   └── whisperService.ts       # Voice transcription service
+├── 📂 legal/                   # Compliance and legal documents
+├── 📂 demo/                    # Demonstration and examples
+├── 🗄️ server.js                # Main application server
+├── 📋 package.json             # Dependencies and scripts
+└── 📚 README.md                # Project documentation
+```
 
-- 🔐 **Access Control** → Keycloak / Firebase Auth  
-- 🌐 **Localization Tools** → i18next + Whisper translation overlay  
-- 🎨 **UI Theming** → Tailwind or CSS-in-JS  
-- 📊 **Analytics** → Grafana / Metabase  
-- 🎛️ **AI Tuning** → YAML configs + admin webhooks  
-- 🔗 **Integration Engine** → HL7/FHIR via Mirth Connect + OHIF PACS viewer  
-- 💰 **Billing Logic** → JSON-based rule engine  
-- 🗄️ **Compliance Modules** → PostgreSQL + Vault + audit logging  
+### 🏗️ **Core Modules**
+
+#### 🏥 **Patient Portal**
+*Comprehensive patient-facing interface built with React and TypeScript*
+
+**Role**: Empowers patients with self-service capabilities and direct access to their healthcare data, improving engagement and reducing administrative burden on healthcare staff.
+
+**Key Features**:
+- 📅 **Appointment Scheduling** → Integrated calendar with provider availability
+- 💊 **Prescription Management** → Digital Rx tracking, refill requests, and pharmacy integration
+- 🧪 **Lab Results Access** → Secure viewing of test results with educational context
+- 📬 **Secure Messaging** → HIPAA-compliant communication with healthcare providers
+- 🌐 **Multilingual Support** → i18next framework supporting 12+ languages
+- 📚 **Health Literacy Tools** → AI-powered explanations in patient-friendly language
+- 🧭 **Care Navigation** → Specialty referral assistance and care coordination
+
+#### 🩺 **Provider Panel** *(Planned)*
+*Clinical workflow enhancement and EHR integration module*
+
+**Role**: Streamlines clinical workflows, reduces documentation burden, and enhances decision-making with AI-powered insights and specialty-specific tools.
+
+**Planned Features**:
+- 📋 **Clinical Dashboard** → Unified patient summary with actionable insights
+- 💊 **Smart Prescribing** → Drug interaction checking and formulary optimization
+- 📊 **Decision Support** → Evidence-based alerts and clinical guidelines
+- 🤖 **AI Assistant** → Voice-enabled documentation and clinical query support
+- 📝 **Transcription Suite** → Specialty-aware speech-to-text with medical terminology
+- 🧠 **CME Integration** → Continuing education tracking and recommendations
+
+#### 🛠️ **Admin Console**
+*System configuration and management interface*
+
+**Role**: Provides healthcare administrators with centralized control over system configuration, user management, compliance monitoring, and integration settings.
+
+**Key Features**:
+- 🔐 **Role-Based Access Control** → Granular permissions management
+- 🌐 **Localization Management** → Multi-language content and regional customization
+- 🎛️ **AI Model Tuning** → Specialty-specific AI configuration via YAML
+- 📊 **Analytics Dashboard** → Usage metrics and performance monitoring
+- 🔗 **Integration Hub** → HL7/FHIR API management and third-party connections
+- 🗄️ **Compliance Monitoring** → Audit logging and regulatory compliance tools
+
+#### 🧠 **Core Services**
+*Foundational platform services and APIs*
+
+**Role**: Provides essential platform capabilities including AI/ML services, data processing, and integration layers that power the user-facing modules.
+
+**Services**:
+- 🗣️ **Whisper Transcription** → Voice-to-text processing for clinical documentation
+- 🌐 **Translation Services** → Real-time language translation for patient communications
+- 📡 **Integration Engine** → HL7/FHIR message processing and API gateway
+- 🔒 **Security Services** → Authentication, authorization, and encryption management  
 
 ## 🧬 Supported Specialties  
 Modular workflows are designed for:
