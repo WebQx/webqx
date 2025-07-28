@@ -3,7 +3,11 @@
 _A multilingual, specialty-aware, and privacy-first blueprint for global clinical care._
 
 ## 🚀 Overview  
-WebQX™ is an open-source healthcare stack designed to support all 12 core medical specialties, including Primary Care, Radiology, Pediatrics, Oncology, Cardiology, Psychiatry, and more. Its modular design supports multilingual documentation, AI-powered assistance, and global interoperability—from remote clinics to urban hospitals.
+WebQX™ is a comprehensive modular healthcare stack designed to empower both patients and providers across 12 core medical specialties, including Primary Care, Psychiatry, Radiology, Pediatrics, Oncology, Cardiology, and more. Our platform champions multilingual support, health equity, and enhanced health literacy to ensure accessible care for diverse global communities.
+
+Built with compliance at its core, WebQX™ adheres to global healthcare standards including HIPAA and FHIR, providing healthcare organizations with confidence in data security and interoperability. The platform's modular architecture enables seamless scalability and customization, adapting to the unique needs of healthcare settings from rural clinics to major urban hospitals.
+
+At the heart of WebQX™ is our commitment to accessibility, collaborative care, and patient empowerment—leveraging technology to break down barriers and improve global healthcare access for all.
 
 ## 🧩 Modular Architecture
 
