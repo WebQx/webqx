@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/patient-portal'],
+  roots: ['<rootDir>/patient-portal', '<rootDir>/fhir'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
@@ -13,13 +13,37 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   collectCoverageFrom: [
     'patient-portal/**/*.{ts,tsx}',
+    'fhir/**/*.{js}',
     '!patient-portal/**/*.d.ts',
+    '!fhir/**/*.d.ts',
   ],
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        jsx: 'react-jsx'
+  testEnvironmentOptions: {
+    node: true
+  },
+  projects: [
+    {
+      displayName: 'patient-portal',
+      testEnvironment: 'jsdom',
+      testMatch: ['<rootDir>/patient-portal/**/*.(test|spec).+(ts|tsx|js)'],
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+      transform: {
+        '^.+\\.(ts|tsx)$': 'ts-jest'
+      },
+      globals: {
+        'ts-jest': {
+          tsconfig: {
+            jsx: 'react-jsx'
+          }
+        }
+      }
+    },
+    {
+      displayName: 'fhir',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/fhir/**/*.(test|spec).+(js)'],
+      transform: {
+        '^.+\\.js$': 'babel-jest'
       }
     }
-  }
+  ]
 };

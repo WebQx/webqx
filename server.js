@@ -1,12 +1,56 @@
 const express = require('express');
 const path = require('path');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+
+// FHIR imports
+const patientRoutes = require('./fhir/routes/patient');
+const { 
+    authenticateToken, 
+    requireScopes, 
+    createAuthEndpoint, 
+    createTokenEndpoint, 
+    createCapabilityEndpoint,
+    generateTestToken
+} = require('./fhir/middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Security middleware
+app.use(helmet({
+    crossOriginEmbedderPolicy: false, // Allow embedding for development
+}));
+
+// CORS configuration for FHIR
+app.use('/fhir', cors({
+    origin: true, // Allow all origins in development
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    credentials: true
+}));
+
+// Rate limiting for FHIR endpoints
+const fhirLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: {
+        resourceType: 'OperationOutcome',
+        issue: [{
+            severity: 'error',
+            code: 'throttled',
+            diagnostics: 'Too many requests, please try again later.'
+        }]
+    }
+});
+
+app.use('/fhir', fhirLimiter);
+
 // Middleware for parsing JSON bodies
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '.')));
@@ -16,9 +60,33 @@ app.get('/health', (req, res) => {
     res.status(200).json({ 
         status: 'healthy', 
         service: 'WebQX Healthcare Platform',
+        fhir: 'enabled',
         timestamp: new Date().toISOString()
     });
 });
+
+// FHIR OAuth2 endpoints
+app.get('/oauth/authorize', createAuthEndpoint());
+app.post('/oauth/token', createTokenEndpoint());
+
+// FHIR metadata/capability statement
+app.get('/fhir/metadata', createCapabilityEndpoint());
+
+// FHIR Patient resource routes with authentication
+app.use('/fhir/Patient', authenticateToken, requireScopes(['patient/*.read', 'patient/*.write']), patientRoutes);
+
+// Development endpoint to get test token
+if (process.env.NODE_ENV === 'development') {
+    app.get('/dev/token', (req, res) => {
+        const token = generateTestToken();
+        res.json({
+            access_token: token,
+            token_type: 'Bearer',
+            expires_in: 3600,
+            scope: 'patient/*.read patient/*.write user/*.read'
+        });
+    });
+}
 
 // Translation API endpoint
 app.post('/api/whisper/translate', (req, res) => {

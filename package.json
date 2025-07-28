@@ -25,7 +25,16 @@
     "express": "^4.18.2",
     "i18next": "^25.3.2",
     "i18next-browser-languagedetector": "^8.2.0",
-    "react-i18next": "^15.6.1"
+    "react-i18next": "^15.6.1",
+    "fhir": "^4.11.1",
+    "@types/fhir": "^0.0.40",
+    "uuid": "^9.0.1",
+    "joi": "^17.11.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "jsonwebtoken": "^9.0.2",
+    "express-validator": "^7.0.1"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -38,10 +47,14 @@
     "@types/node": "^24.1.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "@types/uuid": "^9.0.7",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/cors": "^2.8.17",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "supertest": "^6.3.4",
     "ts-jest": "^29.4.0",
     "typescript": "^5.8.3"
   }
