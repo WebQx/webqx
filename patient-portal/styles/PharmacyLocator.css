@@ -1,0 +1,290 @@
+/* PharmacyLocator Component Styles */
+
+.pharmacy-locator {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading State */
+.loading-container {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+/* Error State */
+.error-container {
+  text-align: center;
+  padding: 40px 20px;
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+}
+
+.error-icon {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.error-container h3 {
+  color: #721c24;
+  margin: 10px 0;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+
+.empty-state h3 {
+  color: #495057;
+  margin: 10px 0;
+}
+
+/* Header */
+.pharmacy-locator-header {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.pharmacy-locator-header h2 {
+  color: #495057;
+  font-size: 1.5rem;
+  margin: 0 0 10px 0;
+}
+
+.results-count {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Pharmacy List */
+.pharmacy-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pharmacy-item {
+  margin-bottom: 15px;
+}
+
+.pharmacy-item.highlighted {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Pharmacy Card */
+.pharmacy-card {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.pharmacy-card:hover {
+  border-color: #007bff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.pharmacy-card:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+  border-color: #007bff;
+}
+
+/* Pharmacy Header */
+.pharmacy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.pharmacy-name {
+  color: #495057;
+  font-size: 1.25rem;
+  margin: 0;
+  flex: 1;
+}
+
+.pharmacy-highlights {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.highlight-badge {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.price-highlight {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.distance-highlight {
+  background-color: #cce5ff;
+  color: #004085;
+  border: 1px solid #99d6ff;
+}
+
+/* Pharmacy Details */
+.pharmacy-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.pharmacy-price,
+.pharmacy-distance,
+.pharmacy-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pharmacy-details .label {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pharmacy-details .value {
+  font-size: 1rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+/* Status-specific styling */
+.status-available {
+  color: #28a745 !important;
+}
+
+.status-in-stock {
+  color: #17a2b8 !important;
+}
+
+.status-limited-stock {
+  color: #ffc107 !important;
+}
+
+.status-out-of-stock {
+  color: #dc3545 !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .pharmacy-locator {
+    padding: 15px;
+    margin: 10px;
+  }
+  
+  .pharmacy-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .pharmacy-highlights {
+    align-self: flex-start;
+  }
+  
+  .pharmacy-details {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .pharmacy-name {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pharmacy-locator {
+    padding: 10px;
+    margin: 5px;
+  }
+  
+  .pharmacy-card {
+    padding: 15px;
+  }
+  
+  .highlight-badge {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+}
+
+/* Focus indicators for better accessibility */
+.pharmacy-card:focus-visible {
+  outline: 3px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .pharmacy-card {
+    border-width: 2px;
+  }
+  
+  .highlight-badge {
+    border-width: 2px;
+  }
+  
+  .pharmacy-locator {
+    border: 2px solid #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .pharmacy-card,
+  .pharmacy-item.highlighted,
+  .loading-spinner {
+    transition: none;
+    animation: none;
+  }
+}

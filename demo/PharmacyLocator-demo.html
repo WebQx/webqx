@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmacyLocator Component Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .demo-section h3 {
+            margin-top: 0;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        .demo-controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .demo-button {
+            padding: 8px 16px;
+            border: 1px solid #007bff;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .demo-button:hover {
+            background: #0056b3;
+        }
+        .demo-button.secondary {
+            background: white;
+            color: #007bff;
+        }
+        .demo-button.secondary:hover {
+            background: #f8f9fa;
+        }
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-info { background: #d1ecf1; color: #0c5460; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🏥 PharmacyLocator Component Demo</h1>
+            <p>A comprehensive React component for displaying pharmacy information with pricing, distance, and availability.</p>
+            <div>
+                <span class="status-indicator status-success">✓ TypeScript</span>
+                <span class="status-indicator status-info">♿ Accessible</span>
+                <span class="status-indicator status-warning">📱 Responsive</span>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🚀 Features Implemented</h3>
+            <ul>
+                <li><strong>TypeScript Enhancements:</strong> Strongly-typed interfaces for rxcui prop and stores array</li>
+                <li><strong>Error Handling:</strong> Robust error handling with user-friendly messages</li>
+                <li><strong>Loading State:</strong> Loading spinner with accessibility support</li>
+                <li><strong>Accessibility:</strong> Semantic HTML, ARIA attributes, keyboard navigation</li>
+                <li><strong>UI Enhancements:</strong> Highlighting for best prices and closest pharmacies</li>
+                <li><strong>Testing:</strong> Comprehensive unit tests with 24 test cases covering all scenarios</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>📋 Component Usage</h3>
+            <div class="code-block">
+import PharmacyLocator, { PharmacyStore } from './components/PharmacyLocator';
+
+// Basic usage
+&lt;PharmacyLocator 
+  rxcui="12345" 
+  onPharmacySelect={(pharmacy) => console.log('Selected:', pharmacy)}
+/&gt;
+
+// With custom styling
+&lt;PharmacyLocator 
+  rxcui="12345" 
+  className="my-custom-class"
+  onPharmacySelect={handlePharmacySelection}
+/&gt;
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🏗️ TypeScript Interfaces</h3>
+            <div class="code-block">
+interface PharmacyStore {
+  name: string;
+  rxcui: string[];
+  price: string;
+  distance: number;
+  status: string;
+}
+
+interface PharmacyLocatorProps {
+  rxcui?: string;
+  className?: string;
+  onPharmacySelect?: (pharmacy: PharmacyStore) => void;
+}
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🧪 Test Coverage</h3>
+            <p>The component includes comprehensive testing covering:</p>
+            <ul>
+                <li>Loading state rendering and accessibility</li>
+                <li>Error state handling and display</li>
+                <li>Empty state for no results</li>
+                <li>Successful data display with highlighting</li>
+                <li>User interactions (click and keyboard navigation)</li>
+                <li>Accessibility features and ARIA labels</li>
+                <li>Props handling and configuration</li>
+                <li>Data handling for various scenarios</li>
+            </ul>
+            
+            <div class="code-block">
+Test Results: ✓ 24 passing tests
+- Loading State: 2 tests
+- Error State: 3 tests  
+- Empty State: 2 tests
+- Successful Data Display: 4 tests
+- User Interactions: 4 tests
+- Accessibility: 3 tests
+- Props and Configuration: 2 tests
+- Data Handling: 2 tests
+- Integration: 2 tests
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>♿ Accessibility Features</h3>
+            <ul>
+                <li><strong>Semantic HTML:</strong> Proper use of headings, lists, and regions</li>
+                <li><strong>ARIA Labels:</strong> Descriptive labels for all interactive elements</li>
+                <li><strong>Live Regions:</strong> Screen reader announcements for dynamic content</li>
+                <li><strong>Keyboard Navigation:</strong> Full keyboard support with Enter and Space keys</li>
+                <li><strong>Focus Management:</strong> Proper focus indicators and tab order</li>
+                <li><strong>High Contrast:</strong> Support for high contrast mode</li>
+                <li><strong>Reduced Motion:</strong> Respects user's motion preferences</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>🎨 UI Enhancements</h3>
+            <ul>
+                <li><strong>Smart Highlighting:</strong> Automatically highlights pharmacies with best prices (bottom 25%) and closest distances</li>
+                <li><strong>Responsive Design:</strong> Mobile-friendly layout that adapts to different screen sizes</li>
+                <li><strong>Visual Feedback:</strong> Hover effects and focus states for better interactivity</li>
+                <li><strong>Status Indicators:</strong> Color-coded status badges for medication availability</li>
+                <li><strong>Loading Animations:</strong> Smooth loading spinner with pulsing animation</li>
+                <li><strong>Error States:</strong> Clear error messaging with helpful guidance</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Technical Implementation</h3>
+            <ul>
+                <li><strong>Mock API:</strong> Built-in mock function simulates real API calls with error handling</li>
+                <li><strong>State Management:</strong> React hooks for managing loading, error, and data states</li>
+                <li><strong>Error Boundaries:</strong> Graceful error handling for both network and runtime errors</li>
+                <li><strong>Performance:</strong> Efficient re-rendering with proper dependency arrays</li>
+                <li><strong>Type Safety:</strong> Full TypeScript coverage with strict typing</li>
+                <li><strong>Modular CSS:</strong> Organized styles with responsive breakpoints</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>📊 Sample Data Structure</h3>
+            <div class="code-block">
+[
+  {
+    "name": "HealthMart Orlando",
+    "rxcui": ["12345"],
+    "price": "18.99",
+    "distance": 1.2,
+    "status": "Available"
+  },
+  {
+    "name": "CVS Downtown", 
+    "rxcui": ["12345"],
+    "price": "22.50",
+    "distance": 2.0,
+    "status": "In Stock"
+  },
+  {
+    "name": "Walgreens Main St",
+    "rxcui": ["12345"], 
+    "price": "16.75",
+    "distance": 3.5,
+    "status": "Available"
+  }
+]
+            </div>
+        </div>
+    </div>
+</body>
+</html>
