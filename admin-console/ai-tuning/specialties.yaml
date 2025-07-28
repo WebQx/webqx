@@ -1,0 +1,237 @@
+# Medical Specialties Configuration
+# WebQX™ Healthcare Platform - AI Tuning and Workflow Configuration
+
+# This file defines the medical specialties supported by the WebQX platform
+# and their associated workflows, requirements, and contributor guidelines
+
+specialties:
+  primary_care:
+    name: "Primary Care"
+    description: "General medicine and family practice"
+    workflows:
+      - "wellness_visits"
+      - "chronic_disease_management"
+      - "preventive_care"
+      - "referral_coordination"
+    contributors_needed:
+      - "family_physicians"
+      - "nurse_practitioners"
+      - "medical_assistants"
+    
+  radiology:
+    name: "Radiology"
+    description: "Medical imaging and diagnostic services"
+    workflows:
+      - "imaging_orders"
+      - "report_generation"
+      - "pacs_integration"
+      - "radiologist_workflow"
+    contributors_needed:
+      - "radiologists"
+      - "radiology_technicians"
+      - "medical_imaging_specialists"
+      
+  cardiology:
+    name: "Cardiology"
+    description: "Heart and cardiovascular system care"
+    workflows:
+      - "cardiac_assessments"
+      - "ecg_management"
+      - "cardiac_procedures"
+      - "risk_stratification"
+    contributors_needed:
+      - "cardiologists"
+      - "cardiac_technicians"
+      - "cardiovascular_nurses"
+      
+  pediatrics:
+    name: "Pediatrics"
+    description: "Child and adolescent healthcare"
+    workflows:
+      - "growth_tracking"
+      - "vaccination_schedules"
+      - "developmental_assessments"
+      - "pediatric_procedures"
+    contributors_needed:
+      - "pediatricians"
+      - "pediatric_nurses"
+      - "child_development_specialists"
+      
+  oncology:
+    name: "Oncology"
+    description: "Cancer diagnosis, treatment, and care"
+    workflows:
+      - "cancer_screening"
+      - "treatment_planning"
+      - "chemotherapy_management"
+      - "survivorship_care"
+    contributors_needed:
+      - "oncologists"
+      - "oncology_nurses"
+      - "cancer_registrars"
+      
+  psychiatry:
+    name: "Psychiatry"
+    description: "Mental health and behavioral healthcare"
+    workflows:
+      - "mental_health_screening"
+      - "therapy_management"
+      - "medication_management"
+      - "crisis_intervention"
+    contributors_needed:
+      - "psychiatrists"
+      - "psychologists"
+      - "mental_health_counselors"
+      
+  endocrinology:
+    name: "Endocrinology"
+    description: "Hormone and metabolic disorder treatment"
+    workflows:
+      - "diabetes_management"
+      - "thyroid_care"
+      - "hormone_therapy"
+      - "metabolic_monitoring"
+    contributors_needed:
+      - "endocrinologists"
+      - "diabetes_educators"
+      - "metabolic_specialists"
+      
+  orthopedics:
+    name: "Orthopedics"
+    description: "Musculoskeletal system care and surgery"
+    workflows:
+      - "injury_assessment"
+      - "surgical_planning"
+      - "rehabilitation_tracking"
+      - "joint_replacement"
+    contributors_needed:
+      - "orthopedic_surgeons"
+      - "physical_therapists"
+      - "sports_medicine_specialists"
+      
+  neurology:
+    name: "Neurology"
+    description: "Nervous system disorders and treatment"
+    workflows:
+      - "neurological_assessments"
+      - "seizure_management"
+      - "stroke_protocols"
+      - "neurodegenerative_care"
+    contributors_needed:
+      - "neurologists"
+      - "neuropsychologists"
+      - "neurology_nurses"
+      
+  gastroenterology:
+    name: "Gastroenterology"
+    description: "Digestive system and liver care"
+    workflows:
+      - "endoscopy_management"
+      - "liver_function_monitoring"
+      - "inflammatory_bowel_disease"
+      - "colorectal_screening"
+    contributors_needed:
+      - "gastroenterologists"
+      - "gi_nurses"
+      - "hepatologists"
+      
+  pulmonology:
+    name: "Pulmonology"
+    description: "Respiratory system and lung care"
+    workflows:
+      - "pulmonary_function_testing"
+      - "respiratory_therapy"
+      - "sleep_studies"
+      - "lung_disease_management"
+    contributors_needed:
+      - "pulmonologists"
+      - "respiratory_therapists"
+      - "sleep_technicians"
+      
+  dermatology:
+    name: "Dermatology"
+    description: "Skin, hair, and nail conditions"
+    workflows:
+      - "skin_cancer_screening"
+      - "dermatology_procedures"
+      - "cosmetic_treatments"
+      - "dermatopathology"
+    contributors_needed:
+      - "dermatologists"
+      - "dermatology_nurses"
+      - "dermatopathologists"
+      
+  obgyn:
+    name: "OBGYN"
+    description: "Women's reproductive health and obstetrics"
+    workflows:
+      - "prenatal_care"
+      - "gynecological_exams"
+      - "labor_delivery"
+      - "reproductive_health"
+    contributors_needed:
+      - "obstetricians"
+      - "gynecologists"
+      - "midwives"
+
+# Contributor requirements by specialty
+contributor_requirements:
+  clinical_specialties:
+    required_credentials:
+      - "medical_license"
+      - "board_certification"  # preferred
+      - "malpractice_insurance"
+    
+  technical_specialties:
+    required_skills:
+      - "healthcare_domain_knowledge"
+      - "medical_coding_familiarity"
+      - "regulatory_compliance_understanding"
+
+# AI tuning parameters for each specialty
+ai_configuration:
+  common_parameters:
+    safety_threshold: "high"
+    medical_accuracy_requirement: "evidence_based"
+    patient_privacy_level: "maximum"
+    
+  specialty_specific:
+    primary_care:
+      complexity_level: "moderate"
+      decision_support: "guideline_based"
+      
+    radiology:
+      ai_assistance: "image_analysis"
+      integration_requirements: "dicom_pacs"
+      
+    oncology:
+      clinical_trial_integration: "enabled"
+      precision_medicine: "genomic_data"
+
+# Quality assurance requirements
+quality_requirements:
+  medical_accuracy:
+    peer_review_required: true
+    evidence_citation_required: true
+    clinical_validation_needed: true
+    
+  regulatory_compliance:
+    fda_consideration: true
+    hipaa_compliance: "mandatory"
+    medical_ethics_review: true
+
+# Documentation requirements for contributors
+documentation_standards:
+  clinical_contributions:
+    required_sections:
+      - "clinical_rationale"
+      - "evidence_base"
+      - "safety_considerations"
+      - "regulatory_implications"
+      
+  technical_contributions:
+    required_sections:
+      - "healthcare_impact"
+      - "compliance_considerations"
+      - "testing_requirements"
+      - "deployment_guidelines"
