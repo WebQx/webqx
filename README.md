@@ -61,8 +61,17 @@ Modular workflows are designed for:
 ## 🛡️ Security & Compliance  
 - TLS encryption for data in transit  
 - Audit-ready backend with IP protection options  
-- NDA & Contributor IP Assignment Addendum templates included  
-- BAA readiness for HIPAA-compatible deployments  
+- Comprehensive Contributor NDA and IP Assignment requirements  
+- BAA readiness for HIPAA-compatible deployments
+
+## ⚖️ Legal Notice for Contributors
+
+**🚨 IMPORTANT**: All contributions to this repository are subject to the **[WebQx Contributor Non-Disclosure Agreement (NDA)](./CONTRIBUTOR_NDA.md)**. By contributing to this repository, you agree to legally binding terms regarding confidentiality, intellectual property assignment, and prohibited use. All contributions become the exclusive property of WebQx.
+
+**Before contributing, you must**:
+- Read and agree to the [Contributor NDA](./CONTRIBUTOR_NDA.md)
+- Review the [Contributing Guidelines](./CONTRIBUTING.md)
+- Acknowledge that all intellectual property rights are assigned to WebQx  
 
 ## 🛠️ Build Stack  
 | Layer       | Technology                       |
@@ -111,18 +120,22 @@ open http://localhost:3000
 The patient portal will be available at the root URL, and health checks at `/health`.
 
 ## 🤝 Contribution Guide  
+
+**⚖️ LEGAL REQUIREMENT**: All contributors must first read and agree to the **[WebQx Contributor NDA](./CONTRIBUTOR_NDA.md)** before making any contributions.
+
 We welcome clinicians, developers, and researchers:
 
+- Review and agree to the [Contributor NDA](./CONTRIBUTOR_NDA.md) - **MANDATORY**
+- Follow the [Contributing Guidelines](./CONTRIBUTING.md) for detailed instructions
 - Clone, fork, and suggest new specialty workflows  
-- Sign IP Addendum and NDA prior to PR submission  
 - Use branches like `feature/oncology-workflow-v1.0`  
 - Submit YAML logic + compliance notes with PR  
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`specialties.yaml`](./admin-console/ai-tuning/specialties.yaml)
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`CONTRIBUTOR_NDA.md`](./CONTRIBUTOR_NDA.md) for complete requirements.
 
 ## 📜 License  
-Apache 2.0 — Includes contributor IP addendums for legal clarity and scalability  
-See [`LICENSE.md`](./LICENSE.md), [`nda-template.md`](./legal/nda-template.md), and [`ip-addendum.md`](./legal/ip-addendum.md)
+Apache 2.0 — Includes contributor IP assignment and comprehensive NDA requirements  
+See [`LICENSE.md`](./LICENSE.md), [`CONTRIBUTOR_NDA.md`](./CONTRIBUTOR_NDA.md), and [`CONTRIBUTING.md`](./CONTRIBUTING.md)
 
 ---
 
