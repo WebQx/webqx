@@ -80,7 +80,8 @@
 .quick-actions-section,
 .health-overview-section,
 .literacy-section,
-.emergency-section {
+.emergency-section,
+.prescription-section {
   background: #f8f9fa;
   padding: 1.5rem;
   border-radius: 12px;
@@ -93,7 +94,8 @@
 .quick-actions-section:hover,
 .health-overview-section:hover,
 .literacy-section:hover,
-.emergency-section:hover {
+.emergency-section:hover,
+.prescription-section:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
@@ -414,6 +416,82 @@
     background: #fff;
     color: #000;
   }
+}
+
+/* Prescription Form Styles - Basic initial styling */
+.prescription-form {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.prescription-form h3 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+}
+
+.search-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.search-container input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+
+.search-container button {
+  padding: 0.5rem 1rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.results-list h4 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+}
+
+.medication-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  background: #f8f9fa;
+}
+
+.medication-info {
+  flex: 1;
+}
+
+.medication-synonym {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.medication-id {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.add-to-ehr-btn {
+  padding: 0.5rem 1rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
 /* Reduced motion support */
