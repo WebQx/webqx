@@ -416,6 +416,242 @@
   }
 }
 
+/* ExportReview Component */
+.export-review {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+/* Export Demo Styles */
+.export-demo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.export-demo-item {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #f8f9fa;
+}
+
+.export-demo-item h3 {
+  color: #2c3e50;
+  font-size: 1.1rem;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.section-description {
+  color: #6c757d;
+  font-size: 0.95rem;
+  margin: 0.5rem 0 1rem 0;
+  font-style: italic;
+}
+
+.export-review-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.export-review-header h2 {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.export-review-subtitle {
+  color: #7f8c8d;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.medication-details,
+.export-details {
+  margin-bottom: 1.5rem;
+}
+
+.medication-details h3,
+.export-details h3 {
+  color: #2c3e50;
+  font-size: 1.2rem;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.medication-info,
+.export-info {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.medication-info dt,
+.export-info dt {
+  font-weight: 600;
+  color: #495057;
+  margin: 0;
+}
+
+.medication-info dd,
+.export-info dd {
+  margin: 0 0 0 1rem;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icd10-warning {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  border: 1px solid #ffeaa7;
+}
+
+.warning-message {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.warning-message p {
+  margin: 0;
+  color: #856404;
+}
+
+.success-message {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.success-message p {
+  margin: 0;
+  color: #155724;
+  font-weight: 500;
+}
+
+.error-message {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.error-message p {
+  margin: 0;
+  color: #721c24;
+  font-weight: 500;
+}
+
+.export-actions {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.export-button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  min-width: 200px;
+}
+
+.export-button:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.export-button:focus {
+  outline: 2px solid #28a745;
+  outline-offset: 2px;
+}
+
+.export-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive Design for ExportReview */
+@media (max-width: 767px) {
+  .export-review {
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+  
+  .export-demo-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .medication-info,
+  .export-info {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .medication-info dd,
+  .export-info dd {
+    margin-left: 0;
+    margin-top: 0.25rem;
+  }
+  
+  .export-button {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* High contrast mode support for ExportReview */
+@media (prefers-contrast: high) {
+  .export-review {
+    border: 2px solid #000;
+  }
+  
+  .export-button {
+    background: #000;
+    color: #fff;
+    border: 2px solid #000;
+  }
+  
+  .export-button:hover:not(:disabled) {
+    background: #fff;
+    color: #000;
+  }
+  
+  .warning-message,
+  .success-message,
+  .error-message {
+    border: 2px solid #000;
+  }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   * {

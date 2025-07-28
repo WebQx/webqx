@@ -24,6 +24,16 @@ jest.mock('../components/LiteracyAssistant', () => {
   };
 });
 
+jest.mock('../components/ExportReview', () => {
+  return function MockExportReview(props: any) {
+    return (
+      <div data-testid="export-review" className={props.className}>
+        Export Review for {props.selectedMed.name} - {props.specialty} - {props.providerId}
+      </div>
+    );
+  };
+});
+
 describe('Home Component', () => {
   it('renders the main portal structure', () => {
     render(<Home />);
@@ -116,6 +126,22 @@ describe('Home Component', () => {
     
     expect(screen.queryByRole('region', { name: /health education/i })).not.toBeInTheDocument();
     expect(screen.queryByTestId('literacy-assistant')).not.toBeInTheDocument();
+  });
+
+  it('renders export demo when showExportDemo is true', () => {
+    render(<Home showExportDemo={true} />);
+    
+    expect(screen.getByRole('region', { name: /prescription export demo/i })).toBeInTheDocument();
+    expect(screen.getByText('📤 Prescription Export Demo')).toBeInTheDocument();
+    expect(screen.getByText('Mapped Specialty Example (Cardiology)')).toBeInTheDocument();
+    expect(screen.getByText('Unmapped Specialty Example (Shows R69 Fallback)')).toBeInTheDocument();
+  });
+
+  it('does not render export demo when showExportDemo is false', () => {
+    render(<Home showExportDemo={false} />);
+    
+    expect(screen.queryByRole('region', { name: /prescription export demo/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('📤 Prescription Export Demo')).not.toBeInTheDocument();
   });
 
   it('renders emergency information section', () => {
