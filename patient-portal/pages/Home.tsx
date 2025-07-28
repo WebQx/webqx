@@ -1,6 +1,7 @@
 import React from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 import LiteracyAssistant from '../components/LiteracyAssistant';
+import DrugInteractionChecker from '../components/DrugInteractionChecker';
 
 /**
  * Home component - Main landing page for the WebQX Patient Portal
@@ -168,6 +169,20 @@ const Home: React.FC<HomeProps> = ({
               </ul>
             </div>
           </div>
+        </section>
+
+        {/* Drug Interaction Checker */}
+        <section 
+          className="drug-interaction-section"
+          role="region"
+          aria-labelledby="drug-interaction-heading"
+        >
+          <h2 id="drug-interaction-heading" className="section-title">
+            💊 Drug Safety Tools
+          </h2>
+          <DrugInteractionChecker 
+            className="portal-drug-checker"
+          />
         </section>
 
         {/* Health Literacy Assistant */}
