@@ -242,6 +242,27 @@ function createCapabilityEndpoint() {
                         { name: 'active', type: 'token' },
                         { name: 'identifier', type: 'token' }
                     ]
+                }, {
+                    type: 'Appointment',
+                    profile: 'http://hl7.org/fhir/StructureDefinition/Appointment',
+                    interaction: [
+                        { code: 'read' },
+                        { code: 'create' },
+                        { code: 'update' },
+                        { code: 'delete' },
+                        { code: 'search-type' }
+                    ],
+                    searchParam: [
+                        { name: 'patient', type: 'reference' },
+                        { name: 'practitioner', type: 'reference' },
+                        { name: 'status', type: 'token' },
+                        { name: 'date', type: 'date' },
+                        { name: 'service-type', type: 'token' }
+                    ],
+                    operation: [
+                        { name: 'book', definition: 'http://hl7.org/fhir/OperationDefinition/Appointment-book' },
+                        { name: 'cancel', definition: 'http://hl7.org/fhir/OperationDefinition/Appointment-cancel' }
+                    ]
                 }]
             }]
         };
