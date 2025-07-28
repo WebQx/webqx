@@ -181,4 +181,31 @@ describe('Home Component', () => {
       expect(buttonElement).toHaveTextContent(button.text);
     });
   });
+
+  it('applies proper CSS classes for enhanced focus and hover states', () => {
+    render(<Home />);
+    
+    // Check that action buttons have the correct class
+    const actionButtons = screen.getAllByRole('button', { name: /Schedule|View|Message|Request/ });
+    actionButtons.forEach(button => {
+      expect(button).toHaveClass('action-button');
+    });
+  });
+
+  it('maintains keyboard navigation accessibility', async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+    
+    // Start tabbing through interactive elements
+    const firstButton = screen.getByRole('button', { name: /Schedule new appointment/ });
+    
+    // Focus should work on buttons
+    await user.tab();
+    expect(firstButton).toHaveFocus();
+    
+    // Continue tabbing to next button
+    await user.tab();
+    const secondButton = screen.getByRole('button', { name: /View test results/ });
+    expect(secondButton).toHaveFocus();
+  });
 });

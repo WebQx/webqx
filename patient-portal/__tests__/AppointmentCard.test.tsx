@@ -53,4 +53,22 @@ describe('AppointmentCard Component', () => {
     expect(screen.getByText('Provider:')).toBeInTheDocument();
     expect(screen.getByText(/Dr. Smith/)).toBeInTheDocument();
   });
+
+  it('applies proper CSS class for enhanced hover states', () => {
+    const { container } = render(<AppointmentCard {...defaultProps} />);
+    const appointmentCard = container.querySelector('.appointment-card');
+    
+    expect(appointmentCard).toHaveClass('appointment-card');
+  });
+
+  it('maintains focus accessibility for keyboard navigation', async () => {
+    const user = userEvent.setup();
+    render(<AppointmentCard {...defaultProps} />);
+    
+    const appointmentCard = screen.getByRole('article', { name: /Appointment: Annual Checkup/ });
+    
+    // Should be focusable via keyboard
+    await user.tab();
+    expect(appointmentCard).toHaveFocus();
+  });
 });
