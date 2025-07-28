@@ -1,0 +1,112 @@
+/* PharmacyDemo Page Styles */
+
+.pharmacy-demo {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.demo-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.demo-header h1 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.demo-header p {
+  color: #6c757d;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.demo-controls {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control-group label {
+  color: #495057;
+}
+
+.control-group select {
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  max-width: 400px;
+}
+
+.help-text {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.demo-component {
+  margin-bottom: 3rem;
+}
+
+.component-wrapper {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+  background: white;
+}
+
+.demo-features h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.feature-card {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.feature-card h3 {
+  color: #495057;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.feature-card ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.feature-card li {
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .pharmacy-demo {
+    padding: 1rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+}
