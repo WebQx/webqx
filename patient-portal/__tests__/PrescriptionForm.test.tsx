@@ -1,24 +1,9 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import PrescriptionForm from '../components/PrescriptionForm';
 
-// Mock the fetchRxNorm function to avoid actual API calls in tests
-jest.mock('../components/PrescriptionForm', () => {
-  const originalModule = jest.requireActual('../components/PrescriptionForm');
-  return {
-    ...originalModule,
-    __esModule: true,
-    default: originalModule.PrescriptionForm,
-  };
-});
-
 describe('PrescriptionForm', () => {
-  beforeEach(() => {
-    // Clear any previous console.error calls
-    jest.clearAllMocks();
-  });
-
   test('renders prescription form with search input', () => {
     render(<PrescriptionForm />);
     
@@ -36,7 +21,7 @@ describe('PrescriptionForm', () => {
     expect(searchInput).toHaveValue('ibuprofen');
   });
 
-  test('triggers search when search button is clicked', () => {
+  test('shows loading state when search button is clicked with valid input', () => {
     render(<PrescriptionForm />);
     
     const searchInput = screen.getByPlaceholderText('Search for medications...');
@@ -45,19 +30,9 @@ describe('PrescriptionForm', () => {
     fireEvent.change(searchInput, { target: { value: 'test medication' } });
     fireEvent.click(searchButton);
     
-    // Since we're testing the problematic version, we just verify the search was attempted
-    expect(searchInput).toHaveValue('test medication');
-  });
-
-  test('triggers search when Enter key is pressed', () => {
-    render(<PrescriptionForm />);
-    
-    const searchInput = screen.getByPlaceholderText('Search for medications...');
-    
-    fireEvent.change(searchInput, { target: { value: 'test medication' } });
-    fireEvent.keyPress(searchInput, { key: 'Enter', code: 'Enter' });
-    
-    expect(searchInput).toHaveValue('test medication');
+    // Check for loading state immediately
+    expect(screen.getByText('🔄 Searching for medications...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '🔄 Searching...' })).toBeDisabled();
   });
 
   test('does not search with empty query', () => {
@@ -66,7 +41,8 @@ describe('PrescriptionForm', () => {
     const searchButton = screen.getByRole('button', { name: 'Search' });
     fireEvent.click(searchButton);
     
-    // Should not show results section for empty search
+    // Should not show loading or results with empty query
+    expect(screen.queryByText('🔄 Searching for medications...')).not.toBeInTheDocument();
     expect(screen.queryByText('Search Results:')).not.toBeInTheDocument();
   });
 
@@ -77,11 +53,39 @@ describe('PrescriptionForm', () => {
     expect(container.firstChild).toHaveClass('custom-class');
   });
 
-  test('has proper component structure', () => {
+  test('has proper accessibility attributes', () => {
+    render(<PrescriptionForm />);
+    
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Search' })).toBeInTheDocument();
+  });
+
+  test('input supports keyboard navigation', () => {
+    render(<PrescriptionForm />);
+    
+    const searchInput = screen.getByPlaceholderText('Search for medications...');
+    
+    // Test that input can receive focus and accept keyboard input
+    searchInput.focus();
+    expect(searchInput).toHaveFocus();
+    
+    fireEvent.change(searchInput, { target: { value: 'test' } });
+    expect(searchInput).toHaveValue('test');
+  });
+
+  test('search button is properly labeled for screen readers', () => {
+    render(<PrescriptionForm />);
+    
+    const searchButton = screen.getByRole('button', { name: 'Search' });
+    expect(searchButton).toBeInTheDocument();
+    expect(searchButton).toHaveTextContent('Search');
+  });
+
+  test('component has proper structure and headings', () => {
     render(<PrescriptionForm />);
     
     expect(screen.getByText('Medication Search')).toBeInTheDocument();
     expect(screen.getByRole('textbox')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Search' })).toBeInTheDocument();
+    expect(screen.getByRole('button')).toBeInTheDocument();
   });
 });
