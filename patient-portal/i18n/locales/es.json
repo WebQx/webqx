@@ -1,0 +1,102 @@
+{
+  "portal": {
+    "title": "Bienvenido al Portal de Pacientes WebQX™",
+    "tagline": "Empoderando a los Pacientes y Apoyando a los Proveedores de Salud",
+    "description": "Su plataforma integral de gestión de salud con soporte multilingüe, programación de citas, mensajería segura y acceso a registros médicos.",
+    "welcomeBack": "¡Bienvenido de nuevo, {{name}}! 👋"
+  },
+  "navigation": {
+    "main": "Navegación Principal",
+    "quickActions": "Menú de acciones rápidas",
+    "footer": "Navegación del pie de página"
+  },
+  "sections": {
+    "appointments": "Sus Citas",
+    "quickActions": "Acciones Rápidas",
+    "healthOverview": "Resumen de Salud",
+    "healthEducation": "Educación en Salud",
+    "emergency": "Información de Emergencia"
+  },
+  "appointments": {
+    "upcoming": "Cita Próxima",
+    "noAppointments": "No hay citas programadas",
+    "provider": "Proveedor:",
+    "annualCheckup": "Chequeo Anual",
+    "followUp": "Visita de Seguimiento",
+    "annualCheckupDetails": "Examen físico anual y evaluación de salud",
+    "followUpDetails": "Seguimiento de consulta previa",
+    "scheduledFor": "{{date}} a las {{time}}"
+  },
+  "actions": {
+    "scheduleAppointment": "Programar Cita",
+    "viewLabResults": "Ver Resultados de Laboratorio",
+    "messageProvider": "Enviar Mensaje al Proveedor",
+    "refillPrescription": "Renovar Receta"
+  },
+  "health": {
+    "recentVitals": "Signos Vitales Recientes",
+    "healthAlerts": "Alertas de Salud",
+    "bloodPressure": "Presión Arterial: {{value}} mmHg",
+    "heartRate": "Frecuencia Cardíaca: {{value}} lpm",
+    "weight": "Peso: {{value}} libras",
+    "lastUpdated": "Última Actualización: {{date}}",
+    "fluShotDue": "Vacuna contra la gripe anual pendiente",
+    "prescriptionRefill": "Renovación de receta disponible",
+    "wellnessReminder": "Recordatorio de chequeo de bienestar"
+  },
+  "literacy": {
+    "assistant": "Asistente de Alfabetización en Salud",
+    "searchPlaceholder": "Buscar términos médicos...",
+    "searchHelp": "Escriba para buscar términos médicos y sus definiciones",
+    "noResults": "No se encontraron términos médicos que coincidan con su búsqueda.",
+    "glossary": "Glosario de términos médicos",
+    "terms": {
+      "hypertension": {
+        "term": "Hipertensión",
+        "definition": "Presión arterial alta"
+      },
+      "diabetes": {
+        "term": "Diabetes",
+        "definition": "Una condición donde los niveles de azúcar en sangre son demasiado altos"
+      },
+      "prescription": {
+        "term": "Receta",
+        "definition": "Una orden escrita de un médico para medicamentos"
+      },
+      "laboratory": {
+        "term": "Laboratorio",
+        "definition": "Pruebas médicas realizadas en sangre, orina u otras muestras"
+      }
+    }
+  },
+  "emergency": {
+    "notice": "Para emergencias médicas, llame al 911 inmediatamente",
+    "urgentCare": "Para necesidades de atención médica urgentes pero no de emergencia:",
+    "nurseHotline": "Línea de Enfermeras: (555) 123-HELP",
+    "afterHours": "Clínica fuera de horario: (555) 123-CARE",
+    "portalMessaging": "Mensajería del portal de pacientes para preguntas no urgentes"
+  },
+  "footer": {
+    "copyright": "© 2024 Plataforma de Salud WebQX. Todos los derechos reservados.",
+    "privacyPolicy": "Política de Privacidad",
+    "termsOfService": "Términos de Servicio",
+    "helpSupport": "Ayuda y Soporte",
+    "accessibility": "Accesibilidad"
+  },
+  "language": {
+    "selector": "Idioma",
+    "current": "Idioma actual: {{language}}",
+    "changeLanguage": "Cambiar idioma a {{language}}"
+  },
+  "aria": {
+    "dashboard": "Panel de Control del Portal de Pacientes WebQX",
+    "personalizedWelcome": "Bienvenida personalizada",
+    "appointmentCard": "Cita: {{title}}",
+    "appointmentDateTime": "Fecha y hora: {{datetime}}",
+    "vitalsSummary": "Resumen de signos vitales",
+    "healthAlerts": "Alertas y recordatorios de salud",
+    "emergencyInfo": "Información de contacto de emergencia",
+    "expandAssistant": "Expandir Asistente de Alfabetización en Salud",
+    "collapseAssistant": "Contraer Asistente de Alfabetización en Salud"
+  }
+}
