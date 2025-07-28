@@ -15,6 +15,9 @@ module.exports = {
     'patient-portal/**/*.{ts,tsx}',
     '!patient-portal/**/*.d.ts',
   ],
+  moduleNameMapper: {
+    '\\.(css|less|scss)$': 'identity-obj-proxy'
+  },
   globals: {
     'ts-jest': {
       tsconfig: {

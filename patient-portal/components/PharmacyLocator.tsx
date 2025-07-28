@@ -1,317 +1,230 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { fetchMockPharmacyOptions } from '../services/pharmacyService';
+import { PharmacyStore, PharmacyLocatorProps } from '../types/pharmacy';
+import '../styles/PharmacyLocator.css';
 
 /**
- * Interface for pharmacy store data
+ * PharmacyLocator component displays pharmacy fulfillment options for a medication
+ * Features include error handling, loading states, and accessibility enhancements
  */
-export interface PharmacyStore {
-  /** The name of the pharmacy */
-  name: string;
-  /** Array of RxCUI identifiers for medications available at this pharmacy */
-  rxcui: string[];
-  /** Price of the medication as a string */
-  price: string;
-  /** Distance to the pharmacy in miles */
-  distance: number;
-  /** Current availability status */
-  status: string;
-}
-
-/**
- * Props interface for PharmacyLocator component
- */
-export interface PharmacyLocatorProps {
-  /** RxCUI identifier for the medication to search for */
-  rxcui?: string;
-  /** CSS class name for styling */
-  className?: string;
-  /** Callback when a pharmacy is selected */
-  onPharmacySelect?: (pharmacy: PharmacyStore) => void;
-}
-
-/**
- * Interface for component state
- */
-interface PharmacyLocatorState {
-  stores: PharmacyStore[];
-  loading: boolean;
-  error: string | null;
-}
-
-/**
- * Mock data for pharmacy stores - simulates API response
- */
-const mockPharmacyData: PharmacyStore[] = [
-  {
-    name: "HealthMart Orlando",
-    rxcui: ["12345"],
-    price: "18.99",
-    distance: 1.2,
-    status: "Available"
-  },
-  {
-    name: "CVS Downtown",
-    rxcui: ["12345"],
-    price: "22.50",
-    distance: 2.0,
-    status: "In Stock"
-  },
-  {
-    name: "Walgreens Main St",
-    rxcui: ["12345"],
-    price: "16.75",
-    distance: 3.5,
-    status: "Available"
-  },
-  {
-    name: "Target Pharmacy",
-    rxcui: ["12345"],
-    price: "24.99",
-    distance: 0.8,
-    status: "Limited Stock"
-  }
-];
-
-/**
- * Simulates fetching pharmacy options from an API
- * @param rxcui - The RxCUI identifier to search for
- * @returns Promise that resolves to pharmacy store data
- */
-export const fetchMockPharmacyOptions = async (rxcui?: string): Promise<PharmacyStore[]> => {
-  return new Promise((resolve, reject) => {
-    // Simulate network delay
-    setTimeout(() => {
-      try {
-        // Simulate random API failure (10% chance)
-        if (Math.random() < 0.1) {
-          throw new Error('Network error: Unable to fetch pharmacy data');
-        }
-        
-        if (!rxcui) {
-          resolve([]);
-          return;
-        }
-        
-        // Filter mock data by rxcui if provided
-        const filteredStores = mockPharmacyData.filter(store => 
-          store.rxcui.includes(rxcui)
-        );
-        
-        resolve(filteredStores);
-      } catch (error) {
-        reject(error);
-      }
-    }, 1000); // 1 second delay to simulate API call
-  });
-};
-
-/**
- * PharmacyLocator component displays a list of pharmacies with medication availability
- * and pricing information. Includes loading states, error handling, and accessibility features.
- */
-export const PharmacyLocator: React.FC<PharmacyLocatorProps> = ({
-  rxcui,
-  className = "",
-  onPharmacySelect
+export const PharmacyLocator: React.FC<PharmacyLocatorProps> = ({ 
+  rxcui, 
+  className = "" 
 }) => {
-  const [state, setState] = useState<PharmacyLocatorState>({
-    stores: [],
-    loading: false,
-    error: null
-  });
+  const [stores, setStores] = useState<PharmacyStore[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
-  // Fetch pharmacy data when component mounts or rxcui changes
   useEffect(() => {
+    if (!rxcui) {
+      return;
+    }
+
     const fetchPharmacies = async () => {
-      setState(prev => ({ ...prev, loading: true, error: null }));
+      setLoading(true);
+      setError('');
       
       try {
-        const stores = await fetchMockPharmacyOptions(rxcui);
-        setState(prev => ({ ...prev, stores, loading: false }));
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: errorMessage
-        }));
+        const pharmacyData = await fetchMockPharmacyOptions(rxcui);
+        setStores(pharmacyData);
+      } catch (err: any) {
+        const errorMessage = err?.message || err?.details || 'An unexpected error occurred while fetching pharmacy options.';
+        setError(errorMessage);
+        setStores([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchPharmacies();
   }, [rxcui]);
 
-  // Helper function to get price as number for comparison
-  const getPriceValue = (price: string): number => {
-    return parseFloat(price.replace('$', ''));
+  /**
+   * Formats price for display
+   */
+  const formatPrice = (price: number): string => {
+    return price.toFixed(2);
   };
 
-  // Helper function to determine if price is low (bottom 25% of prices)
-  const isLowPrice = (price: string): boolean => {
-    const priceValue = getPriceValue(price);
-    const allPrices = state.stores.map(store => getPriceValue(store.price));
-    const sortedPrices = allPrices.sort((a, b) => a - b);
-    const quarterIndex = Math.ceil(sortedPrices.length * 0.25);
-    return priceValue <= sortedPrices[quarterIndex - 1];
+  /**
+   * Gets appropriate CSS classes for a pharmacy item
+   */
+  const getPharmacyItemClasses = (store: PharmacyStore): string => {
+    const baseClasses = 'pharmacy-item';
+    const modifierClasses = [];
+    
+    if (store.isBestPrice) modifierClasses.push('best-price');
+    if (store.isClosest) modifierClasses.push('closest');
+    if (store.status !== 'Open') modifierClasses.push('limited-hours');
+    
+    return [baseClasses, ...modifierClasses].join(' ');
   };
 
-  // Helper function to determine if distance is short (bottom 25% of distances)
-  const isShortDistance = (distance: number): boolean => {
-    const allDistances = state.stores.map(store => store.distance);
-    const sortedDistances = allDistances.sort((a, b) => a - b);
-    const quarterIndex = Math.ceil(sortedDistances.length * 0.25);
-    return distance <= sortedDistances[quarterIndex - 1];
-  };
+  /**
+   * Retry function for failed requests
+   */
+  const handleRetry = () => {
+    if (rxcui) {
+      const fetchPharmacies = async () => {
+        setLoading(true);
+        setError('');
+        
+        try {
+          const pharmacyData = await fetchMockPharmacyOptions(rxcui);
+          setStores(pharmacyData);
+        } catch (err: any) {
+          const errorMessage = err?.message || err?.details || 'An unexpected error occurred while fetching pharmacy options.';
+          setError(errorMessage);
+          setStores([]);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-  // Handle pharmacy selection
-  const handlePharmacyClick = (pharmacy: PharmacyStore) => {
-    if (onPharmacySelect) {
-      onPharmacySelect(pharmacy);
+      fetchPharmacies();
     }
   };
 
-  // Handle keyboard navigation for pharmacy selection
-  const handlePharmacyKeyDown = (event: React.KeyboardEvent, pharmacy: PharmacyStore) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handlePharmacyClick(pharmacy);
-    }
-  };
-
-  // Loading state
-  if (state.loading) {
-    return (
-      <div 
-        className={`pharmacy-locator ${className}`}
-        role="status"
-        aria-live="polite"
-        aria-label="Loading pharmacy information"
-      >
-        <div className="loading-container">
-          <div className="loading-spinner" aria-hidden="true">⏳</div>
-          <p>Loading pharmacy options...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (state.error) {
-    return (
-      <div 
-        className={`pharmacy-locator ${className}`}
-        role="alert"
-        aria-live="assertive"
-      >
-        <div className="error-container">
-          <div className="error-icon" aria-hidden="true">⚠️</div>
-          <h3>Unable to Load Pharmacy Information</h3>
-          <p>{state.error}</p>
-          <p>Please try again later or contact support if the problem persists.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Empty state
-  if (state.stores.length === 0) {
-    return (
-      <div 
-        className={`pharmacy-locator ${className}`}
-        role="region"
-        aria-label="Pharmacy search results"
-      >
-        <div className="empty-state">
-          <div className="empty-icon" aria-hidden="true">🏥</div>
-          <h3>No Pharmacies Found</h3>
-          <p>
-            {rxcui 
-              ? "No pharmacies found with this medication in stock." 
-              : "Please provide a medication identifier to search for pharmacies."
-            }
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Main content with pharmacy list
   return (
-    <div 
+    <section 
       className={`pharmacy-locator ${className}`}
       role="region"
-      aria-label="Pharmacy search results"
+      aria-labelledby="pharmacy-locator-heading"
+      aria-live="polite"
     >
-      <header className="pharmacy-locator-header">
-        <h2>Available Pharmacies</h2>
-        <p className="results-count" aria-live="polite">
-          Found {state.stores.length} pharmacy{state.stores.length !== 1 ? 'ies' : ''} with your medication
-        </p>
-      </header>
+      <h3 id="pharmacy-locator-heading" className="pharmacy-locator-title">
+        📍 Pharmacy Fulfillment Options
+      </h3>
+      
+      {loading && (
+        <div 
+          className="pharmacy-loading"
+          role="status"
+          aria-label="Loading pharmacy options"
+        >
+          <div className="loading-spinner" aria-hidden="true"></div>
+          <span className="loading-text">Finding pharmacy options...</span>
+        </div>
+      )}
 
-      <ul 
-        className="pharmacy-list" 
-        role="list"
-        aria-label="List of pharmacies with medication availability"
-      >
-        {state.stores.map((pharmacy, index) => {
-          const lowPrice = isLowPrice(pharmacy.price);
-          const shortDistance = isShortDistance(pharmacy.distance);
-          const highlighted = lowPrice || shortDistance;
-          
-          return (
-            <li
-              key={`${pharmacy.name}-${index}`}
-              className={`pharmacy-item ${highlighted ? 'highlighted' : ''}`}
-              role="listitem"
+      {error && (
+        <div 
+          className="pharmacy-error"
+          role="alert"
+          aria-describedby="error-description"
+        >
+          <div className="error-icon" aria-hidden="true">⚠️</div>
+          <div className="error-content">
+            <p className="error-message">Unable to load pharmacy options</p>
+            <p id="error-description" className="error-details">{error}</p>
+            <button 
+              className="retry-button"
+              onClick={handleRetry}
+              aria-label="Retry loading pharmacy options"
             >
-              <div
-                className="pharmacy-card"
-                tabIndex={0}
-                role="button"
-                aria-label={`Select ${pharmacy.name}, $${pharmacy.price}, ${pharmacy.distance} miles away, ${pharmacy.status}`}
-                onClick={() => handlePharmacyClick(pharmacy)}
-                onKeyDown={(e) => handlePharmacyKeyDown(e, pharmacy)}
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && stores.length === 0 && (
+        <div 
+          className="pharmacy-empty"
+          role="status"
+          aria-label="No pharmacy options found"
+        >
+          <p>No pharmacy options found for this medication.</p>
+        </div>
+      )}
+
+      {!loading && !error && stores.length > 0 && (
+        <div className="pharmacy-results">
+          <p className="results-summary" aria-live="polite">
+            Found {stores.length} pharmacy option{stores.length !== 1 ? 's' : ''} near you
+          </p>
+          
+          <ul 
+            className="pharmacy-list"
+            role="list"
+            aria-label="Available pharmacy options"
+          >
+            {stores.map((store) => (
+              <li 
+                key={store.id}
+                className={getPharmacyItemClasses(store)}
+                role="listitem"
               >
                 <div className="pharmacy-header">
-                  <h3 className="pharmacy-name">{pharmacy.name}</h3>
-                  <div className="pharmacy-highlights">
-                    {lowPrice && (
-                      <span className="highlight-badge price-highlight" aria-label="Low price">
-                        💰 Best Price
+                  <h4 className="pharmacy-name">
+                    🏥 {store.name}
+                    {store.isClosest && (
+                      <span className="badge closest-badge" aria-label="Closest pharmacy">
+                        Closest
                       </span>
                     )}
-                    {shortDistance && (
-                      <span className="highlight-badge distance-highlight" aria-label="Close distance">
-                        📍 Closest
+                    {store.isBestPrice && (
+                      <span className="badge best-price-badge" aria-label="Best price">
+                        Best Price
                       </span>
                     )}
+                  </h4>
+                  <div className="pharmacy-status" aria-label={`Status: ${store.status}`}>
+                    <span className={`status-indicator ${store.status.toLowerCase().replace(' ', '-')}`}>
+                      {store.status}
+                    </span>
                   </div>
                 </div>
                 
                 <div className="pharmacy-details">
-                  <div className="pharmacy-price">
-                    <span className="label">Price:</span>
-                    <span className="value">${pharmacy.price}</span>
+                  <div className="pharmacy-pricing">
+                    <span className="price-label">Price:</span>
+                    <span 
+                      className={`price-value ${store.isBestPrice ? 'best-price' : ''}`}
+                      aria-label={`Price: ${formatPrice(store.price)} dollars`}
+                    >
+                      💵 ${formatPrice(store.price)}
+                    </span>
                   </div>
                   
-                  <div className="pharmacy-distance">
-                    <span className="label">Distance:</span>
-                    <span className="value">{pharmacy.distance} miles</span>
-                  </div>
-                  
-                  <div className="pharmacy-status">
-                    <span className="label">Status:</span>
-                    <span className={`value status-${pharmacy.status.toLowerCase().replace(/\s+/g, '-')}`}>
-                      {pharmacy.status}
+                  <div className="pharmacy-location">
+                    <span className="distance-label">Distance:</span>
+                    <span 
+                      className="distance-value"
+                      aria-label={`Distance: ${store.distance} miles`}
+                    >
+                      📍 {store.distance} mi
                     </span>
                   </div>
                 </div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+
+                {store.address && (
+                  <div className="pharmacy-address">
+                    <span className="address-label">Address:</span>
+                    <address className="address-value">{store.address}</address>
+                  </div>
+                )}
+
+                {store.phone && (
+                  <div className="pharmacy-contact">
+                    <span className="phone-label">Phone:</span>
+                    <a 
+                      href={`tel:${store.phone}`}
+                      className="phone-value"
+                      aria-label={`Call ${store.name} at ${store.phone}`}
+                    >
+                      📞 {store.phone}
+                    </a>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+
+    </section>
   );
 };
 
