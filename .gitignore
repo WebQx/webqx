@@ -46,3 +46,30 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# HIPAA Compliance - Sensitive Files
+logs/
+audit-*.json
+*.key
+*.pem
+*.p12
+*.keystore
+
+# Security and Configuration
+.env.*
+secrets/
+keys/
+certificates/
+ssl/
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.tmp
+
+# Database dumps and exports
+*.sql
+*.dump
+*.csv
+*.xlsx
