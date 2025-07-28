@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "build": "mkdir -p build && cp index.html build/ && cp -r patient-portal build/ && echo 'Build completed successfully'",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
