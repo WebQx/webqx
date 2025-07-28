@@ -1,6 +1,7 @@
 import React from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 import LiteracyAssistant from '../components/LiteracyAssistant';
+import PrescriptionDosage from '../components/PrescriptionDosage';
 
 /**
  * Home component - Main landing page for the WebQX Patient Portal
@@ -38,6 +39,33 @@ const Home: React.FC<HomeProps> = ({
   className = "",
   showLiteracyAssistant = true
 }) => {
+  // Sample dosage data for demonstration
+  const sampleDosages = [
+    {
+      id: '1',
+      amount: '250mg',
+      frequency: 'twice daily',
+      instructions: 'Take with food to reduce stomach upset',
+      recommended: true
+    },
+    {
+      id: '2',
+      amount: '500mg',
+      frequency: 'once daily',
+      instructions: 'Take on empty stomach, 1 hour before meals'
+    },
+    {
+      id: '3',
+      amount: '125mg',
+      frequency: 'three times daily',
+      instructions: 'Take at evenly spaced intervals'
+    }
+  ];
+
+  const handleDosageChoice = (dosage: any) => {
+    alert(`You selected: ${dosage.amount} ${dosage.frequency}\nInstructions: ${dosage.instructions || 'None'}`);
+  };
+
   return (
     <main 
       className={`portal ${className}`}
@@ -168,6 +196,31 @@ const Home: React.FC<HomeProps> = ({
               </ul>
             </div>
           </div>
+        </section>
+
+        {/* Prescription Dosage Section */}
+        <section 
+          className="prescription-section"
+          role="region"
+          aria-labelledby="prescription-heading"
+        >
+          <h2 id="prescription-heading" className="section-title">
+            💊 Prescription Management
+          </h2>
+          <PrescriptionDosage
+            dosages={sampleDosages}
+            onChoose={handleDosageChoice}
+            title="Select Your Dosage"
+            className="portal-prescription-dosage"
+          />
+          
+          {/* Demo with empty dosages */}
+          <PrescriptionDosage
+            dosages={[]}
+            onChoose={handleDosageChoice}
+            title="Alternative Medication (Currently Unavailable)"
+            className="portal-prescription-dosage"
+          />
         </section>
 
         {/* Health Literacy Assistant */}

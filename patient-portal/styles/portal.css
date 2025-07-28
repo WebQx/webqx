@@ -416,6 +416,175 @@
   }
 }
 
+/* Prescription Dosage Component */
+.prescription-dosage {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.prescription-dosage-header {
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+}
+
+.prescription-dosage-title {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.prescription-dosage-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #7f8c8d;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px dashed #bdc3c7;
+}
+
+.prescription-dosage-empty p {
+  margin: 0.5rem 0;
+}
+
+.prescription-dosage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.prescription-dosage-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fafafa;
+  transition: all 0.2s ease;
+}
+
+.prescription-dosage-item:hover {
+  border-color: #3498db;
+  background-color: #f0f7ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.15);
+}
+
+.prescription-dosage-item.recommended {
+  border-color: #f39c12;
+  background-color: #fff9e6;
+}
+
+.prescription-dosage-item.recommended:hover {
+  border-color: #e67e22;
+  background-color: #fff3d4;
+}
+
+.prescription-dosage-info {
+  flex: 1;
+}
+
+.prescription-dosage-amount {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.prescription-dosage-recommended-badge {
+  background-color: #f39c12;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.prescription-dosage-frequency {
+  color: #5a6c7d;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.prescription-dosage-instructions {
+  color: #7f8c8d;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.prescription-dosage-actions {
+  margin-left: 1rem;
+}
+
+.prescription-dosage-choose-btn {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.prescription-dosage-choose-btn:hover {
+  background: linear-gradient(135deg, #2980b9, #1f4e79);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.prescription-dosage-choose-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.prescription-dosage-choose-btn:focus {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .prescription-dosage-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .prescription-dosage-actions {
+    margin-left: 0;
+  }
+  
+  .prescription-dosage-choose-btn {
+    width: 100%;
+  }
+  
+  .prescription-dosage-amount {
+    flex-wrap: wrap;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .prescription-dosage-item {
+    border-width: 2px;
+  }
+  
+  .prescription-dosage-choose-btn {
+    border: 2px solid #000;
+  }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   * {
