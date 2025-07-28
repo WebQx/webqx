@@ -111,14 +111,21 @@ open http://localhost:3000
 The patient portal will be available at the root URL, and health checks at `/health`.
 
 ## 🤝 Contribution Guide  
-We welcome clinicians, developers, and researchers:
 
-- Clone, fork, and suggest new specialty workflows  
-- Sign IP Addendum and NDA prior to PR submission  
-- Use branches like `feature/oncology-workflow-v1.0`  
-- Submit YAML logic + compliance notes with PR  
+**⚠️ IMPORTANT**: All contributions require NDA compliance. Review our comprehensive contribution guide before starting.
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`specialties.yaml`](./admin-console/ai-tuning/specialties.yaml)
+### Quick Start for Contributors
+1. **Legal Requirements**: Sign [NDA](./legal/nda-template.md) and [IP Addendum](./legal/ip-addendum.md)
+2. **Development Setup**: Follow our [contribution guidelines](./CONTRIBUTING.md)
+3. **Specialty Workflows**: Use branches like `feature/oncology-workflow-v1.0`
+4. **Compliance**: Submit code with compliance documentation
+
+### 📚 Documentation
+- **[Complete Contribution Guide](./CONTRIBUTING.md)** - Comprehensive guidelines for contributors
+- **[Legal Framework](./legal/)** - NDA, IP addendum, and compliance procedures
+- **[Medical Standards](./docs/medical-standards/)** - Healthcare-specific requirements
+
+We welcome clinicians, developers, and researchers who can contribute to our mission of equitable healthcare technology while maintaining the highest standards of legal compliance and medical safety.
 
 ## 📜 License  
 Apache 2.0 — Includes contributor IP addendums for legal clarity and scalability  
