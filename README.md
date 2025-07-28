@@ -2,6 +2,18 @@
 # 🌐 WebQX™: Modular Healthcare Platform  
 _A multilingual, specialty-aware, and privacy-first blueprint for global clinical care._
 
+## 🎯 Vision & Mission
+
+**WebQx is committed to creating a fully integrated global healthcare platform** that breaks down barriers to quality medical care worldwide. Our vision is built on three fundamental pillars:
+
+🌍 **Global Healthcare Integration**: We aim to create a comprehensive, interconnected healthcare ecosystem that seamlessly connects patients, providers, and medical institutions across the globe, regardless of geographic location or economic status.
+
+🔓 **Open-Source Innovation**: By leveraging open-source software, we maximize accessibility and drive continuous innovation through collaborative development, ensuring that cutting-edge healthcare technology is not limited by proprietary constraints.
+
+💚 **Universal Access**: Our platform is and will always remain **absolutely free to use**, ensuring equitable access to healthcare technologies worldwide. We believe that access to quality healthcare tools should never be determined by financial means.
+
+_"Care equity begins with code equity."_ — This is more than our tagline; it's our commitment to democratizing healthcare technology for everyone, everywhere.
+
 ## 🚀 Overview  
 WebQX™ is an open-source healthcare stack designed to support all 12 core medical specialties, including Primary Care, Radiology, Pediatrics, Oncology, Cardiology, Psychiatry, and more. Its modular design supports multilingual documentation, AI-powered assistance, and global interoperability—from remote clinics to urban hospitals.
 
