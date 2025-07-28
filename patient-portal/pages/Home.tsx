@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 import LiteracyAssistant from '../components/LiteracyAssistant';
+import Header from '../components/Header';
+import { SupportedLanguage } from '../types/localization';
+import { getTranslations } from '../utils/localization';
 
 /**
  * Home component - Main landing page for the WebQX Patient Portal
@@ -24,6 +27,10 @@ interface HomeProps {
   className?: string;
   /** Whether to show the literacy assistant expanded by default */
   showLiteracyAssistant?: boolean;
+  /** Initial language for the portal */
+  initialLanguage?: SupportedLanguage;
+  /** Callback function when language is changed */
+  onLanguageChange?: (language: SupportedLanguage) => void;
 }
 
 /**
@@ -36,8 +43,26 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({
   patientName = "Patient",
   className = "",
-  showLiteracyAssistant = true
+  showLiteracyAssistant = true,
+  initialLanguage = 'en',
+  onLanguageChange
 }) => {
+  // State management for language selection
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(initialLanguage);
+  
+  // Get localized texts based on current language
+  const texts = getTranslations(currentLanguage);
+  
+  /**
+   * Handle language change - update local state and notify parent component
+   */
+  const handleLanguageChange = (newLanguage: SupportedLanguage) => {
+    setCurrentLanguage(newLanguage);
+    // Notify parent component if callback is provided
+    if (onLanguageChange) {
+      onLanguageChange(newLanguage);
+    }
+  };
   return (
     <main 
       className={`portal ${className}`}
@@ -45,23 +70,12 @@ const Home: React.FC<HomeProps> = ({
       aria-label="WebQX Patient Portal Dashboard"
     >
       {/* Welcome Section */}
-      <header className="portal-header" role="banner">
-        <h1 className="portal-title">
-          🌐 Welcome to WebQX™ Patient Portal
-        </h1>
-        <p className="portal-tagline" aria-describedby="portal-description">
-          Empowering Patients and Supporting Health Care Providers
-        </p>
-        <div id="portal-description" className="sr-only">
-          Your comprehensive healthcare management platform with multilingual support,
-          appointment scheduling, secure messaging, and health record access.
-        </div>
-        
-        {/* Personalized Greeting */}
-        <div className="welcome-message" role="region" aria-label="Personalized welcome">
-          <p>Welcome back, <strong>{patientName}</strong>! 👋</p>
-        </div>
-      </header>
+      <Header
+        patientName={patientName}
+        language={currentLanguage}
+        onLanguageChange={handleLanguageChange}
+        texts={texts}
+      />
 
       {/* Main Content Area */}
       <div className="portal-content">
@@ -73,7 +87,7 @@ const Home: React.FC<HomeProps> = ({
           aria-labelledby="appointments-heading"
         >
           <h2 id="appointments-heading" className="section-title">
-            📅 Your Appointments
+            {texts.appointments}
           </h2>
           <div className="appointments-grid" role="list">
             <AppointmentCard
@@ -100,7 +114,7 @@ const Home: React.FC<HomeProps> = ({
           aria-labelledby="quick-actions-heading"
         >
           <h2 id="quick-actions-heading" className="section-title">
-            🎯 Quick Actions
+            {texts.quickActions}
           </h2>
           <nav className="quick-actions-nav" role="navigation" aria-label="Quick actions menu">
             <ul className="quick-actions-list">
@@ -109,7 +123,7 @@ const Home: React.FC<HomeProps> = ({
                   className="action-button"
                   aria-label="Schedule new appointment"
                 >
-                  🗓️ Schedule Appointment
+                  {texts.scheduleAppointment}
                 </button>
               </li>
               <li>
@@ -117,7 +131,7 @@ const Home: React.FC<HomeProps> = ({
                   className="action-button"
                   aria-label="View test results"
                 >
-                  🧪 View Lab Results
+                  {texts.viewLabResults}
                 </button>
               </li>
               <li>
@@ -125,7 +139,7 @@ const Home: React.FC<HomeProps> = ({
                   className="action-button"
                   aria-label="Send secure message to provider"
                 >
-                  💬 Message Provider
+                  {texts.messageProvider}
                 </button>
               </li>
               <li>
@@ -133,7 +147,7 @@ const Home: React.FC<HomeProps> = ({
                   className="action-button"
                   aria-label="Request prescription refill"
                 >
-                  💊 Refill Prescription
+                  {texts.refillPrescription}
                 </button>
               </li>
             </ul>
@@ -147,11 +161,11 @@ const Home: React.FC<HomeProps> = ({
           aria-labelledby="health-overview-heading"
         >
           <h2 id="health-overview-heading" className="section-title">
-            📊 Health Overview
+            {texts.healthOverview}
           </h2>
           <div className="health-overview-grid">
             <div className="health-metric" role="group" aria-label="Vital signs summary">
-              <h3>📈 Recent Vitals</h3>
+              <h3>{texts.recentVitals}</h3>
               <ul>
                 <li>Blood Pressure: 120/80 mmHg</li>
                 <li>Heart Rate: 72 bpm</li>
@@ -160,7 +174,7 @@ const Home: React.FC<HomeProps> = ({
               </ul>
             </div>
             <div className="health-alerts" role="group" aria-label="Health alerts and reminders">
-              <h3>🔔 Health Alerts</h3>
+              <h3>{texts.healthAlerts}</h3>
               <ul>
                 <li>Annual flu shot due</li>
                 <li>Prescription refill available</li>
@@ -178,7 +192,7 @@ const Home: React.FC<HomeProps> = ({
             aria-labelledby="literacy-heading"
           >
             <h2 id="literacy-heading" className="section-title">
-              📚 Health Education
+              {texts.healthEducation}
             </h2>
             <LiteracyAssistant 
               className="portal-literacy-assistant"
@@ -194,14 +208,14 @@ const Home: React.FC<HomeProps> = ({
           aria-labelledby="emergency-heading"
         >
           <h2 id="emergency-heading" className="section-title">
-            🚨 Emergency Information
+            {texts.emergencyInfo}
           </h2>
           <div className="emergency-content" role="group" aria-label="Emergency contact information">
             <p className="emergency-notice">
-              <strong>For medical emergencies, call 911 immediately</strong>
+              <strong>{texts.emergencyNotice}</strong>
             </p>
             <p>
-              For urgent but non-emergency healthcare needs:
+              {texts.urgentCare}
             </p>
             <ul>
               <li>Nurse Hotline: (555) 123-HELP</li>

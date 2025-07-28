@@ -31,6 +31,48 @@
   margin-bottom: 2rem;
   padding: 2rem 0;
   border-bottom: 2px solid #e0e0e0;
+  position: relative;
+}
+
+/* Language Selector */
+.language-selector-container {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.language-selector-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+  font-weight: 500;
+  text-align: right;
+}
+
+.language-selector {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background-color: white;
+  font-size: 0.875rem;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 160px;
+}
+
+.language-selector:hover {
+  border-color: #3498db;
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+}
+
+.language-selector:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
 .portal-title {
@@ -395,6 +437,23 @@
   .footer-links {
     flex-direction: column;
     gap: 1rem;
+  }
+  
+  /* Language selector responsive adjustments */
+  .language-selector-container {
+    position: static;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .language-selector-label {
+    text-align: center;
+    font-size: 0.8rem;
+  }
+  
+  .language-selector {
+    min-width: 140px;
+    font-size: 0.8rem;
   }
 }
 

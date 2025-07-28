@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX™ Patient Portal - Enhanced Header Demo</title>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Portal CSS -->
+    <link rel="stylesheet" href="patient-portal/styles/portal.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .demo-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #3498db;
+        }
+        
+        .demo-info h2 {
+            margin: 0 0 0.5rem 0;
+            color: #2c3e50;
+        }
+        
+        .demo-info p {
+            margin: 0;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-info">
+            <h2>🌐 WebQX™ Enhanced Header Component Demo</h2>
+            <p>This demo showcases the enhanced Header component with multilingual support, accessibility features, and state management. Try changing the language in the dropdown to see the interface update dynamically!</p>
+        </div>
+        
+        <div id="header-demo-root"></div>
+        
+        <main class="portal-content" style="margin-top: 2rem;">
+            <section class="appointments-section">
+                <h2 class="section-title" id="appointments-title">📅 Your Appointments</h2>
+                <p>This section content will update based on the selected language.</p>
+            </section>
+            
+            <section class="quick-actions-section">
+                <h2 class="section-title" id="quickactions-title">🎯 Quick Actions</h2>
+                <p>Interactive buttons for common patient portal actions.</p>
+            </section>
+            
+            <section class="health-overview-section">
+                <h2 class="section-title" id="healthoverview-title">📊 Health Overview</h2>
+                <p>Patient health summary and vital signs.</p>
+            </section>
+        </main>
+    </div>
+
+    <script type="text/babel">
+        // Localization data
+        const translations = {
+            en: {
+                portalTitle: "🌐 Welcome to WebQX™ Patient Portal",
+                portalTagline: "Empowering Patients and Supporting Health Care Providers",
+                welcomeBack: "Welcome back",
+                languageLabel: "Language / Idioma / Langue / Sprache / 语言",
+                appointments: "📅 Your Appointments",
+                quickActions: "🎯 Quick Actions",
+                healthOverview: "📊 Health Overview"
+            },
+            es: {
+                portalTitle: "🌐 Bienvenido al Portal de Pacientes WebQX™",
+                portalTagline: "Empoderando a los Pacientes y Apoyando a los Proveedores de Atención Médica",
+                welcomeBack: "Bienvenido de nuevo",
+                languageLabel: "Language / Idioma / Langue / Sprache / 语言",
+                appointments: "📅 Sus Citas",
+                quickActions: "🎯 Acciones Rápidas",
+                healthOverview: "📊 Resumen de Salud"
+            },
+            fr: {
+                portalTitle: "🌐 Bienvenue sur le Portail Patient WebQX™",
+                portalTagline: "Autonomiser les Patients et Soutenir les Fournisseurs de Soins de Santé",
+                welcomeBack: "Bon retour",
+                languageLabel: "Language / Idioma / Langue / Sprache / 语言",
+                appointments: "📅 Vos Rendez-vous",
+                quickActions: "🎯 Actions Rapides",
+                healthOverview: "📊 Aperçu de la Santé"
+            },
+            de: {
+                portalTitle: "🌐 Willkommen im WebQX™ Patientenportal",
+                portalTagline: "Patienten stärken und Gesundheitsdienstleister unterstützen",
+                welcomeBack: "Willkommen zurück",
+                languageLabel: "Language / Idioma / Langue / Sprache / 语言",
+                appointments: "📅 Ihre Termine",
+                quickActions: "🎯 Schnelle Aktionen",
+                healthOverview: "📊 Gesundheitsübersicht"
+            },
+            zh: {
+                portalTitle: "🌐 欢迎使用WebQX™患者门户",
+                portalTagline: "赋能患者，支持医疗服务提供者",
+                welcomeBack: "欢迎回来",
+                languageLabel: "Language / Idioma / Langue / Sprache / 语言",
+                appointments: "📅 您的预约",
+                quickActions: "🎯 快速操作",
+                healthOverview: "📊 健康概览"
+            }
+        };
+
+        const languageOptions = [
+            { code: 'en', name: 'English', nativeName: 'English' },
+            { code: 'es', name: 'Spanish', nativeName: 'Español' },
+            { code: 'fr', name: 'French', nativeName: 'Français' },
+            { code: 'de', name: 'German', nativeName: 'Deutsch' },
+            { code: 'zh', name: 'Chinese', nativeName: '中文' }
+        ];
+
+        const getTranslations = (language) => {
+            return translations[language] || translations.en;
+        };
+
+        const getLanguageOption = (code) => {
+            return languageOptions.find(option => option.code === code) || languageOptions[0];
+        };
+
+        // Header Component
+        const Header = ({ patientName = "Patient", language, onLanguageChange, texts, className = "" }) => {
+            const handleLanguageChange = (event) => {
+                const newLanguage = event.target.value;
+                onLanguageChange(newLanguage);
+            };
+
+            const currentLanguageOption = getLanguageOption(language);
+
+            return React.createElement('header', 
+                { className: `portal-header ${className}`, role: 'banner' },
+                
+                // Language Selector Container
+                React.createElement('div', { className: 'language-selector-container' },
+                    React.createElement('label', {
+                        htmlFor: 'language-selector',
+                        className: 'language-selector-label',
+                        id: 'language-selector-label'
+                    }, texts.languageLabel),
+                    
+                    React.createElement('select', {
+                        id: 'language-selector',
+                        className: 'language-selector',
+                        value: language,
+                        onChange: handleLanguageChange,
+                        'aria-labelledby': 'language-selector-label',
+                        'aria-describedby': 'language-selector-description'
+                    }, 
+                        languageOptions.map(option => 
+                            React.createElement('option', 
+                                { key: option.code, value: option.code },
+                                `${option.nativeName} (${option.name})`
+                            )
+                        )
+                    ),
+                    
+                    React.createElement('div', 
+                        { id: 'language-selector-description', className: 'sr-only' },
+                        `Select your preferred language for the patient portal interface. Current selection: ${currentLanguageOption.nativeName}`
+                    )
+                ),
+
+                // Main Portal Title
+                React.createElement('h1', { className: 'portal-title' }, texts.portalTitle),
+
+                // Portal Tagline
+                React.createElement('p', { 
+                    className: 'portal-tagline', 
+                    'aria-describedby': 'portal-description' 
+                }, texts.portalTagline),
+
+                // Screen reader description
+                React.createElement('div', 
+                    { id: 'portal-description', className: 'sr-only' },
+                    'Your comprehensive healthcare management platform with multilingual support, appointment scheduling, secure messaging, and health record access.'
+                ),
+
+                // Personalized Greeting
+                React.createElement('div', 
+                    { className: 'welcome-message', role: 'region', 'aria-label': 'Personalized welcome' },
+                    React.createElement('p', null,
+                        `${texts.welcomeBack}, `,
+                        React.createElement('strong', null, patientName),
+                        '! 👋'
+                    )
+                )
+            );
+        };
+
+        // Demo App Component
+        const DemoApp = () => {
+            const [currentLanguage, setCurrentLanguage] = React.useState('en');
+            const texts = getTranslations(currentLanguage);
+
+            const handleLanguageChange = (newLanguage) => {
+                setCurrentLanguage(newLanguage);
+                
+                // Update section titles for demo
+                document.getElementById('appointments-title').textContent = texts.appointments;
+                document.getElementById('quickactions-title').textContent = texts.quickActions;
+                document.getElementById('healthoverview-title').textContent = texts.healthOverview;
+            };
+
+            React.useEffect(() => {
+                handleLanguageChange(currentLanguage);
+            }, [currentLanguage]);
+
+            return React.createElement(Header, {
+                patientName: "Dr. Maria García",
+                language: currentLanguage,
+                onLanguageChange: handleLanguageChange,
+                texts: texts
+            });
+        };
+
+        // Render the demo
+        ReactDOM.render(
+            React.createElement(DemoApp),
+            document.getElementById('header-demo-root')
+        );
+    </script>
+</body>
+</html>
