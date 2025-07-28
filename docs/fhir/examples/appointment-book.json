@@ -1,0 +1,8 @@
+{
+  "patientId": "patient-001",
+  "practitionerId": "practitioner-001",
+  "slotId": "slot-1753747200000",
+  "serviceType": "General Consultation",
+  "description": "Annual wellness check and preventive care",
+  "priority": 5
+}
