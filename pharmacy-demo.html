@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmacyLocator Component Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .mock-component {
+            border: 2px dashed #dee2e6;
+            padding: 1.5rem;
+            border-radius: 8px;
+            background: #f8f9fa;
+            margin: 1rem 0;
+        }
+        .pharmacy-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            border-left: 4px solid #28a745;
+        }
+        .pharmacy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .pharmacy-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            background: #d4edda;
+            color: #155724;
+            margin-left: 0.5rem;
+        }
+        .status-open {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            background: #d4edda;
+            color: #155724;
+            font-size: 0.875rem;
+        }
+        .pharmacy-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .price-value {
+            font-weight: 600;
+            color: #28a745;
+        }
+        .features-list {
+            background: #e3f2fd;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+        }
+        .features-list h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .feature-item {
+            margin: 0.5rem 0;
+            padding-left: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>📍 PharmacyLocator Component Demo</h1>
+            <p>Enhanced React component with TypeScript, error handling, and accessibility</p>
+        </div>
+
+        <div class="mock-component">
+            <h3 id="pharmacy-locator-heading">📍 Pharmacy Fulfillment Options</h3>
+            <p style="color: #495057; font-weight: 500;">Found 3 pharmacy options near you</p>
+            
+            <div class="pharmacy-item">
+                <div class="pharmacy-header">
+                    <div>
+                        <span class="pharmacy-name">🏥 CVS Pharmacy #2847</span>
+                        <span class="badge">CLOSEST</span>
+                        <span class="badge">BEST PRICE</span>
+                    </div>
+                    <span class="status-open">Open</span>
+                </div>
+                <div class="pharmacy-details">
+                    <div>
+                        <span style="color: #6c757d;">Price:</span>
+                        <span class="price-value">💵 $12.99</span>
+                    </div>
+                    <div>
+                        <span style="color: #6c757d;">Distance:</span>
+                        <span>📍 0.3 mi</span>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e9ecef;">
+                    <span style="color: #6c757d;">Address:</span>
+                    <span>123 Main St, Anytown, ST 12345</span>
+                </div>
+                <div style="margin-top: 0.75rem;">
+                    <span style="color: #6c757d;">Phone:</span>
+                    <a href="tel:(555)123-4567" style="color: #007bff; text-decoration: none;">📞 (555) 123-4567</a>
+                </div>
+            </div>
+
+            <div class="pharmacy-item" style="border-left-color: #007bff;">
+                <div class="pharmacy-header">
+                    <div>
+                        <span class="pharmacy-name">🏥 Walgreens #8234</span>
+                    </div>
+                    <span class="status-open">Open</span>
+                </div>
+                <div class="pharmacy-details">
+                    <div>
+                        <span style="color: #6c757d;">Price:</span>
+                        <span style="font-weight: 600; color: #2c3e50;">💵 $15.49</span>
+                    </div>
+                    <div>
+                        <span style="color: #6c757d;">Distance:</span>
+                        <span>📍 0.7 mi</span>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e9ecef;">
+                    <span style="color: #6c757d;">Address:</span>
+                    <span>456 Oak Ave, Anytown, ST 12345</span>
+                </div>
+            </div>
+
+            <div class="pharmacy-item" style="border-left-color: #6c757d;">
+                <div class="pharmacy-header">
+                    <div>
+                        <span class="pharmacy-name">🏥 Community Health Pharmacy</span>
+                        <span class="badge" style="background: #d4edda;">BEST PRICE</span>
+                    </div>
+                    <span class="status-open">Open</span>
+                </div>
+                <div class="pharmacy-details">
+                    <div>
+                        <span style="color: #6c757d;">Price:</span>
+                        <span class="price-value">💵 $11.50</span>
+                    </div>
+                    <div>
+                        <span style="color: #6c757d;">Distance:</span>
+                        <span>📍 2.1 mi</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="features-list">
+            <h3>✨ Component Features Implemented</h3>
+            <div class="feature-item">🔒 <strong>TypeScript Enhanced:</strong> Strong type safety with custom interfaces</div>
+            <div class="feature-item">⚠️ <strong>Error Handling:</strong> Graceful error messages and retry functionality</div>
+            <div class="feature-item">⏳ <strong>Loading States:</strong> Visual loading indicators with accessibility</div>
+            <div class="feature-item">♿ <strong>Accessibility:</strong> Semantic HTML, ARIA labels, screen reader support</div>
+            <div class="feature-item">🎨 <strong>UI Enhancements:</strong> Visual price highlighting and status indicators</div>
+            <div class="feature-item">🧪 <strong>Testing:</strong> 14 comprehensive unit tests covering all scenarios</div>
+        </div>
+
+        <div style="margin-top: 2rem; padding: 1rem; background: #fff3cd; border-radius: 8px; border-left: 4px solid #856404;">
+            <p style="margin: 0; color: #856404;">
+                <strong>Note:</strong> This is a visual representation of the PharmacyLocator component. 
+                The actual React component includes full interactivity, TypeScript support, error handling, 
+                loading states, and comprehensive accessibility features.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
