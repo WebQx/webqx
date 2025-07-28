@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmacyLocator Demo - WebQX</title>
+    <link rel="stylesheet" href="../patient-portal/styles/portal.css">
+    <style>
+        /* Additional demo styles */
+        .demo-section {
+            margin-bottom: 3rem;
+        }
+        
+        .demo-pharmacy-locator {
+            border: 2px solid #3498db;
+        }
+        
+        .feature-highlight {
+            background: #e8f5e8;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .feature-list li::before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="portal">
+        <div class="portal-header">
+            <h1 class="portal-title">PharmacyLocator Component Demo</h1>
+            <p class="portal-tagline">Enhanced pharmacy listing with sorting and accessibility features</p>
+            <div class="welcome-message">
+                Interactive demonstration of the PharmacyLocator component
+            </div>
+        </div>
+        
+        <div class="feature-highlight">
+            <h3>🚀 Enhanced Features Implemented:</h3>
+            <ul class="feature-list">
+                <li><strong>TypeScript Interfaces:</strong> Strongly typed pharmacy data structures</li>
+                <li><strong>Error Handling:</strong> Graceful handling of empty/undefined data</li>
+                <li><strong>Accessibility:</strong> ARIA roles, keyboard navigation, screen reader support</li>
+                <li><strong>Dynamic Sorting:</strong> Sort by distance, price, or name with visual indicators</li>
+                <li><strong>Responsive Design:</strong> Mobile-friendly layout with consistent styling</li>
+                <li><strong>Comprehensive Testing:</strong> Full test coverage with React Testing Library</li>
+            </ul>
+        </div>
+        
+        <div class="portal-content">
+            <section class="demo-section">
+                <h2 class="section-title">Full Pharmacy List Demo</h2>
+                <div id="pharmacy-locator-demo"></div>
+            </section>
+            
+            <section class="demo-section">
+                <h2 class="section-title">Empty State Demo</h2>
+                <div id="empty-state-demo"></div>
+            </section>
+        </div>
+        
+        <div class="portal-footer">
+            <div class="footer-content">
+                <p>PharmacyLocator Component Demo - WebQX Healthcare Platform</p>
+                <p><em>Click on any pharmacy to see the selection functionality in action!</em></p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Sample pharmacy data
+        const samplePharmacies = [
+            {
+                id: '1',
+                name: 'CVS Pharmacy',
+                availability: 'open',
+                price: '$$',
+                distance: 0.5,
+                address: '123 Main St, Springfield, IL 62701',
+                phone: '(555) 123-4567',
+                services: ['Prescriptions', 'Vaccinations', 'Health Screenings', 'Blood Pressure Checks']
+            },
+            {
+                id: '2',
+                name: 'Walgreens',
+                availability: 'open-24h',
+                price: '$',
+                distance: 1.2,
+                address: '456 Oak Ave, Springfield, IL 62702',
+                phone: '(555) 987-6543',
+                services: ['Prescriptions', 'Photo Services', 'Vaccinations']
+            },
+            {
+                id: '3',
+                name: 'Local Health Pharmacy',
+                availability: 'closed',
+                price: '$$$',
+                distance: 0.3,
+                address: '789 Pine Rd, Springfield, IL 62703',
+                phone: '(555) 555-0123',
+                services: ['Prescriptions', 'Compounding', 'Medical Equipment']
+            },
+            {
+                id: '4',
+                name: 'Community Care Pharmacy',
+                availability: 'open',
+                price: '$$',
+                distance: 2.1,
+                address: '321 Elm Street, Springfield, IL 62704',
+                phone: '(555) 444-7890',
+                services: ['Prescriptions', 'Diabetes Care', 'Immunizations']
+            },
+            {
+                id: '5',
+                name: 'Express Rx',
+                availability: 'open-24h',
+                price: '$',
+                distance: 1.8,
+                address: '654 Maple Drive, Springfield, IL 62705',
+                phone: '(555) 333-2468'
+            }
+        ];
+
+        // Render pharmacy locator components (plain JavaScript simulation)
+        function renderPharmacyLocator(containerId, stores) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            container.innerHTML = createPharmacyLocatorHTML(stores);
+            attachEventListeners(container, stores);
+        }
+
+        function createPharmacyLocatorHTML(stores) {
+            if (!stores || stores.length === 0) {
+                return `
+                    <div class="pharmacy-locator" role="region" aria-label="Nearby pharmacies">
+                        <div class="pharmacy-locator-header">
+                            <h2 class="pharmacy-locator-title">Nearby Pharmacies</h2>
+                        </div>
+                        <div class="empty-state" role="status" aria-live="polite">
+                            <p class="no-pharmacies-message">🏥 No pharmacies found nearby.</p>
+                            <p class="empty-state-suggestion">Try adjusting your location or search criteria.</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const sortedStores = [...stores].sort((a, b) => a.distance - b.distance);
+            
+            return `
+                <div class="pharmacy-locator demo-pharmacy-locator" role="region" aria-label="Nearby pharmacies">
+                    <div class="pharmacy-locator-header">
+                        <h2 class="pharmacy-locator-title">Nearby Pharmacies (${stores.length})</h2>
+                        <div class="sort-controls" role="group" aria-label="Sort pharmacies">
+                            <label class="sort-label">Sort by:</label>
+                            <div class="sort-buttons">
+                                <button type="button" class="sort-button active" data-sort="distance">
+                                    Distance <span class="sort-indicator">↑</span>
+                                </button>
+                                <button type="button" class="sort-button" data-sort="price">Price</button>
+                                <button type="button" class="sort-button" data-sort="name">Name</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pharmacy-list" role="list" data-testid="pharmacy-list">
+                        ${sortedStores.map(pharmacy => createPharmacyItemHTML(pharmacy)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createPharmacyItemHTML(pharmacy) {
+            const availability = getAvailabilityStatus(pharmacy.availability);
+            
+            return `
+                <div class="pharmacy-item" role="listitem" tabindex="0" 
+                     data-pharmacy-id="${pharmacy.id}"
+                     aria-label="${pharmacy.name}, ${pharmacy.distance} miles away, ${availability.text}">
+                    <div class="pharmacy-header">
+                        <h3 class="pharmacy-name">${pharmacy.name}</h3>
+                        <div class="pharmacy-meta">
+                            <span class="pharmacy-status ${availability.className}" aria-label="Status: ${availability.text}">
+                                ${availability.text}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="pharmacy-details">
+                        <div class="pharmacy-info">
+                            <span class="pharmacy-distance" aria-label="Distance: ${pharmacy.distance} miles">
+                                📍 ${pharmacy.distance} mi
+                            </span>
+                            <span class="pharmacy-price" aria-label="Price tier: ${pharmacy.price}">
+                                💰 ${pharmacy.price}
+                            </span>
+                        </div>
+                        ${pharmacy.address ? `<div class="pharmacy-address" aria-label="Address: ${pharmacy.address}">📧 ${pharmacy.address}</div>` : ''}
+                        ${pharmacy.phone ? `<div class="pharmacy-phone" aria-label="Phone: ${pharmacy.phone}">📞 ${pharmacy.phone}</div>` : ''}
+                        ${pharmacy.services && pharmacy.services.length > 0 ? `
+                            <div class="pharmacy-services" aria-label="Available services">
+                                <span class="services-label">Services:</span>
+                                <ul class="services-list" role="list">
+                                    ${pharmacy.services.map(service => `<li class="service-item" role="listitem">${service}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getAvailabilityStatus(availability) {
+            switch (availability) {
+                case 'open':
+                    return { text: 'Open', className: 'status-open' };
+                case 'closed':
+                    return { text: 'Closed', className: 'status-closed' };
+                case 'open-24h':
+                    return { text: 'Open 24h', className: 'status-24h' };
+                default:
+                    return { text: 'Unknown', className: 'status-unknown' };
+            }
+        }
+
+        function attachEventListeners(container, stores) {
+            // Add click handlers for pharmacy items
+            const pharmacyItems = container.querySelectorAll('.pharmacy-item');
+            pharmacyItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const pharmacyId = item.dataset.pharmacyId;
+                    const pharmacy = stores.find(p => p.id === pharmacyId);
+                    if (pharmacy) {
+                        alert(`You selected: ${pharmacy.name}\\nDistance: ${pharmacy.distance} miles\\nPhone: ${pharmacy.phone || 'N/A'}`);
+                    }
+                });
+
+                item.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        item.click();
+                    }
+                });
+            });
+
+            // Add sort functionality
+            const sortButtons = container.querySelectorAll('.sort-button');
+            sortButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const sortField = button.dataset.sort;
+                    handleSort(container, stores, sortField);
+                });
+            });
+        }
+
+        function handleSort(container, stores, field) {
+            const sortButtons = container.querySelectorAll('.sort-button');
+            const activeButton = container.querySelector('.sort-button.active');
+            const currentField = activeButton?.dataset.sort;
+            const isReverse = currentField === field;
+
+            // Update button states
+            sortButtons.forEach(btn => {
+                btn.classList.remove('active');
+                const indicator = btn.querySelector('.sort-indicator');
+                if (indicator) indicator.remove();
+            });
+
+            const clickedButton = container.querySelector(`[data-sort="${field}"]`);
+            clickedButton.classList.add('active');
+            const direction = isReverse ? 'desc' : 'asc';
+            clickedButton.innerHTML += ` <span class="sort-indicator">${direction === 'asc' ? '↑' : '↓'}</span>`;
+
+            // Sort stores
+            const sortedStores = [...stores].sort((a, b) => {
+                let comparison = 0;
+                switch (field) {
+                    case 'distance':
+                        comparison = a.distance - b.distance;
+                        break;
+                    case 'price':
+                        comparison = a.price.length - b.price.length;
+                        break;
+                    case 'name':
+                        comparison = a.name.localeCompare(b.name);
+                        break;
+                }
+                return direction === 'asc' ? comparison : -comparison;
+            });
+
+            // Re-render pharmacy list
+            const pharmacyList = container.querySelector('.pharmacy-list');
+            pharmacyList.innerHTML = sortedStores.map(pharmacy => createPharmacyItemHTML(pharmacy)).join('');
+            attachEventListeners(container, stores);
+        }
+
+        // Initialize demos
+        renderPharmacyLocator('pharmacy-locator-demo', samplePharmacies);
+        renderPharmacyLocator('empty-state-demo', []);
+    </script>
+</body>
+</html>
