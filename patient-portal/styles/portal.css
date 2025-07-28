@@ -80,6 +80,7 @@
 .quick-actions-section,
 .health-overview-section,
 .literacy-section,
+.prescription-section,
 .emergency-section {
   background: #f8f9fa;
   padding: 1.5rem;
@@ -93,6 +94,7 @@
 .quick-actions-section:hover,
 .health-overview-section:hover,
 .literacy-section:hover,
+.prescription-section:hover,
 .emergency-section:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
@@ -312,6 +314,21 @@
   background: #fff5f5;
   border-color: #fed7d7;
   grid-column: 1 / -1;
+}
+
+/* Prescription Section */
+.prescription-section {
+  grid-column: 1 / -1;
+  background: #f7fafc;
+  border-color: #e2e8f0;
+}
+
+.portal-prescription-form {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+  border: none;
 }
 
 .emergency-notice {

@@ -1,6 +1,7 @@
 import React from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 import LiteracyAssistant from '../components/LiteracyAssistant';
+import PrescriptionForm from '../components/PrescriptionForm';
 
 /**
  * Home component - Main landing page for the WebQX Patient Portal
@@ -168,6 +169,23 @@ const Home: React.FC<HomeProps> = ({
               </ul>
             </div>
           </div>
+        </section>
+
+        {/* Prescription Management Section */}
+        <section 
+          className="prescription-section"
+          role="region"
+          aria-labelledby="prescription-heading"
+        >
+          <PrescriptionForm 
+            className="portal-prescription-form"
+            onMedicationAdded={(medication) => {
+              console.log('Medication added to patient EHR:', medication);
+            }}
+            onSearch={(query) => {
+              console.log('Patient searched for:', query);
+            }}
+          />
         </section>
 
         {/* Health Literacy Assistant */}
