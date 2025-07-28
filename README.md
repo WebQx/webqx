@@ -111,14 +111,22 @@ open http://localhost:3000
 The patient portal will be available at the root URL, and health checks at `/health`.
 
 ## 🤝 Contribution Guide  
-We welcome clinicians, developers, and researchers:
 
+**⚠️ CONTRIBUTOR APPROVAL REQUIRED**: All contributors must be approved by the WebQX platform ownership team before making any contributions to this repository.
+
+### Approval Process Steps:
+1. **Submit Request** → Contact [contributors@webqx.health](mailto:contributors@webqx.health)  
+2. **Sign NDA** → Complete required legal documentation  
+3. **Await Approval** → Receive explicit approval notification  
+4. **Start Contributing** → Follow detailed guidelines in our contribution guide  
+
+### Once Approved:
 - Clone, fork, and suggest new specialty workflows  
-- Sign IP Addendum and NDA prior to PR submission  
-- Use branches like `feature/oncology-workflow-v1.0`  
+- Use descriptive branches like `feature/oncology-workflow-v1.0`  
 - Submit YAML logic + compliance notes with PR  
+- Follow healthcare security and compliance standards  
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`specialties.yaml`](./admin-console/ai-tuning/specialties.yaml)
+📖 **See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for complete contribution guidelines and requirements.**
 
 ## 📜 License  
 Apache 2.0 — Includes contributor IP addendums for legal clarity and scalability  
