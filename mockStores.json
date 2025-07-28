@@ -1,0 +1,57 @@
+[
+  {
+    "id": "store-001",
+    "name": "MediCare Pharmacy",
+    "address": "123 Health Street, Medical District, NY 10001",
+    "phone": "(555) 123-4567",
+    "hours": "Mon-Fri: 8AM-8PM, Sat: 9AM-6PM, Sun: 10AM-4PM",
+    "rxcui": ["123456", "789012", "345678"],
+    "services": ["prescription_filling", "consultation", "delivery"],
+    "rating": 4.5,
+    "distance": "0.3 miles"
+  },
+  {
+    "id": "store-002", 
+    "name": "QuickScript Pharmacy",
+    "address": "456 Wellness Ave, Downtown, NY 10002",
+    "phone": "(555) 234-5678",
+    "hours": "Mon-Sat: 7AM-10PM, Sun: 8AM-8PM",
+    "rxcui": ["123456", "111213", "567890"],
+    "services": ["prescription_filling", "immunizations", "24hr_service"],
+    "rating": 4.2,
+    "distance": "0.7 miles"
+  },
+  {
+    "id": "store-003",
+    "name": "Family Health Pharmacy",
+    "address": "789 Community Blvd, Suburbia, NY 10003", 
+    "phone": "(555) 345-6789",
+    "hours": "Mon-Fri: 9AM-7PM, Sat: 9AM-5PM, Sun: Closed",
+    "rxcui": ["789012", "141516", "171819"],
+    "services": ["prescription_filling", "consultation", "compounding"],
+    "rating": 4.8,
+    "distance": "1.2 miles"
+  },
+  {
+    "id": "store-004",
+    "name": "Express Rx",
+    "address": "321 Speed Lane, Fast City, NY 10004",
+    "phone": "(555) 456-7890", 
+    "hours": "Daily: 6AM-12AM",
+    "rxcui": ["345678", "202122", "232425"],
+    "services": ["prescription_filling", "drive_through", "delivery"],
+    "rating": 4.0,
+    "distance": "2.1 miles"
+  },
+  {
+    "id": "store-005",
+    "name": "Wellness Central Pharmacy",
+    "address": "654 Healing Way, Wellness District, NY 10005",
+    "phone": "(555) 567-8901",
+    "hours": "Mon-Fri: 8AM-9PM, Sat-Sun: 9AM-6PM",
+    "rxcui": ["111213", "262728", "293031"],
+    "services": ["prescription_filling", "consultation", "health_screening"],
+    "rating": 4.6,
+    "distance": "1.8 miles"
+  }
+]
