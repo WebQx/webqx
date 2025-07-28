@@ -5,6 +5,17 @@ _A multilingual, specialty-aware, and privacy-first blueprint for global clinica
 ## 🚀 Overview  
 WebQX™ is an open-source healthcare stack designed to support all 12 core medical specialties, including Primary Care, Radiology, Pediatrics, Oncology, Cardiology, Psychiatry, and more. Its modular design supports multilingual documentation, AI-powered assistance, and global interoperability—from remote clinics to urban hospitals.
 
+## 🆓 Free & Open Access  
+**WebQX™ provides completely free access to all core functionalities for both patients and providers.** There are no subscription fees, licensing costs, or hidden charges for using any of the platform's modules and features.
+
+### 💡 Our Commitment to Healthcare Equity
+- **🏥 For Healthcare Providers**: Access all EHR capabilities, clinical decision support, prescription management, and AI-powered assistance at no cost
+- **👥 For Patients**: Complete access to patient portal features, appointment scheduling, prescription management, lab results, and secure messaging without any fees
+- **🌍 Global Accessibility**: Ensuring equitable healthcare access worldwide by removing financial barriers to essential healthcare technology
+- **🔓 No Subscription Models**: Unlike proprietary healthcare platforms, WebQX™ operates on a truly open model with no premium tiers or paid features
+
+This platform exists to democratize healthcare technology and ensure that quality healthcare tools are accessible regardless of economic circumstances. Our mission is to eliminate technology-based disparities in healthcare delivery.
+
 ## 🧩 Modular Architecture
 
 ### ✅ Patient Portal  
@@ -127,4 +138,6 @@ See [`LICENSE.md`](./LICENSE.md), [`nda-template.md`](./legal/nda-template.md), 
 ---
 
 Crafted with ❤️ by [@webqx-health](https://github.com/webqx-health)  
-_“Care equity begins with code equity.”_
+_“Care equity begins with code equity - and that means free access for all.”_
+## 🌟 Join the Free Healthcare Revolution
+WebQX™ is committed to keeping healthcare technology free and accessible forever. By choosing our platform, you're not just getting powerful healthcare tools - you're supporting a movement toward equitable healthcare access worldwide. **No costs, no barriers, just better healthcare for everyone.**
