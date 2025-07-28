@@ -1,6 +1,7 @@
 import React from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 import LiteracyAssistant from '../components/LiteracyAssistant';
+import ExportReview, { SelectedMedication } from '../components/ExportReview';
 
 /**
  * Home component - Main landing page for the WebQX Patient Portal
@@ -24,6 +25,8 @@ interface HomeProps {
   className?: string;
   /** Whether to show the literacy assistant expanded by default */
   showLiteracyAssistant?: boolean;
+  /** Whether to show the export review demo */
+  showExportDemo?: boolean;
 }
 
 /**
@@ -36,8 +39,18 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({
   patientName = "Patient",
   className = "",
-  showLiteracyAssistant = true
+  showLiteracyAssistant = true,
+  showExportDemo = false
 }) => {
+  // Sample medication data for the export demo
+  const sampleMedication: SelectedMedication = {
+    id: 'med-sample-001',
+    name: 'Lisinopril',
+    dosage: '10mg',
+    frequency: 'Once daily',
+    duration: '30 days',
+    notes: 'Take with food, monitor blood pressure'
+  };
   return (
     <main 
       className={`portal ${className}`}
@@ -184,6 +197,56 @@ const Home: React.FC<HomeProps> = ({
               className="portal-literacy-assistant"
               initiallyExpanded={false}
             />
+          </section>
+        )}
+
+        {/* Prescription Export Demo */}
+        {showExportDemo && (
+          <section 
+            className="export-section"
+            role="region"
+            aria-labelledby="export-heading"
+          >
+            <h2 id="export-heading" className="section-title">
+              📤 Prescription Export Demo
+            </h2>
+            <p className="section-description">
+              Demo of the ExportReview component with different specialty scenarios
+            </p>
+            
+            <div className="export-demo-grid">
+              {/* Cardiology - Mapped Specialty */}
+              <div className="export-demo-item">
+                <h3>Mapped Specialty Example (Cardiology)</h3>
+                <ExportReview
+                  selectedMed={sampleMedication}
+                  specialty="cardiology"
+                  providerId="provider-cardio-123"
+                  className="demo-export-review"
+                  onExportSuccess={(data) => console.log('Export success:', data)}
+                  onExportError={(error) => console.error('Export error:', error)}
+                />
+              </div>
+              
+              {/* Unknown Specialty - Fallback to R69 */}
+              <div className="export-demo-item">
+                <h3>Unmapped Specialty Example (Shows R69 Fallback)</h3>
+                <ExportReview
+                  selectedMed={{
+                    ...sampleMedication,
+                    name: 'Metformin',
+                    dosage: '500mg',
+                    frequency: 'Twice daily',
+                    notes: 'Take with meals'
+                  }}
+                  specialty="unknown-specialty"
+                  providerId="provider-general-456"
+                  className="demo-export-review"
+                  onExportSuccess={(data) => console.log('Export success:', data)}
+                  onExportError={(error) => console.error('Export error:', error)}
+                />
+              </div>
+            </div>
           </section>
         )}
 
