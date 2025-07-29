@@ -1,0 +1,102 @@
+{
+  "portal": {
+    "title": "🌐 欢迎使用WebQX™患者门户",
+    "tagline": "赋能患者，支持医疗服务提供者",
+    "description": "您的综合医疗管理平台，支持多语言、预约安排、安全消息和健康记录访问。",
+    "welcomeBack": "欢迎回来，{{name}}！👋"
+  },
+  "navigation": {
+    "main": "主导航",
+    "quickActions": "快速操作菜单",
+    "footer": "页脚导航"
+  },
+  "sections": {
+    "appointments": "📅 您的预约",
+    "quickActions": "🎯 快速操作",
+    "healthOverview": "📊 健康概览",
+    "healthEducation": "📚 健康教育",
+    "emergency": "🚨 紧急信息"
+  },
+  "appointments": {
+    "upcoming": "即将到来的预约",
+    "noAppointments": "没有安排预约",
+    "provider": "医生：",
+    "annualCheckup": "年度体检",
+    "followUp": "复诊",
+    "annualCheckupDetails": "年度体检和健康筛查",
+    "followUpDetails": "前次咨询的后续访问",
+    "scheduledFor": "{{date}} {{time}}"
+  },
+  "actions": {
+    "scheduleAppointment": "🗓️ 安排预约",
+    "viewLabResults": "🧪 查看实验室结果",
+    "messageProvider": "💬 联系医生",
+    "refillPrescription": "💊 续开处方"
+  },
+  "health": {
+    "recentVitals": "📈 最近生命体征",
+    "healthAlerts": "🔔 健康警报",
+    "bloodPressure": "血压：{{value}} mmHg",
+    "heartRate": "心率：{{value}} bpm",
+    "weight": "体重：{{value}} 磅",
+    "lastUpdated": "最后更新：{{date}}",
+    "fluShotDue": "年度流感疫苗到期",
+    "prescriptionRefill": "处方续开可用",
+    "wellnessReminder": "健康检查提醒"
+  },
+  "literacy": {
+    "assistant": "健康素养助手",
+    "searchPlaceholder": "搜索医学术语...",
+    "searchHelp": "输入以搜索医学术语及其定义",
+    "noResults": "未找到与您的搜索匹配的医学术语。",
+    "glossary": "医学术语词汇表",
+    "terms": {
+      "hypertension": {
+        "term": "高血压",
+        "definition": "血压过高"
+      },
+      "diabetes": {
+        "term": "糖尿病",
+        "definition": "血糖水平过高的疾病"
+      },
+      "prescription": {
+        "term": "处方",
+        "definition": "医生开具的药物书面指示"
+      },
+      "laboratory": {
+        "term": "实验室",
+        "definition": "对血液、尿液或其他样本进行的医学检测"
+      }
+    }
+  },
+  "emergency": {
+    "notice": "医疗紧急情况，请立即拨打911",
+    "urgentCare": "对于紧急但非急诊的医疗需求：",
+    "nurseHotline": "护士热线：(555) 123-HELP",
+    "afterHours": "非工作时间诊所：(555) 123-CARE",
+    "portalMessaging": "患者门户消息用于非紧急问题"
+  },
+  "footer": {
+    "copyright": "© 2024 WebQX 医疗平台。保留所有权利。",
+    "privacyPolicy": "隐私政策",
+    "termsOfService": "服务条款",
+    "helpSupport": "帮助与支持",
+    "accessibility": "无障碍"
+  },
+  "language": {
+    "selector": "Language / Idioma / Langue / Sprache / 语言",
+    "current": "当前语言：{{language}}",
+    "changeLanguage": "更改语言为{{language}}"
+  },
+  "aria": {
+    "dashboard": "WebQX患者门户仪表板",
+    "personalizedWelcome": "个性化欢迎",
+    "appointmentCard": "预约：{{title}}",
+    "appointmentDateTime": "日期和时间：{{datetime}}",
+    "vitalsSummary": "生命体征摘要",
+    "healthAlerts": "健康警报和提醒",
+    "emergencyInfo": "紧急联系信息",
+    "expandAssistant": "展开健康素养助手",
+    "collapseAssistant": "收起健康素养助手"
+  }
+}
