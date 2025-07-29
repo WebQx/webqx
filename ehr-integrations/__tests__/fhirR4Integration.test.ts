@@ -764,65 +764,65 @@ describe('FHIR R4 Integration', () => {
 // Performance Tests
 // ============================================================================
 
-describe('Performance Tests', () => {
-  test('should handle multiple concurrent bookings', async () => {
-    const bookingService = new AppointmentBookingService(mockBookingConfig);
-    
-    // Mock successful responses
-    jest.spyOn(bookingService, 'getAvailableSlots').mockResolvedValue([{
-      slot: {
-        resourceType: 'Slot',
-        id: 'slot-123',
-        schedule: { reference: 'Schedule/schedule-123' },
-        status: 'free',
-        start: '2024-01-15T10:00:00Z',
-        end: '2024-01-15T10:30:00Z'
-      },
-      available: true,
-      durationMinutes: 30
-    }]);
+  describe('Performance Tests', () => {
+    test('should handle multiple concurrent bookings', async () => {
+      const bookingService = new AppointmentBookingService(mockBookingConfig);
+      
+      // Mock successful responses
+      jest.spyOn(bookingService, 'getAvailableSlots').mockResolvedValue([{
+        slot: {
+          resourceType: 'Slot',
+          id: 'slot-123',
+          schedule: { reference: 'Schedule/schedule-123' },
+          status: 'free',
+          start: '2024-01-15T10:00:00Z',
+          end: '2024-01-15T10:30:00Z'
+        },
+        available: true,
+        durationMinutes: 30
+      }]);
 
-    const fhirClient = new FHIRR4Client({
-      baseUrl: 'https://test-fhir.example.com',
-      smartConfig: mockSmartConfig
+      const fhirClient = new FHIRR4Client({
+        baseUrl: 'https://test-fhir.example.com',
+        smartConfig: mockSmartConfig
+      });
+
+      jest.spyOn(fhirClient, 'createAppointment').mockResolvedValue({
+        success: true,
+        data: {
+          resourceType: 'Appointment',
+          id: 'appt-123',
+          status: 'booked',
+          participant: []
+        }
+      });
+
+      (bookingService as any).fhirClient = fhirClient;
+
+      const bookingRequests = Array.from({ length: 10 }, (_, i) => ({
+        patient: { 
+          resourceType: 'Patient' as const,
+          id: `patient-${i}`,
+          name: [{ given: ['Patient'], family: `${i}` }]
+        },
+        startTime: `2024-01-15T${10 + i}:00:00Z`,
+        durationMinutes: 30,
+        serviceType: { text: 'Test Service' }
+      }));
+
+      const startTime = Date.now();
+      const results = await Promise.all(
+        bookingRequests.map(request => bookingService.bookAppointment(request))
+      );
+      const endTime = Date.now();
+
+      expect(results).toHaveLength(10);
+      expect(results.every(result => result.success)).toBe(true);
+      expect(endTime - startTime).toBeLessThan(5000); // Should complete within 5 seconds
+
+      bookingService.disconnect();
     });
-
-    jest.spyOn(fhirClient, 'createAppointment').mockResolvedValue({
-      success: true,
-      data: {
-        resourceType: 'Appointment',
-        id: 'appt-123',
-        status: 'booked',
-        participant: []
-      }
-    });
-
-    (bookingService as any).fhirClient = fhirClient;
-
-    const bookingRequests = Array.from({ length: 10 }, (_, i) => ({
-      patient: { 
-        resourceType: 'Patient' as const,
-        id: `patient-${i}`,
-        name: [{ given: ['Patient'], family: `${i}` }]
-      },
-      startTime: `2024-01-15T${10 + i}:00:00Z`,
-      durationMinutes: 30,
-      serviceType: { text: 'Test Service' }
-    }));
-
-    const startTime = Date.now();
-    const results = await Promise.all(
-      bookingRequests.map(request => bookingService.bookAppointment(request))
-    );
-    const endTime = Date.now();
-
-    expect(results).toHaveLength(10);
-    expect(results.every(result => result.success)).toBe(true);
-    expect(endTime - startTime).toBeLessThan(5000); // Should complete within 5 seconds
-
-    bookingService.disconnect();
   });
-});
 
 // ============================================================================
 // Accessibility Tests
