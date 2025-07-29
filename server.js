@@ -17,6 +17,9 @@ const {
     generateTestToken
 } = require('./fhir/middleware/auth');
 
+// PostDICOM imports
+const postdicomRouter = require('./modules/postdicom/routes/dicom.js');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -87,6 +90,9 @@ app.use('/fhir/Patient', authenticateToken, requireScopes(['patient/*.read', 'pa
 
 // FHIR Appointment resource routes with authentication
 app.use('/fhir/Appointment', authenticateToken, requireScopes(['user/*.read', 'user/*.write', 'patient/*.read']), appointmentRoutes);
+
+// PostDICOM API routes
+app.use('/postdicom', postdicomRouter);
 
 // Development endpoint to get test token
 if (process.env.NODE_ENV === 'development') {
