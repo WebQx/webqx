@@ -1,0 +1,511 @@
+/**
+ * PACS Imaging Viewers Styles
+ * Shared styles for DICOM viewer components
+ */
+
+/* Base viewer styles */
+.dicom-viewer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dicom-viewer canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Loading states */
+.dicom-viewer-loading,
+.imaging-viewer-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e9ecef;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error states */
+.dicom-viewer-error,
+.imaging-viewer-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background-color: #fff5f5;
+  color: #e53e3e;
+  padding: 20px;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+/* Viewer controls */
+.viewer-controls {
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.controls-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.control-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Button styles */
+.control-btn,
+.tool-button,
+.control-button {
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+}
+
+.control-btn:hover,
+.tool-button:hover,
+.control-button:hover {
+  background-color: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+.control-btn:active,
+.tool-button:active,
+.control-button:active {
+  background-color: #e2e8f0;
+}
+
+.tool-button.active {
+  background-color: #4299e1;
+  color: white;
+  border-color: #3182ce;
+}
+
+/* Zoom controls */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-slider {
+  flex: 1;
+  min-width: 100px;
+}
+
+.zoom-value {
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Navigation controls */
+.image-navigation {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.image-navigation button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.image-navigation button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.image-navigation button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Metadata display */
+.metadata-display {
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.metadata-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+}
+
+.metadata-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #2d3748;
+}
+
+.read-only-indicator {
+  font-size: 12px;
+  color: #718096;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metadata-content {
+  padding: 20px;
+}
+
+.metadata-section {
+  margin-bottom: 24px;
+}
+
+.metadata-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metadata-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.metadata-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metadata-item label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #718096;
+}
+
+.metadata-item span {
+  font-size: 14px;
+  color: #2d3748;
+}
+
+/* Compact metadata view */
+.metadata-compact {
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.compact-row {
+  margin-bottom: 4px;
+}
+
+.compact-row:last-child {
+  margin-bottom: 0;
+}
+
+/* Provider viewer */
+.provider-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.provider-viewer.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  background-color: #000;
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.header-left h2 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  color: #2d3748;
+}
+
+.study-info {
+  font-size: 14px;
+  color: #718096;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle-button {
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-button.active {
+  background-color: #4299e1;
+  color: white;
+  border-color: #3182ce;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.save-button,
+.print-button,
+.export-button {
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.save-button:hover,
+.print-button:hover,
+.export-button:hover {
+  background-color: #3182ce;
+}
+
+.viewer-content {
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.controls-panel {
+  width: 300px;
+  flex-shrink: 0;
+}
+
+.viewer-panel {
+  flex: 1;
+  background-color: #000;
+  border-radius: 8px;
+  position: relative;
+}
+
+.metadata-panel {
+  width: 350px;
+  flex-shrink: 0;
+}
+
+.viewer-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background-color: #2d3748;
+  color: #e2e8f0;
+  font-size: 12px;
+}
+
+/* Patient viewer */
+.patient-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.patient-viewer .viewer-content {
+  position: relative;
+}
+
+.patient-viewer .viewer-panel.with-metadata {
+  width: calc(100% - 400px);
+}
+
+.patient-viewer .viewer-panel.full-width {
+  width: 100%;
+}
+
+.simple-controls {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+
+.simple-controls .control-group {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.simple-controls .control-btn {
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.simple-controls .control-btn:hover {
+  background-color: white;
+}
+
+.zoom-display {
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.patient-disclaimers {
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+}
+
+.disclaimer-section {
+  margin-bottom: 16px;
+}
+
+.disclaimer-section:last-child {
+  margin-bottom: 0;
+}
+
+.disclaimer-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.disclaimer-section p {
+  margin: 0;
+  font-size: 13px;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .viewer-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .controls-panel,
+  .metadata-panel {
+    width: 100%;
+  }
+  
+  .metadata-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .simple-controls {
+    position: relative;
+    top: auto;
+    left: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: 12px;
+  }
+}
