@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/patient-portal', '<rootDir>/services'],
+  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
@@ -14,8 +14,12 @@ module.exports = {
   collectCoverageFrom: [
     'patient-portal/**/*.{ts,tsx}',
     'services/**/*.{ts,tsx}',
+    'ehr-integrations/**/*.{ts,tsx}',
+    'modules/**/*.{ts,tsx}',
     '!patient-portal/**/*.d.ts',
     '!services/**/*.d.ts',
+    '!ehr-integrations/**/*.d.ts',
+    '!modules/**/*.d.ts',
   ],
   moduleNameMapper: {
     '\\.(css|less|scss)$': 'identity-obj-proxy'
