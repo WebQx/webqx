@@ -112,12 +112,17 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
 
     this.jobs.set(jobId, job);
 
-    this.auditLogger?.logActivity('BATCH_JOB_CREATED', {
-      jobId,
-      name,
-      imageCount: imageIds.length,
-      audioFileCount: audioFiles.length,
-      timestamp: new Date().toISOString()
+    this.auditLogger?.log({
+      action: 'system_backup', // Using closest available action for batch job operations
+      resourceType: 'batch_transcription_job',
+      resourceId: jobId,
+      success: true,
+      context: {
+        jobName: name,
+        imageCount: imageIds.length,
+        audioFileCount: audioFiles.length,
+        timestamp: new Date().toISOString()
+      }
     });
 
     this.emit('jobCreated', { jobId, job });
@@ -141,9 +146,15 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
     job.startTime = new Date();
     job.progress = 0;
 
-    this.auditLogger?.logActivity('BATCH_JOB_STARTED', {
-      jobId,
-      timestamp: new Date().toISOString()
+    this.auditLogger?.log({
+      action: 'system_backup',
+      resourceType: 'batch_transcription_job',
+      resourceId: jobId,
+      success: true,
+      context: {
+        operation: 'job_started',
+        timestamp: new Date().toISOString()
+      }
     });
 
     this.emit('jobStarted', { jobId, job });
@@ -192,13 +203,19 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
         await this.saveOverlaysToStorage(jobId, job.results);
       }
 
-      this.auditLogger?.logActivity('BATCH_JOB_COMPLETED', {
-        jobId,
-        status: job.status,
-        resultCount: job.results.length,
-        errorCount: job.errors.length,
-        duration: job.endTime.getTime() - job.startTime!.getTime(),
-        timestamp: new Date().toISOString()
+      this.auditLogger?.log({
+        action: 'system_backup',
+        resourceType: 'batch_transcription_job',
+        resourceId: jobId,
+        success: job.status === 'completed',
+        context: {
+          operation: 'job_completed',
+          status: job.status,
+          resultCount: job.results.length,
+          errorCount: job.errors.length,
+          duration: job.endTime.getTime() - job.startTime!.getTime(),
+          timestamp: new Date().toISOString()
+        }
       });
 
       this.emit('jobCompleted', { jobId, job });
@@ -262,11 +279,18 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
     settings: OverlaySettings
   ): Promise<{ success: boolean; overlayImageUrl?: string }> {
     try {
-      this.auditLogger?.logActivity('OVERLAY_APPLIED', {
-        imageId,
-        overlayId: `${imageId}_${overlay.timestamp.getTime()}`,
-        language: overlay.language,
-        timestamp: new Date().toISOString()
+      this.auditLogger?.log({
+        action: 'edit_patient_data',
+        resourceType: 'transcription_overlay',
+        resourceId: `${imageId}_${overlay.timestamp.getTime()}`,
+        success: true,
+        context: {
+          operation: 'overlay_applied',
+          imageId,
+          overlayId: `${imageId}_${overlay.timestamp.getTime()}`,
+          language: overlay.language,
+          timestamp: new Date().toISOString()
+        }
       });
 
       // In a real implementation, this would use image processing libraries
@@ -306,10 +330,16 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
       this.overlayStorage.set(overlay.imageId, existingOverlays);
     });
 
-    this.auditLogger?.logActivity('OVERLAYS_SAVED', {
-      jobId,
-      overlayCount: overlays.length,
-      timestamp: new Date().toISOString()
+    this.auditLogger?.log({
+      action: 'system_backup',
+      resourceType: 'transcription_overlay_storage',
+      resourceId: jobId,
+      success: true,
+      context: {
+        operation: 'overlays_saved',
+        overlayCount: overlays.length,
+        timestamp: new Date().toISOString()
+      }
     });
   }
 
@@ -340,9 +370,15 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
     job.endTime = new Date();
     job.errors.push('Job cancelled by user');
 
-    this.auditLogger?.logActivity('BATCH_JOB_CANCELLED', {
-      jobId,
-      timestamp: new Date().toISOString()
+    this.auditLogger?.log({
+      action: 'system_backup',
+      resourceType: 'batch_transcription_job',
+      resourceId: jobId,
+      success: false,
+      context: {
+        operation: 'job_cancelled',
+        timestamp: new Date().toISOString()
+      }
     });
 
     this.emit('jobCancelled', { jobId, job });
@@ -367,9 +403,15 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
 
     this.jobs.delete(jobId);
 
-    this.auditLogger?.logActivity('BATCH_JOB_DELETED', {
-      jobId,
-      timestamp: new Date().toISOString()
+    this.auditLogger?.log({
+      action: 'delete_patient',
+      resourceType: 'batch_transcription_job',
+      resourceId: jobId,
+      success: true,
+      context: {
+        operation: 'job_deleted',
+        timestamp: new Date().toISOString()
+      }
     });
 
     this.emit('jobDeleted', { jobId });

@@ -189,13 +189,16 @@ export class PACSClinicalSyncService {
       });
 
       // Audit log
-      await this.auditLogger.logActivity({
-        userId: 'system',
+      await this.auditLogger.log({
         action: 'sync_ehr_data',
         resourceType: 'clinical_sync_operation',
         resourceId: requestId,
-        details: { syncType: request.syncType, patientMrn: request.patientMrn },
-        success: true
+        success: true,
+        context: { 
+          userId: 'system',
+          syncType: request.syncType, 
+          patientMrn: request.patientMrn 
+        }
       });
 
       const processingTimeMs = Date.now() - startTime;
@@ -227,13 +230,16 @@ export class PACSClinicalSyncService {
       });
 
       // Audit log
-      await this.auditLogger.logActivity({
-        userId: 'system',
+      await this.auditLogger.log({
         action: 'sync_ehr_data',
         resourceType: 'clinical_sync_operation',
         resourceId: requestId,
-        details: { error: errorMessage },
-        success: false
+        success: false,
+        errorMessage: errorMessage,
+        context: { 
+          userId: 'system',
+          error: errorMessage 
+        }
       });
 
       return {

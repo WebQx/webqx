@@ -290,10 +290,17 @@ export class PACSService extends EventEmitter {
    */
   async uploadDICOM(file: Buffer, filename: string): Promise<{ success: boolean; instanceId?: string }> {
     try {
-      this.auditLogger?.logActivity('PACS_DICOM_UPLOAD', {
-        filename,
-        size: file.length,
-        timestamp: new Date().toISOString()
+      this.auditLogger?.log({
+        action: 'system_backup',
+        resourceType: 'dicom_file',
+        resourceId: filename,
+        success: true,
+        context: {
+          operation: 'pacs_dicom_upload',
+          filename,
+          size: file.length,
+          timestamp: new Date().toISOString()
+        }
       });
 
       const url = `${this.config.orthancUrl}/instances`;
