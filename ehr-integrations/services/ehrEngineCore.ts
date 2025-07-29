@@ -331,11 +331,14 @@ export class EHREngineCore extends EventEmitter {
 
     } catch (error) {
       const duration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isInitializationError = errorMessage.includes('not initialized');
+      
       const apiError: EHRApiError = {
-        code: 'RESOURCE_CREATE_FAILED',
-        message: 'Failed to create FHIR resource',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        retryable: true
+        code: isInitializationError ? 'ENGINE_NOT_INITIALIZED' : 'RESOURCE_CREATE_FAILED',
+        message: isInitializationError ? errorMessage : 'Failed to create FHIR resource',
+        details: isInitializationError ? undefined : errorMessage,
+        retryable: !isInitializationError
       };
 
       this.logError('Failed to create resource', error, { operationId, resourceType: resource.resourceType });
@@ -409,11 +412,14 @@ export class EHREngineCore extends EventEmitter {
 
     } catch (error) {
       const duration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isInitializationError = errorMessage.includes('not initialized');
+      
       const apiError: EHRApiError = {
-        code: 'RESOURCE_UPDATE_FAILED',
-        message: 'Failed to update FHIR resource',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        retryable: true
+        code: isInitializationError ? 'ENGINE_NOT_INITIALIZED' : 'RESOURCE_UPDATE_FAILED',
+        message: isInitializationError ? errorMessage : 'Failed to update FHIR resource',
+        details: isInitializationError ? undefined : errorMessage,
+        retryable: !isInitializationError
       };
 
       this.logError('Failed to update resource', error, { operationId, resourceType: resource.resourceType });
@@ -468,11 +474,14 @@ export class EHREngineCore extends EventEmitter {
 
     } catch (error) {
       const duration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isInitializationError = errorMessage.includes('not initialized');
+      
       const apiError: EHRApiError = {
-        code: 'RESOURCE_RETRIEVAL_FAILED',
-        message: 'Failed to retrieve FHIR resource',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        retryable: true
+        code: isInitializationError ? 'ENGINE_NOT_INITIALIZED' : 'RESOURCE_RETRIEVAL_FAILED',
+        message: isInitializationError ? errorMessage : 'Failed to retrieve FHIR resource',
+        details: isInitializationError ? undefined : errorMessage,
+        retryable: !isInitializationError
       };
 
       this.logError('Failed to retrieve resource', error, { operationId, resourceType, resourceId });
@@ -538,11 +547,14 @@ export class EHREngineCore extends EventEmitter {
 
     } catch (error) {
       const duration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isInitializationError = errorMessage.includes('not initialized');
+      
       const apiError: EHRApiError = {
-        code: 'RESOURCE_DELETE_FAILED',
-        message: 'Failed to delete FHIR resource',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        retryable: true
+        code: isInitializationError ? 'ENGINE_NOT_INITIALIZED' : 'RESOURCE_DELETE_FAILED',
+        message: isInitializationError ? errorMessage : 'Failed to delete FHIR resource',
+        details: isInitializationError ? undefined : errorMessage,
+        retryable: !isInitializationError
       };
 
       this.logError('Failed to delete resource', error, { operationId, resourceType, resourceId });

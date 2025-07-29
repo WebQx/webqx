@@ -2,10 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, test, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import EnhancedVoiceTranscription from '../EnhancedVoiceTranscription';
+import EnhancedVoiceTranscription from '../components/EnhancedVoiceTranscription';
 
 // Mock services
-jest.mock('../../../services/whisperService', () => ({
+jest.mock('../../services/whisperService', () => ({
   whisperService: {
     validateFile: jest.fn(),
     transcribeAudio: jest.fn(),
@@ -13,7 +13,7 @@ jest.mock('../../../services/whisperService', () => ({
   }
 }));
 
-jest.mock('../../../services/whisperStreamingService', () => ({
+jest.mock('../../services/whisperStreamingService', () => ({
   WhisperStreamingService: jest.fn().mockImplementation(() => ({
     startTranscription: jest.fn(),
     stopTranscription: jest.fn(),
@@ -21,7 +21,7 @@ jest.mock('../../../services/whisperStreamingService', () => ({
   }))
 }));
 
-jest.mock('../../prescriptions/services/whisperTranslator', () => ({
+jest.mock('../prescriptions/services/whisperTranslator', () => ({
   whisperTranslator: {
     getSupportedLanguages: jest.fn(() => [
       { code: 'en', name: 'English', nativeName: 'English', rtl: false },
@@ -95,7 +95,7 @@ describe('EnhancedVoiceTranscription', () => {
 
   describe('File Upload Functionality', () => {
     test('should handle file upload', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ isValid: true });
       whisperService.transcribeAudio.mockResolvedValue({
         text: 'Test transcription',
@@ -133,7 +133,7 @@ describe('EnhancedVoiceTranscription', () => {
     });
 
     test('should handle file validation errors', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ 
         isValid: false, 
         error: 'Invalid file type' 
@@ -158,7 +158,7 @@ describe('EnhancedVoiceTranscription', () => {
     });
 
     test('should handle transcription errors', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ isValid: true });
       whisperService.transcribeAudio.mockRejectedValue({
         message: 'API Error',
@@ -196,7 +196,7 @@ describe('EnhancedVoiceTranscription', () => {
     });
 
     test('should start real-time transcription', async () => {
-      const { WhisperStreamingService } = require('../../../services/whisperStreamingService');
+      const { WhisperStreamingService } = require('../../services/whisperStreamingService');
       const mockService = {
         startTranscription: jest.fn(),
         stopTranscription: jest.fn(),
@@ -256,7 +256,7 @@ describe('EnhancedVoiceTranscription', () => {
     });
 
     test('should handle language detection and translation', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       const { whisperTranslator } = require('../../prescriptions/services/whisperTranslator');
       
       whisperService.validateFile.mockReturnValue({ isValid: true });
@@ -305,7 +305,7 @@ describe('EnhancedVoiceTranscription', () => {
 
   describe('Medical Specialty Support', () => {
     test('should use specialty-specific medical prompts', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ isValid: true });
       whisperService.transcribeAudio.mockResolvedValue({
         text: 'Patient has hypertension',
@@ -334,7 +334,7 @@ describe('EnhancedVoiceTranscription', () => {
 
   describe('User Actions', () => {
     test('should clear transcription results', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ isValid: true });
       whisperService.transcribeAudio.mockResolvedValue({
         text: 'Test transcription',
@@ -361,7 +361,7 @@ describe('EnhancedVoiceTranscription', () => {
     });
 
     test('should copy transcription to clipboard', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ isValid: true });
       whisperService.transcribeAudio.mockResolvedValue({
         text: 'Test transcription',
@@ -388,7 +388,7 @@ describe('EnhancedVoiceTranscription', () => {
     });
 
     test('should copy translation to clipboard', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ isValid: true });
       whisperService.transcribeAudio.mockResolvedValue({
         text: 'Hello world',
@@ -423,7 +423,7 @@ describe('EnhancedVoiceTranscription', () => {
 
   describe('Transcription History', () => {
     test('should show transcription history after multiple transcriptions', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ isValid: true });
       whisperService.transcribeAudio
         .mockResolvedValueOnce({
@@ -478,7 +478,7 @@ describe('EnhancedVoiceTranscription', () => {
     });
 
     test('should announce transcription results to screen readers', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ isValid: true });
       whisperService.transcribeAudio.mockResolvedValue({
         text: 'Test transcription',
@@ -502,7 +502,7 @@ describe('EnhancedVoiceTranscription', () => {
 
   describe('Error Handling', () => {
     test('should display loading state during transcription', async () => {
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ isValid: true });
       
       // Mock loading state
@@ -540,7 +540,7 @@ describe('EnhancedVoiceTranscription', () => {
         writable: true
       });
 
-      const { whisperService } = require('../../../services/whisperService');
+      const { whisperService } = require('../../services/whisperService');
       whisperService.validateFile.mockReturnValue({ isValid: true });
       whisperService.transcribeAudio.mockResolvedValue({
         text: 'Test transcription',
