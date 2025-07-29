@@ -786,35 +786,399 @@ export interface FHIRBatchRequest {
   useTransaction?: boolean;
 }
 
-export default {
-  // Resource interfaces
-  FHIRResource,
-  FHIRPatient,
-  FHIRPractitioner,
-  FHIRAppointment,
-  FHIRSchedule,
-  FHIRSlot,
-  FHIROrganization,
-  FHIRBundle,
-  FHIROperationOutcome,
-  
-  // Element interfaces
-  FHIRMeta,
-  FHIRCoding,
-  FHIRCodeableConcept,
-  FHIRIdentifier,
-  FHIRPeriod,
-  FHIRReference,
-  FHIRHumanName,
-  FHIRContactPoint,
-  FHIRAddress,
-  FHIRAttachment,
-  
-  // Search and request interfaces
-  FHIRAppointmentSearchParams,
-  FHIRSlotSearchParams,
-  FHIRCreateAppointmentRequest,
-  FHIRUpdateAppointmentRequest,
-  FHIRBatchRequest,
-  FHIRApiResponse
-};
+// ============================================================================
+// FHIR R4 MedicationRequest Resource
+// ============================================================================
+
+/**
+ * FHIR R4 MedicationRequest Resource
+ */
+export interface FHIRMedicationRequest extends FHIRResource {
+  resourceType: 'MedicationRequest';
+  /** External identifier */
+  identifier?: FHIRIdentifier[];
+  /** active | on-hold | cancelled | completed | entered-in-error | stopped | draft | unknown */
+  status: 'active' | 'on-hold' | 'cancelled' | 'completed' | 'entered-in-error' | 'stopped' | 'draft' | 'unknown';
+  /** proposal | plan | order | original-order | reflex-order | filler-order | instance-order | option */
+  intent: string;
+  /** routine | urgent | asap | stat */
+  priority?: 'routine' | 'urgent' | 'asap' | 'stat';
+  /** Medication to be taken */
+  medicationCodeableConcept?: FHIRCodeableConcept;
+  /** Medication to be taken */
+  medicationReference?: FHIRReference;
+  /** Who or group medication request is for */
+  subject: FHIRReference;
+  /** Encounter created as part of encounter/admission/stay */
+  encounter?: FHIRReference;
+  /** When request was initially authored */
+  authoredOn?: string;
+  /** Who/What requested the Request */
+  requester?: FHIRReference;
+  /** How the medication should be taken */
+  dosageInstruction?: FHIRDosage[];
+  /** Medication supply authorization */
+  dispenseRequest?: FHIRMedicationRequestDispenseRequest;
+}
+
+/**
+ * FHIR R4 Dosage element
+ */
+export interface FHIRDosage {
+  /** Dosage sequence */
+  sequence?: number;
+  /** Free text dosage instructions */
+  text?: string;
+  /** Patient or consumer oriented instructions */
+  patientInstruction?: string;
+  /** When medication should be administered */
+  timing?: FHIRTiming;
+  /** Take "as needed" (for x) */
+  asNeededBoolean?: boolean;
+  /** Take "as needed" (for x) */
+  asNeededCodeableConcept?: FHIRCodeableConcept;
+  /** Body site to administer to */
+  site?: FHIRCodeableConcept;
+  /** How drug should enter body */
+  route?: FHIRCodeableConcept;
+  /** Technique for administering medication */
+  method?: FHIRCodeableConcept;
+  /** Amount of medication per dose */
+  doseAndRate?: FHIRDosageDoseAndRate[];
+}
+
+/**
+ * FHIR R4 Dosage DoseAndRate element
+ */
+export interface FHIRDosageDoseAndRate {
+  /** The kind of dose or rate specified */
+  type?: FHIRCodeableConcept;
+  /** Amount of medication per dose */
+  doseRange?: FHIRRange;
+  /** Amount of medication per dose */
+  doseQuantity?: FHIRQuantity;
+  /** Amount of medication per unit of time */
+  rateRatio?: FHIRRatio;
+  /** Amount of medication per unit of time */
+  rateRange?: FHIRRange;
+  /** Amount of medication per unit of time */
+  rateQuantity?: FHIRQuantity;
+}
+
+/**
+ * FHIR R4 MedicationRequest DispenseRequest element
+ */
+export interface FHIRMedicationRequestDispenseRequest {
+  /** Minimum period of time between dispenses */
+  dispenseInterval?: FHIRDuration;
+  /** Time period supply is authorized for */
+  validityPeriod?: FHIRPeriod;
+  /** Number of refills authorized */
+  numberOfRepeatsAllowed?: number;
+  /** Amount of medication to supply per dispense */
+  quantity?: FHIRQuantity;
+  /** Number of days supply per dispense */
+  expectedSupplyDuration?: FHIRDuration;
+}
+
+// ============================================================================
+// FHIR R4 Observation Resource
+// ============================================================================
+
+/**
+ * FHIR R4 Observation Resource
+ */
+export interface FHIRObservation extends FHIRResource {
+  resourceType: 'Observation';
+  /** External identifier */
+  identifier?: FHIRIdentifier[];
+  /** registered | preliminary | final | amended | corrected | cancelled | entered-in-error | unknown */
+  status: 'registered' | 'preliminary' | 'final' | 'amended' | 'corrected' | 'cancelled' | 'entered-in-error' | 'unknown';
+  /** Classification of type of observation */
+  category?: FHIRCodeableConcept[];
+  /** Type of observation (code / type) */
+  code: FHIRCodeableConcept;
+  /** Who and/or what the observation is about */
+  subject?: FHIRReference;
+  /** Healthcare event during which this observation is made */
+  encounter?: FHIRReference;
+  /** Clinically relevant time/time-period for observation */
+  effectiveDateTime?: string;
+  /** Clinically relevant time/time-period for observation */
+  effectivePeriod?: FHIRPeriod;
+  /** Date/Time this version was made available */
+  issued?: string;
+  /** Who is responsible for the observation */
+  performer?: FHIRReference[];
+  /** Actual result */
+  valueQuantity?: FHIRQuantity;
+  /** Actual result */
+  valueCodeableConcept?: FHIRCodeableConcept;
+  /** Actual result */
+  valueString?: string;
+  /** Actual result */
+  valueBoolean?: boolean;
+  /** Actual result */
+  valueInteger?: number;
+  /** Actual result */
+  valueRange?: FHIRRange;
+  /** Actual result */
+  valueRatio?: FHIRRatio;
+  /** Actual result */
+  valueSampledData?: FHIRSampledData;
+  /** Actual result */
+  valueTime?: string;
+  /** Actual result */
+  valueDateTime?: string;
+  /** Actual result */
+  valuePeriod?: FHIRPeriod;
+  /** Why the result is missing */
+  dataAbsentReason?: FHIRCodeableConcept;
+  /** High, low, normal, etc. */
+  interpretation?: FHIRCodeableConcept[];
+  /** Reference range for the observation */
+  referenceRange?: FHIRObservationReferenceRange[];
+  /** Component observations */
+  component?: FHIRObservationComponent[];
+}
+
+/**
+ * FHIR R4 Observation ReferenceRange element
+ */
+export interface FHIRObservationReferenceRange {
+  /** Low Range, if relevant */
+  low?: FHIRQuantity;
+  /** High Range, if relevant */
+  high?: FHIRQuantity;
+  /** Reference range qualifier */
+  type?: FHIRCodeableConcept;
+  /** Applicable age range, if relevant */
+  age?: FHIRRange;
+  /** Text based reference range in an observation */
+  text?: string;
+}
+
+/**
+ * FHIR R4 Observation Component element
+ */
+export interface FHIRObservationComponent {
+  /** Type of component observation (code / type) */
+  code: FHIRCodeableConcept;
+  /** Actual component result */
+  valueQuantity?: FHIRQuantity;
+  /** Actual component result */
+  valueCodeableConcept?: FHIRCodeableConcept;
+  /** Actual component result */
+  valueString?: string;
+  /** Actual component result */
+  valueBoolean?: boolean;
+  /** Actual component result */
+  valueInteger?: number;
+  /** Actual component result */
+  valueRange?: FHIRRange;
+  /** Actual component result */
+  valueRatio?: FHIRRatio;
+  /** Actual component result */
+  valueSampledData?: FHIRSampledData;
+  /** Actual component result */
+  valueTime?: string;
+  /** Actual component result */
+  valueDateTime?: string;
+  /** Actual component result */
+  valuePeriod?: FHIRPeriod;
+  /** Why the component result is missing */
+  dataAbsentReason?: FHIRCodeableConcept;
+  /** High, low, normal, etc. */
+  interpretation?: FHIRCodeableConcept[];
+  /** Reference range for the component */
+  referenceRange?: FHIRObservationReferenceRange[];
+}
+
+// ============================================================================
+// FHIR R4 DiagnosticReport Resource  
+// ============================================================================
+
+/**
+ * FHIR R4 DiagnosticReport Resource
+ */
+export interface FHIRDiagnosticReport extends FHIRResource {
+  resourceType: 'DiagnosticReport';
+  /** External identifier */
+  identifier?: FHIRIdentifier[];
+  /** Request details */
+  basedOn?: FHIRReference[];
+  /** registered | partial | preliminary | final | amended | corrected | appended | cancelled | entered-in-error | unknown */
+  status: 'registered' | 'partial' | 'preliminary' | 'final' | 'amended' | 'corrected' | 'appended' | 'cancelled' | 'entered-in-error' | 'unknown';
+  /** Service category */
+  category?: FHIRCodeableConcept[];
+  /** Name/Code for this diagnostic report */
+  code: FHIRCodeableConcept;
+  /** The subject of the report */
+  subject?: FHIRReference;
+  /** Health care event when test ordered */
+  encounter?: FHIRReference;
+  /** Clinically relevant time/time-period for report */
+  effectiveDateTime?: string;
+  /** Clinically relevant time/time-period for report */
+  effectivePeriod?: FHIRPeriod;
+  /** DateTime this version was made */
+  issued?: string;
+  /** Responsible Diagnostic Service */
+  performer?: FHIRReference[];
+  /** Specimens this report is based on */
+  specimen?: FHIRReference[];
+  /** Observations */
+  result?: FHIRReference[];
+  /** Clinical conclusion (interpretation) of test results */
+  conclusion?: string;
+  /** Codes for the clinical conclusion of test results */
+  conclusionCode?: FHIRCodeableConcept[];
+  /** Key images associated with this report */
+  media?: FHIRDiagnosticReportMedia[];
+}
+
+/**
+ * FHIR R4 DiagnosticReport Media element
+ */
+export interface FHIRDiagnosticReportMedia {
+  /** Comment about the image */
+  comment?: string;
+  /** Reference to the image source */
+  link: FHIRReference;
+}
+
+// ============================================================================
+// Additional FHIR R4 Data Types
+// ============================================================================
+
+/**
+ * FHIR R4 Timing element
+ */
+export interface FHIRTiming {
+  /** When the event occurs */
+  event?: string[];
+  /** BID | TID | QID | AM | PM | QD | QOD | + */
+  repeat?: FHIRTimingRepeat;
+  /** BID | TID | QID | AM | PM | QD | QOD | + */
+  code?: FHIRCodeableConcept;
+}
+
+/**
+ * FHIR R4 Timing Repeat element
+ */
+export interface FHIRTimingRepeat {
+  /** Length/Range of lengths, or (Start and/or end) limits */
+  boundsDuration?: FHIRDuration;
+  /** Length/Range of lengths, or (Start and/or end) limits */
+  boundsRange?: FHIRRange;
+  /** Length/Range of lengths, or (Start and/or end) limits */
+  boundsPeriod?: FHIRPeriod;
+  /** Number of times to repeat */
+  count?: number;
+  /** Maximum number of times to repeat */
+  countMax?: number;
+  /** How long when it happens */
+  duration?: number;
+  /** How long when it happens (Max) */
+  durationMax?: number;
+  /** s | min | h | d | wk | mo | a - unit of time (UCUM) */
+  durationUnit?: 's' | 'min' | 'h' | 'd' | 'wk' | 'mo' | 'a';
+  /** Event occurs frequency times per period */
+  frequency?: number;
+  /** Event occurs up to frequencyMax times per period */
+  frequencyMax?: number;
+  /** Event occurs frequency times per period */
+  period?: number;
+  /** Upper limit of period (3-4 hours) */
+  periodMax?: number;
+  /** s | min | h | d | wk | mo | a - unit of time (UCUM) */
+  periodUnit?: 's' | 'min' | 'h' | 'd' | 'wk' | 'mo' | 'a';
+  /** mon | tue | wed | thu | fri | sat | sun */
+  dayOfWeek?: ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun')[];
+  /** Time of day for action */
+  timeOfDay?: string[];
+  /** Code for time period of occurrence */
+  when?: ('MORN' | 'MORN.early' | 'MORN.late' | 'NOON' | 'AFT' | 'AFT.early' | 'AFT.late' | 'EVE' | 'EVE.early' | 'EVE.late' | 'NIGHT' | 'PHS' | 'IMD' | 'HS' | 'WAKE' | 'C' | 'CM' | 'CD' | 'CV' | 'AC' | 'ACM' | 'ACD' | 'ACV' | 'PC' | 'PCM' | 'PCD' | 'PCV')[];
+  /** Minutes from event (before or after) */
+  offset?: number;
+}
+
+/**
+ * FHIR R4 Range element
+ */
+export interface FHIRRange {
+  /** Low limit */
+  low?: FHIRQuantity;
+  /** High limit */
+  high?: FHIRQuantity;
+}
+
+/**
+ * FHIR R4 Ratio element
+ */
+export interface FHIRRatio {
+  /** Numerator value */
+  numerator?: FHIRQuantity;
+  /** Denominator value */
+  denominator?: FHIRQuantity;
+}
+
+/**
+ * FHIR R4 Quantity element
+ */
+export interface FHIRQuantity {
+  /** Numerical value (with implicit precision) */
+  value?: number;
+  /** < | <= | >= | > - how to understand the value */
+  comparator?: '<' | '<=' | '>=' | '>';
+  /** Unit representation */
+  unit?: string;
+  /** System that defines coded unit form */
+  system?: string;
+  /** Coded form of the unit */
+  code?: string;
+}
+
+/**
+ * FHIR R4 Duration element
+ */
+export interface FHIRDuration extends FHIRQuantity {
+  // Duration is a specialization of Quantity
+}
+
+/**
+ * FHIR R4 SampledData element
+ */
+export interface FHIRSampledData {
+  /** Zero value and units */
+  origin: FHIRQuantity;
+  /** Number of milliseconds between samples */
+  period: number;
+  /** Multiply data by this before adding to origin */
+  factor?: number;
+  /** Lower limit of detection */
+  lowerLimit?: number;
+  /** Upper limit of detection */
+  upperLimit?: number;
+  /** Number of sample points at each time point */
+  dimensions: number;
+  /** Decimal values with spaces, or "E" | "U" | "L" */
+  data?: string;
+}
+
+// Export type names as string constants for runtime use
+export const FHIR_RESOURCE_TYPES = {
+  PATIENT: 'Patient',
+  PRACTITIONER: 'Practitioner',
+  APPOINTMENT: 'Appointment',
+  SCHEDULE: 'Schedule',
+  SLOT: 'Slot',
+  ORGANIZATION: 'Organization',
+  BUNDLE: 'Bundle',
+  OPERATION_OUTCOME: 'OperationOutcome',
+  MEDICATION_REQUEST: 'MedicationRequest',
+  OBSERVATION: 'Observation',
+  DIAGNOSTIC_REPORT: 'DiagnosticReport'
+} as const;
+
+export type FHIRResourceType = typeof FHIR_RESOURCE_TYPES[keyof typeof FHIR_RESOURCE_TYPES];
