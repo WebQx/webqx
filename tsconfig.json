@@ -18,10 +18,18 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "include": [
-    "patient-portal/**/*"
+    "patient-portal/**/*",
+    "modules/**/*",
+    "interoperability/**/*",
+    "ehr-integrations/**/*",
+    "auth/**/*"
   ],
   "typeRoots": ["./node_modules/@types", "./patient-portal/types"]
 }

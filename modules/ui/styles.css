@@ -1,0 +1,23 @@
+/* Global styles for the modules */
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.mic-button:hover:not(:disabled) {
+  background-color: #45a049 !important;
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: #1976D2 !important;
+}
+
+.note-preview {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

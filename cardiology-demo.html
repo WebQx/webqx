@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CardioIntake Demo - WebQX Healthcare Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .demo-header {
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .demo-content {
+            padding: 40px;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .feature-card h3 {
+            color: #d32f2f;
+            margin-top: 0;
+        }
+
+        .mockup {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background: white;
+            margin: 20px 0;
+        }
+
+        .mock-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        .mock-submit {
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 24px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        .mock-preview {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 16px;
+            background: #f9f9f9;
+            margin: 16px 0;
+        }
+
+        .code-snippet {
+            background: #263238;
+            color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+        }
+
+        .improvement-tag {
+            display: inline-block;
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🏥 WebQX Healthcare Platform</h1>
+            <h2>CardioIntake Component Implementation</h2>
+            <p>Enhanced with Error Handling, Loading States, TypeScript Types & Accessibility</p>
+        </div>
+
+        <div class="demo-content">
+            <h2>✨ Key Improvements Implemented</h2>
+            
+            <div class="feature-list">
+                <div class="feature-card">
+                    <h3>🚨 Error Handling</h3>
+                    <span class="improvement-tag">Enhanced</span>
+                    <p>Comprehensive error handling for API calls with user feedback and logging</p>
+                    <ul>
+                        <li>Try-catch blocks for async operations</li>
+                        <li>User-friendly error messages</li>
+                        <li>Error state management</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3>⏳ Loading States</h3>
+                    <span class="improvement-tag">New</span>
+                    <p>Loading indicators prevent multiple submissions and improve UX</p>
+                    <ul>
+                        <li>Button loading state with spinner</li>
+                        <li>Disabled state during submission</li>
+                        <li>Loading feedback for users</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🔒 TypeScript Types</h3>
+                    <span class="improvement-tag">Enhanced</span>
+                    <p>Strong typing for better code reliability and development experience</p>
+                    <ul>
+                        <li>Interface definitions for all data structures</li>
+                        <li>Typed hooks and functions</li>
+                        <li>Runtime error prevention</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3>♿ Accessibility</h3>
+                    <span class="improvement-tag">Enhanced</span>
+                    <p>ARIA labels and accessibility features for all users</p>
+                    <ul>
+                        <li>aria-label attributes on interactive elements</li>
+                        <li>Role-based markup</li>
+                        <li>Screen reader compatibility</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3>📊 Enhanced Logging</h3>
+                    <span class="improvement-tag">Enhanced</span>
+                    <p>Detailed audit trails with success/failure tracking</p>
+                    <ul>
+                        <li>Success/failure status logging</li>
+                        <li>Error details in logs</li>
+                        <li>Compliance-ready audit trail</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3>📝 Code Comments</h3>
+                    <span class="improvement-tag">Enhanced</span>
+                    <p>Comprehensive documentation for maintainability</p>
+                    <ul>
+                        <li>Function and component documentation</li>
+                        <li>Inline comments for complex logic</li>
+                        <li>JSDoc style documentation</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>🖥️ Component Preview</h2>
+            <div class="mockup">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h1 style="color: #d32f2f; margin: 0; font-size: 28px;">❤️ Cardiology Intake</h1>
+                    <p style="color: #666; margin: 8px 0 0 0;">Voice-enabled clinical documentation</p>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button class="mock-button" aria-label="Start recording">🎤</button>
+                    <p style="margin-top: 8px; color: #666;">Click the microphone to start voice recording</p>
+                </div>
+
+                <div class="mock-preview">
+                    <h3 style="margin-top: 0; color: #333;">📝 Note Preview</h3>
+                    <div style="margin-bottom: 12px;">
+                        <strong>Original Transcript:</strong>
+                        <p style="background: white; padding: 8px; border-radius: 4px; margin: 4px 0;">
+                            Patient reports chest pain and shortness of breath. Symptoms started this morning.
+                        </p>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <strong>Mapped Medications (RxNorm):</strong>
+                        <ul style="margin: 4px 0; padding-left: 20px;">
+                            <li>No medications detected in transcript</li>
+                        </ul>
+                    </div>
+                    <div style="font-size: 14px; color: #666;">
+                        <strong>Mapping Confidence:</strong> 10.0%
+                    </div>
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="mock-submit" aria-label="Submit note">
+                        Submit Note
+                    </button>
+                </div>
+            </div>
+
+            <h2>💻 Implementation Code</h2>
+            <div class="code-snippet">
+export const CardiologyIntake: React.FC = () => {
+  // Hook for voice transcription with English language setting
+  const { startRecording, transcript } = useWhisper("en");
+  
+  // Authentication hook with cardiology specialty verification  
+  const { user, roleVerified } = useAuth("cardiology");
+  
+  // Audit logging hook for compliance and monitoring
+  const logAction = useAuditLog();
+
+  // State for loading and error messages
+  const [isLoading, setIsLoading] = useState&lt;boolean&gt;(false);
+  const [error, setError] = useState&lt;string | null&gt;(null);
+
+  // Map transcript to RxNorm format for standardized medication data
+  const note = mapToRxNorm(transcript);
+
+  const handleSubmit = async (): Promise&lt;void&gt; => {
+    if (!roleVerified) {
+      alert("Access Denied");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await saveToEHR("cardiology", note, user.id);
+      logAction({
+        user: user.id,
+        module: "CardiologyIntake", 
+        action: "Submitted transcript",
+        timestamp: new Date().toISOString(),
+        status: "success",
+      });
+      alert("Note successfully submitted!");
+    } catch (err) {
+      setError("Error submitting the note. Please try again.");
+      logAction({
+        user: user.id,
+        module: "CardiologyIntake",
+        action: "Failed to submit transcript", 
+        timestamp: new Date().toISOString(),
+        status: "failure",
+        error: err instanceof Error ? err.message : "Unknown error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    &lt;CardiologyLayout&gt;
+      &lt;MicButton onClick={startRecording} aria-label="Start recording" /&gt;
+      &lt;NotePreview data={note} /&gt;
+      &lt;SubmitButton
+        onClick={handleSubmit}
+        isLoading={isLoading}
+        aria-label="Submit note"
+      /&gt;
+      {error && (
+        &lt;div role="alert" style={{ color: "red" }}&gt;
+          ❌ {error}
+        &lt;/div&gt;
+      )}
+    &lt;/CardiologyLayout&gt;
+  );
+};
+            </div>
+
+            <h2>🧪 Test Results</h2>
+            <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 8px; padding: 20px;">
+                <h3 style="color: #2e7d32; margin-top: 0;">✅ All Tests Passing</h3>
+                <ul>
+                    <li>✓ Component renders correctly with all essential elements</li>
+                    <li>✓ Displays transcript in note preview</li>
+                    <li>✓ Submit button has correct accessibility attributes</li>
+                    <li>✓ Microphone button has correct accessibility attributes</li>
+                    <li>✓ Shows loading state when submitting</li>
+                </ul>
+            </div>
+
+            <h2>🚀 Technical Implementation</h2>
+            <p>The CardiologyIntake component has been implemented with all requested improvements:</p>
+            <ul>
+                <li><strong>Modular Architecture:</strong> Separate modules for transcription, auth, UI components, and integrations</li>
+                <li><strong>Type Safety:</strong> Complete TypeScript type definitions for all interfaces and functions</li>
+                <li><strong>Error Resilience:</strong> Comprehensive error handling with user feedback and audit logging</li>
+                <li><strong>Accessibility:</strong> WCAG-compliant implementation with proper ARIA attributes</li>
+                <li><strong>Performance:</strong> Loading states and optimized re-renders</li>
+                <li><strong>Maintainability:</strong> Well-documented code with clear separation of concerns</li>
+            </ul>
+
+            <div style="margin-top: 40px; text-align: center; color: #666; font-size: 14px;">
+                <p>WebQX Healthcare Platform - Cardiology Module</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
