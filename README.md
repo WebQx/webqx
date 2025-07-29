@@ -46,48 +46,79 @@ Role-based access and modular configuration for deployment:
 - 🗄️ **Compliance Modules** → PostgreSQL + Vault + audit logging  
 
 ## 📁 WebQx-EHR Directory Structure  
-The WebQx-EHR project follows a modular directory structure designed for scalability and maintainability across healthcare specialties and integrations:
+The WebQx-EHR project follows a comprehensive modular directory structure designed for scalability, maintainability, and healthcare compliance across all medical specialties and integrations:
 
 ```
-webqx-ehr/
-├── modules/
-│   ├── transcription/
-│   ├── specialty-primary-care/
-│   ├── specialty-radiology/
-│   ├── specialty-cardiology/
-│   ├── specialty-neurology/
-│   ├── specialty-pulmonology/
-│   └── specialty-oncology/
-├── ehr-integrations/
-│   ├── openemr/
-│   ├── openmrs/
-│   ├── librehealth/
-│   ├── gnuhealth/
-│   └── hospitalrun/
-├── auth/
-│   ├── firebase/
-│   ├── specialty-access-control/
-│   └── provider-verification/
-├── interoperability/
-│   ├── openEHR-layer/
-│   ├── terminology-maps/
-│   └── fhir-interfaces/
-├── messaging/
-│   └── matrix-overlay/
-└── docs/
-    ├── CONTRIBUTING.md
-    ├── LICENSING.md
-    ├── NDAs/
-    └── IP-assignment/
+webqx/
+├── core/                           # Core system functionalities
+│   ├── authentication/             # User authentication and identity management
+│   ├── authorization/              # Role-based access control (RBAC)
+│   ├── audit/                      # Audit logging and compliance tracking
+│   ├── security/                   # Security services and data protection
+│   ├── compliance/                 # HIPAA, GDPR, and healthcare compliance
+│   ├── data-management/            # Data persistence and backup services
+│   ├── user-management/            # User profiles and account management
+│   ├── notification-system/        # Alerts and messaging services
+│   ├── logging/                    # System logging and monitoring
+│   └── configuration/              # System configuration management
+├── modules/                        # Specialty modules and specialized services
+│   ├── transcription/              # Medical transcription and voice recognition
+│   ├── specialty-primary-care/     # General practice and family medicine
+│   ├── specialty-radiology/        # Medical imaging and radiology services
+│   ├── specialty-cardiology/       # Cardiovascular medicine and procedures
+│   ├── specialty-oncology/         # Cancer care and treatment protocols
+│   ├── specialty-neurology/        # Neurological conditions and treatments
+│   ├── specialty-pulmonology/      # Respiratory medicine and pulmonary care
+│   ├── specialty-pediatrics/       # Pediatric medicine and child healthcare
+│   ├── specialty-psychiatry/       # Mental health and psychiatric services
+│   ├── specialty-endocrinology/    # Hormone and metabolic disorders
+│   ├── specialty-orthopedics/      # Musculoskeletal system and surgery
+│   ├── specialty-gastroenterology/ # Digestive system disorders
+│   ├── specialty-dermatology/      # Skin conditions and dermatologic care
+│   ├── specialty-obgyn/            # Obstetrics and gynecology services
+│   └── postdicom/                  # DICOM imaging and PACS integration
+├── external-integrations/          # External system integrations
+│   ├── hl7/                        # HL7 messaging and FHIR integration
+│   ├── dicom/                      # DICOM medical imaging integration
+│   ├── pacs/                       # Picture Archiving and Communication System
+│   ├── pharmacy/                   # Pharmacy systems and e-prescribing
+│   ├── laboratory/                 # Laboratory information system (LIS)
+│   ├── billing/                    # Billing and revenue cycle management
+│   ├── insurance/                  # Insurance verification and claims processing
+│   ├── telehealth/                 # Video conferencing and remote care
+│   ├── medical-devices/            # Medical device integration and IoT
+│   └── third-party-apis/           # External API integrations
+├── api/                            # API logic and infrastructure
+│   ├── v1/                         # Version 1 API endpoints
+│   ├── v2/                         # Version 2 API endpoints
+│   ├── middleware/                 # Common middleware functions
+│   ├── authentication/             # API authentication and token management
+│   ├── validation/                 # Request validation and data sanitization
+│   ├── documentation/              # API documentation and schema definitions
+│   ├── error-handling/             # Centralized error handling
+│   ├── rate-limiting/              # API rate limiting and throttling
+│   └── versioning/                 # API version management
+├── ehr-integrations/               # EHR system integrations
+├── patient-portal/                 # Patient-facing functionality
+├── fhir/                          # FHIR-related functionality
+├── services/                      # Various system services
+├── admin-console/                 # Administrative functionality
+├── docs/                          # Documentation and compliance
+└── legal/                         # Legal documentation and IP management
 ```
 
 **Key Directories:**
-- 🧩 **modules/** → Specialty-specific clinical modules and transcription services
-- 🔗 **ehr-integrations/** → Ready-to-deploy integrations with popular open-source EHR systems
-- 🔐 **auth/** → Authentication and access control mechanisms including provider verification
-- 🌐 **interoperability/** → Standards-compliant data exchange layers (HL7 FHIR, openEHR)
-- 💬 **messaging/** → Secure communication infrastructure using Matrix protocol
-- 📚 **docs/** → Legal documentation, contribution guidelines, and IP management
+- 🏗️ **core/** → Essential system services (auth, security, audit, compliance)
+- 🧩 **modules/** → Medical specialty-specific clinical modules and specialized services
+- 🔗 **external-integrations/** → Healthcare system integrations (HL7, DICOM, pharmacy, lab)
+- 🌐 **api/** → RESTful API infrastructure with versioning and documentation
+- 🔐 **ehr-integrations/** → Ready-to-deploy integrations with popular EHR systems
+- 👤 **patient-portal/** → Patient-facing interface and self-service features
+- 📊 **fhir/** → FHIR R4 compliance and interoperability services
+- ⚙️ **services/** → Supporting services and utilities
+- 🛠️ **admin-console/** → Administrative tools and system management
+- 📚 **docs/** → Technical documentation and user guides
+- ⚖️ **legal/** → Legal documentation, NDAs, and IP management
 
 # 🌐 WebQX™ Modular PACS Ecosystem
 
