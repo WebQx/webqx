@@ -97,7 +97,7 @@ describe('OAuth2 Provider Tests', () => {
       expect(authUrl).toContain('login.microsoftonline.com');
       expect(authUrl).toContain('test-tenant');
       expect(authUrl).toContain('client_id=test-client-id');
-      expect(authUrl).toContain('scope=openid%20profile%20email');
+      expect(authUrl).toContain('scope=openid+profile+email');
     });
 
     it('should create state object', () => {
