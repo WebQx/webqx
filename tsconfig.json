@@ -23,7 +23,8 @@
   },
   "include": [
     "patient-portal/**/*",
-    "services/**/*"
+    "services/**/*",
+    "ehr-integrations/**/*"
   ],
   "typeRoots": ["./node_modules/@types", "./patient-portal/types"]
 }
