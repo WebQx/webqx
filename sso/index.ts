@@ -160,9 +160,9 @@ export class SSOManager {
   }
 
   /**
-   * Logout user
+   * Handle logout and clean up session
    */
-  async logout(token: string): Promise<void> {
+  async handleLogout(token: string): Promise<void> {
     try {
       const decoded = this.jwtUtils.verifyToken(token);
       const sessionData = this.jwtUtils.getSessionFromToken(token);

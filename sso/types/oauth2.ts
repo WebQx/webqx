@@ -11,6 +11,11 @@ export interface OAuth2Config {
   tokenURL?: string;
   userInfoURL?: string;
   tenant?: string; // For Azure AD multi-tenant
+  prompt?: string; // For re-authentication prompts
+  hostedDomain?: string; // For Google hosted domain
+  customParams?: Record<string, string>; // For generic providers
+  fieldMapping?: Record<string, string>; // For custom field mapping
+  tokenValidationURL?: string; // For token validation
 }
 
 export interface OAuth2TokenResponse {

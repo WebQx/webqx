@@ -39,7 +39,7 @@ export class AuthMiddleware {
       if (!session || this.isSessionExpired(session)) {
         this.auditLogger.logSessionExpired(
           session?.provider || 'unknown',
-          session?.protocol || 'unknown',
+          session?.protocol || 'oauth2' as 'oauth2' | 'saml',
           decoded.sub,
           decoded.sessionId
         );
@@ -271,7 +271,7 @@ export class AuthMiddleware {
   cleanupExpiredSessions(): void {
     const now = new Date();
     
-    for (const [sessionId, session] of this.sessionStore.entries()) {
+    for (const [sessionId, session] of Array.from(this.sessionStore.entries())) {
       if (now >= session.expiresAt) {
         this.auditLogger.logSessionExpired(
           session.provider,

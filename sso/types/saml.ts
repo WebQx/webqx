@@ -12,6 +12,7 @@ export interface SAMLConfig {
   digestAlgorithm?: string;
   nameIDFormat?: string;
   attributes?: string[];
+  attributeMapping?: Record<string, string>; // For custom attribute mapping
 }
 
 export interface SAMLAssertion {

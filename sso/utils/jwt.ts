@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { SSOUser, SSOSession, SSOError, SSOValidationError } from '../types/common';
 
 /**
