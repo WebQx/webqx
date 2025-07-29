@@ -49,13 +49,13 @@ const Header: React.FC<HeaderProps> = React.memo(({
     const newLanguage = event.target.value as SupportedLanguage;
     setIsLanguageChanging(true);
     
-    // Add small delay for visual feedback
-    setTimeout(() => {
-      // Call the callback first to update parent state
-      onLanguageChange(newLanguage);
-      // Then update local loading state
-      setIsLanguageChanging(false);
-    }, 150);
+    // Use a Promise with setTimeout for better React compatibility
+    await new Promise(resolve => setTimeout(resolve, 150));
+    
+    // Call the callback first to update parent state
+    onLanguageChange(newLanguage);
+    // Then update local loading state
+    setIsLanguageChanging(false);
   };
 
   /**
