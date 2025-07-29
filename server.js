@@ -34,6 +34,11 @@ app.use(helmet({
             connectSrc: ["'self'"],
             imgSrc: ["'self'", "data:", "https:"],
         },
+        // Disable CSP in development to allow inline event handlers
+        useDefaults: false,
+        ...(process.env.NODE_ENV === 'development' && { 
+            contentSecurityPolicy: false 
+        })
     },
 }));
 
