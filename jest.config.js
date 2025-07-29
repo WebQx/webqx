@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/auth'],
+  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/auth', '<rootDir>/interoperability'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
@@ -16,13 +16,16 @@ module.exports = {
     'services/**/*.{ts,tsx}',
     'ehr-integrations/**/*.{ts,tsx}',
     'modules/**/*.{ts,tsx}',
+    'fhir/**/*.{js}',
     'auth/**/*.{ts,tsx}',
+    'interoperability/**/*.{ts,tsx}',
     '!patient-portal/**/*.d.ts',
     '!services/**/*.d.ts',
     '!ehr-integrations/**/*.d.ts',
     '!modules/**/*.d.ts',
-    'fhir/**/*.{js}',
+    '!fhir/**/*.d.ts',
     '!auth/**/*.d.ts',
+    '!interoperability/**/*.d.ts',
   ],
   moduleNameMapper: {
     '\\.(css|less|scss)$': 'identity-obj-proxy'
@@ -34,7 +37,7 @@ module.exports = {
     {
       displayName: 'frontend',
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/patient-portal/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/services/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/ehr-integrations/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/modules/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/auth/**/*.(test|spec).+(ts|tsx|js)'],
+      testMatch: ['<rootDir>/patient-portal/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/services/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/ehr-integrations/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/modules/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/auth/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/interoperability/**/*.(test|spec).+(ts|tsx|js)'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
       transform: {
         '^.+\\.(ts|tsx)$': 'ts-jest'
