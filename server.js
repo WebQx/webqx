@@ -17,6 +17,9 @@ const {
     generateTestToken
 } = require('./fhir/middleware/auth');
 
+// PACS imports
+const pacsRoutes = require('./routes/pacs');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -71,6 +74,7 @@ app.get('/health', (req, res) => {
         status: 'healthy', 
         service: 'WebQX Healthcare Platform',
         fhir: 'enabled',
+        pacs: 'enabled',
         timestamp: new Date().toISOString()
     });
 });
@@ -87,6 +91,9 @@ app.use('/fhir/Patient', authenticateToken, requireScopes(['patient/*.read', 'pa
 
 // FHIR Appointment resource routes with authentication
 app.use('/fhir/Appointment', authenticateToken, requireScopes(['user/*.read', 'user/*.write', 'patient/*.read']), appointmentRoutes);
+
+// PACS routes with authentication
+app.use('/api/pacs', authenticateToken, requireScopes(['user/*.read', 'user/*.write']), pacsRoutes);
 
 // Development endpoint to get test token
 if (process.env.NODE_ENV === 'development') {
