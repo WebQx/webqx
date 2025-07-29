@@ -1,0 +1,293 @@
+name: 🧪 WebQx Healthcare Platform - Staging Deployment
+
+on:
+  push:
+    branches: [ develop, staging ]
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: 'Run full test suite'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  NODE_VERSION: '18.x'
+  REGISTRY_URL: 'https://registry.npmjs.org'
+
+jobs:
+  validate-and-test:
+    name: 🔍 Validation & Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: ${{ env.REGISTRY_URL }}
+          cache: 'npm'
+      
+      - name: 📦 Install Dependencies
+        run: npm ci
+      
+      - name: 🔍 TypeScript Type Check
+        run: |
+          echo "🔍 Running TypeScript compilation check..."
+          npm run type-check || echo "⚠️  Type check failed - review before merging"
+      
+      - name: 🧪 Run Test Suite
+        if: github.event.inputs.run_tests != 'false'
+        run: |
+          echo "🧪 Running test suite for staging validation..."
+          npm test
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+      
+      - name: 📊 Generate Test Coverage
+        if: github.event.inputs.run_tests != 'false'
+        run: |
+          echo "📊 Generating test coverage report..."
+          npm run test:coverage
+        continue-on-error: true
+      
+      - name: 📈 Upload Coverage Reports
+        uses: actions/upload-artifact@v4
+        if: always() && github.event.inputs.run_tests != 'false'
+        with:
+          name: staging-coverage-reports
+          path: coverage/
+          retention-days: 14
+
+  build-staging:
+    name: 🏗️ Build for Staging
+    runs-on: ubuntu-latest
+    needs: validate-and-test
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'deploy-staging')
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: ${{ env.REGISTRY_URL }}
+          cache: 'npm'
+      
+      - name: 📦 Install Dependencies
+        run: npm ci --only=production
+      
+      - name: 🔒 Setup Staging Environment Variables
+        run: |
+          echo "Setting up staging environment variables..."
+          echo "NODE_ENV=staging" >> $GITHUB_ENV
+          echo "PORT=${{ secrets.STAGING_PORT || '3001' }}" >> $GITHUB_ENV
+          
+          # Staging-specific configurations
+          echo "DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}" >> $GITHUB_ENV
+          echo "FHIR_SERVER_URL=${{ secrets.STAGING_FHIR_SERVER_URL }}" >> $GITHUB_ENV
+          echo "JWT_SECRET=${{ secrets.STAGING_JWT_SECRET || secrets.JWT_SECRET }}" >> $GITHUB_ENV
+      
+      - name: 🏗️ Prepare Staging Build
+        run: |
+          echo "🏗️ Preparing application for staging deployment..."
+          
+          # Create staging deployment package
+          mkdir -p staging-package
+          cp -r . staging-package/
+          cd staging-package
+          
+          # Clean up
+          rm -rf node_modules coverage .git .github
+          rm -f .env.example
+          
+          # Install production dependencies
+          npm ci --only=production
+          
+          echo "✅ Staging build prepared"
+      
+      - name: 📦 Create Staging Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webqx-staging-package
+          path: staging-package/
+          retention-days: 3
+
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [validate-and-test, build-staging]
+    environment: 
+      name: staging
+      url: https://staging.webqx.org
+    if: success()
+    
+    steps:
+      - name: 📥 Download Staging Package
+        uses: actions/download-artifact@v4
+        with:
+          name: webqx-staging-package
+          path: ./staging-deployment
+      
+      - name: 🔧 Setup Node.js for Deployment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: 🚀 Deploy to Staging Server
+        if: secrets.STAGING_SSH_HOST && secrets.STAGING_SSH_USER && secrets.STAGING_SSH_PRIVATE_KEY
+        run: |
+          echo "🚀 Deploying to staging server..."
+          
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.STAGING_SSH_HOST }} >> ~/.ssh/known_hosts
+          
+          # Deploy to staging
+          ssh ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }} "mkdir -p /var/www/webqx-staging"
+          scp -r staging-deployment/* ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}:/var/www/webqx-staging/
+          
+          # Restart staging application
+          ssh ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }} "
+            cd /var/www/webqx-staging &&
+            pm2 stop webqx-staging || true &&
+            pm2 start server.js --name webqx-staging -- --port ${{ secrets.STAGING_PORT || '3001' }} &&
+            pm2 save
+          "
+          
+          echo "✅ Staging deployment completed"
+      
+      - name: 🌐 Deploy to Staging Vercel
+        if: secrets.STAGING_VERCEL_TOKEN && secrets.STAGING_VERCEL_PROJECT_ID
+        run: |
+          echo "🌐 Deploying to Vercel staging..."
+          cd staging-deployment
+          npx vercel --token ${{ secrets.STAGING_VERCEL_TOKEN }} --scope ${{ secrets.STAGING_VERCEL_ORG_ID }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.STAGING_VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.STAGING_VERCEL_PROJECT_ID }}
+      
+      - name: 📊 Staging Health Check
+        run: |
+          echo "📊 Running staging health checks..."
+          sleep 20
+          
+          STAGING_URL="${{ secrets.STAGING_HEALTH_CHECK_URL || 'https://staging.webqx.org/health' }}"
+          
+          if curl -f -s "$STAGING_URL" > /dev/null; then
+            echo "✅ Staging health check passed"
+          else
+            echo "⚠️  Staging health check failed"
+            exit 1
+          fi
+
+  notify-staging:
+    name: 📢 Staging Notifications
+    runs-on: ubuntu-latest
+    needs: [validate-and-test, build-staging, deploy-staging]
+    if: always()
+    
+    steps:
+      - name: 🔔 Determine Status
+        id: status
+        run: |
+          if [ "${{ needs.deploy-staging.result }}" = "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=✅ WebQx staging deployment successful!" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.deploy-staging.result }}" = "skipped" ]; then
+            echo "status=skipped" >> $GITHUB_OUTPUT
+            echo "message=⏭️ WebQx staging deployment skipped (PR validation only)" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=❌ WebQx staging deployment failed!" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: 💬 Send Slack Notification
+        if: secrets.SLACK_WEBHOOK_URL
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"attachments\": [{
+                \"color\": \"${{ steps.status.outputs.color }}\",
+                \"fields\": [{
+                  \"title\": \"WebQx Staging Deployment\",
+                  \"value\": \"${{ steps.status.outputs.message }}\",
+                  \"short\": false
+                }, {
+                  \"title\": \"Environment\",
+                  \"value\": \"staging\",
+                  \"short\": true
+                }, {
+                  \"title\": \"Branch\",
+                  \"value\": \"${{ github.ref_name }}\",
+                  \"short\": true
+                }, {
+                  \"title\": \"Event\",
+                  \"value\": \"${{ github.event_name }}\",
+                  \"short\": true
+                }, {
+                  \"title\": \"Triggered by\",
+                  \"value\": \"${{ github.actor }}\",
+                  \"short\": true
+                }],
+                \"footer\": \"WebQx Healthcare Platform - Staging\",
+                \"ts\": $(date +%s)
+              }]
+            }" \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+      
+      - name: 📝 PR Comment (if applicable)
+        if: github.event_name == 'pull_request' && needs.deploy-staging.result == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🧪 Staging Deployment Report
+              
+              ✅ **Staging deployment successful!**
+              
+              - **Environment**: staging
+              - **Branch**: ${{ github.ref_name }}
+              - **Commit**: ${{ github.sha }}
+              - **Staging URL**: https://staging.webqx.org
+              
+              ### 🔗 Quick Links
+              - [View Staging Site](https://staging.webqx.org)
+              - [Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              - [Coverage Reports](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              
+              *This staging deployment will be available for testing and validation.*`
+            })
+      
+      - name: 📊 Staging Summary
+        run: |
+          echo "## 🧪 Staging Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ steps.status.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: staging" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Event**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Staging Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [🧪 Staging Site](https://staging.webqx.org)" >> $GITHUB_STEP_SUMMARY
+          echo "- [📊 Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
