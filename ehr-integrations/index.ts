@@ -31,6 +31,10 @@ export { DataSyncService } from './services/dataSync';
 export { FHIRR4Client } from './services/fhirR4Client';
 export { AppointmentBookingService } from './services/appointmentBookingService';
 
+// Enhanced EHR Engine Services
+export { EHREngineCore, createEHREngine } from './services/ehrEngineCore';
+export { RealTimeUpdateService, createRealTimeService } from './services/realTimeUpdateService';
+
 // Service Types
 export type {
   SMARTOnFHIRConfig,
@@ -46,6 +50,21 @@ export type {
   RealTimeUpdateEvent,
   RealTimeEventListener
 } from './services/appointmentBookingService';
+
+export type {
+  RealTimeUpdateEvent as RealTimeEvent,
+  RealTimeEventType,
+  RealTimeSubscription,
+  RealTimeServiceConfig,
+  WebSocketStatus
+} from './services/realTimeUpdateService';
+
+export type {
+  EHREngineConfig,
+  EHREngineResult,
+  SpecialtyModule,
+  ExternalEHRConnector
+} from './services/ehrEngineCore';
 
 // ============================================================================
 // Components
