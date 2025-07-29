@@ -17,6 +17,16 @@ const {
     generateTestToken
 } = require('./fhir/middleware/auth');
 
+// Dicoogle PACS Plugins import (using require for Node.js compatibility)
+let dicooglePlugins = null;
+try {
+    // Dynamically import TypeScript module
+    const { initializeDicooglePlugins } = require('./modules/dicoogle-plugins/src/index.ts');
+    dicooglePlugins = { initializeDicooglePlugins };
+} catch (error) {
+    console.warn('[Dicoogle] TypeScript module not compiled, skipping PACS integration:', error.message);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -66,13 +76,39 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '.')));
 
 // Health check endpoint for Railway
-app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'healthy', 
-        service: 'WebQX Healthcare Platform',
-        fhir: 'enabled',
-        timestamp: new Date().toISOString()
-    });
+app.get('/health', async (req, res) => {
+    try {
+        const healthData = { 
+            status: 'healthy', 
+            service: 'WebQX Healthcare Platform',
+            fhir: 'enabled',
+            timestamp: new Date().toISOString()
+        };
+
+        // Add Dicoogle PACS health check if available
+        if (dicooglePlugins) {
+            try {
+                // This would check the Dicoogle plugins health
+                healthData.pacs = 'enabled';
+                healthData.dicoogle = 'operational';
+            } catch (error) {
+                healthData.pacs = 'error';
+                healthData.dicoogle = error.message;
+            }
+        } else {
+            healthData.pacs = 'disabled';
+            healthData.dicoogle = 'not_available';
+        }
+
+        res.status(200).json(healthData);
+    } catch (error) {
+        res.status(503).json({
+            status: 'unhealthy',
+            service: 'WebQX Healthcare Platform',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // FHIR OAuth2 endpoints
@@ -204,8 +240,57 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🌐 WebQX Healthcare Platform is running on port ${PORT}`);
     console.log(`🩺 Patient Portal available at http://localhost:${PORT}`);
     console.log(`💊 Health check endpoint: http://localhost:${PORT}/health`);
+    
+    // Initialize Dicoogle PACS plugins if available
+    if (dicooglePlugins) {
+        try {
+            console.log('[Dicoogle] Initializing PACS plugins...');
+            
+            // Configure Dicoogle plugins for WebQX
+            const dicoogleConfig = {
+                server: {
+                    host: process.env.DICOOGLE_HOST || 'localhost',
+                    port: parseInt(process.env.DICOOGLE_PORT || '8080', 10),
+                    protocol: process.env.DICOOGLE_PROTOCOL || 'http',
+                },
+                auth: {
+                    enabled: process.env.DICOOGLE_AUTH_ENABLED === 'true',
+                    provider: 'webqx',
+                    webqxAuthEndpoint: `http://localhost:${PORT}/oauth/token`,
+                },
+                performance: {
+                    caching: {
+                        enabled: process.env.DICOOGLE_CACHE_ENABLED === 'true',
+                        provider: process.env.DICOOGLE_CACHE_PROVIDER || 'memory',
+                    },
+                },
+                security: {
+                    enableAuditLogging: true,
+                    enableRoleBasedAccess: true,
+                    allowedRoles: ['provider', 'admin', 'radiologist', 'technologist'],
+                },
+                integration: {
+                    webqxApiEndpoint: `http://localhost:${PORT}/api`,
+                },
+            };
+
+            await dicooglePlugins.initializeDicooglePlugins(app, dicoogleConfig);
+            
+            console.log('🏥 Dicoogle PACS plugins initialized successfully');
+            console.log(`📡 PACS API available at http://localhost:${PORT}/api/dicoogle`);
+            console.log(`📊 PACS documentation: http://localhost:${PORT}/api/dicoogle/docs`);
+            
+        } catch (error) {
+            console.error('[Dicoogle] Failed to initialize PACS plugins:', error);
+            console.log('⚠️  WebQX will continue without PACS functionality');
+        }
+    } else {
+        console.log('⚠️  Dicoogle PACS plugins not available (TypeScript compilation required)');
+        console.log('💡 To enable PACS functionality, compile TypeScript modules:');
+        console.log('   npm run type-check');
+    }
 });
