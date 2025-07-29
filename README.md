@@ -21,6 +21,7 @@ Built with React, supporting user-friendly access to clinical services:
 - 💵 **Billing & Insurance** → OpenMRS + Bahmni billing packages  
 - 📚 **Health Literacy Assistant** → Whisper + spaCy or Haystack NLP  
 - 🧭 **Care Navigation** → D3.js or Neo4j referral engine  
+- 🖼️ **Imaging Viewer** → Secure access to DICOM images through OHIF Viewer  
 
 ### 🩺 Provider Panel  
 Modular EHR engine enhancements via OpenEMR / OpenMRS:
@@ -32,6 +33,7 @@ Modular EHR engine enhancements via OpenEMR / OpenMRS:
 - 🧠 **CME Tracker** → Open Badges (BadgeOS/Moodle)  
 - 🤖 **Provider Assistant Bot** → LLM + private Whisper API  
 - 📝 **Transcription Suite** → Whisper + Google Cloud Speech-to-Text + specialty macros  
+- 🖼️ **PACS Integration** → DICOM viewer and imaging storage powered by Orthanc & OHIF  
 
 ### 🛠️ Admin Console  
 Role-based access and modular configuration for deployment:
