@@ -1,0 +1,240 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2024-01-01T00:00:00Z",
+  "description": "WebQX Healthcare Platform Modules Registry",
+  "modules": {
+    "patient-portal": {
+      "name": "Patient Portal",
+      "category": "frontend",
+      "description": "Comprehensive patient-facing interface with appointment scheduling, prescription management, health records access, and secure messaging capabilities.",
+      "version": "1.0.0",
+      "path": "./patient-portal",
+      "technologies": ["React", "TypeScript", "CSS"],
+      "features": [
+        "Appointment Management",
+        "Prescription Dashboard",
+        "Health Records Viewer",
+        "Secure Messaging",
+        "Accessibility Support",
+        "Internationalization"
+      ],
+      "status": "active",
+      "documentation": "./patient-portal/README.md",
+      "demos": [
+        "./patient-portal/examples"
+      ],
+      "links": {
+        "demo": "./demo.html",
+        "docs": "./patient-portal/README.md"
+      }
+    },
+    "specialty-primary-care": {
+      "name": "Primary Care Specialty Module",
+      "category": "medical-specialty",
+      "description": "Comprehensive primary care module providing interfaces for general medical care, preventive services, chronic disease management, and patient coordination.",
+      "version": "1.0.0",
+      "path": "./modules/specialty-primary-care",
+      "technologies": ["TypeScript", "React"],
+      "features": [
+        "Chronic Disease Management",
+        "Preventive Care Scheduling",
+        "Patient Coordination",
+        "EHR Integration",
+        "Clinical Workflows"
+      ],
+      "status": "active",
+      "documentation": "./modules/specialty-primary-care/README.md",
+      "relatedSpecialties": ["family_medicine", "internal_medicine"],
+      "links": {
+        "docs": "./modules/specialty-primary-care/index.ts"
+      }
+    },
+    "ehr-integrations": {
+      "name": "EHR Integrations",
+      "category": "backend-integration",
+      "description": "Ready-to-deploy integrations with popular open-source EHR systems including FHIR R4 support, appointment booking, and audit logging.",
+      "version": "1.0.0",
+      "path": "./ehr-integrations",
+      "technologies": ["TypeScript", "FHIR R4", "HL7"],
+      "features": [
+        "FHIR R4 Client",
+        "Appointment Booking Service",
+        "Audit Logging",
+        "Data Synchronization",
+        "Encryption Utilities",
+        "Validation Services"
+      ],
+      "status": "active",
+      "documentation": "./ehr-integrations/README-FHIR-R4.md",
+      "integrations": ["OpenEMR", "OpenMRS", "LibreHealth", "GNUHealth", "HospitalRun"],
+      "links": {
+        "docs": "./ehr-integrations/README-FHIR-R4.md",
+        "demo": "./demo-fhir-r4-appointment-booking.html"
+      }
+    },
+    "fhir-services": {
+      "name": "FHIR Services",
+      "category": "backend-service",
+      "description": "FHIR-compliant backend services providing middleware, models, and routes for healthcare data interoperability.",
+      "version": "1.0.0",
+      "path": "./fhir",
+      "technologies": ["Node.js", "Express", "FHIR R4"],
+      "features": [
+        "FHIR Middleware",
+        "Resource Models",
+        "REST API Routes",
+        "Healthcare Data Services",
+        "Interoperability Standards"
+      ],
+      "status": "active",
+      "documentation": "./fhir/README.md",
+      "links": {
+        "docs": "./fhir"
+      }
+    },
+    "whisper-service": {
+      "name": "Whisper Transcription Service",
+      "category": "ai-service",
+      "description": "Production-ready audio transcription service using Whisper API with comprehensive error handling, file validation, and React integration.",
+      "version": "1.0.0",
+      "path": "./services",
+      "technologies": ["TypeScript", "Whisper API", "React"],
+      "features": [
+        "Audio Transcription",
+        "Multilingual Support",
+        "File Validation",
+        "Real-time Processing",
+        "Error Handling",
+        "React Integration"
+      ],
+      "status": "active",
+      "documentation": "./services/README.md",
+      "demos": [
+        "./demo-whisper-service.js"
+      ],
+      "links": {
+        "docs": "./services/README.md",
+        "demo": "./demo-whisper-service.js"
+      }
+    },
+    "admin-console": {
+      "name": "Admin Console",
+      "category": "administration",
+      "description": "Role-based administration interface with AI tuning capabilities, specialty configuration, and system management tools.",
+      "version": "1.0.0",
+      "path": "./admin-console",
+      "technologies": ["React", "YAML", "TypeScript"],
+      "features": [
+        "AI Tuning Configuration",
+        "Medical Specialties Management",
+        "Role-based Access Control",
+        "System Configuration",
+        "Analytics Dashboard"
+      ],
+      "status": "active",
+      "documentation": "./admin-console/README.md",
+      "configuration": "./admin-console/ai-tuning/specialties.yaml",
+      "links": {
+        "config": "./admin-console/ai-tuning/specialties.yaml"
+      }
+    },
+    "prescription-management": {
+      "name": "Prescription Management",
+      "category": "clinical-workflow",
+      "description": "Comprehensive prescription management system with pharmacy integration, refill requests, and medication tracking.",
+      "version": "1.0.0",
+      "path": "./patient-portal/prescriptions",
+      "technologies": ["React", "TypeScript", "CSS"],
+      "features": [
+        "Prescription Dashboard",
+        "Pharmacy Integration",
+        "Refill Management",
+        "Medication Tracking",
+        "Drug Interaction Checking",
+        "Insurance Integration"
+      ],
+      "status": "active",
+      "documentation": "./patient-portal/components/prescriptions/README.md",
+      "parent": "patient-portal",
+      "links": {
+        "docs": "./patient-portal/components/prescriptions/README.md"
+      }
+    },
+    "legal-compliance": {
+      "name": "Legal & Compliance",
+      "category": "compliance",
+      "description": "Legal documentation, IP assignment templates, NDAs, and compliance frameworks for healthcare platform deployment.",
+      "version": "1.0.0",
+      "path": "./legal",
+      "technologies": ["Documentation", "Legal Templates"],
+      "features": [
+        "IP Assignment Templates",
+        "NDA Templates",
+        "Compliance Documentation",
+        "Healthcare Regulations",
+        "HIPAA Guidelines"
+      ],
+      "status": "active",
+      "documentation": "./legal/ip-addendum.md",
+      "links": {
+        "docs": "./legal/ip-addendum.md"
+      }
+    }
+  },
+  "categories": {
+    "frontend": {
+      "name": "Frontend Applications",
+      "description": "User-facing interfaces and applications",
+      "icon": "💻"
+    },
+    "backend-integration": {
+      "name": "Backend Integrations", 
+      "description": "EHR and system integrations",
+      "icon": "🔗"
+    },
+    "backend-service": {
+      "name": "Backend Services",
+      "description": "Core backend services and APIs",
+      "icon": "⚙️"
+    },
+    "ai-service": {
+      "name": "AI Services",
+      "description": "Artificial intelligence and machine learning services",
+      "icon": "🤖"
+    },
+    "medical-specialty": {
+      "name": "Medical Specialties",
+      "description": "Specialty-specific medical modules",
+      "icon": "🩺"
+    },
+    "clinical-workflow": {
+      "name": "Clinical Workflows",
+      "description": "Clinical process management and workflows",
+      "icon": "📋"
+    },
+    "administration": {
+      "name": "Administration",
+      "description": "System administration and management tools",
+      "icon": "⚡"
+    },
+    "compliance": {
+      "name": "Legal & Compliance",
+      "description": "Legal documents and compliance frameworks",
+      "icon": "⚖️"
+    }
+  },
+  "specialties": {
+    "primary_care": "Primary Care",
+    "cardiology": "Cardiology", 
+    "neurology": "Neurology",
+    "pulmonology": "Pulmonology",
+    "oncology": "Oncology",
+    "psychiatry": "Psychiatry",
+    "endocrinology": "Endocrinology",
+    "orthopedics": "Orthopedics",
+    "radiology": "Radiology",
+    "pediatrics": "Pediatrics",
+    "dermatology": "Dermatology",
+    "gastroenterology": "Gastroenterology"
+  }
+}

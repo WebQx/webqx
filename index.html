@@ -3,134 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebQX™ Patient Portal – Essentials Canvas</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        .container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            text-align: center;
-        }
-        h2 {
-            margin-top: 30px;
-            color: #2c3e50;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        ul li {
-            margin: 10px 0;
-        }
-        .section {
-            padding: 15px 10px;
-            border-top: 1px solid #ccc;
-        }
-        .section:first-child {
-            border-top: none;
-        }
-    </style>
+    <title>WebQX™ Healthcare Platform - Modular Architecture</title>
+    <meta name="description" content="Discover all modules in the WebQX Healthcare Platform - a multilingual, specialty-aware, and privacy-first blueprint for global clinical care.">
+    <meta name="keywords" content="healthcare, WebQX, modules, EHR, FHIR, patient portal, medical specialties">
+    
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="WebQX™ Healthcare Platform - Modules">
+    <meta property="og:description" content="Comprehensive modular healthcare platform with patient portal, EHR integrations, and specialty modules.">
+    <meta property="og:type" content="website">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="modules.css">
 </head>
 <body>
+    <!-- Header -->
+    <header class="header">
+        <h1>🌐 WebQX™ Healthcare Platform</h1>
+        <p>Discover all modules in our modular healthcare architecture - empowering patients and supporting healthcare providers with comprehensive, accessible, and secure solutions.</p>
+    </header>
+
+    <!-- Main Container -->
     <div class="container">
-        <h1>🌐 WebQX™ Patient Portal</h1>
-        <p><strong>Tagline:</strong> Empowering Patients and Supporting Health Care Providers</p>
-        <div class="section">
-            <h2>🧭 Welcome Panel</h2>
-            <ul>
-                <li>🌍 Multilingual UX & Accessibility Settings</li>
-                <li>🧑‍⚕️ Personalized Care Overview</li>
-                <li>🧠 Mental Wellness Hub</li>
-                <li>👓🦷 Vision & Dental Records</li>
-                <li>🧭 Concierge Services</li>
-                <ul>
-                    <li>- Hospital Advocate</li>
-                    <li>- Long-Distance Family Support</li>
+        <!-- Search and Filter Controls -->
+        <section class="controls-section" role="search" aria-label="Module search and filtering">
+            <div class="search-container">
+                <label for="module-search">🔍 Search Modules</label>
+                <input 
+                    type="search" 
+                    id="module-search" 
+                    placeholder="Search by name, description, features, or technology..."
+                    aria-describedby="search-help"
+                >
+                <div id="search-help" class="sr-only">
+                    Search across module names, descriptions, features, and technologies
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <h3>Filter by Category</h3>
+                <div id="category-filters" role="group" aria-label="Category filters">
+                    <!-- Category filter buttons will be dynamically inserted here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Modules Display Area -->
+        <main>
+            <section id="modules-container" aria-live="polite" aria-label="Available modules">
+                <!-- Loading state -->
+                <div class="loading-state">
+                    <p>🔄 Loading modules...</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Legacy Information Section -->
+        <section class="legacy-info" style="margin-top: 3rem; padding: 2rem; background: #f8f9fa; border-radius: 12px; border-left: 4px solid #3498db;">
+            <h2>📋 Platform Overview</h2>
+            <p><strong>WebQX™</strong> is a comprehensive modular healthcare stack designed to empower both patients and providers across multiple medical specialties. Our platform champions multilingual support, health equity, and enhanced health literacy to ensure accessible care for diverse global communities.</p>
+            
+            <div style="margin-top: 1.5rem;">
+                <h3>🎯 Core Principles</h3>
+                <ul style="margin-left: 1.5rem; list-style: disc;">
+                    <li><strong>Modular Architecture:</strong> Scalable and customizable components</li>
+                    <li><strong>Privacy-First:</strong> HIPAA compliance and global privacy standards</li>
+                    <li><strong>Accessibility:</strong> Full WCAG compliance and inclusive design</li>
+                    <li><strong>Interoperability:</strong> FHIR R4 and HL7 standard support</li>
+                    <li><strong>Multilingual:</strong> Global reach with comprehensive i18n support</li>
                 </ul>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>📅 Appointments & Scheduling</h2>
-            <ul>
-                <li>🗓️ Self-Scheduling & Rescheduling</li>
-                <li>🔔 Automated Reminders & Waitlist Notifications</li>
-                <li>📋 Pre-Visit Intake Forms & Questionnaires</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>📬 Smart Data Import System</h2>
-            <ul>
-                <li>📧 Unique Patient Email (e.g., john.doe@webqx.health)</li>
-                <li>🔐 Encrypted Access Code</li>
-                <li>📥 Auto-routing of Labs, Imaging, Notes</li>
-                <li>🔔 Patient Notifications & Privacy Controls</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>💬 Secure Messaging & Communication</h2>
-            <ul>
-                <li>🛡️ HIPAA-Compliant Messaging</li>
-                <li>🧑‍⚕️ Direct Provider Communication</li>
-                <li>🤖 Personal Health Bot</li>
-                <li>📚 Health Literacy Assistant (Glossary + Visuals)</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>🧾 Health Records & Prescription Management</h2>
-            <ul>
-                <li>🧪 Lab Results Viewer</li>
-                <li>💊 Medication List & Refill Requests</li>
-                <li>🧬 Immunizations & Problem Lists</li>
-                <li>📝 Visit Summaries & SOAP Notes</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>💳 Billing & Insurance</h2>
-            <ul>
-                <li>📄 View Statements & Claims</li>
-                <li>💰 Secure Online Payments</li>
-                <li>🧾 Coverage Eligibility & Grant Navigator</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>🎯 Patient Empowerment Tools</h2>
-            <ul>
-                <li>✅ Care Goals Tracker</li>
-                <li>📈 Behavioral Nudging Engine</li>
-                <li>📚 Decision Aid Tools</li>
-                <li>📊 Longitudinal Health Charts</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>🗺️ Social Determinants & Community Support</h2>
-            <ul>
-                <li>🧮 Needs Screening Module</li>
-                <li>🗺️ Local Resource Map</li>
-                <li>🤝 Cultural Liaison Access</li>
-                <li>🧑‍⚖️ Legal & Housing Aid Interfaces</li>
-            </ul>
-        </div>
-        <div class="section">
-            <h2>🔐 Security & Ethics</h2>
-            <ul>
-                <li>🔑 Biometric Access Controls</li>
-                <li>📋 Audit Logs & Data Sharing Permissions</li>
-                <li>🛡️ HIPAA+ & Global Privacy Compliance</li>
-            </ul>
-        </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem;">
+                <h3>🩺 Supported Medical Specialties</h3>
+                <p>Primary Care, Cardiology, Neurology, Pulmonology, Oncology, Psychiatry, Endocrinology, Orthopedics, Radiology, Pediatrics, Dermatology, Gastroenterology, and more.</p>
+            </div>
+        </section>
     </div>
+
+    <!-- Screen Reader Only Text -->
+    <div class="sr-only">
+        <h2>Accessibility Information</h2>
+        <p>This page displays all available modules in the WebQX Healthcare Platform. Use the search box to find specific modules, or use the category filter buttons to browse by module type. Each module card contains detailed information and links to documentation and demos.</p>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="modules.js"></script>
+    
+    <!-- Analytics placeholder -->
+    <script>
+        // Analytics can be added here for tracking module interactions
+        console.log('WebQX Module Discovery System loaded');
+    </script>
 </body>
 </html>
