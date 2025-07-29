@@ -11,6 +11,16 @@ At the heart of WebQX™ is our commitment to accessibility, collaborative care,
 
 ## 🧩 Modular Architecture
 
+### 🔧 **Laravel API Backend**  
+A robust PHP backend providing RESTful APIs and healthcare data management:
+
+- 🏥 **FHIR R4 Compliance** → Healthcare interoperability standards
+- 🔐 **Authentication & Authorization** → Secure user management
+- 💾 **Database Management** → SQLite/MySQL with Laravel Eloquent ORM
+- 📊 **Healthcare Analytics** → Patient data insights and reporting
+- 🔗 **EHR Integration** → Seamless connection with existing systems
+- 📋 **API Documentation** → Comprehensive endpoints for frontend integration
+
 ### ✅ Patient Portal  
 Built with React, supporting user-friendly access to clinical services:
 
@@ -217,8 +227,8 @@ A modular, specialty-aware clinical documentation panel for WebQX™. Designed f
 | Layer       | Technology                       |
 |-------------|----------------------------------|
 | Frontend    | React + TypeScript               |
-| Backend     | Node.js (Fastify) + Flask        |
-| Database    | PostgreSQL + Firebase Sync       |
+| Backend     | Laravel API + Node.js (Fastify) |
+| Database    | SQLite/PostgreSQL + Firebase     |
 | Messaging   | Matrix / Medplum                 |
 | AI/NLP      | Whisper + spaCy / Haystack       |
 | Compliance  | Vault, audit logging, RBAC       |
@@ -246,6 +256,8 @@ This project is ready for deployment on [Railway](https://railway.app) with zero
 5. Deploy automatically triggers
 
 #### Local Development
+
+**Frontend (React/Node.js):**
 ```bash
 # Install dependencies
 npm install
@@ -255,6 +267,24 @@ npm start
 
 # Access the application
 open http://localhost:3000
+```
+
+**Backend (Laravel API):**
+```bash
+# Navigate to Laravel directory
+cd laravel-api
+
+# Install PHP dependencies
+composer install
+
+# Run database migrations
+php artisan migrate
+
+# Start Laravel development server
+php artisan serve
+
+# Access Laravel API
+curl http://localhost:8000
 ```
 
 The patient portal will be available at the root URL, and health checks at `/health`.
