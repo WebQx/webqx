@@ -151,38 +151,53 @@ describe('PrescriptionsModule', () => {
 
   describe('Error Boundary Integration', () => {
     test('catches and handles errors from child components', () => {
-      // Mock a child component that throws an error
-      jest.doMock('../../components/prescriptions/SmartRxTemplatePicker', () => {
-        return function ErrorTemplatePicker() {
-          throw new Error('Template picker error');
-        };
-      });
+      // Spy on console.error to suppress error boundary error messages during test
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      
+      // Create a component that throws an error when rendered
+      const ErrorComponent = () => {
+        throw new Error('Template picker error');
+      };
+
+      // Mock the SmartRxTemplatePicker to throw an error
+      jest.doMock('../../components/prescriptions/SmartRxTemplatePicker', () => ErrorComponent);
+      
+      // Clear modules and re-import to get the mocked version
+      jest.resetModules();
+      const PrescriptionsModule = require('../../components/prescriptions/PrescriptionsModule').default;
 
       render(<PrescriptionsModule />);
 
       expect(screen.getByRole('alert')).toBeInTheDocument();
       expect(screen.getByText('⚠️ Prescription System Unavailable')).toBeInTheDocument();
+      
+      // Restore console.error
+      consoleSpy.mockRestore();
     });
 
     test('error boundary fallback has proper accessibility', () => {
-      // Mock ErrorBoundary to render fallback
-      jest.doMock('../../components/prescriptions/ErrorBoundary', () => {
-        return function MockErrorBoundary({ children, fallback }: any) {
-          return fallback || children;
-        };
-      });
+      // Spy on console.error to suppress error boundary error messages during test
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      
+      // Create a component that throws an error when rendered
+      const ErrorComponent = () => {
+        throw new Error('Test error');
+      };
 
-      // Trigger error condition
-      jest.doMock('../../components/prescriptions/SmartRxTemplatePicker', () => {
-        return function ErrorTemplatePicker() {
-          throw new Error('Test error');
-        };
-      });
+      // Mock the SmartRxTemplatePicker to throw an error
+      jest.doMock('../../components/prescriptions/SmartRxTemplatePicker', () => ErrorComponent);
+      
+      // Clear modules and re-import to get the mocked version
+      jest.resetModules();
+      const PrescriptionsModule = require('../../components/prescriptions/PrescriptionsModule').default;
 
       render(<PrescriptionsModule />);
 
       expect(screen.getByRole('alert')).toBeInTheDocument();
       expect(screen.getByLabelText('Reload page to try again')).toBeInTheDocument();
+      
+      // Restore console.error
+      consoleSpy.mockRestore();
     });
 
     test('calls onError callback when error occurs', () => {

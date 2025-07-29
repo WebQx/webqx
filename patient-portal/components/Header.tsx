@@ -51,7 +51,9 @@ const Header: React.FC<HeaderProps> = React.memo(({
     
     // Add small delay for visual feedback
     setTimeout(() => {
+      // Call the callback first to update parent state
       onLanguageChange(newLanguage);
+      // Then update local loading state
       setIsLanguageChanging(false);
     }, 150);
   };
