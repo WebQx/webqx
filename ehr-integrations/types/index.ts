@@ -726,3 +726,6 @@ export interface FilterCriteria {
   /** Custom filters */
   customFilters?: Record<string, unknown>;
 }
+
+// Re-export PACS Clinical Sync types
+export * from './pacs-clinical-sync';
