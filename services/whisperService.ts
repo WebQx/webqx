@@ -75,7 +75,7 @@ export interface ValidationResult {
  * Default configuration for the Whisper service
  */
 const DEFAULT_CONFIG: Required<WhisperConfig> = {
-  apiUrl: process.env.WHISPER_API_URL || 'https://api.openai.com/v1/audio/transcriptions',
+  apiUrl: (typeof process !== 'undefined' && process.env?.WHISPER_API_URL) || 'https://api.openai.com/v1/audio/transcriptions',
   timeout: 30000, // 30 seconds
   maxFileSize: 25 * 1024 * 1024, // 25MB
   allowedFileTypes: [
@@ -136,7 +136,7 @@ export class WhisperService {
     }
 
     // Check file type
-    if (!this.config.allowedFileTypes.includes(file.type)) {
+    if (this.config.allowedFileTypes.indexOf(file.type) === -1) {
       return {
         isValid: false,
         error: `Unsupported file type: ${file.type}. Supported types: ${this.config.allowedFileTypes.join(', ')}`
@@ -251,7 +251,7 @@ export class WhisperService {
       });
 
       // Get API key from environment
-      const apiKey = process.env.WHISPER_API_KEY;
+      const apiKey = (typeof process !== 'undefined' && process.env?.WHISPER_API_KEY) || '';
       if (!apiKey) {
         throw new Error('WHISPER_API_KEY environment variable is required');
       }
