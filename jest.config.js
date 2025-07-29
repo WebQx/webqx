@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir'],
+  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/__tests__'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
@@ -13,7 +13,7 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   collectCoverageFrom: [
     'patient-portal/**/*.{ts,tsx}',
-    'services/**/*.{ts,tsx}',
+    'services/**/*.{ts,tsx,js}',
     'ehr-integrations/**/*.{ts,tsx}',
     'modules/**/*.{ts,tsx}',
     'fhir/**/*.{js}',
@@ -53,6 +53,12 @@ module.exports = {
       transform: {
         '^.+\\.js$': 'babel-jest'
       }
+    },
+    {
+      displayName: 'hipaa-compliance',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/__tests__/**/*.(test|spec).+(js)'],
+      transform: {}
     }
   ]
 };
