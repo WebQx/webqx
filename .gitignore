@@ -46,3 +46,15 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# Deployment files (keep for automation)
+# deploy.sh - keep
+# rollback.sh - keep
+# .env.production - keep
+# deployment.conf - keep
+# migrations/ - keep
+
+# Deployment artifacts
+.last_backup
+app.pid
+/var/log/webqx-*.log

@@ -1,0 +1,39 @@
+[Unit]
+Description=WebQx Healthcare Platform
+Documentation=https://docs.webqx.org
+After=network.target
+
+[Service]
+Type=simple
+User=webqx
+Group=webqx
+WorkingDirectory=/opt/webqx
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+Environment=PORT=3000
+EnvironmentFile=/opt/webqx/.env.production
+
+# Resource limits for security
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/webqx /var/log/webqx /tmp
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=webqx
+
+# Health check
+ExecReload=/bin/kill -HUP $MAINPID
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -56,14 +56,49 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files
 app.use(express.static(path.join(__dirname, '.')));
 
-// Health check endpoint for Railway
+// Enhanced health check endpoint for deployment monitoring
 app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'healthy', 
-        service: 'WebQX Healthcare Platform',
-        fhir: 'enabled',
-        timestamp: new Date().toISOString()
-    });
+    try {
+        const healthStatus = {
+            status: 'healthy',
+            service: 'WebQX Healthcare Platform',
+            version: process.env.npm_package_version || '1.0.0',
+            environment: process.env.NODE_ENV || 'development',
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString(),
+            memory: {
+                used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+                total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+            },
+            features: {
+                fhir: 'enabled',
+                patient_portal: 'enabled',
+                admin_console: 'enabled',
+                translation_api: 'enabled'
+            },
+            database: {
+                status: process.env.DATABASE_URL ? 'configured' : 'not_configured'
+            }
+        };
+
+        // Add deployment-specific information
+        if (process.env.DEPLOYMENT_ENV) {
+            healthStatus.deployment = {
+                environment: process.env.DEPLOYMENT_ENV,
+                domain: process.env.DOMAIN || 'localhost',
+                deployed_at: process.env.DEPLOYED_AT || 'unknown'
+            };
+        }
+
+        res.status(200).json(healthStatus);
+    } catch (error) {
+        res.status(503).json({
+            status: 'unhealthy',
+            service: 'WebQX Healthcare Platform',
+            error: 'Health check failed',
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // FHIR OAuth2 endpoints
