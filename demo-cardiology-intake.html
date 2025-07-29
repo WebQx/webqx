@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX EHR - Cardiology Intake Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .progress-indicator {
+            background: #34495e;
+            padding: 20px 30px;
+            color: white;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #3498db;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 16.67%;
+        }
+
+        .form-content {
+            padding: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .form-field {
+            margin-bottom: 25px;
+        }
+
+        .field-label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .field-label .required {
+            color: #e74c3c;
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            font-family: inherit;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .field-help {
+            display: block;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .form-navigation {
+            display: flex;
+            justify-content: space-between;
+            padding: 30px 40px;
+            background: #ecf0f1;
+            border-top: 1px solid #bdc3c7;
+        }
+
+        .nav-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-previous {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .nav-previous:hover:not(:disabled) {
+            background: #7f8c8d;
+        }
+
+        .nav-next {
+            background: #3498db;
+            color: white;
+        }
+
+        .nav-next:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .enhancement-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px 40px;
+            background: #f8f9fa;
+            border-top: 1px solid #bdc3c7;
+        }
+
+        .badge {
+            background: #27ae60;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .demo-note {
+            background: #f39c12;
+            color: white;
+            padding: 15px 40px;
+            text-align: center;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Demo Note -->
+        <div class="demo-note">
+            🚀 WebQX EHR Enhancement Demo - All 6 Required Enhancements Implemented
+        </div>
+
+        <!-- Header -->
+        <header class="header" role="banner">
+            <h1 id="intake-heading">💗 Cardiology Intake Form</h1>
+            <p>Please complete this form to help us provide the best cardiac care for you.</p>
+        </header>
+
+        <!-- Progress Indicator -->
+        <div class="progress-indicator" role="progressbar" aria-valuenow="16.67" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-info">
+                <span>Section 1 of 6: Chief Complaint & History</span>
+                <span>16.67% Complete</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- Form Content -->
+        <div class="form-content">
+            <section role="region" aria-labelledby="chief-complaint-heading">
+                <h3 id="chief-complaint-heading" class="section-title">
+                    Chief Complaint & History
+                </h3>
+
+                <div class="form-field">
+                    <label class="field-label">
+                        What is your main concern today? <span class="required">*</span>
+                    </label>
+                    <textarea
+                        placeholder="Please describe your main symptoms or concerns..."
+                        aria-required="true"
+                        aria-describedby="chief-complaint-help"
+                        rows="4"
+                    >Chest pain and shortness of breath for the past 3 days</textarea>
+                    <span id="chief-complaint-help" class="field-help">
+                        Describe your primary symptoms, when they started, and what prompted this visit.
+                    </span>
+                </div>
+
+                <div class="form-field">
+                    <label class="field-label">
+                        History of Present Illness <span class="required">*</span>
+                    </label>
+                    <textarea
+                        placeholder="Please provide details about your current symptoms and their progression..."
+                        aria-required="true"
+                        aria-describedby="history-help"
+                        rows="6"
+                    >The chest pain started 3 days ago while climbing stairs. It's a sharp pain that gets worse with exertion and better with rest. I also experience shortness of breath during physical activity. No pain radiation to arms or jaw. No previous cardiac history.</textarea>
+                    <span id="history-help" class="field-help">
+                        Include timeline, severity changes, associated symptoms, and any treatments tried.
+                    </span>
+                </div>
+            </section>
+        </div>
+
+        <!-- Navigation -->
+        <div class="form-navigation" role="navigation" aria-label="Form navigation">
+            <button type="button" class="nav-button nav-previous" disabled>
+                ← Previous
+            </button>
+            <button type="button" class="nav-button nav-next">
+                Next →
+            </button>
+        </div>
+
+        <!-- Enhancement Badges -->
+        <div class="enhancement-badges">
+            <span class="badge">✅ Error Handling</span>
+            <span class="badge">✅ Loading States</span>
+            <span class="badge">✅ TypeScript Types</span>
+            <span class="badge">✅ Accessibility</span>
+            <span class="badge">✅ Detailed Logging</span>
+            <span class="badge">✅ Code Comments</span>
+        </div>
+    </div>
+
+    <script>
+        // Simulate form interaction logging
+        document.querySelectorAll('textarea, input').forEach(element => {
+            element.addEventListener('input', (e) => {
+                console.log('[Cardiology Intake] User interaction:', {
+                    timestamp: new Date(),
+                    action: 'form_data_updated',
+                    field: e.target.getAttribute('aria-describedby') || 'unknown',
+                    value: e.target.value.substring(0, 50) + '...'
+                });
+            });
+        });
+
+        // Simulate navigation
+        document.querySelector('.nav-next').addEventListener('click', () => {
+            console.log('[Cardiology Intake] Navigation:', {
+                timestamp: new Date(),
+                action: 'section_navigated',
+                direction: 'next',
+                currentSection: 1
+            });
+            alert('Would navigate to: Cardiovascular Symptoms section\n\n✅ All form interactions are logged with detailed metadata');
+        });
+    </script>
+</body>
+</html>
