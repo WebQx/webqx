@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir'],
+  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/PACS'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
@@ -17,11 +17,13 @@ module.exports = {
     'ehr-integrations/**/*.{ts,tsx}',
     'modules/**/*.{ts,tsx}',
     'fhir/**/*.{js}',
+    'PACS/**/*.{js}',
     '!patient-portal/**/*.d.ts',
     '!services/**/*.d.ts',
     '!ehr-integrations/**/*.d.ts',
     '!modules/**/*.d.ts',
     '!fhir/**/*.d.ts',
+    '!PACS/**/*.d.ts',
   ],
   moduleNameMapper: {
     '\\.(css|less|scss)$': 'identity-obj-proxy'
@@ -50,6 +52,14 @@ module.exports = {
       displayName: 'fhir',
       testEnvironment: 'node',
       testMatch: ['<rootDir>/fhir/**/*.(test|spec).+(js)'],
+      transform: {
+        '^.+\\.js$': 'babel-jest'
+      }
+    },
+    {
+      displayName: 'pacs',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/PACS/**/*.(test|spec).+(js)'],
       transform: {
         '^.+\\.js$': 'babel-jest'
       }
