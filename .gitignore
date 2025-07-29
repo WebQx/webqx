@@ -46,3 +46,23 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# Laravel specific (from laravel-api directory)
+laravel-api/.env
+laravel-api/.env.backup
+laravel-api/.env.production
+laravel-api/.phpactor.json
+laravel-api/.phpunit.result.cache
+laravel-api/.fleet
+laravel-api/.nova
+laravel-api/.phpunit.cache
+laravel-api/.zed
+laravel-api/auth.json
+laravel-api/public/build
+laravel-api/public/hot
+laravel-api/public/storage
+laravel-api/storage/*.key
+laravel-api/storage/pail
+laravel-api/vendor
+laravel-api/Homestead.json
+laravel-api/Homestead.yaml
