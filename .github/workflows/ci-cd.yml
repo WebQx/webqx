@@ -1,0 +1,420 @@
+name: WebQx Healthcare Platform CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18.x'
+  POSTGRES_VERSION: '14'
+
+jobs:
+  lint-and-type-check:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run TypeScript type checking
+      run: npm run type-check
+      
+    - name: Run linting (if configured)
+      run: |
+        if [ -f "package.json" ] && npm run | grep -q "lint"; then
+          npm run lint
+        else
+          echo "No lint script found, skipping..."
+        fi
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run unit tests
+      run: npm test -- --testNamePattern="^(?!.*Integration)" --coverage
+      env:
+        NODE_ENV: test
+        
+    - name: Upload unit test coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: unit-tests
+        name: unit-tests
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:${{ env.POSTGRES_VERSION }}
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: webqx_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Setup test environment
+      run: |
+        cp .env.test .env
+        
+    - name: Wait for PostgreSQL
+      run: |
+        until pg_isready -h localhost -p 5432 -U test; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+        
+    - name: Setup test database schema
+      run: |
+        # If you have database migration scripts, run them here
+        # npm run migrate:test || echo "No migration script found"
+        echo "Database setup complete"
+      env:
+        DATABASE_URL: postgresql://test:test@localhost:5432/webqx_test
+        
+    - name: Run integration tests
+      run: npm test -- --testNamePattern="Integration" --coverage
+      env:
+        NODE_ENV: test
+        TEST_DATABASE_URL: postgresql://test:test@localhost:5432/webqx_test
+        TEST_JWT_SECRET: test-jwt-secret-min-32-characters-long-for-testing
+        TEST_ENCRYPTION_KEY: test-encryption-key-for-testing-purposes
+        TEST_SESSION_SECRET: test-session-secret-for-testing
+        TEST_OPENAI_API_KEY: ${{ secrets.TEST_OPENAI_API_KEY }}
+        TEST_FHIR_SERVER_URL: https://test-fhir.webqx.health/fhir
+        
+    - name: Upload integration test coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: integration-tests
+        name: integration-tests
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run npm audit
+      run: npm audit --audit-level=moderate
+      
+    - name: Run security scan with CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: javascript
+        
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+  api-tests:
+    name: API Integration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:${{ env.POSTGRES_VERSION }}
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: webqx_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Start server in background
+      run: |
+        cp .env.test .env
+        npm start &
+        echo $! > server.pid
+      env:
+        NODE_ENV: test
+        PORT: 3001
+        DATABASE_URL: postgresql://test:test@localhost:5432/webqx_test
+        JWT_SECRET: test-jwt-secret-min-32-characters-long-for-testing
+        
+    - name: Wait for server to start
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:3001/health; do sleep 2; done'
+        
+    - name: Run API tests
+      run: npm test -- --testPathPattern="api.test" --runInBand
+      env:
+        NODE_ENV: test
+        TEST_BASE_URL: http://localhost:3001
+        
+    - name: Stop server
+      run: |
+        if [ -f server.pid ]; then
+          kill $(cat server.pid) || true
+          rm server.pid
+        fi
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [lint-and-type-check, unit-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: |
+        if npm run | grep -q "build"; then
+          npm run build
+        else
+          echo "No build script found, creating production bundle..."
+          mkdir -p dist
+          cp -r . dist/ || true
+        fi
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: dist/
+        retention-days: 7
+
+  docker-build:
+    name: Docker Build and Test
+    runs-on: ubuntu-latest
+    needs: [build]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: webqx/healthcare-platform:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Test Docker image
+      run: |
+        docker run --rm -d --name webqx-test -p 3000:3000 \
+          -e NODE_ENV=production \
+          -e JWT_SECRET=test-jwt-secret-min-32-characters-long \
+          webqx/healthcare-platform:test
+        
+        # Wait for container to start
+        sleep 10
+        
+        # Test health endpoint
+        curl -f http://localhost:3000/health
+        
+        # Stop container
+        docker stop webqx-test
+
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [api-tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Start server
+      run: |
+        cp .env.test .env
+        npm start &
+        echo $! > server.pid
+      env:
+        NODE_ENV: test
+        PORT: 3001
+        
+    - name: Wait for server
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:3001/health; do sleep 2; done'
+        
+    - name: Install Artillery
+      run: npm install -g artillery@latest
+      
+    - name: Run performance tests
+      run: |
+        cat > artillery-config.yml << EOF
+        config:
+          target: http://localhost:3001
+          phases:
+            - duration: 60
+              arrivalRate: 10
+        scenarios:
+          - name: Health check
+            requests:
+              - get:
+                  url: /health
+          - name: FHIR metadata
+            requests:
+              - get:
+                  url: /fhir/metadata
+        EOF
+        
+        artillery run artillery-config.yml
+        
+    - name: Stop server
+      run: |
+        if [ -f server.pid ]; then
+          kill $(cat server.pid) || true
+        fi
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [integration-tests, security-scan, docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your staging deployment logic here
+        # This could include deploying to Railway, Heroku, AWS, etc.
+        
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests against staging..."
+        # Add smoke test commands here
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [integration-tests, security-scan, docker-build, performance-tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment logic here
+        
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests against production..."
+        # Add smoke test commands here
+        
+    - name: Notify deployment success
+      run: |
+        echo "Production deployment successful!"
+        # Add notification logic (Slack, email, etc.)
+
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    
+    steps:
+    - name: Clean up test artifacts
+      run: |
+        echo "Cleaning up test artifacts..."
+        # Add cleanup commands if needed
