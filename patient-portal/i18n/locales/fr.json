@@ -1,0 +1,102 @@
+{
+  "portal": {
+    "title": "🌐 Bienvenue sur le Portail Patient WebQX™",
+    "tagline": "Autonomiser les Patients et Soutenir les Fournisseurs de Soins de Santé",
+    "description": "Votre plateforme complète de gestion des soins de santé avec support multilingue, prise de rendez-vous, messagerie sécurisée et accès aux dossiers médicaux.",
+    "welcomeBack": "Bon retour, {{name}}! 👋"
+  },
+  "navigation": {
+    "main": "Navigation Principale",
+    "quickActions": "Menu d'actions rapides",
+    "footer": "Navigation du pied de page"
+  },
+  "sections": {
+    "appointments": "📅 Vos Rendez-vous",
+    "quickActions": "🎯 Actions Rapides",
+    "healthOverview": "📊 Aperçu de la Santé",
+    "healthEducation": "📚 Éducation Sanitaire",
+    "emergency": "🚨 Informations d'Urgence"
+  },
+  "appointments": {
+    "upcoming": "Rendez-vous à Venir",
+    "noAppointments": "Aucun rendez-vous programmé",
+    "provider": "Fournisseur:",
+    "annualCheckup": "Bilan Annuel",
+    "followUp": "Visite de Suivi",
+    "annualCheckupDetails": "Examen physique annuel et dépistage de santé",
+    "followUpDetails": "Suivi de consultation précédente",
+    "scheduledFor": "{{date}} à {{time}}"
+  },
+  "actions": {
+    "scheduleAppointment": "🗓️ Planifier un Rendez-vous",
+    "viewLabResults": "🧪 Voir les Résultats de Laboratoire",
+    "messageProvider": "💬 Message au Fournisseur",
+    "refillPrescription": "💊 Renouveler l'Ordonnance"
+  },
+  "health": {
+    "recentVitals": "📈 Signes Vitaux Récents",
+    "healthAlerts": "🔔 Alertes de Santé",
+    "bloodPressure": "Tension Artérielle: {{value}} mmHg",
+    "heartRate": "Fréquence Cardiaque: {{value}} bpm",
+    "weight": "Poids: {{value}} livres",
+    "lastUpdated": "Dernière Mise à Jour: {{date}}",
+    "fluShotDue": "Vaccin contre la grippe annuel dû",
+    "prescriptionRefill": "Renouvellement d'ordonnance disponible",
+    "wellnessReminder": "Rappel de contrôle de bien-être"
+  },
+  "literacy": {
+    "assistant": "Assistant d'Alphabétisation en Santé",
+    "searchPlaceholder": "Rechercher des termes médicaux...",
+    "searchHelp": "Tapez pour rechercher des termes médicaux et leurs définitions",
+    "noResults": "Aucun terme médical trouvé correspondant à votre recherche.",
+    "glossary": "Glossaire des termes médicaux",
+    "terms": {
+      "hypertension": {
+        "term": "Hypertension",
+        "definition": "Tension artérielle élevée"
+      },
+      "diabetes": {
+        "term": "Diabète",
+        "definition": "Une condition où les niveaux de sucre dans le sang sont trop élevés"
+      },
+      "prescription": {
+        "term": "Ordonnance",
+        "definition": "Un ordre écrit d'un médecin pour des médicaments"
+      },
+      "laboratory": {
+        "term": "Laboratoire",
+        "definition": "Tests médicaux effectués sur le sang, l'urine ou d'autres échantillons"
+      }
+    }
+  },
+  "emergency": {
+    "notice": "Pour les urgences médicales, appelez le 911 immédiatement",
+    "urgentCare": "Pour les besoins de soins de santé urgents mais non urgents:",
+    "nurseHotline": "Ligne d'Infirmières: (555) 123-HELP",
+    "afterHours": "Clinique après les heures: (555) 123-CARE",
+    "portalMessaging": "Messagerie du portail patient pour les questions non urgentes"
+  },
+  "footer": {
+    "copyright": "© 2024 Plateforme de Santé WebQX. Tous droits réservés.",
+    "privacyPolicy": "Politique de Confidentialité",
+    "termsOfService": "Conditions de Service",
+    "helpSupport": "Aide et Support",
+    "accessibility": "Accessibilité"
+  },
+  "language": {
+    "selector": "Language / Idioma / Langue / Sprache / 语言",
+    "current": "Langue actuelle: {{language}}",
+    "changeLanguage": "Changer la langue vers {{language}}"
+  },
+  "aria": {
+    "dashboard": "Tableau de Bord du Portail Patient WebQX",
+    "personalizedWelcome": "Accueil personnalisé",
+    "appointmentCard": "Rendez-vous: {{title}}",
+    "appointmentDateTime": "Date et heure: {{datetime}}",
+    "vitalsSummary": "Résumé des signes vitaux",
+    "healthAlerts": "Alertes et rappels de santé",
+    "emergencyInfo": "Informations de contact d'urgence",
+    "expandAssistant": "Étendre l'Assistant d'Alphabétisation en Santé",
+    "collapseAssistant": "Réduire l'Assistant d'Alphabétisation en Santé"
+  }
+}

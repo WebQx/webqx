@@ -1,6 +1,6 @@
 {
   "portal": {
-    "title": "Bienvenido al Portal de Pacientes WebQX™",
+    "title": "🌐 Bienvenido al Portal de Pacientes WebQX™",
     "tagline": "Empoderando a los Pacientes y Apoyando a los Proveedores de Salud",
     "description": "Su plataforma integral de gestión de salud con soporte multilingüe, programación de citas, mensajería segura y acceso a registros médicos.",
     "welcomeBack": "¡Bienvenido de nuevo, {{name}}! 👋"
@@ -11,11 +11,11 @@
     "footer": "Navegación del pie de página"
   },
   "sections": {
-    "appointments": "Sus Citas",
-    "quickActions": "Acciones Rápidas",
-    "healthOverview": "Resumen de Salud",
-    "healthEducation": "Educación en Salud",
-    "emergency": "Información de Emergencia"
+    "appointments": "📅 Sus Citas",
+    "quickActions": "🎯 Acciones Rápidas",
+    "healthOverview": "📊 Resumen de Salud",
+    "healthEducation": "📚 Educación en Salud",
+    "emergency": "🚨 Información de Emergencia"
   },
   "appointments": {
     "upcoming": "Cita Próxima",
@@ -28,14 +28,14 @@
     "scheduledFor": "{{date}} a las {{time}}"
   },
   "actions": {
-    "scheduleAppointment": "Programar Cita",
-    "viewLabResults": "Ver Resultados de Laboratorio",
-    "messageProvider": "Enviar Mensaje al Proveedor",
-    "refillPrescription": "Renovar Receta"
+    "scheduleAppointment": "🗓️ Programar Cita",
+    "viewLabResults": "🧪 Ver Resultados de Laboratorio",
+    "messageProvider": "💬 Enviar Mensaje al Proveedor",
+    "refillPrescription": "💊 Renovar Receta"
   },
   "health": {
-    "recentVitals": "Signos Vitales Recientes",
-    "healthAlerts": "Alertas de Salud",
+    "recentVitals": "📈 Signos Vitales Recientes",
+    "healthAlerts": "🔔 Alertas de Salud",
     "bloodPressure": "Presión Arterial: {{value}} mmHg",
     "heartRate": "Frecuencia Cardíaca: {{value}} lpm",
     "weight": "Peso: {{value}} libras",
@@ -84,7 +84,7 @@
     "accessibility": "Accesibilidad"
   },
   "language": {
-    "selector": "Idioma",
+    "selector": "Language / Idioma / Langue / Sprache / 语言",
     "current": "Idioma actual: {{language}}",
     "changeLanguage": "Cambiar idioma a {{language}}"
   },

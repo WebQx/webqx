@@ -3,6 +3,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Home from '../pages/Home';
 
+// Initialize i18n for testing
+import '../i18n/config';
+
 // Mock the child components since we're testing the integration
 jest.mock('../components/AppointmentCard', () => {
   return function MockAppointmentCard(props: any) {
@@ -197,9 +200,13 @@ describe('Home Component', () => {
     render(<Home />);
     
     // Start tabbing through interactive elements
-    const firstButton = screen.getByRole('button', { name: /Schedule new appointment/ });
+    // First element should be the language selector
+    const languageSelector = screen.getByRole('combobox');
+    await user.tab();
+    expect(languageSelector).toHaveFocus();
     
-    // Focus should work on buttons
+    // Next should be the first action button
+    const firstButton = screen.getByRole('button', { name: /Schedule new appointment/ });
     await user.tab();
     expect(firstButton).toHaveFocus();
     
