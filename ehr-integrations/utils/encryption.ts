@@ -567,18 +567,18 @@ export class EncryptionService {
    * @param iv Initialization vector
    * @returns Algorithm parameters
    */
-  private getEncryptionParams(algorithm: string, iv: ArrayBuffer): AlgorithmIdentifier {
+  private getEncryptionParams(algorithm: string, iv: ArrayBuffer): AesGcmParams | AesCbcParams {
     if (algorithm.includes('gcm')) {
       return {
         name: 'AES-GCM',
         iv: iv,
         tagLength: this.config.tagLength * 8 // Convert bytes to bits
-      };
+      } as AesGcmParams;
     } else if (algorithm.includes('cbc')) {
       return {
         name: 'AES-CBC',
         iv: iv
-      };
+      } as AesCbcParams;
     }
     throw new Error(`Unsupported algorithm: ${algorithm}`);
   }

@@ -401,13 +401,13 @@ export class EHRService {
       }
 
       // Cancel any active operations for this configuration
-      for (const [operationId, operation] of this.activeOperations.entries()) {
+      Array.from(this.activeOperations.entries()).forEach(([operationId, operation]) => {
         if (operation.ehrConfigId === configId) {
           operation.status = 'failed';
           operation.completedAt = new Date();
           this.activeOperations.delete(operationId);
         }
-      }
+      });
 
       // Set disconnected status
       this.connections.set(configId, 'disconnected');

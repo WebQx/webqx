@@ -117,9 +117,6 @@ export interface ErrorState {
 /**
  * Enhanced prescription summary with detailed analytics
  */
-/**
- * Enhanced prescription summary with detailed analytics
- */
 export interface PrescriptionSummary {
   /** Total number of prescriptions */
   totalPrescriptions: number;
@@ -146,17 +143,11 @@ export interface PrescriptionSummary {
   /** Average number of refills per prescription */
   averageRefills: number;
 }
-  mostPrescribedMedications: Array<{
-    medication: string;
-    count: number;
-    percentage: number;
-  }>;
-  prescriptionsByMonth: Array<{
-    month: string;
-    count: number;
-  }>;
-  averageRefills: number;
-}
+
+/**
+ * Enhanced EHR Exporter class with comprehensive error handling,
+ * loading states, TypeScript types, accessibility features, and detailed logging
+ */
 
 class EHRExporter {
   private readonly supportedFormats: ExportFormat[] = [

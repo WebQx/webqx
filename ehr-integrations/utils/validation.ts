@@ -640,16 +640,16 @@ function luhnCheck(value: string): boolean {
  * @param rules Object with validation rules
  * @returns Combined validation result
  */
-export function validateWithRules<T extends Record<string, unknown>>(
+export function validateWithRules<T extends Record<string, any>>(
   values: T,
-  rules: Partial<Record<keyof T, ValidationRule<T[keyof T]>>>
+  rules: Partial<Record<keyof T, ValidationRule<any>>>
 ): ValidationResult {
   const allErrors: string[] = [];
   const allWarnings: string[] = [];
 
   Object.keys(rules).forEach(key => {
-    const rule = rules[key];
-    const value = values[key];
+    const rule = rules[key as keyof T];
+    const value = values[key as keyof T];
 
     if (rule) {
       const result = rule(value);
