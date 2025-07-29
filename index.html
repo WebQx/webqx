@@ -42,17 +42,121 @@
         .section:first-child {
             border-top: none;
         }
+        .loading {
+            color: #007bff;
+            font-style: italic;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .patient-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .appointment-card {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 4px;
+        }
+        .appointment-card.pending {
+            border-left-color: #ffc107;
+        }
+        .appointment-card.booked {
+            border-left-color: #28a745;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .lang-selector {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        .dynamic-content {
+            min-height: 50px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-healthy {
+            background-color: #28a745;
+        }
+        .status-warning {
+            background-color: #ffc107;
+        }
+        .status-error {
+            background-color: #dc3545;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="lang-selector">
+            <label for="language-select">🌍 Language:</label>
+            <select id="language-select" onchange="changeLanguage()">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+            </select>
+        </div>
+
         <h1>🌐 WebQX™ Patient Portal</h1>
-        <p><strong>Tagline:</strong> Empowering Patients and Supporting Health Care Providers</p>
+        <p><strong>Tagline:</strong> <span id="tagline">Empowering Patients and Supporting Health Care Providers</span></p>
+        
         <div class="section">
-            <h2>🧭 Welcome Panel</h2>
+            <h2>🧭 Welcome Panel & System Status</h2>
+            <div id="system-status" class="dynamic-content">
+                <div class="loading">🔄 Checking system status...</div>
+            </div>
+            <div id="patient-info" class="dynamic-content">
+                <div class="loading">🔄 Loading patient information...</div>
+            </div>
             <ul>
-                <li>🌍 Multilingual UX & Accessibility Settings</li>
-                <li>🧑‍⚕️ Personalized Care Overview</li>
+                <li>🌍 <button class="btn btn-secondary" onclick="toggleLanguageDemo()">Test Multilingual Translation</button></li>
+                <li>🧑‍⚕️ <span id="personalized-care">Personalized Care Overview</span></li>
                 <li>🧠 Mental Wellness Hub</li>
                 <li>👓🦷 Vision & Dental Records</li>
                 <li>🧭 Concierge Services</li>
@@ -62,23 +166,46 @@
                 </ul>
             </ul>
         </div>
+
         <div class="section">
             <h2>📅 Appointments & Scheduling</h2>
-            <ul>
-                <li>🗓️ Self-Scheduling & Rescheduling</li>
-                <li>🔔 Automated Reminders & Waitlist Notifications</li>
-                <li>📋 Pre-Visit Intake Forms & Questionnaires</li>
-            </ul>
+            <div id="appointments-list" class="dynamic-content">
+                <div class="loading">🔄 Loading appointments...</div>
+            </div>
+            <button class="btn" onclick="showAppointmentForm()">📅 Schedule New Appointment</button>
+            <div id="appointment-form" style="display: none;">
+                <h3>Schedule New Appointment</h3>
+                <div class="form-group">
+                    <label for="appointment-type">Appointment Type:</label>
+                    <select id="appointment-type">
+                        <option value="consultation">General Consultation</option>
+                        <option value="followup">Follow-up Visit</option>
+                        <option value="physical">Physical Examination</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="appointment-date">Preferred Date:</label>
+                    <input type="date" id="appointment-date" min="">
+                </div>
+                <div class="form-group">
+                    <label for="appointment-notes">Notes:</label>
+                    <textarea id="appointment-notes" rows="3" placeholder="Any specific concerns or notes..."></textarea>
+                </div>
+                <button class="btn" onclick="submitAppointment()">Submit Request</button>
+                <button class="btn btn-secondary" onclick="hideAppointmentForm()">Cancel</button>
+            </div>
         </div>
+
         <div class="section">
             <h2>📬 Smart Data Import System</h2>
             <ul>
-                <li>📧 Unique Patient Email (e.g., john.doe@webqx.health)</li>
+                <li>📧 Unique Patient Email: <span id="patient-email" class="loading">Loading...</span></li>
                 <li>🔐 Encrypted Access Code</li>
                 <li>📥 Auto-routing of Labs, Imaging, Notes</li>
                 <li>🔔 Patient Notifications & Privacy Controls</li>
             </ul>
         </div>
+
         <div class="section">
             <h2>💬 Secure Messaging & Communication</h2>
             <ul>
@@ -87,7 +214,16 @@
                 <li>🤖 Personal Health Bot</li>
                 <li>📚 Health Literacy Assistant (Glossary + Visuals)</li>
             </ul>
+            <div id="translation-demo" style="display: none; margin-top: 10px;">
+                <h4>Translation Demo:</h4>
+                <div class="form-group">
+                    <input type="text" id="translation-text" placeholder="Enter text to translate..." value="Take 2 tablets daily">
+                </div>
+                <button class="btn" onclick="translateText()">Translate</button>
+                <div id="translation-result" style="margin-top: 10px;"></div>
+            </div>
         </div>
+
         <div class="section">
             <h2>🧾 Health Records & Prescription Management</h2>
             <ul>
@@ -97,6 +233,7 @@
                 <li>📝 Visit Summaries & SOAP Notes</li>
             </ul>
         </div>
+
         <div class="section">
             <h2>💳 Billing & Insurance</h2>
             <ul>
@@ -105,6 +242,7 @@
                 <li>🧾 Coverage Eligibility & Grant Navigator</li>
             </ul>
         </div>
+
         <div class="section">
             <h2>🎯 Patient Empowerment Tools</h2>
             <ul>
@@ -114,6 +252,7 @@
                 <li>📊 Longitudinal Health Charts</li>
             </ul>
         </div>
+
         <div class="section">
             <h2>🗺️ Social Determinants & Community Support</h2>
             <ul>
@@ -123,6 +262,7 @@
                 <li>🧑‍⚖️ Legal & Housing Aid Interfaces</li>
             </ul>
         </div>
+
         <div class="section">
             <h2>🔐 Security & Ethics</h2>
             <ul>
@@ -132,5 +272,286 @@
             </ul>
         </div>
     </div>
+
+    <script>
+        // Global variables
+        let accessToken = null;
+        let currentLanguage = 'en';
+        let currentPatient = null;
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        async function initializeApp() {
+            try {
+                // Get authentication token
+                await getAccessToken();
+                
+                // Load initial data
+                await Promise.all([
+                    checkSystemStatus(),
+                    loadPatientInfo(),
+                    loadAppointments()
+                ]);
+
+                // Set minimum date for appointment scheduling
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('appointment-date').setAttribute('min', today);
+                
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+                showError('system-status', 'Failed to initialize application. Please refresh the page.');
+            }
+        }
+
+        async function getAccessToken() {
+            try {
+                const response = await fetch('/dev/token');
+                if (!response.ok) {
+                    throw new Error('Failed to get access token');
+                }
+                const data = await response.json();
+                accessToken = data.access_token;
+                return accessToken;
+            } catch (error) {
+                console.error('Error getting access token:', error);
+                throw error;
+            }
+        }
+
+        async function checkSystemStatus() {
+            try {
+                const response = await fetch('/health');
+                if (!response.ok) {
+                    throw new Error('Health check failed');
+                }
+                const data = await response.json();
+                
+                const statusHtml = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="status-indicator status-healthy"></span>
+                        <strong>System Status: ${data.status}</strong>
+                        <span style="margin-left: 20px;">🩺 FHIR: ${data.fhir}</span>
+                        <span style="margin-left: 20px;">⏰ ${new Date(data.timestamp).toLocaleString()}</span>
+                    </div>
+                `;
+                document.getElementById('system-status').innerHTML = statusHtml;
+            } catch (error) {
+                showError('system-status', 'System status unavailable');
+            }
+        }
+
+        async function loadPatientInfo() {
+            try {
+                if (!accessToken) {
+                    throw new Error('No access token available');
+                }
+
+                const response = await fetch('/fhir/Patient', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Accept': 'application/fhir+json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load patient data');
+                }
+
+                const data = await response.json();
+                
+                if (data.entry && data.entry.length > 0) {
+                    // Use the first patient for demo
+                    currentPatient = data.entry[0].resource;
+                    displayPatientInfo(currentPatient);
+                    
+                    // Update email in the Smart Data Import section
+                    const emailElement = document.getElementById('patient-email');
+                    const email = currentPatient.telecom?.find(t => t.system === 'email')?.value || 'Not available';
+                    emailElement.textContent = email;
+                    emailElement.classList.remove('loading');
+                } else {
+                    showError('patient-info', 'No patient data available');
+                }
+            } catch (error) {
+                console.error('Error loading patient info:', error);
+                showError('patient-info', 'Failed to load patient information');
+            }
+        }
+
+        function displayPatientInfo(patient) {
+            const name = patient.name?.[0] ? `${patient.name[0].given?.join(' ')} ${patient.name[0].family}` : 'Unknown';
+            const birthDate = patient.birthDate ? new Date(patient.birthDate).toLocaleDateString() : 'Unknown';
+            const gender = patient.gender || 'Unknown';
+            const patientId = patient.identifier?.[0]?.value || patient.id;
+
+            const patientHtml = `
+                <div class="patient-info">
+                    <h3>👤 Welcome, ${name}!</h3>
+                    <p><strong>Patient ID:</strong> ${patientId}</p>
+                    <p><strong>Date of Birth:</strong> ${birthDate}</p>
+                    <p><strong>Gender:</strong> ${gender}</p>
+                    <p><strong>Status:</strong> <span class="success">Active Patient</span></p>
+                </div>
+            `;
+            
+            document.getElementById('patient-info').innerHTML = patientHtml;
+            
+            // Update personalized care overview
+            document.getElementById('personalized-care').textContent = `Personalized Care Overview for ${name}`;
+        }
+
+        async function loadAppointments() {
+            try {
+                if (!accessToken) {
+                    throw new Error('No access token available');
+                }
+
+                const response = await fetch('/fhir/Appointment', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Accept': 'application/fhir+json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load appointments');
+                }
+
+                const data = await response.json();
+                displayAppointments(data.entry || []);
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                showError('appointments-list', 'Failed to load appointments');
+            }
+        }
+
+        function displayAppointments(appointments) {
+            if (appointments.length === 0) {
+                document.getElementById('appointments-list').innerHTML = '<p>No appointments scheduled.</p>';
+                return;
+            }
+
+            let appointmentsHtml = '<h3>Your Upcoming Appointments:</h3>';
+            
+            appointments.forEach(entry => {
+                const appointment = entry.resource;
+                const start = new Date(appointment.start).toLocaleString();
+                const status = appointment.status;
+                const description = appointment.description || 'General appointment';
+                const practitioner = appointment.participant?.find(p => p.actor?.display?.includes('Dr.'))?.actor?.display || 'Provider TBD';
+
+                appointmentsHtml += `
+                    <div class="appointment-card ${status}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${description}</strong><br>
+                                <span>📅 ${start}</span><br>
+                                <span>👨‍⚕️ ${practitioner}</span><br>
+                                <span class="status-indicator status-${status === 'booked' ? 'healthy' : 'warning'}"></span>
+                                Status: ${status.charAt(0).toUpperCase() + status.slice(1)}
+                            </div>
+                            <div>
+                                ${status === 'pending' ? '<button class="btn">Confirm</button>' : ''}
+                                <button class="btn btn-secondary">Reschedule</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('appointments-list').innerHTML = appointmentsHtml;
+        }
+
+        function showAppointmentForm() {
+            document.getElementById('appointment-form').style.display = 'block';
+        }
+
+        function hideAppointmentForm() {
+            document.getElementById('appointment-form').style.display = 'none';
+        }
+
+        async function submitAppointment() {
+            const type = document.getElementById('appointment-type').value;
+            const date = document.getElementById('appointment-date').value;
+            const notes = document.getElementById('appointment-notes').value;
+
+            if (!date) {
+                alert('Please select a date for your appointment.');
+                return;
+            }
+
+            // For demo purposes, show success message
+            alert(`Appointment request submitted!\n\nType: ${type}\nDate: ${date}\nNotes: ${notes}\n\nYou will receive a confirmation shortly.`);
+            hideAppointmentForm();
+        }
+
+        function toggleLanguageDemo() {
+            const demo = document.getElementById('translation-demo');
+            demo.style.display = demo.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function translateText() {
+            const text = document.getElementById('translation-text').value;
+            const targetLang = currentLanguage;
+            
+            if (!text.trim()) {
+                alert('Please enter text to translate.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/whisper/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        targetLang: targetLang
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Translation failed');
+                }
+
+                const data = await response.json();
+                
+                document.getElementById('translation-result').innerHTML = `
+                    <div style="background: #e3f2fd; padding: 10px; border-radius: 4px;">
+                        <strong>Original (${data.sourceLanguage}):</strong> ${text}<br>
+                        <strong>Translated (${data.targetLanguage}):</strong> ${data.translatedText}<br>
+                        <small>Confidence: ${Math.round(data.confidence * 100)}%</small>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Translation error:', error);
+                showError('translation-result', 'Translation failed. Please try again.');
+            }
+        }
+
+        function changeLanguage() {
+            const languageSelect = document.getElementById('language-select');
+            currentLanguage = languageSelect.value;
+            
+            // Update tagline based on language
+            const taglines = {
+                'en': 'Empowering Patients and Supporting Health Care Providers',
+                'es': 'Empoderando a los Pacientes y Apoyando a los Proveedores de Atención Médica',
+                'fr': 'Autonomiser les Patients et Soutenir les Fournisseurs de Soins de Santé',
+                'de': 'Patienten stärken und Gesundheitsdienstleister unterstützen'
+            };
+            
+            document.getElementById('tagline').textContent = taglines[currentLanguage] || taglines['en'];
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="error">❌ ${message}</div>`;
+        }
+    </script>
 </body>
 </html>

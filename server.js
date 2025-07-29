@@ -23,6 +23,15 @@ const PORT = process.env.PORT || 3000;
 // Security middleware
 app.use(helmet({
     crossOriginEmbedderPolicy: false, // Allow embedding for development
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts and eval for demo
+            styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
+            connectSrc: ["'self'"],
+            imgSrc: ["'self'", "data:", "https:"],
+        },
+    },
 }));
 
 // CORS configuration for FHIR
