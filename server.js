@@ -17,6 +17,9 @@ const {
     generateTestToken
 } = require('./fhir/middleware/auth');
 
+// PACS imports
+const dicomApi = require('./PACS/shared/api/dicomApi');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -87,6 +90,9 @@ app.use('/fhir/Patient', authenticateToken, requireScopes(['patient/*.read', 'pa
 
 // FHIR Appointment resource routes with authentication
 app.use('/fhir/Appointment', authenticateToken, requireScopes(['user/*.read', 'user/*.write', 'patient/*.read']), appointmentRoutes);
+
+// PACS DICOM API routes
+app.use('/api/dicom', dicomApi);
 
 // Development endpoint to get test token
 if (process.env.NODE_ENV === 'development') {
