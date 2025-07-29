@@ -35,6 +35,10 @@ export { AppointmentBookingService } from './services/appointmentBookingService'
 export { EHREngineCore, createEHREngine } from './services/ehrEngineCore';
 export { RealTimeUpdateService, createRealTimeService } from './services/realTimeUpdateService';
 
+// External EHR Connectors
+export { OpenEMRConnector } from './connectors/openEmrConnector';
+export { OpenMRSConnector } from './connectors/openMrsConnector';
+
 // Service Types
 export type {
   SMARTOnFHIRConfig,

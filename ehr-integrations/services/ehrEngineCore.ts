@@ -127,13 +127,13 @@ export interface ExternalEHRConnector {
  */
 export class EHREngineCore extends EventEmitter {
   private config: EHREngineConfig;
-  private fhirClient: FHIRR4Client;
+  public fhirClient: FHIRR4Client; // Make public for testing
   private appointmentService: AppointmentBookingService;
-  private realTimeService: RealTimeUpdateService;
+  public realTimeService: RealTimeUpdateService; // Make public for testing
   private ehrService: EHRService;
   private auditLogger: AuditLogger;
   private specialtyModules: Map<string, SpecialtyModule> = new Map();
-  private externalConnectors: Map<string, ExternalEHRConnector> = new Map();
+  public externalConnectors: Map<string, ExternalEHRConnector> = new Map(); // Make public for testing
   private activeOperations: Map<string, any> = new Map();
   private isInitialized = false;
 
