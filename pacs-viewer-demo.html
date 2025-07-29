@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX™ PACS Viewer - Medical Imaging</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .header-info {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .patient-selector {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .patient-selector label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .patient-selector select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .load-btn {
+            padding: 0.5rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        .load-btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .specialty-info {
+            background: #e8f4fd;
+            padding: 1rem 2rem;
+            border-left: 4px solid #2196F3;
+            margin: 0;
+            font-size: 0.9rem;
+            color: #1976D2;
+        }
+        
+        .viewer-container {
+            height: calc(100vh - 140px);
+        }
+        
+        .demo-info {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            max-width: 300px;
+            font-size: 0.8rem;
+            z-index: 1000;
+        }
+        
+        .demo-info h4 {
+            margin-bottom: 0.5rem;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🩺 WebQX™ PACS Viewer</h1>
+        <div class="header-info">
+            <div>Medical Imaging • DICOM Viewer</div>
+            <div id="user-info">Dr. Smith - Radiology</div>
+        </div>
+    </header>
+    
+    <div class="patient-selector">
+        <label for="patient-select">Select Patient:</label>
+        <select id="patient-select">
+            <option value="">Choose a patient...</option>
+            <option value="patient-123">John Doe (PAT-123) - Born: 1980-05-15</option>
+            <option value="patient-456">Jane Smith (PAT-456) - Born: 1975-08-22</option>
+            <option value="patient-789">Robert Johnson (PAT-789) - Born: 1990-12-03</option>
+        </select>
+        <button id="load-studies" class="load-btn">Load Studies</button>
+        
+        <label for="specialty-select" style="margin-left: 2rem;">Specialty View:</label>
+        <select id="specialty-select">
+            <option value="radiology">Radiology</option>
+            <option value="cardiology">Cardiology</option>
+            <option value="orthopedics">Orthopedics</option>
+            <option value="neurology">Neurology</option>
+            <option value="pulmonology">Pulmonology</option>
+        </select>
+    </div>
+    
+    <div class="specialty-info">
+        <strong>PACS Integration Features:</strong> 
+        • DICOM image viewing • Specialty-based routing • Configurable worklists 
+        • Multi-modality support • Integrated measurements • Audit logging
+    </div>
+    
+    <div id="pacs-viewer" class="viewer-container"></div>
+    
+    <div class="demo-info">
+        <h4>🚀 Demo Features</h4>
+        <ul>
+            <li>✅ DICOM image viewer</li>
+            <li>✅ Specialty routing</li>
+            <li>✅ FHIR R4 integration</li>
+            <li>✅ Role-based access</li>
+            <li>✅ Audit logging</li>
+            <li>✅ Performance caching</li>
+        </ul>
+        <p style="margin-top: 0.5rem;">
+            <strong>Usage:</strong> Select a patient, load studies, and explore the PACS viewer with specialty-specific tools.
+        </p>
+    </div>
+
+    <script src="patient-portal/components/PacsViewer.js"></script>
+    <script>
+        // Initialize PACS Viewer
+        let pacsViewer = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize with default specialty
+            initializePacsViewer('radiology');
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Load initial demo message
+            showDemoMessage();
+        });
+        
+        function initializePacsViewer(specialty) {
+            if (pacsViewer) {
+                // Destroy existing viewer
+                document.getElementById('pacs-viewer').innerHTML = '';
+            }
+            
+            pacsViewer = new PacsViewer('pacs-viewer', {
+                specialty: specialty,
+                enableMeasurements: true,
+                enableAnnotations: true,
+                apiBaseUrl: '/fhir/ImagingStudy'
+            });
+        }
+        
+        function setupEventListeners() {
+            // Load studies button
+            document.getElementById('load-studies').addEventListener('click', function() {
+                const patientId = document.getElementById('patient-select').value;
+                if (patientId) {
+                    pacsViewer.loadStudies(patientId);
+                    updateUserInfo(patientId);
+                } else {
+                    alert('Please select a patient first.');
+                }
+            });
+            
+            // Specialty change
+            document.getElementById('specialty-select').addEventListener('change', function(e) {
+                const specialty = e.target.value;
+                initializePacsViewer(specialty);
+                updateSpecialtyInfo(specialty);
+            });
+        }
+        
+        function updateUserInfo(patientId) {
+            const patientSelect = document.getElementById('patient-select');
+            const selectedOption = patientSelect.options[patientSelect.selectedIndex];
+            const patientName = selectedOption.text.split(' (')[0];
+            
+            document.getElementById('user-info').textContent = 
+                `Dr. Smith - ${document.getElementById('specialty-select').value} - Viewing: ${patientName}`;
+        }
+        
+        function updateSpecialtyInfo(specialty) {
+            const specialtyInfo = document.querySelector('.specialty-info');
+            const descriptions = {
+                'radiology': 'Radiology View: General diagnostic imaging workflow with comprehensive DICOM tools',
+                'cardiology': 'Cardiology View: Cardiac-specific measurements, EF calculations, and cardiac function analysis',
+                'orthopedics': 'Orthopedics View: Bone and joint imaging with angle measurements and fracture assessment tools',
+                'neurology': 'Neurology View: Neurological imaging with brain and spine analysis capabilities',
+                'pulmonology': 'Pulmonology View: Chest imaging with lung function and respiratory analysis tools'
+            };
+            
+            specialtyInfo.innerHTML = `<strong>${specialty.charAt(0).toUpperCase() + specialty.slice(1)} PACS View:</strong> ${descriptions[specialty] || 'Specialized medical imaging workflow'}`;
+        }
+        
+        function showDemoMessage() {
+            console.log(`
+🩺 WebQX™ PACS Integration Demo
+
+This demo showcases:
+• DICOM image viewing with specialty-specific tools
+• FHIR R4 ImagingStudy resource integration  
+• Specialty-based study routing (Radiology, Cardiology, etc.)
+• Role-based access control integration
+• Performance optimization with caching
+• Comprehensive audit logging
+
+Features implemented:
+✅ PACS service layer for DICOM operations
+✅ Specialty routing service with configurable rules
+✅ FHIR ImagingStudy service and API endpoints
+✅ Web-based PACS viewer with specialty customization
+✅ Integration with existing WebQX authentication
+✅ Audit logging for all PACS interactions
+
+To test: Select a patient → Load Studies → Explore different specialty views
+            `);
+        }
+        
+        // Mock data for demonstration
+        window.mockPacsData = {
+            'patient-123': {
+                studies: [
+                    {
+                        id: 'study-001',
+                        description: 'CT Chest with Contrast',
+                        started: '2024-01-15T10:00:00Z',
+                        modality: [{ code: 'CT', display: 'Computed Tomography' }],
+                        numberOfSeries: 2,
+                        numberOfInstances: 45,
+                        subject: { display: 'John Doe' }
+                    },
+                    {
+                        id: 'study-002', 
+                        description: 'MRI Brain',
+                        started: '2024-01-14T14:30:00Z',
+                        modality: [{ code: 'MRI', display: 'Magnetic Resonance Imaging' }],
+                        numberOfSeries: 4,
+                        numberOfInstances: 120,
+                        subject: { display: 'John Doe' }
+                    }
+                ]
+            }
+        };
+    </script>
+</body>
+</html>
