@@ -183,11 +183,19 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
             
           } catch (error) {
             job.errors.push(`Error processing ${audioItem.imageId}: ${error.message}`);
-            this.auditLogger?.logError('BATCH_ITEM_ERROR', {
-              jobId,
-              imageId: audioItem.imageId,
-              error: error.message,
-              timestamp: new Date().toISOString()
+            this.auditLogger?.log({
+              action: 'system_backup',
+              resourceType: 'batch_transcription_item',
+              resourceId: audioItem.imageId,
+              success: false,
+              errorMessage: error.message,
+              context: {
+                operation: 'batch_item_error',
+                jobId,
+                imageId: audioItem.imageId,
+                error: error.message,
+                timestamp: new Date().toISOString()
+              }
             });
           }
         });
@@ -209,7 +217,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
         resourceId: jobId,
         success: job.status === 'completed',
         context: {
-          operation: 'job_completed',
+          operation: job.status === 'completed' ? 'job_completed' : 'job_failed',
           status: job.status,
           resultCount: job.results.length,
           errorCount: job.errors.length,
@@ -218,17 +226,28 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
         }
       });
 
-      this.emit('jobCompleted', { jobId, job });
+      if (job.status === 'failed') {
+        this.emit('jobFailed', { jobId, job, error: new Error(`Job failed with ${job.errors.length} errors`) });
+      } else {
+        this.emit('jobCompleted', { jobId, job });
+      }
 
     } catch (error) {
       job.status = 'failed';
       job.endTime = new Date();
       job.errors.push(`Job failed: ${error.message}`);
 
-      this.auditLogger?.logError('BATCH_JOB_FAILED', {
-        jobId,
-        error: error.message,
-        timestamp: new Date().toISOString()
+      this.auditLogger?.log({
+        action: 'system_backup',
+        resourceType: 'batch_transcription_job',
+        resourceId: jobId,
+        success: false,
+        errorMessage: error.message,
+        context: {
+          operation: 'job_failed',
+          error: error.message,
+          timestamp: new Date().toISOString()
+        }
       });
 
       this.emit('jobFailed', { jobId, job, error });
