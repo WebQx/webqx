@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX™ Patient Portal - Enhanced Header Demo</title>
+    
+    <!-- Portal CSS -->
+    <link rel="stylesheet" href="patient-portal/styles/portal.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .demo-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #3498db;
+        }
+        
+        .demo-info h2 {
+            margin: 0 0 0.5rem 0;
+            color: #2c3e50;
+        }
+        
+        .demo-info p {
+            margin: 0;
+            color: #555;
+        }
+        
+        .language-demo {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+        
+        .language-demo h3 {
+            margin: 0 0 0.5rem 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-info">
+            <h2>🌐 WebQX™ Enhanced Header Component Demo</h2>
+            <p>This demo showcases the enhanced Header component with multilingual support, accessibility features, and state management. The language selector allows users to switch between English, Spanish, French, German, and Chinese.</p>
+        </div>
+        
+        <!-- Enhanced Header Component (English) -->
+        <header class="portal-header" role="banner">
+            <!-- Language Selector -->
+            <div class="language-selector-container">
+                <label 
+                    for="language-selector"
+                    class="language-selector-label"
+                    id="language-selector-label"
+                >
+                    Language / Idioma / Langue / Sprache / 语言
+                </label>
+                <select
+                    id="language-selector"
+                    class="language-selector"
+                    aria-labelledby="language-selector-label"
+                    aria-describedby="language-selector-description"
+                    onchange="changeLanguage(this.value)"
+                >
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="zh">中文</option>
+                </select>
+                <div id="language-selector-description" class="sr-only">
+                    Select your preferred language for the patient portal interface. 
+                    Current selection: <span id="current-language">English</span>
+                </div>
+            </div>
+
+            <!-- Main Portal Title -->
+            <h1 class="portal-title" id="portal-title">
+                🌐 Welcome to WebQX™ Patient Portal
+            </h1>
+            
+            <!-- Portal Tagline -->
+            <p class="portal-tagline" aria-describedby="portal-description" id="portal-tagline">
+                Empowering Patients and Supporting Health Care Providers
+            </p>
+            
+            <!-- Screen reader description -->
+            <div id="portal-description" class="sr-only">
+                Your comprehensive healthcare management platform with multilingual support,
+                appointment scheduling, secure messaging, and health record access.
+            </div>
+            
+            <!-- Personalized Greeting -->
+            <div class="welcome-message" role="region" aria-label="Personalized welcome">
+                <p>
+                    <span id="welcome-text">Welcome back</span>, <strong>Dr. Maria García</strong>! 👋
+                </p>
+            </div>
+        </header>
+        
+        <div class="language-demo">
+            <h3>🎯 Interactive Demo</h3>
+            <p>Use the language selector above to see how the interface changes. The component includes:</p>
+            <ul>
+                <li>✅ Proper accessibility labels and ARIA attributes</li>
+                <li>✅ React state management for language selection</li>
+                <li>✅ Responsive design for mobile and desktop</li>
+                <li>✅ Full keyboard navigation support</li>
+                <li>✅ Screen reader compatibility</li>
+            </ul>
+        </div>
+        
+        <main class="portal-content" style="margin-top: 2rem;">
+            <section class="appointments-section">
+                <h2 class="section-title" id="appointments-title">📅 Your Appointments</h2>
+                <p>This section shows upcoming medical appointments and allows scheduling new ones.</p>
+            </section>
+            
+            <section class="quick-actions-section">
+                <h2 class="section-title" id="quickactions-title">🎯 Quick Actions</h2>
+                <div style="display: grid; gap: 0.75rem;">
+                    <button class="action-button" aria-label="Schedule new appointment" id="btn-schedule">
+                        🗓️ Schedule Appointment
+                    </button>
+                    <button class="action-button" aria-label="View test results" id="btn-results">
+                        🧪 View Lab Results
+                    </button>
+                    <button class="action-button" aria-label="Send secure message to provider" id="btn-message">
+                        💬 Message Provider
+                    </button>
+                    <button class="action-button" aria-label="Request prescription refill" id="btn-refill">
+                        💊 Refill Prescription
+                    </button>
+                </div>
+            </section>
+            
+            <section class="health-overview-section">
+                <h2 class="section-title" id="healthoverview-title">📊 Health Overview</h2>
+                <p>Patient health summary, vital signs, and health alerts.</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Translation data
+        const translations = {
+            en: {
+                portalTitle: "🌐 Welcome to WebQX™ Patient Portal",
+                portalTagline: "Empowering Patients and Supporting Health Care Providers",
+                welcomeBack: "Welcome back",
+                appointments: "📅 Your Appointments",
+                quickActions: "🎯 Quick Actions",
+                healthOverview: "📊 Health Overview",
+                scheduleAppointment: "🗓️ Schedule Appointment",
+                viewLabResults: "🧪 View Lab Results",
+                messageProvider: "💬 Message Provider",
+                refillPrescription: "💊 Refill Prescription",
+                currentLanguage: "English"
+            },
+            es: {
+                portalTitle: "🌐 Bienvenido al Portal de Pacientes WebQX™",
+                portalTagline: "Empoderando a los Pacientes y Apoyando a los Proveedores de Atención Médica",
+                welcomeBack: "Bienvenido de nuevo",
+                appointments: "📅 Sus Citas",
+                quickActions: "🎯 Acciones Rápidas",
+                healthOverview: "📊 Resumen de Salud",
+                scheduleAppointment: "🗓️ Programar Cita",
+                viewLabResults: "🧪 Ver Resultados de Laboratorio",
+                messageProvider: "💬 Mensaje al Proveedor",
+                refillPrescription: "💊 Renovar Receta",
+                currentLanguage: "Español"
+            },
+            fr: {
+                portalTitle: "🌐 Bienvenue sur le Portail Patient WebQX™",
+                portalTagline: "Autonomiser les Patients et Soutenir les Fournisseurs de Soins de Santé",
+                welcomeBack: "Bon retour",
+                appointments: "📅 Vos Rendez-vous",
+                quickActions: "🎯 Actions Rapides",
+                healthOverview: "📊 Aperçu de la Santé",
+                scheduleAppointment: "🗓️ Planifier un Rendez-vous",
+                viewLabResults: "🧪 Voir les Résultats de Laboratoire",
+                messageProvider: "💬 Message au Fournisseur",
+                refillPrescription: "💊 Renouveler l'Ordonnance",
+                currentLanguage: "Français"
+            },
+            de: {
+                portalTitle: "🌐 Willkommen im WebQX™ Patientenportal",
+                portalTagline: "Patienten stärken und Gesundheitsdienstleister unterstützen",
+                welcomeBack: "Willkommen zurück",
+                appointments: "📅 Ihre Termine",
+                quickActions: "🎯 Schnelle Aktionen",
+                healthOverview: "📊 Gesundheitsübersicht",
+                scheduleAppointment: "🗓️ Termin Vereinbaren",
+                viewLabResults: "🧪 Laborergebnisse Anzeigen",
+                messageProvider: "💬 Nachricht an Anbieter",
+                refillPrescription: "💊 Rezept Erneuern",
+                currentLanguage: "Deutsch"
+            },
+            zh: {
+                portalTitle: "🌐 欢迎使用WebQX™患者门户",
+                portalTagline: "赋能患者，支持医疗服务提供者",
+                welcomeBack: "欢迎回来",
+                appointments: "📅 您的预约",
+                quickActions: "🎯 快速操作",
+                healthOverview: "📊 健康概览",
+                scheduleAppointment: "🗓️ 安排预约",
+                viewLabResults: "🧪 查看实验室结果",
+                messageProvider: "💬 联系医生",
+                refillPrescription: "💊 续开处方",
+                currentLanguage: "中文"
+            }
+        };
+
+        function changeLanguage(languageCode) {
+            const texts = translations[languageCode];
+            if (!texts) return;
+
+            // Update header content
+            document.getElementById('portal-title').textContent = texts.portalTitle;
+            document.getElementById('portal-tagline').textContent = texts.portalTagline;
+            document.getElementById('welcome-text').textContent = texts.welcomeBack;
+            document.getElementById('current-language').textContent = texts.currentLanguage;
+
+            // Update section titles
+            document.getElementById('appointments-title').textContent = texts.appointments;
+            document.getElementById('quickactions-title').textContent = texts.quickActions;
+            document.getElementById('healthoverview-title').textContent = texts.healthOverview;
+
+            // Update button texts
+            document.getElementById('btn-schedule').textContent = texts.scheduleAppointment;
+            document.getElementById('btn-results').textContent = texts.viewLabResults;
+            document.getElementById('btn-message').textContent = texts.messageProvider;
+            document.getElementById('btn-refill').textContent = texts.refillPrescription;
+
+            // Announce change to screen readers
+            const announcement = document.createElement('div');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.textContent = `Language changed to ${texts.currentLanguage}`;
+            announcement.style.position = 'absolute';
+            announcement.style.left = '-9999px';
+            document.body.appendChild(announcement);
+            setTimeout(() => document.body.removeChild(announcement), 1000);
+        }
+    </script>
+</body>
+</html>
