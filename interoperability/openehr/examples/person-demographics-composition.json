@@ -1,0 +1,337 @@
+{
+  "uid": "ehr-composition-001::example.org::1",
+  "archetype_node_id": "openEHR-EHR-COMPOSITION.person.v1",
+  "name": {
+    "value": "Person Demographics"
+  },
+  "composer": {
+    "name": "Dr. Sarah Johnson",
+    "external_ref": {
+      "id": {
+        "value": "practitioner-001"
+      },
+      "namespace": "example.org",
+      "type": "PRACTITIONER"
+    }
+  },
+  "context": {
+    "start_time": "2024-01-15T10:30:00Z",
+    "setting": {
+      "value": "primary medical care",
+      "defining_code": {
+        "terminology_id": {
+          "value": "openehr"
+        },
+        "code_string": "228"
+      }
+    }
+  },
+  "category": {
+    "value": "persistent",
+    "defining_code": {
+      "terminology_id": {
+        "value": "openehr"
+      },
+      "code_string": "431"
+    }
+  },
+  "territory": {
+    "terminology_id": {
+      "value": "ISO_3166-1"
+    },
+    "code_string": "US"
+  },
+  "language": {
+    "terminology_id": {
+      "value": "ISO_639-1"
+    },
+    "code_string": "en"
+  },
+  "content": [
+    {
+      "@type": "SECTION",
+      "archetype_node_id": "openEHR-EHR-SECTION.demographics.v1",
+      "name": {
+        "value": "Demographics"
+      },
+      "items": [
+        {
+          "@type": "ADMIN_ENTRY",
+          "archetype_node_id": "openEHR-EHR-ADMIN_ENTRY.person_name.v1",
+          "name": {
+            "value": "Person Name"
+          },
+          "data": {
+            "@type": "ITEM_TREE",
+            "items": [
+              {
+                "@type": "CLUSTER",
+                "archetype_node_id": "openEHR-EHR-CLUSTER.person_name.v1",
+                "name": {
+                  "value": "Structured Name"
+                },
+                "items": [
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "Given Name"
+                    },
+                    "value": {
+                      "@type": "DV_TEXT",
+                      "value": "John"
+                    }
+                  },
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "Middle Name"
+                    },
+                    "value": {
+                      "@type": "DV_TEXT",
+                      "value": "William"
+                    }
+                  },
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "Family Name"
+                    },
+                    "value": {
+                      "@type": "DV_TEXT",
+                      "value": "Doe"
+                    }
+                  },
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "Name Use"
+                    },
+                    "value": {
+                      "@type": "DV_CODED_TEXT",
+                      "value": "Primary",
+                      "defining_code": {
+                        "terminology_id": {
+                          "value": "local"
+                        },
+                        "code_string": "at0001"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "@type": "ADMIN_ENTRY",
+          "archetype_node_id": "openEHR-EHR-ADMIN_ENTRY.gender.v1",
+          "name": {
+            "value": "Gender"
+          },
+          "data": {
+            "@type": "ITEM_TREE",
+            "items": [
+              {
+                "@type": "ELEMENT",
+                "name": {
+                  "value": "Administrative Gender"
+                },
+                "value": {
+                  "@type": "DV_CODED_TEXT",
+                  "value": "Male",
+                  "defining_code": {
+                    "terminology_id": {
+                      "value": "local"
+                    },
+                    "code_string": "at0005"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "@type": "ADMIN_ENTRY",
+          "archetype_node_id": "openEHR-EHR-ADMIN_ENTRY.birth_data.v1",
+          "name": {
+            "value": "Birth Data"
+          },
+          "data": {
+            "@type": "ITEM_TREE",
+            "items": [
+              {
+                "@type": "ELEMENT",
+                "name": {
+                  "value": "Date of Birth"
+                },
+                "value": {
+                  "@type": "DV_DATE",
+                  "value": "1985-03-15"
+                }
+              },
+              {
+                "@type": "ELEMENT",
+                "name": {
+                  "value": "Country of Birth"
+                },
+                "value": {
+                  "@type": "DV_CODED_TEXT",
+                  "value": "United States",
+                  "defining_code": {
+                    "terminology_id": {
+                      "value": "ISO_3166-1"
+                    },
+                    "code_string": "US"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "@type": "ADMIN_ENTRY",
+          "archetype_node_id": "openEHR-EHR-ADMIN_ENTRY.person_identifier.v1",
+          "name": {
+            "value": "Person Identifiers"
+          },
+          "data": {
+            "@type": "ITEM_TREE",
+            "items": [
+              {
+                "@type": "CLUSTER",
+                "archetype_node_id": "openEHR-EHR-CLUSTER.person_identifier.v1",
+                "name": {
+                  "value": "Medical Record Number"
+                },
+                "items": [
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "Identifier"
+                    },
+                    "value": {
+                      "@type": "DV_TEXT",
+                      "value": "MRN123456"
+                    }
+                  },
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "Identifier Type"
+                    },
+                    "value": {
+                      "@type": "DV_CODED_TEXT",
+                      "value": "Medical Record Number",
+                      "defining_code": {
+                        "terminology_id": {
+                          "value": "local"
+                        },
+                        "code_string": "MRN"
+                      }
+                    }
+                  },
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "Issuing Organisation"
+                    },
+                    "value": {
+                      "@type": "DV_TEXT",
+                      "value": "Example General Hospital"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "@type": "SECTION",
+      "archetype_node_id": "openEHR-EHR-SECTION.address.v1",
+      "name": {
+        "value": "Address Information"
+      },
+      "items": [
+        {
+          "@type": "ADMIN_ENTRY",
+          "archetype_node_id": "openEHR-EHR-ADMIN_ENTRY.address.v1",
+          "name": {
+            "value": "Address"
+          },
+          "data": {
+            "@type": "ITEM_TREE",
+            "items": [
+              {
+                "@type": "CLUSTER",
+                "archetype_node_id": "openEHR-EHR-CLUSTER.address.v1",
+                "name": {
+                  "value": "Structured Address"
+                },
+                "items": [
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "Address Line"
+                    },
+                    "value": {
+                      "@type": "DV_TEXT",
+                      "value": "123 Main Street, Apt 4B"
+                    }
+                  },
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "City"
+                    },
+                    "value": {
+                      "@type": "DV_TEXT",
+                      "value": "Anytown"
+                    }
+                  },
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "State/Province"
+                    },
+                    "value": {
+                      "@type": "DV_TEXT",
+                      "value": "CA"
+                    }
+                  },
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "Postal Code"
+                    },
+                    "value": {
+                      "@type": "DV_TEXT",
+                      "value": "90210"
+                    }
+                  },
+                  {
+                    "@type": "ELEMENT",
+                    "name": {
+                      "value": "Country"
+                    },
+                    "value": {
+                      "@type": "DV_CODED_TEXT",
+                      "value": "United States",
+                      "defining_code": {
+                        "terminology_id": {
+                          "value": "ISO_3166-1"
+                        },
+                        "code_string": "US"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
