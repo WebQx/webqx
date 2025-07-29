@@ -53,6 +53,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
+    "node-fetch": "^2.7.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "supertest": "^6.3.4",

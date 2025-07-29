@@ -71,6 +71,64 @@ describe('EHR Engine Integration', () => {
       await ehrEngine.initialize();
       // Set test authentication token
       ehrEngine.fhirClient.setAccessToken('test-token-for-integration-tests', 3600);
+      
+      // Mock fetch for FHIR API calls
+      global.fetch = jest.fn().mockImplementation((url, options) => {
+        if (url.includes('/Patient')) {
+          const mockResponse = {
+            resourceType: 'Patient',
+            id: 'test-patient-id',
+            meta: {
+              versionId: '1',
+              lastUpdated: new Date().toISOString()
+            },
+            name: [
+              {
+                use: 'official',
+                family: 'Doe',
+                given: ['John']
+              }
+            ],
+            gender: 'male',
+            birthDate: '1980-01-01'
+          };
+          
+          // Create a proper Headers-like object
+          const headers = new Map([
+            ['content-type', 'application/fhir+json'],
+            ['location', `${url}/test-patient-id`]
+          ]);
+          headers.get = (name) => headers.has(name.toLowerCase()) ? headers.get(name.toLowerCase()) : null;
+          headers.forEach = (callback) => {
+            for (const [key, value] of headers.entries()) {
+              callback(value, key);
+            }
+          };
+          
+          return Promise.resolve({
+            ok: true,
+            status: 201,
+            statusText: 'Created',
+            headers: headers,
+            text: () => Promise.resolve(JSON.stringify(mockResponse)),
+            json: () => Promise.resolve(mockResponse)
+          });
+        }
+        
+        // Default fallback for other URLs
+        const defaultHeaders = new Map();
+        defaultHeaders.get = () => null;
+        defaultHeaders.forEach = () => {};
+        
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: defaultHeaders,
+          text: () => Promise.resolve('{}'),
+          json: () => Promise.resolve({})
+        });
+      });
     });
 
     test('should create FHIR patient resource', async () => {
@@ -88,6 +146,10 @@ describe('EHR Engine Integration', () => {
       };
 
       const result = await ehrEngine.createResource(mockPatient);
+      
+      if (!result.success) {
+        console.log('Create patient test failed with error:', result.error);
+      }
       
       expect(result.success).toBe(true);
       expect(result.data?.resourceType).toBe('Patient');
@@ -227,6 +289,8 @@ describe('EHR Engine Integration', () => {
   describe('External EHR Integration', () => {
     beforeEach(async () => {
       await ehrEngine.initialize();
+      // Set test authentication token
+      ehrEngine.fhirClient.setAccessToken('test-token-for-integration-tests', 3600);
     });
 
     test('should register external connector', () => {
@@ -278,6 +342,8 @@ describe('EHR Engine Integration', () => {
   describe('Specialty Module Integration', () => {
     beforeEach(async () => {
       await ehrEngine.initialize();
+      // Set test authentication token
+      ehrEngine.fhirClient.setAccessToken('test-token-for-integration-tests', 3600);
     });
 
     test('should register specialty module', async () => {
@@ -371,6 +437,8 @@ describe('EHR Engine Integration', () => {
   describe('Performance and Scaling', () => {
     beforeEach(async () => {
       await ehrEngine.initialize();
+      // Set test authentication token
+      ehrEngine.fhirClient.setAccessToken('test-token-for-integration-tests', 3600);
     });
 
     test('should handle concurrent operations', async () => {
