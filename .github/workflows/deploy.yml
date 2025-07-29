@@ -1,0 +1,32 @@
+name: Deploy to WordPress
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Sync Theme to WordPress via FTP
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ${{ secrets.WP_FTP_SERVER }}
+        username: ${{ secrets.WP_FTP_USERNAME }}
+        password: ${{ secrets.WP_FTP_PASSWORD }}
+        local-dir: ./wordpress-theme # Path to your theme folder
+        server-dir: /wp-content/themes/webqx-theme # Path on the WordPress server
+
+    - name: Sync Plugin to WordPress via FTP
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ${{ secrets.WP_FTP_SERVER }}
+        username: ${{ secrets.WP_FTP_USERNAME }}
+        password: ${{ secrets.WP_FTP_PASSWORD }}
+        local-dir: ./wordpress-plugin # Path to your plugin folder
+        server-dir: /wp-content/plugins/webqx-plugin # Path on the WordPress server
