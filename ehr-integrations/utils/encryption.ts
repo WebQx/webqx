@@ -66,23 +66,24 @@ interface DerivedKey {
 }
 
 /**
- * Default encryption configuration
+ * Default encryption configuration with enhanced security
  */
 const DEFAULT_CONFIG: EncryptionConfig = {
   algorithm: 'aes-256-gcm',
   keyDerivation: 'pbkdf2',
-  iterations: 100000,
+  iterations: 200000, // Increased for better security
   saltLength: 32,
   ivLength: 12,
   tagLength: 16
 };
 
 /**
- * Encryption service class
+ * Encryption service class with enhanced security and fallback mechanisms
  */
 export class EncryptionService {
   private config: EncryptionConfig;
   private masterKey?: string;
+  private fallbackAlgorithms: string[] = ['aes-256-gcm', 'aes-256-cbc', 'aes-192-gcm'];
 
   /**
    * Constructor
@@ -91,6 +92,24 @@ export class EncryptionService {
   constructor(config: Partial<EncryptionConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.initializeMasterKey();
+    this.validateConfiguration();
+  }
+
+  /**
+   * Validate encryption configuration
+   */
+  private validateConfiguration(): void {
+    if (this.config.iterations < 100000) {
+      console.warn('Encryption iterations below recommended minimum (100,000)');
+    }
+    
+    if (this.config.saltLength < 16) {
+      throw new Error('Salt length must be at least 16 bytes for security');
+    }
+    
+    if (!this.fallbackAlgorithms.includes(this.config.algorithm)) {
+      console.warn(`Algorithm ${this.config.algorithm} not in fallback list`);
+    }
   }
 
   /**
@@ -98,16 +117,51 @@ export class EncryptionService {
    * @param masterKey Master key for encryption
    */
   setMasterKey(masterKey: string): void {
+    if (masterKey.length < 32) {
+      throw new Error('Master key must be at least 32 characters for security');
+    }
     this.masterKey = masterKey;
   }
 
   /**
-   * Encrypt sensitive data
+   * Encrypt sensitive data with fallback mechanism
    * @param plaintext Data to encrypt
    * @param password Optional password (uses master key if not provided)
    * @returns Promise resolving to encrypted data
    */
   async encrypt(plaintext: string, password?: string): Promise<EncryptedData> {
+    const errors: string[] = [];
+    
+    // Try primary algorithm first
+    try {
+      return await this.encryptWithAlgorithm(plaintext, password, this.config.algorithm);
+    } catch (error) {
+      errors.push(`Primary algorithm ${this.config.algorithm}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    // Try fallback algorithms
+    for (const algorithm of this.fallbackAlgorithms) {
+      if (algorithm === this.config.algorithm) continue; // Already tried
+      
+      try {
+        console.warn(`Falling back to algorithm: ${algorithm}`);
+        return await this.encryptWithAlgorithm(plaintext, password, algorithm);
+      } catch (error) {
+        errors.push(`Fallback algorithm ${algorithm}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    throw new Error(`All encryption algorithms failed: ${errors.join('; ')}`);
+  }
+
+  /**
+   * Encrypt with specific algorithm
+   * @param plaintext Data to encrypt
+   * @param password Password to use
+   * @param algorithm Algorithm to use
+   * @returns Promise resolving to encrypted data
+   */
+  private async encryptWithAlgorithm(plaintext: string, password?: string, algorithm?: string): Promise<EncryptedData> {
     try {
       if (!plaintext) {
         throw new Error('Plaintext cannot be empty');
@@ -118,6 +172,8 @@ export class EncryptionService {
         throw new Error('No encryption password or master key available');
       }
 
+      const currentAlgorithm = algorithm || this.config.algorithm;
+
       // Generate salt and IV
       const salt = this.generateRandomBytes(this.config.saltLength);
       const iv = this.generateRandomBytes(this.config.ivLength);
@@ -126,14 +182,14 @@ export class EncryptionService {
       const derivedKey = await this.deriveKey(keyPassword, salt);
 
       // Encrypt data
-      const encryptedResult = await this.performEncryption(plaintext, derivedKey.key, iv);
+      const encryptedResult = await this.performEncryption(plaintext, derivedKey.key, iv, currentAlgorithm);
 
       // Prepare result
       const result: EncryptedData = {
         data: this.arrayBufferToBase64(encryptedResult.data),
         salt: this.arrayBufferToBase64(salt),
         iv: this.arrayBufferToBase64(iv),
-        algorithm: this.config.algorithm,
+        algorithm: currentAlgorithm,
         keyDerivation: this.config.keyDerivation,
         iterations: this.config.iterations
       };
@@ -468,33 +524,37 @@ export class EncryptionService {
   }
 
   /**
-   * Perform encryption
+   * Perform encryption with algorithm support
    * @param plaintext Plaintext to encrypt
    * @param key Encryption key
    * @param iv Initialization vector
+   * @param algorithm Algorithm to use
    * @returns Promise resolving to encrypted data
    */
   private async performEncryption(
     plaintext: string,
     key: ArrayBuffer,
-    iv: ArrayBuffer
+    iv: ArrayBuffer,
+    algorithm?: string
   ): Promise<{ data: ArrayBuffer; tag?: ArrayBuffer }> {
     const encoder = new TextEncoder();
     const plaintextBuffer = encoder.encode(plaintext);
 
+    const currentAlgorithm = algorithm || this.config.algorithm;
+
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
       key,
-      { name: this.getAlgorithmName(this.config.algorithm) },
+      { name: this.getAlgorithmName(currentAlgorithm) },
       false,
       ['encrypt']
     );
 
-    const algorithm = this.getEncryptionParams(this.config.algorithm, iv);
-    const encryptedData = await crypto.subtle.encrypt(algorithm, cryptoKey, plaintextBuffer);
+    const algorithmParams = this.getEncryptionParams(currentAlgorithm, iv);
+    const encryptedData = await crypto.subtle.encrypt(algorithmParams, cryptoKey, plaintextBuffer);
 
     // For GCM mode, extract the tag
-    if (this.config.algorithm.includes('gcm')) {
+    if (currentAlgorithm.includes('gcm')) {
       const dataLength = encryptedData.byteLength - this.config.tagLength;
       const data = encryptedData.slice(0, dataLength);
       const tag = encryptedData.slice(dataLength);
