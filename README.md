@@ -161,6 +161,52 @@ Modular workflows are designed for:
 - Dermatology  
 - OBGYN  
 
+# 🌐 WebQX™ Transcription + PACS Module
+
+A modular, specialty-aware clinical documentation panel for WebQX™. Designed for multilingual transcription, PACS imaging reference, and role-specific workflows across Provider, Reviewer, and Admin interfaces.
+
+---
+
+## 🚀 Features
+
+- 🎙️ **Live Dictation Panel** for real-time clinical transcription
+- 🌍 **Multilingual & Specialty Support** including Radiology, Cardiology, Primary Care
+- 🖼️ **PACS Imaging Preview** integrated into Provider dashboard
+- 📡 **Whisper-style Sync** with timestamped transcript segments
+- 🔐 **Privacy & Offline Modes** for secure, resilient recording
+- ✅ **EMR Submission + Reviewer Queue** for quality control
+- 📊 **Audit Logs + Specialty Analytics** for Admin oversight
+
+---
+
+## 🧠 Tech Stack
+
+| Layer        | Tech                      |
+|--------------|---------------------------|
+| UI Framework | React Native + Expo       |
+| State Mgmt   | useState, useEffect Hooks |
+| Transcription| Simulated Whisper Sync    |
+| PACS Preview | ScrollView + Image fetch  |
+
+---
+
+## 🧪 Module Overview
+
+```plaintext
+📱 Mobile UX
+│
+├── 🎙️ Provider Panel
+│   ├── Dictation Controls
+│   ├── Transcript Input + Segment Sync
+│   ├── Privacy + Offline Toggles
+│   └── 🖼️ PACS Imaging Preview
+│
+├── 🧐 Reviewer Panel
+│   └── Transcript Queue + Flag/Approve
+│
+└── 📋 Admin Panel
+    ├── Audit Logs
+    └── Specialty Transcript Analytics
 ## 🛡️ Security & Compliance  
 - TLS encryption for data in transit  
 - Audit-ready backend with IP protection options  
