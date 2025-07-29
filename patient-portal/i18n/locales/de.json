@@ -1,0 +1,102 @@
+{
+  "portal": {
+    "title": "🌐 Willkommen im WebQX™ Patientenportal",
+    "tagline": "Patienten stärken und Gesundheitsdienstleister unterstützen",
+    "description": "Ihre umfassende Gesundheitsmanagement-Plattform mit mehrsprachiger Unterstützung, Terminplanung, sicherer Nachrichten und Zugang zu Gesundheitsakten.",
+    "welcomeBack": "Willkommen zurück, {{name}}! 👋"
+  },
+  "navigation": {
+    "main": "Hauptnavigation",
+    "quickActions": "Schnellaktionen-Menü",
+    "footer": "Fußzeilen-Navigation"
+  },
+  "sections": {
+    "appointments": "📅 Ihre Termine",
+    "quickActions": "🎯 Schnelle Aktionen",
+    "healthOverview": "📊 Gesundheitsübersicht",
+    "healthEducation": "📚 Gesundheitsbildung",
+    "emergency": "🚨 Notfallinformationen"
+  },
+  "appointments": {
+    "upcoming": "Anstehender Termin",
+    "noAppointments": "Keine Termine geplant",
+    "provider": "Anbieter:",
+    "annualCheckup": "Jahresuntersuchung",
+    "followUp": "Nachuntersuchung",
+    "annualCheckupDetails": "Jährliche körperliche Untersuchung und Gesundheitsvorsorge",
+    "followUpDetails": "Nachuntersuchung zur vorherigen Beratung",
+    "scheduledFor": "{{date}} um {{time}}"
+  },
+  "actions": {
+    "scheduleAppointment": "🗓️ Termin Vereinbaren",
+    "viewLabResults": "🧪 Laborergebnisse Anzeigen",
+    "messageProvider": "💬 Nachricht an Anbieter",
+    "refillPrescription": "💊 Rezept Erneuern"
+  },
+  "health": {
+    "recentVitals": "📈 Aktuelle Vitalwerte",
+    "healthAlerts": "🔔 Gesundheitswarnungen",
+    "bloodPressure": "Blutdruck: {{value}} mmHg",
+    "heartRate": "Herzfrequenz: {{value}} bpm",
+    "weight": "Gewicht: {{value}} Pfund",
+    "lastUpdated": "Zuletzt Aktualisiert: {{date}}",
+    "fluShotDue": "Jährliche Grippeimpfung fällig",
+    "prescriptionRefill": "Rezepterneuerung verfügbar",
+    "wellnessReminder": "Wellness-Check Erinnerung"
+  },
+  "literacy": {
+    "assistant": "Gesundheitsbildung-Assistent",
+    "searchPlaceholder": "Medizinische Begriffe suchen...",
+    "searchHelp": "Tippen Sie, um medizinische Begriffe und ihre Definitionen zu suchen",
+    "noResults": "Keine medizinischen Begriffe gefunden, die Ihrer Suche entsprechen.",
+    "glossary": "Glossar medizinischer Begriffe",
+    "terms": {
+      "hypertension": {
+        "term": "Hypertonie",
+        "definition": "Hoher Blutdruck"
+      },
+      "diabetes": {
+        "term": "Diabetes",
+        "definition": "Ein Zustand, bei dem der Blutzuckerspiegel zu hoch ist"
+      },
+      "prescription": {
+        "term": "Rezept",
+        "definition": "Eine schriftliche Anweisung eines Arztes für Medikamente"
+      },
+      "laboratory": {
+        "term": "Labor",
+        "definition": "Medizinische Tests, die an Blut-, Urin- oder anderen Proben durchgeführt werden"
+      }
+    }
+  },
+  "emergency": {
+    "notice": "Für medizinische Notfälle rufen Sie sofort 911 an",
+    "urgentCare": "Für dringende, aber nicht notfallmäßige Gesundheitsbedürfnisse:",
+    "nurseHotline": "Krankenschwester-Hotline: (555) 123-HELP",
+    "afterHours": "Nach-Stunden-Klinik: (555) 123-CARE",
+    "portalMessaging": "Patientenportal-Nachrichten für nicht dringende Fragen"
+  },
+  "footer": {
+    "copyright": "© 2024 WebQX Gesundheitsplattform. Alle Rechte vorbehalten.",
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "termsOfService": "Nutzungsbedingungen",
+    "helpSupport": "Hilfe & Support",
+    "accessibility": "Barrierefreiheit"
+  },
+  "language": {
+    "selector": "Language / Idioma / Langue / Sprache / 语言",
+    "current": "Aktuelle Sprache: {{language}}",
+    "changeLanguage": "Sprache ändern zu {{language}}"
+  },
+  "aria": {
+    "dashboard": "WebQX Patientenportal Dashboard",
+    "personalizedWelcome": "Personalisierte Begrüßung",
+    "appointmentCard": "Termin: {{title}}",
+    "appointmentDateTime": "Datum und Uhrzeit: {{datetime}}",
+    "vitalsSummary": "Zusammenfassung der Vitalwerte",
+    "healthAlerts": "Gesundheitswarnungen und Erinnerungen",
+    "emergencyInfo": "Notfallkontaktinformationen",
+    "expandAssistant": "Gesundheitsbildung-Assistent erweitern",
+    "collapseAssistant": "Gesundheitsbildung-Assistent ausblenden"
+  }
+}

@@ -196,10 +196,13 @@ describe('Home Component', () => {
     const user = userEvent.setup();
     render(<Home />);
     
-    // Start tabbing through interactive elements
-    const firstButton = screen.getByRole('button', { name: /Schedule new appointment/ });
+    // First focusable element should be the language selector from the Header
+    const languageSelector = screen.getByRole('combobox');
+    await user.tab();
+    expect(languageSelector).toHaveFocus();
     
-    // Focus should work on buttons
+    // Next focusable element should be the first action button
+    const firstButton = screen.getByRole('button', { name: /Schedule new appointment/ });
     await user.tab();
     expect(firstButton).toHaveFocus();
     

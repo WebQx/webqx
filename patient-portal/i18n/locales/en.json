@@ -1,6 +1,6 @@
 {
   "portal": {
-    "title": "Welcome to WebQX™ Patient Portal",
+    "title": "🌐 Welcome to WebQX™ Patient Portal",
     "tagline": "Empowering Patients and Supporting Health Care Providers",
     "description": "Your comprehensive healthcare management platform with multilingual support, appointment scheduling, secure messaging, and health record access.",
     "welcomeBack": "Welcome back, {{name}}! 👋"
@@ -11,11 +11,11 @@
     "footer": "Footer navigation"
   },
   "sections": {
-    "appointments": "Your Appointments",
-    "quickActions": "Quick Actions",
-    "healthOverview": "Health Overview",
-    "healthEducation": "Health Education",
-    "emergency": "Emergency Information"
+    "appointments": "📅 Your Appointments",
+    "quickActions": "🎯 Quick Actions", 
+    "healthOverview": "📊 Health Overview",
+    "healthEducation": "📚 Health Education",
+    "emergency": "🚨 Emergency Information"
   },
   "appointments": {
     "upcoming": "Upcoming Appointment",
@@ -28,14 +28,14 @@
     "scheduledFor": "{{date}} at {{time}}"
   },
   "actions": {
-    "scheduleAppointment": "Schedule Appointment",
-    "viewLabResults": "View Lab Results",
-    "messageProvider": "Message Provider",
-    "refillPrescription": "Refill Prescription"
+    "scheduleAppointment": "🗓️ Schedule Appointment",
+    "viewLabResults": "🧪 View Lab Results", 
+    "messageProvider": "💬 Message Provider",
+    "refillPrescription": "💊 Refill Prescription"
   },
   "health": {
-    "recentVitals": "Recent Vitals",
-    "healthAlerts": "Health Alerts",
+    "recentVitals": "📈 Recent Vitals",
+    "healthAlerts": "🔔 Health Alerts",
     "bloodPressure": "Blood Pressure: {{value}} mmHg",
     "heartRate": "Heart Rate: {{value}} bpm",
     "weight": "Weight: {{value}} lbs",
@@ -84,7 +84,7 @@
     "accessibility": "Accessibility"
   },
   "language": {
-    "selector": "Language",
+    "selector": "Language / Idioma / Langue / Sprache / 语言",
     "current": "Current language: {{language}}",
     "changeLanguage": "Change language to {{language}}"
   },
