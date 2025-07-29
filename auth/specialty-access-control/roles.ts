@@ -259,7 +259,7 @@ export function getEffectivePermissions(role: UserRole): Permission[] {
   }, [] as Permission[]);
 
   // Remove duplicates and return
-  return [...new Set([...directPermissions, ...inheritedPermissions])];
+  return Array.from(new Set([...directPermissions, ...inheritedPermissions]));
 }
 
 /**
@@ -275,7 +275,7 @@ export function getEffectiveResources(role: UserRole): string[] {
   }, [] as string[]);
 
   // Remove duplicates and return
-  return [...new Set([...directResources, ...inheritedResources])];
+  return Array.from(new Set([...directResources, ...inheritedResources]));
 }
 
 /**

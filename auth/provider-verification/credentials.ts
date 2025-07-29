@@ -105,7 +105,7 @@ export class ProviderCredentialsManager {
     status: CredentialStatus,
     verificationDate?: Date
   ): Promise<void> {
-    for (const [providerId, credentials] of this.credentials.entries()) {
+    for (const [providerId, credentials] of Array.from(this.credentials.entries())) {
       const credential = credentials.find(c => c.id === credentialId);
       
       if (credential) {
@@ -254,7 +254,7 @@ export class ProviderCredentialsManager {
    * Acknowledge alert
    */
   async acknowledgeAlert(alertId: string): Promise<void> {
-    for (const [providerId, alerts] of this.alerts.entries()) {
+    for (const [providerId, alerts] of Array.from(this.alerts.entries())) {
       const alert = alerts.find(a => a.id === alertId);
       
       if (alert) {
@@ -273,7 +273,7 @@ export class ProviderCredentialsManager {
   async monitorCredentials(): Promise<void> {
     console.log('[Credentials] Starting credential monitoring');
 
-    for (const [providerId] of this.credentials.entries()) {
+    for (const [providerId] of Array.from(this.credentials.entries())) {
       await this.generateAlerts(providerId);
     }
 

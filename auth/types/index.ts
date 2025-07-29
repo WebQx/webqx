@@ -86,7 +86,11 @@ export type Permission =
   // Nursing permissions
   | 'write:vitals'
   | 'administer:medications'
-  | 'monitor:patients';
+  | 'monitor:patients'
+  
+  // Attending-specific permissions
+  | 'supervise:residents'
+  | 'approve:procedures';
 
 export interface RolePermissions {
   role: UserRole;
