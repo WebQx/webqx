@@ -365,6 +365,7 @@ export class PACSAuditLogger extends AuditLogger {
     const unauthorizedAttempts = logs.filter(log => !log.success && log.action.includes('access')).length;
     const dataBreaches = logs.filter(log => 
       log.action.includes('external') || 
+      log.action.includes('share') ||
       (log.encryptionStatus === 'unencrypted' && log.success)
     ).length;
     
@@ -385,6 +386,7 @@ export class PACSAuditLogger extends AuditLogger {
       !log.success || 
       log.action.includes('delete') || 
       log.action.includes('external') ||
+      log.action.includes('share') ||
       log.encryptionStatus === 'unencrypted'
     );
 

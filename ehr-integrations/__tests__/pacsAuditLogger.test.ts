@@ -219,11 +219,7 @@ describe('PACS Audit Logger', () => {
 
   describe('Compliance Reporting', () => {
     test('should generate compliance report with metrics', async () => {
-      // Set up test data by logging several activities
-      const startDate = new Date('2024-01-01');
-      const endDate = new Date('2024-01-31');
-
-      // Log some test activities
+      // Log some test activities first
       await pacsAuditLogger.logPACS({
         action: 'pacs_image_view',
         resourceType: 'dicom_image',
@@ -245,6 +241,11 @@ describe('PACS Audit Logger', () => {
           encryptionStatus: 'unencrypted'
         }
       });
+
+      // Use current date range to ensure logs are captured
+      const now = new Date();
+      const startDate = new Date(now.getTime() - 60000); // 1 minute ago
+      const endDate = new Date(now.getTime() + 60000); // 1 minute from now
 
       const report = await pacsAuditLogger.generateComplianceReport(startDate, endDate);
 
@@ -272,7 +273,7 @@ describe('PACS Audit Logger', () => {
 
       const report = await pacsAuditLogger.generateComplianceReport(
         new Date('2024-01-01'), 
-        new Date('2024-12-31')
+        new Date('2025-12-31') // Use future date to capture current logs
       );
 
       expect(report.dataBreaches).toBeGreaterThan(0);
