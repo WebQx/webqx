@@ -2,15 +2,12 @@
  * Test suite for WebQX™ OHIF Integration Module
  */
 
-import { 
-  DICOMService, 
-  ImagingAPI, 
-  PerformanceService, 
-  ImagingRBAC,
-  WebQXImagingPlugin,
-  createImagingWorkflow,
-  validateDICOMData
-} from '../index';
+import DICOMServiceDefault from '../services/dicomService';
+import ImagingAPIDefault from '../services/imagingApi';
+import PerformanceServiceDefault from '../services/performanceService';
+import ImagingRBACDefault from '../auth/rbac';
+import WebQXImagingPluginDefault from '../ohif/plugins/WebQXImagingPlugin';
+import { createImagingWorkflow, validateDICOMData } from '../utils';
 
 import { 
   WebQXUser, 
@@ -66,7 +63,7 @@ describe('WebQX OHIF Integration Module', () => {
   });
 
   describe('DICOMService', () => {
-    let dicomService: DICOMService;
+    let dicomService: DICOMServiceDefault;
 
     beforeEach(() => {
       const config = {
@@ -78,7 +75,7 @@ describe('WebQX OHIF Integration Module', () => {
           compression: true
         }
       };
-      dicomService = new DICOMService(config);
+      dicomService = new DICOMServiceDefault(config);
     });
 
     test('should initialize with correct configuration', () => {
@@ -123,10 +120,10 @@ describe('WebQX OHIF Integration Module', () => {
   });
 
   describe('ImagingAPI', () => {
-    let imagingAPI: ImagingAPI;
+    let imagingAPI: ImagingAPIDefault;
 
     beforeEach(() => {
-      imagingAPI = new ImagingAPI({
+      imagingAPI = new ImagingAPIDefault({
         dicomBaseUrl: 'http://localhost:8080/dcm4chee-arc',
         enablePerformanceOptimization: true,
         cacheSize: 512
@@ -187,7 +184,7 @@ describe('WebQX OHIF Integration Module', () => {
   });
 
   describe('PerformanceService', () => {
-    let performanceService: PerformanceService;
+    let performanceService: PerformanceServiceDefault;
 
     beforeEach(() => {
       const cacheConfig: CacheConfiguration = {
@@ -196,7 +193,7 @@ describe('WebQX OHIF Integration Module', () => {
         strategy: 'lru',
         compression: true
       };
-      performanceService = new PerformanceService(cacheConfig);
+      performanceService = new PerformanceServiceDefault(cacheConfig);
     });
 
     test('should cache data successfully', async () => {
@@ -241,10 +238,10 @@ describe('WebQX OHIF Integration Module', () => {
   });
 
   describe('ImagingRBAC', () => {
-    let rbac: ImagingRBAC;
+    let rbac: ImagingRBACDefault;
 
     beforeEach(() => {
-      rbac = new ImagingRBAC();
+      rbac = new ImagingRBACDefault();
     });
 
     test('should check user permissions correctly', () => {
@@ -354,7 +351,7 @@ describe('WebQX OHIF Integration Module', () => {
   });
 
   describe('WebQXImagingPlugin', () => {
-    let plugin: WebQXImagingPlugin;
+    let plugin: WebQXImagingPluginDefault;
     let mockCanvas: HTMLCanvasElement;
 
     beforeEach(() => {
@@ -366,7 +363,7 @@ describe('WebQX OHIF Integration Module', () => {
         onMeasurementChange: jest.fn()
       };
 
-      plugin = new WebQXImagingPlugin(context);
+      plugin = new WebQXImagingPluginDefault(context);
 
       // Mock canvas
       mockCanvas = document.createElement('canvas');
@@ -408,7 +405,7 @@ describe('WebQX OHIF Integration Module', () => {
         permissions: ['view_images'] // Limited permissions
       };
       
-      const restrictedPlugin = new WebQXImagingPlugin({
+      const restrictedPlugin = new WebQXImagingPluginDefault({
         user: restrictedUser,
         language: 'en',
         permissions: restrictedUser.permissions
