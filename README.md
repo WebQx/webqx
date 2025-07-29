@@ -33,6 +33,14 @@ Modular EHR engine enhancements via OpenEMR / OpenMRS:
 - 🤖 **Provider Assistant Bot** → LLM + private Whisper API  
 - 📝 **Transcription Suite** → Whisper + Google Cloud Speech-to-Text + specialty macros  
 
+### Provider Portal - Transcription Module
+Advanced transcription capabilities designed for clinical workflow integration:
+
+- 🎤 **Live Transcription**: Real-time transcription with multilingual support.
+- 🎛️ **Dictation Management**: Start, pause, and stop dictation seamlessly.
+- ⏰ **Timestamp Sync**: Synchronize transcripts with DICOM images.
+- 🔒 **Privacy Controls**: Enable or disable privacy mode during transcription.
+
 ### 🛠️ Admin Console  
 Role-based access and modular configuration for deployment:
 
