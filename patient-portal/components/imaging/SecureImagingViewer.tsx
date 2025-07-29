@@ -8,8 +8,9 @@
  * @version 1.0.0
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { imagingCache } from '../../services/imagingCache';
 
 // Types for imaging viewer
 export interface ImagingStudy {
@@ -51,6 +52,8 @@ interface SecureImagingViewerProps {
   onReleaseRequest?: (request: ReleaseRequest) => void;
   onViewerLoad?: () => void;
   onViewerError?: (error: Error) => void;
+  onPerformanceMetrics?: (metrics: any) => void;
+  enablePerformanceOptimizations?: boolean;
   className?: string;
 }
 
@@ -78,6 +81,8 @@ export const SecureImagingViewer: React.FC<SecureImagingViewerProps> = ({
   onReleaseRequest,
   onViewerLoad,
   onViewerError,
+  onPerformanceMetrics,
+  enablePerformanceOptimizations = true,
   className = '',
 }) => {
   const { t } = useTranslation();
@@ -90,33 +95,67 @@ export const SecureImagingViewer: React.FC<SecureImagingViewerProps> = ({
   const [releaseRequestReason, setReleaseRequestReason] = useState('');
   const [releaseRequestUrgency, setReleaseRequestUrgency] = useState<'routine' | 'urgent' | 'emergency'>('routine');
   const [viewerLoaded, setViewerLoaded] = useState(false);
+  const [loadStartTime, setLoadStartTime] = useState<number>(0);
+  const [cacheMetrics, setCacheMetrics] = useState<any>(null);
+
+  // Performance monitoring
+  const performanceMetrics = useMemo(() => ({
+    loadStartTime,
+    cacheEnabled: enablePerformanceOptimizations,
+    studyId,
+  }), [loadStartTime, enablePerformanceOptimizations, studyId]);
 
   /**
-   * Load study information from API
+   * Load study information from cache or API with performance optimizations
    */
   const loadStudy = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
+      setLoadStartTime(Date.now());
 
-      const response = await fetch(`/api/imaging/studies/${studyId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      let studyData: ImagingStudy;
 
-      if (!response.ok) {
-        throw new Error(`Failed to load study: ${response.statusText}`);
+      if (enablePerformanceOptimizations) {
+        // Use cache service for optimized loading
+        studyData = await imagingCache.getStudy(studyId, patientId);
+        
+        // Update cache metrics
+        const metrics = imagingCache.getMetrics();
+        setCacheMetrics(metrics);
+        onPerformanceMetrics?.(metrics);
+      } else {
+        // Direct API call without caching
+        const response = await fetch(`/api/imaging/studies/${studyId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load study: ${response.statusText}`);
+        }
+
+        studyData = await response.json();
       }
 
-      const studyData: ImagingStudy = await response.json();
       setStudy(studyData);
 
       // Load viewer if study is available
       if (studyData.status === 'available' && studyData.viewerUrl) {
-        loadOHIFViewer(studyData.viewerUrl);
+        await loadOHIFViewer(studyData.viewerUrl);
       }
+
+      // Report performance metrics
+      const loadTime = Date.now() - loadStartTime;
+      onPerformanceMetrics?.({
+        ...performanceMetrics,
+        loadTime,
+        cacheMetrics,
+        studyStatus: studyData.status,
+      });
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
@@ -124,7 +163,7 @@ export const SecureImagingViewer: React.FC<SecureImagingViewerProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [studyId, onViewerError]);
+  }, [studyId, patientId, enablePerformanceOptimizations, onViewerError, onPerformanceMetrics, loadStartTime, performanceMetrics, cacheMetrics]);
 
   /**
    * Load OHIF viewer in iframe with patient-safe configuration
