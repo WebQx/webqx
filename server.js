@@ -17,6 +17,10 @@ const {
     generateTestToken
 } = require('./fhir/middleware/auth');
 
+// SSO imports
+const ssoRoutes = require('./auth/sso-routes');
+const ssoService = require('./auth/plugins/sso-integration-service');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -67,13 +71,18 @@ app.use(express.static(path.join(__dirname, '.')));
 
 // Health check endpoint for Railway
 app.get('/health', (req, res) => {
+    const ssoHealth = ssoService.healthCheck();
     res.status(200).json({ 
         status: 'healthy', 
         service: 'WebQX Healthcare Platform',
         fhir: 'enabled',
+        sso: ssoHealth.status,
         timestamp: new Date().toISOString()
     });
 });
+
+// SSO Authentication routes
+app.use('/api/sso', ssoRoutes);
 
 // FHIR OAuth2 endpoints
 app.get('/oauth/authorize', createAuthEndpoint());
