@@ -65,14 +65,99 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files
 app.use(express.static(path.join(__dirname, '.')));
 
-// Health check endpoint for Railway
+// Enhanced health check endpoint for CI/CD monitoring
 app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'healthy', 
-        service: 'WebQX Healthcare Platform',
-        fhir: 'enabled',
-        timestamp: new Date().toISOString()
-    });
+    const startTime = process.hrtime();
+    
+    try {
+        // Read version information if available
+        let versionInfo = {};
+        try {
+            const fs = require('fs');
+            if (fs.existsSync('./version.txt')) {
+                const versionData = fs.readFileSync('./version.txt', 'utf8');
+                versionData.split('\n').forEach(line => {
+                    const [key, value] = line.split('=');
+                    if (key && value) {
+                        versionInfo[key] = value;
+                    }
+                });
+            }
+        } catch (e) {
+            // Version file not available, continue without it
+        }
+        
+        const [seconds, nanoseconds] = process.hrtime(startTime);
+        const responseTime = seconds * 1000 + nanoseconds / 1000000; // Convert to milliseconds
+        
+        const healthInfo = {
+            status: 'healthy',
+            service: 'WebQX Healthcare Platform',
+            environment: process.env.NODE_ENV || 'development',
+            version: versionInfo.BUILD_VERSION || 'unknown',
+            build_time: versionInfo.BUILD_TIME || 'unknown',
+            deployment_type: versionInfo.DEPLOYMENT_TYPE || 'unknown',
+            uptime: process.uptime(),
+            memory_usage: process.memoryUsage(),
+            response_time_ms: Math.round(responseTime * 100) / 100,
+            timestamp: new Date().toISOString(),
+            features: {
+                fhir: 'enabled',
+                patient_portal: 'enabled',
+                admin_console: 'enabled',
+                transcription: process.env.FEATURE_TRANSCRIPTION === 'true',
+                ai_assistant: process.env.FEATURE_AI_ASSISTANT === 'true',
+                multilingual: process.env.FEATURE_MULTILINGUAL === 'true'
+            },
+            dependencies: {
+                database: 'not_checked', // Could add database ping here
+                redis: 'not_checked',    // Could add Redis ping here
+                external_apis: 'not_checked'
+            }
+        };
+        
+        res.status(200).json(healthInfo);
+    } catch (error) {
+        const [seconds, nanoseconds] = process.hrtime(startTime);
+        const responseTime = seconds * 1000 + nanoseconds / 1000000;
+        
+        res.status(503).json({
+            status: 'unhealthy',
+            service: 'WebQX Healthcare Platform',
+            error: error.message,
+            response_time_ms: Math.round(responseTime * 100) / 100,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
+// Simple version endpoint for deployment tracking
+app.get('/version', (req, res) => {
+    try {
+        const fs = require('fs');
+        let versionInfo = {
+            service: 'WebQX Healthcare Platform',
+            version: 'unknown',
+            environment: process.env.NODE_ENV || 'development'
+        };
+        
+        if (fs.existsSync('./version.txt')) {
+            const versionData = fs.readFileSync('./version.txt', 'utf8');
+            versionData.split('\n').forEach(line => {
+                const [key, value] = line.split('=');
+                if (key && value) {
+                    versionInfo[key] = value;
+                }
+            });
+        }
+        
+        res.status(200).json(versionInfo);
+    } catch (error) {
+        res.status(500).json({
+            error: 'Unable to read version information',
+            service: 'WebQX Healthcare Platform'
+        });
+    }
 });
 
 // FHIR OAuth2 endpoints

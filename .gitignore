@@ -46,3 +46,33 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# CI/CD and deployment artifacts
+version.txt
+server.pid
+*.backup
+backups/
+deployment-*.json
+rollback-*.json
+
+# Environment files (keeping .env.production and .env.staging as templates)
+.env.test
+.env.development
+.env.production.local
+.env.staging.local
+
+# Railway deployment files
+.railway/
+
+# Testing artifacts
+test-results/
+coverage/
+junit.xml
+
+# Security scan results
+security-report.json
+vulnerability-report.json
+
+# Temporary CI/CD files
+.ci-temp/
+.deployment-temp/

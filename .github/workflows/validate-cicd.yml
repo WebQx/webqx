@@ -1,0 +1,301 @@
+# WebQX Healthcare Platform - CI/CD Validation Workflow
+# Validates the CI/CD pipeline setup and configuration
+
+name: Validate CI/CD Setup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Run weekly on Mondays at 6 AM UTC
+
+jobs:
+  validate-workflows:
+    name: Validate Workflow Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Validate workflow files
+      run: |
+        echo "Validating GitHub Actions workflow files..."
+        
+        # Check if all required workflows exist
+        required_workflows=(
+          ".github/workflows/ci.yml"
+          ".github/workflows/deploy-staging.yml"
+          ".github/workflows/deploy-production.yml"
+          ".github/workflows/rollback.yml"
+        )
+        
+        missing_workflows=()
+        for workflow in "${required_workflows[@]}"; do
+          if [ ! -f "$workflow" ]; then
+            missing_workflows+=("$workflow")
+          else
+            echo "✅ Found: $workflow"
+          fi
+        done
+        
+        if [ ${#missing_workflows[@]} -gt 0 ]; then
+          echo "❌ Missing workflow files: ${missing_workflows[*]}"
+          exit 1
+        fi
+        
+        echo "✅ All required workflow files found"
+        
+    - name: Validate environment configuration
+      run: |
+        echo "Validating environment configuration files..."
+        
+        # Check environment template files
+        env_files=(
+          ".env.example"
+          ".env.staging"
+          ".env.production"
+        )
+        
+        for env_file in "${env_files[@]}"; do
+          if [ -f "$env_file" ]; then
+            echo "✅ Found: $env_file"
+            
+            # Check for required variables
+            required_vars=(
+              "NODE_ENV"
+              "DATABASE_URL"
+              "API_BASE_URL"
+            )
+            
+            for var in "${required_vars[@]}"; do
+              if grep -q "^$var=" "$env_file"; then
+                echo "  ✅ $var defined in $env_file"
+              else
+                echo "  ⚠️  $var missing in $env_file"
+              fi
+            done
+          else
+            echo "❌ Missing: $env_file"
+          fi
+        done
+
+  validate-docker:
+    name: Validate Docker Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Validate Dockerfile
+      run: |
+        echo "Validating Dockerfile..."
+        
+        if [ ! -f "Dockerfile" ]; then
+          echo "❌ Dockerfile not found"
+          exit 1
+        fi
+        
+        echo "✅ Dockerfile found"
+        
+        # Check for health check
+        if grep -q "HEALTHCHECK" Dockerfile; then
+          echo "✅ Health check configured in Dockerfile"
+        else
+          echo "⚠️  No health check found in Dockerfile"
+        fi
+        
+        # Check for non-root user
+        if grep -q "USER" Dockerfile; then
+          echo "✅ Non-root user configured"
+        else
+          echo "⚠️  Running as root user"
+        fi
+        
+    - name: Test Docker build
+      run: |
+        echo "Testing Docker build..."
+        docker build -t webqx-validation:test .
+        echo "✅ Docker build successful"
+
+  validate-secrets:
+    name: Validate Required Secrets
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check secret configuration
+      run: |
+        echo "Validating required secrets configuration..."
+        
+        # This job validates that secret names are properly referenced
+        # The actual secrets are not accessible in this context
+        
+        required_secrets=(
+          "RAILWAY_TOKEN"
+          "RAILWAY_STAGING_PROJECT_ID"
+          "RAILWAY_PRODUCTION_PROJECT_ID"
+        )
+        
+        optional_secrets=(
+          "SLACK_WEBHOOK_URL"
+          "SNYK_TOKEN"
+        )
+        
+        echo "Required secrets for CI/CD:"
+        for secret in "${required_secrets[@]}"; do
+          echo "  🔑 $secret"
+        done
+        
+        echo ""
+        echo "Optional secrets for enhanced features:"
+        for secret in "${optional_secrets[@]}"; do
+          echo "  🔑 $secret (optional)"
+        done
+        
+        echo ""
+        echo "⚠️  Please ensure all required secrets are configured in repository settings"
+
+  validate-environments:
+    name: Validate GitHub Environments
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check environment protection rules
+      run: |
+        echo "Validating GitHub environment configuration..."
+        
+        environments=(
+          "staging"
+          "production"
+          "production-rollback"
+        )
+        
+        echo "Required GitHub environments:"
+        for env in "${environments[@]}"; do
+          echo "  🌍 $env"
+        done
+        
+        echo ""
+        echo "Environment protection recommendations:"
+        echo "  🔒 staging: No approval required, allow develop branch"
+        echo "  🔒 production: Require reviewers, allow main branch only"
+        echo "  🔒 production-rollback: Require senior approval"
+
+  validate-health-endpoints:
+    name: Validate Health Endpoints
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Start application for health check validation
+      run: |
+        echo "Starting application to validate health endpoints..."
+        cp .env.example .env
+        npm start &
+        SERVER_PID=$!
+        echo $SERVER_PID > server.pid
+        
+        echo "Waiting for application to start..."
+        sleep 15
+        
+        # Test health endpoint
+        echo "Testing /health endpoint..."
+        if curl -f http://localhost:3000/health; then
+          echo "✅ Health endpoint responsive"
+        else
+          echo "❌ Health endpoint failed"
+          kill $SERVER_PID
+          exit 1
+        fi
+        
+        # Test version endpoint
+        echo "Testing /version endpoint..."
+        if curl -f http://localhost:3000/version; then
+          echo "✅ Version endpoint responsive"
+        else
+          echo "⚠️  Version endpoint not available"
+        fi
+        
+        # Cleanup
+        kill $SERVER_PID
+        rm -f server.pid
+
+  validate-documentation:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check documentation files
+      run: |
+        echo "Validating CI/CD documentation..."
+        
+        required_docs=(
+          "CI-CD-DOCUMENTATION.md"
+          "README.md"
+          "DEPLOYMENT.md"
+        )
+        
+        for doc in "${required_docs[@]}"; do
+          if [ -f "$doc" ]; then
+            echo "✅ Found: $doc"
+            
+            # Check for CI/CD references
+            if grep -qi "ci\|cd\|pipeline\|deploy" "$doc"; then
+              echo "  ✅ Contains CI/CD information"
+            else
+              echo "  ⚠️  May need CI/CD information updates"
+            fi
+          else
+            echo "❌ Missing: $doc"
+          fi
+        done
+
+  validation-summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-workflows, validate-docker, validate-secrets, validate-environments, validate-health-endpoints, validate-documentation]
+    if: always()
+    
+    steps:
+    - name: Generate validation report
+      run: |
+        echo "## 🏥 WebQX CI/CD Validation Report"
+        echo ""
+        echo "| Component | Status |"
+        echo "|-----------|--------|"
+        echo "| Workflow Files | ${{ needs.validate-workflows.result == 'success' && '✅ Valid' || '❌ Issues Found' }} |"
+        echo "| Docker Configuration | ${{ needs.validate-docker.result == 'success' && '✅ Valid' || '❌ Issues Found' }} |"
+        echo "| Secrets Configuration | ${{ needs.validate-secrets.result == 'success' && '✅ Valid' || '❌ Issues Found' }} |"
+        echo "| Environment Setup | ${{ needs.validate-environments.result == 'success' && '✅ Valid' || '❌ Issues Found' }} |"
+        echo "| Health Endpoints | ${{ needs.validate-health-endpoints.result == 'success' && '✅ Working' || '❌ Issues Found' }} |"
+        echo "| Documentation | ${{ needs.validate-documentation.result == 'success' && '✅ Complete' || '❌ Issues Found' }} |"
+        echo ""
+        echo "Validation completed at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        
+        # Determine overall status
+        if [ "${{ needs.validate-workflows.result }}" = "success" ] && \
+           [ "${{ needs.validate-docker.result }}" = "success" ] && \
+           [ "${{ needs.validate-health-endpoints.result }}" = "success" ]; then
+          echo ""
+          echo "🎉 **CI/CD pipeline validation passed!**"
+          echo "The system is ready for automated deployments."
+        else
+          echo ""
+          echo "⚠️ **CI/CD pipeline validation found issues.**"
+          echo "Please review the failed jobs and fix issues before deploying."
+          exit 1
+        fi

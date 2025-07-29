@@ -1,0 +1,545 @@
+# WebQX Healthcare Platform - Rollback Workflow
+# Provides rapid rollback capabilities for failed deployments
+
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to rollback'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version to rollback to (commit SHA, tag, or "previous")'
+        required: true
+        default: 'previous'
+      reason:
+        description: 'Reason for rollback'
+        required: true
+      emergency:
+        description: 'Emergency rollback (skip some safety checks)'
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # Pre-rollback validation
+  rollback-validation:
+    name: Rollback Validation
+    runs-on: ubuntu-latest
+    
+    outputs:
+      target-version: ${{ steps.version.outputs.target }}
+      rollback-id: ${{ steps.rollback.outputs.rollback_id }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Determine target version
+      id: version
+      run: |
+        if [ "${{ github.event.inputs.version }}" = "previous" ]; then
+          # Get the previous successful deployment
+          echo "Finding previous successful deployment for ${{ github.event.inputs.environment }}..."
+          
+          # This would typically query your deployment tracking system
+          # For now, we'll use git to find the previous commit
+          PREVIOUS_COMMIT=$(git rev-parse HEAD~1)
+          echo "target=$PREVIOUS_COMMIT" >> $GITHUB_OUTPUT
+          echo "Previous commit: $PREVIOUS_COMMIT"
+        else
+          echo "target=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          echo "Target version: ${{ github.event.inputs.version }}"
+        fi
+        
+    - name: Validate target version exists
+      run: |
+        TARGET="${{ steps.version.outputs.target }}"
+        
+        # Check if the target version exists
+        if ! git cat-file -e "$TARGET^{commit}" 2>/dev/null; then
+          echo "❌ Target version $TARGET does not exist"
+          exit 1
+        fi
+        
+        # Check if target version has been tested
+        echo "✅ Target version $TARGET exists"
+        
+        # For production rollbacks, ensure the target was previously deployed to production
+        if [ "${{ github.event.inputs.environment }}" = "production" ] && [ "${{ github.event.inputs.emergency }}" = "false" ]; then
+          echo "Validating that target version was previously deployed to production..."
+          # This would check your deployment history
+          echo "⚠️  Skipping production deployment history check (not implemented)"
+        fi
+        
+    - name: Create rollback record
+      id: rollback
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const rollbackId = `rollback-${Date.now()}`;
+          
+          // Create an issue to track the rollback
+          const issue = await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `🚨 Rollback: ${context.payload.inputs.environment} to ${context.payload.inputs.version}`,
+            body: `
+          ## Rollback Details
+          
+          - **Environment**: ${context.payload.inputs.environment}
+          - **Target Version**: ${context.payload.inputs.version}
+          - **Current Version**: ${context.sha.substring(0, 7)}
+          - **Initiated By**: ${context.actor}
+          - **Reason**: ${context.payload.inputs.reason}
+          - **Emergency**: ${context.payload.inputs.emergency}
+          - **Timestamp**: ${new Date().toISOString()}
+          - **Rollback ID**: ${rollbackId}
+          
+          ## Status
+          - [ ] Validation completed
+          - [ ] Backup created
+          - [ ] Rollback executed
+          - [ ] Health checks passed
+          - [ ] Teams notified
+          
+          This issue will be automatically updated with rollback progress.
+            `,
+            labels: ['rollback', 'urgent', context.payload.inputs.environment]
+          });
+          
+          core.setOutput('rollback_id', rollbackId);
+          core.setOutput('issue_number', issue.data.number);
+          
+          return rollbackId;
+
+  # Emergency approval (for production)
+  rollback-approval:
+    name: Rollback Approval
+    runs-on: ubuntu-latest
+    needs: rollback-validation
+    if: github.event.inputs.environment == 'production' && github.event.inputs.emergency == 'false'
+    environment: 
+      name: production-rollback
+      
+    steps:
+    - name: Production rollback approval
+      run: |
+        echo "🔐 Production rollback requires approval"
+        echo "Environment: ${{ github.event.inputs.environment }}"
+        echo "Target Version: ${{ needs.rollback-validation.outputs.target-version }}"
+        echo "Reason: ${{ github.event.inputs.reason }}"
+        echo "Rollback ID: ${{ needs.rollback-validation.outputs.rollback-id }}"
+
+  # Create backup before rollback
+  pre-rollback-backup:
+    name: Pre-Rollback Backup
+    runs-on: ubuntu-latest
+    needs: [rollback-validation, rollback-approval]
+    if: always() && needs.rollback-validation.result == 'success' && (needs.rollback-approval.result == 'success' || needs.rollback-approval.result == 'skipped')
+    
+    steps:
+    - name: Create current state backup
+      run: |
+        echo "Creating backup of current state before rollback..."
+        
+        # Get current deployment info
+        if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+          CURRENT_URL="https://webqx.health"
+        else
+          CURRENT_URL="https://staging.webqx.health"
+        fi
+        
+        # Create backup metadata
+        mkdir -p backups/${{ github.event.inputs.environment }}/rollback
+        
+        cat > backups/${{ github.event.inputs.environment }}/rollback/pre-rollback-$(date +%Y%m%d-%H%M%S).json << EOF
+        {
+          "backup_type": "pre-rollback",
+          "environment": "${{ github.event.inputs.environment }}",
+          "backup_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "current_version": "$(curl -s $CURRENT_URL/version | jq -r '.BUILD_VERSION' 2>/dev/null || echo 'unknown')",
+          "rollback_target": "${{ needs.rollback-validation.outputs.target-version }}",
+          "rollback_reason": "${{ github.event.inputs.reason }}",
+          "initiated_by": "${{ github.actor }}",
+          "rollback_id": "${{ needs.rollback-validation.outputs.rollback-id }}",
+          "emergency": "${{ github.event.inputs.emergency }}",
+          "workflow_run_id": "${{ github.run_id }}"
+        }
+        EOF
+        
+    - name: Upload rollback backup
+      uses: actions/upload-artifact@v4
+      with:
+        name: rollback-backup-${{ needs.rollback-validation.outputs.rollback-id }}
+        path: backups/
+        retention-days: 90
+
+  # Execute rollback
+  execute-rollback:
+    name: Execute Rollback
+    runs-on: ubuntu-latest
+    needs: [rollback-validation, rollback-approval, pre-rollback-backup]
+    if: always() && needs.rollback-validation.result == 'success' && (needs.rollback-approval.result == 'success' || needs.rollback-approval.result == 'skipped')
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+    - name: Checkout target version
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.rollback-validation.outputs.target-version }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci --only=production
+      
+    - name: Build target version
+      run: |
+        if npm run build --silent 2>/dev/null; then
+          NODE_ENV=production npm run build
+        else
+          echo "No build script found, using source files directly"
+        fi
+      env:
+        NODE_ENV: production
+        
+    - name: Create rollback version file
+      run: |
+        echo "BUILD_VERSION=${{ needs.rollback-validation.outputs.target-version }}" > version.txt
+        echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> version.txt
+        echo "DEPLOYMENT_TYPE=ROLLBACK" >> version.txt
+        echo "ROLLBACK_REASON=${{ github.event.inputs.reason }}" >> version.txt
+        echo "ROLLBACK_ID=${{ needs.rollback-validation.outputs.rollback-id }}" >> version.txt
+        echo "ROLLBACK_OPERATOR=${{ github.actor }}" >> version.txt
+        echo "DEPLOYMENT_ENV=${{ github.event.inputs.environment }}" >> version.txt
+        
+    - name: Deploy rollback version
+      run: |
+        echo "Deploying rollback to ${{ github.event.inputs.environment }}..."
+        
+        # Install Railway CLI
+        curl -fsSL https://railway.app/install.sh | sh
+        export PATH=$PATH:$HOME/.railway/bin
+        
+        # Login and connect to appropriate project
+        railway login --token ${{ secrets.RAILWAY_TOKEN }}
+        
+        if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+          railway link ${{ secrets.RAILWAY_PRODUCTION_PROJECT_ID }}
+        else
+          railway link ${{ secrets.RAILWAY_STAGING_PROJECT_ID }}
+        fi
+        
+        # Set rollback environment variables
+        railway vars set NODE_ENV=${{ github.event.inputs.environment }}
+        railway vars set DEPLOYMENT_ENV=${{ github.event.inputs.environment }}
+        railway vars set BUILD_VERSION="${{ needs.rollback-validation.outputs.target-version }}"
+        railway vars set DEPLOYMENT_TYPE="ROLLBACK"
+        railway vars set ROLLBACK_ID="${{ needs.rollback-validation.outputs.rollback-id }}"
+        
+        # Deploy with prioritized rollback
+        echo "Executing rollback deployment..."
+        railway up --detach
+        
+        # Wait for rollback to complete
+        echo "Waiting for rollback deployment to complete..."
+        sleep 60
+        
+        # Get deployment URL
+        if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+          DEPLOYMENT_URL="https://webqx.health"
+        else
+          DEPLOYMENT_URL=$(railway status --json | jq -r '.deployments[0].url')
+        fi
+        
+        echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> $GITHUB_ENV
+
+  # Post-rollback verification
+  rollback-verification:
+    name: Rollback Verification
+    runs-on: ubuntu-latest
+    needs: [rollback-validation, execute-rollback]
+    
+    steps:
+    - name: Verify rollback health
+      run: |
+        echo "Verifying rollback health for ${{ github.event.inputs.environment }}..."
+        
+        if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+          DEPLOYMENT_URL="https://webqx.health"
+        else
+          DEPLOYMENT_URL="https://staging.webqx.health"
+        fi
+        
+        max_attempts=30
+        attempt=1
+        successful_checks=0
+        required_checks=5
+        
+        echo "Running health checks..."
+        
+        while [ $attempt -le $max_attempts ]; do
+          if curl -f --max-time 10 "$DEPLOYMENT_URL/health" >/dev/null 2>&1; then
+            successful_checks=$((successful_checks + 1))
+            echo "✅ Health check $successful_checks/$required_checks passed"
+            
+            if [ $successful_checks -ge $required_checks ]; then
+              echo "✅ Rollback verification successful!"
+              break
+            fi
+          else
+            successful_checks=0
+            echo "❌ Health check failed, resetting counter"
+          fi
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "❌ Rollback verification failed after $max_attempts attempts"
+            echo "🚨 CRITICAL: Rollback may have failed!"
+            exit 1
+          fi
+          
+          echo "Attempt $attempt/$max_attempts, successful checks: $successful_checks/$required_checks"
+          sleep 10
+          attempt=$((attempt + 1))
+        done
+        
+    - name: Verify rollback version
+      run: |
+        if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+          DEPLOYMENT_URL="https://webqx.health"
+        else
+          DEPLOYMENT_URL="https://staging.webqx.health"
+        fi
+        
+        # Check deployed version
+        DEPLOYED_VERSION=$(curl -s "$DEPLOYMENT_URL/version" | jq -r '.BUILD_VERSION' 2>/dev/null || echo "unknown")
+        TARGET_VERSION="${{ needs.rollback-validation.outputs.target-version }}"
+        
+        echo "Target version: $TARGET_VERSION"
+        echo "Deployed version: $DEPLOYED_VERSION"
+        
+        if [ "$DEPLOYED_VERSION" = "$TARGET_VERSION" ] || [ "$DEPLOYED_VERSION" = "${TARGET_VERSION:0:7}" ]; then
+          echo "✅ Rollback version verification successful"
+        else
+          echo "❌ Rollback version verification failed"
+          echo "Expected: $TARGET_VERSION"
+          echo "Deployed: $DEPLOYED_VERSION"
+          exit 1
+        fi
+        
+    - name: Run rollback smoke tests
+      run: |
+        echo "Running post-rollback smoke tests..."
+        
+        if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+          DEPLOYMENT_URL="https://webqx.health"
+        else
+          DEPLOYMENT_URL="https://staging.webqx.health"
+        fi
+        
+        # Test critical endpoints
+        echo "Testing critical endpoints..."
+        
+        # Root endpoint
+        if curl -f "$DEPLOYMENT_URL/" >/dev/null 2>&1; then
+          echo "✅ Root endpoint responsive"
+        else
+          echo "❌ Root endpoint failed"
+        fi
+        
+        # API health endpoint
+        if curl -f "$DEPLOYMENT_URL/api/health" >/dev/null 2>&1; then
+          echo "✅ API health endpoint responsive"
+        else
+          echo "⚠️  API health endpoint not available"
+        fi
+        
+        # Patient portal
+        if curl -f "$DEPLOYMENT_URL/patient-portal" >/dev/null 2>&1; then
+          echo "✅ Patient portal accessible"
+        else
+          echo "⚠️  Patient portal may not be accessible"
+        fi
+        
+        echo "Rollback smoke tests completed"
+
+  # Update rollback status
+  update-rollback-status:
+    name: Update Rollback Status
+    runs-on: ubuntu-latest
+    needs: [rollback-validation, execute-rollback, rollback-verification]
+    if: always()
+    
+    steps:
+    - name: Update rollback issue
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const rollbackSuccess = '${{ needs.execute-rollback.result }}' === 'success' && 
+                                 '${{ needs.rollback-verification.result }}' === 'success';
+          
+          const statusEmoji = rollbackSuccess ? '✅' : '❌';
+          const statusText = rollbackSuccess ? 'Completed Successfully' : 'Failed';
+          
+          const updateBody = `
+          ## Rollback Status: ${statusEmoji} ${statusText}
+          
+          - **Environment**: ${{ github.event.inputs.environment }}
+          - **Target Version**: ${{ needs.rollback-validation.outputs.target-version }}
+          - **Initiated By**: ${{ github.actor }}
+          - **Reason**: ${{ github.event.inputs.reason }}
+          - **Emergency**: ${{ github.event.inputs.emergency }}
+          - **Rollback ID**: ${{ needs.rollback-validation.outputs.rollback-id }}
+          - **Completed At**: ${new Date().toISOString()}
+          
+          ## Status Checklist
+          - [x] Validation completed
+          - [x] Backup created
+          - [${rollbackSuccess ? 'x' : ' '}] Rollback executed
+          - [${rollbackSuccess ? 'x' : ' '}] Health checks passed
+          - [ ] Teams notified
+          
+          ${rollbackSuccess ? 
+            '✅ **Rollback completed successfully. System has been restored to the target version.**' : 
+            '❌ **Rollback failed. Manual intervention may be required.**'
+          }
+          `;
+          
+          // Find and update the rollback issue
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: 'rollback',
+            state: 'open',
+            sort: 'created',
+            direction: 'desc',
+            per_page: 10
+          });
+          
+          const rollbackIssue = issues.data.find(issue => 
+            issue.title.includes('${{ needs.rollback-validation.outputs.rollback-id }}') ||
+            issue.body.includes('${{ needs.rollback-validation.outputs.rollback-id }}')
+          );
+          
+          if (rollbackIssue) {
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: rollbackIssue.number,
+              body: updateBody,
+              state: rollbackSuccess ? 'closed' : 'open'
+            });
+          }
+
+  # Notify teams
+  notify-rollback:
+    name: Notify Rollback
+    runs-on: ubuntu-latest
+    needs: [rollback-validation, execute-rollback, rollback-verification, update-rollback-status]
+    if: always()
+    
+    steps:
+    - name: Notify successful rollback
+      if: needs.execute-rollback.result == 'success' && needs.rollback-verification.result == 'success'
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "text": "🔄 WebQX Healthcare Platform - Rollback Completed",
+            "attachments": [
+              {
+                "color": "warning",
+                "fields": [
+                  {
+                    "title": "Environment",
+                    "value": "${{ github.event.inputs.environment }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Target Version",
+                    "value": "${{ needs.rollback-validation.outputs.target-version }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Initiated By",
+                    "value": "${{ github.actor }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Emergency",
+                    "value": "${{ github.event.inputs.emergency }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Reason",
+                    "value": "${{ github.event.inputs.reason }}",
+                    "short": false
+                  },
+                  {
+                    "title": "Status",
+                    "value": "✅ Rollback Completed Successfully",
+                    "short": false
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        
+    - name: Notify failed rollback
+      if: needs.execute-rollback.result == 'failure' || needs.rollback-verification.result == 'failure'
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "text": "🚨 WebQX Healthcare Platform - Rollback Failed",
+            "attachments": [
+              {
+                "color": "danger",
+                "fields": [
+                  {
+                    "title": "Environment",
+                    "value": "${{ github.event.inputs.environment }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Target Version",
+                    "value": "${{ needs.rollback-validation.outputs.target-version }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Initiated By",
+                    "value": "${{ github.actor }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Status",
+                    "value": "❌ Rollback Failed",
+                    "short": false
+                  },
+                  {
+                    "title": "Action Required",
+                    "value": "🚨 URGENT: Manual intervention required immediately",
+                    "short": false
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

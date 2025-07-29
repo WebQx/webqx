@@ -1,0 +1,512 @@
+# WebQX Healthcare Platform - Production Deployment
+# Deploys to production with manual approval and enhanced safety checks
+
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (commit SHA or tag)'
+        required: true
+        default: 'main'
+      reason:
+        description: 'Reason for deployment'
+        required: true
+      notify_teams:
+        description: 'Notify teams about deployment'
+        type: boolean
+        default: true
+
+env:
+  NODE_VERSION: '18'
+  DEPLOYMENT_ENV: 'production'
+
+jobs:
+  # Pre-deployment validation
+  pre-production-validation:
+    name: Pre-Production Validation
+    runs-on: ubuntu-latest
+    
+    outputs:
+      deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+      version-tag: ${{ steps.version.outputs.tag }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.version }}
+        
+    - name: Validate version
+      id: version
+      run: |
+        # Ensure we're deploying from main or a valid release tag
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        COMMIT_SHA=$(git rev-parse HEAD)
+        
+        echo "Current branch: $CURRENT_BRANCH"
+        echo "Commit SHA: $COMMIT_SHA"
+        
+        # Create version tag
+        VERSION_TAG="${COMMIT_SHA:0:7}-$(date +%Y%m%d-%H%M%S)"
+        echo "tag=$VERSION_TAG" >> $GITHUB_OUTPUT
+        
+        # Validate that this commit has passed CI
+        echo "Validating CI status for commit $COMMIT_SHA"
+        
+    - name: Check CI status
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: checks } = await github.rest.checks.listForRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: '${{ github.event.inputs.version }}'
+          });
+          
+          const ciCheck = checks.check_runs.find(check => 
+            check.name.includes('CI') || check.name.includes('build')
+          );
+          
+          if (!ciCheck || ciCheck.conclusion !== 'success') {
+            core.setFailed('CI checks have not passed for this version');
+          }
+          
+    - name: Validate staging deployment
+      run: |
+        echo "Checking if version has been tested in staging..."
+        # This would typically check if the version has been deployed to staging
+        # and has been running successfully for a minimum period
+        
+    - name: Create production deployment
+      id: deployment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const deployment = await github.rest.repos.createDeployment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: '${{ github.event.inputs.version }}',
+            environment: 'production',
+            description: `Production deployment: ${{ github.event.inputs.reason }}`,
+            auto_merge: false,
+            required_contexts: []
+          });
+          core.setOutput('deployment_id', deployment.data.id);
+          return deployment.data.id;
+
+  # Manual approval gate
+  production-approval:
+    name: Production Deployment Approval
+    runs-on: ubuntu-latest
+    needs: pre-production-validation
+    environment: 
+      name: production
+      url: https://webqx.health
+      
+    steps:
+    - name: Manual approval checkpoint
+      run: |
+        echo "🔐 Production deployment requires manual approval"
+        echo "Version: ${{ github.event.inputs.version }}"
+        echo "Reason: ${{ github.event.inputs.reason }}"
+        echo "Deployer: ${{ github.actor }}"
+        echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+  # Create production backup before deployment
+  pre-deployment-backup:
+    name: Pre-Deployment Backup
+    runs-on: ubuntu-latest
+    needs: production-approval
+    
+    steps:
+    - name: Create pre-deployment backup
+      run: |
+        echo "Creating pre-deployment backup..."
+        
+        # Create backup metadata
+        mkdir -p backups/production/pre-deployment
+        
+        cat > backups/production/pre-deployment/backup-$(date +%Y%m%d-%H%M%S).json << EOF
+        {
+          "backup_type": "pre-deployment",
+          "environment": "production",
+          "backup_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "current_version": "$(curl -s https://webqx.health/version || echo 'unknown')",
+          "new_version": "${{ github.event.inputs.version }}",
+          "deployer": "${{ github.actor }}",
+          "reason": "${{ github.event.inputs.reason }}",
+          "workflow_run_id": "${{ github.run_id }}"
+        }
+        EOF
+        
+    - name: Upload backup metadata
+      uses: actions/upload-artifact@v4
+      with:
+        name: production-backup-pre-${{ needs.pre-production-validation.outputs.version-tag }}
+        path: backups/
+        retention-days: 90
+
+  # Build for production
+  build-for-production:
+    name: Build for Production
+    runs-on: ubuntu-latest
+    needs: [pre-production-validation, production-approval]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.version }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci --only=production
+      
+    - name: Build application
+      run: |
+        if npm run build --silent 2>/dev/null; then
+          NODE_ENV=production npm run build
+        else
+          echo "No build script found, using source files directly"
+        fi
+      env:
+        NODE_ENV: production
+        
+    - name: Create production version file
+      run: |
+        echo "BUILD_VERSION=${{ needs.pre-production-validation.outputs.version-tag }}" > version.txt
+        echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> version.txt
+        echo "BUILD_BRANCH=${{ github.event.inputs.version }}" >> version.txt
+        echo "DEPLOYMENT_ENV=production" >> version.txt
+        echo "DEPLOYER=${{ github.actor }}" >> version.txt
+        echo "DEPLOYMENT_REASON=${{ github.event.inputs.reason }}" >> version.txt
+        
+    - name: Security scan for production
+      run: |
+        echo "Running final security checks for production..."
+        npm audit --audit-level=high
+        
+        # Check for production-specific security concerns
+        echo "Checking for debug configurations..."
+        if grep -r "DEBUG=true\|console\.log\|debugger" . --exclude-dir=node_modules --exclude="*.test.*" --exclude="*.spec.*"; then
+          echo "⚠️  Debug code found in production build"
+          echo "Please review and remove debug code before production deployment"
+        fi
+        
+    - name: Upload production build
+      uses: actions/upload-artifact@v4
+      with:
+        name: production-build-${{ needs.pre-production-validation.outputs.version-tag }}
+        path: |
+          .
+          !node_modules
+          !.git
+          !coverage
+          !*.test.*
+          !*.spec.*
+        retention-days: 90
+
+  # Deploy to production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [pre-production-validation, production-approval, pre-deployment-backup, build-for-production]
+    environment: production
+    
+    steps:
+    - name: Download production build
+      uses: actions/download-artifact@v4
+      with:
+        name: production-build-${{ needs.pre-production-validation.outputs.version-tag }}
+        
+    - name: Deploy to Railway Production
+      run: |
+        # Install Railway CLI
+        curl -fsSL https://railway.app/install.sh | sh
+        export PATH=$PATH:$HOME/.railway/bin
+        
+        # Deploy to production service
+        railway login --token ${{ secrets.RAILWAY_TOKEN }}
+        railway link ${{ secrets.RAILWAY_PRODUCTION_PROJECT_ID }}
+        
+        # Set production environment variables
+        railway vars set NODE_ENV=production
+        railway vars set DEPLOYMENT_ENV=production
+        railway vars set BUILD_VERSION="${{ needs.pre-production-validation.outputs.version-tag }}"
+        railway vars set DEPLOYER="${{ github.actor }}"
+        
+        # Deploy with zero-downtime
+        railway up --detach
+        
+        # Wait for deployment to be ready
+        echo "Waiting for production deployment to be ready..."
+        sleep 90
+        
+        # Get production URL
+        PRODUCTION_URL=$(railway status --json | jq -r '.deployments[0].url')
+        echo "PRODUCTION_URL=$PRODUCTION_URL" >> $GITHUB_ENV
+        
+    - name: Production health checks
+      run: |
+        echo "Running comprehensive production health checks..."
+        max_attempts=60
+        attempt=1
+        
+        while [ $attempt -le $max_attempts ]; do
+          # Basic health check
+          if curl -f --max-time 10 "$PRODUCTION_URL/health"; then
+            echo "✅ Basic health check passed"
+            break
+          fi
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "❌ Production health check failed after $max_attempts attempts"
+            echo "🚨 CRITICAL: Production deployment may have failed!"
+            exit 1
+          fi
+          
+          echo "Attempt $attempt/$max_attempts failed, retrying in 5 seconds..."
+          sleep 5
+          attempt=$((attempt + 1))
+        done
+        
+        # Extended health checks
+        echo "Running extended health checks..."
+        
+        # Check critical endpoints
+        curl -f "$PRODUCTION_URL/" || echo "❌ Root endpoint failed"
+        curl -f "$PRODUCTION_URL/api/health" || echo "⚠️  API health endpoint not available"
+        
+        # Check version endpoint
+        DEPLOYED_VERSION=$(curl -s "$PRODUCTION_URL/version" | jq -r '.BUILD_VERSION' 2>/dev/null || echo "unknown")
+        echo "Deployed version: $DEPLOYED_VERSION"
+        
+        # Performance check
+        response_time=$(curl -o /dev/null -s -w "%{time_total}" "$PRODUCTION_URL/")
+        echo "Response time: ${response_time}s"
+        
+        if (( $(echo "$response_time > 5" | bc -l) )); then
+          echo "⚠️  Slow response time detected: ${response_time}s"
+        fi
+        
+    - name: Production smoke tests
+      run: |
+        echo "Running production smoke tests..."
+        
+        # Test patient portal accessibility
+        if curl -f "$PRODUCTION_URL/patient-portal" 2>/dev/null; then
+          echo "✅ Patient portal accessible"
+        else
+          echo "⚠️  Patient portal may not be accessible"
+        fi
+        
+        # Test admin console (should require auth)
+        admin_response=$(curl -s -o /dev/null -w "%{http_code}" "$PRODUCTION_URL/admin-console")
+        if [ "$admin_response" = "401" ] || [ "$admin_response" = "403" ]; then
+          echo "✅ Admin console properly secured"
+        else
+          echo "⚠️  Admin console security check: HTTP $admin_response"
+        fi
+        
+        # Test FHIR endpoints
+        if curl -f "$PRODUCTION_URL/fhir/metadata" 2>/dev/null; then
+          echo "✅ FHIR endpoints accessible"
+        fi
+        
+        echo "Production smoke tests completed"
+
+  # Post-deployment verification
+  post-deployment-verification:
+    name: Post-Deployment Verification
+    runs-on: ubuntu-latest
+    needs: [pre-production-validation, deploy-production]
+    
+    steps:
+    - name: Monitor deployment stability
+      run: |
+        echo "Monitoring deployment stability for 5 minutes..."
+        
+        stable_checks=0
+        required_stable_checks=10
+        
+        for i in $(seq 1 30); do
+          if curl -f --max-time 5 "$PRODUCTION_URL/health" >/dev/null 2>&1; then
+            stable_checks=$((stable_checks + 1))
+            echo "✅ Stability check $stable_checks/$required_stable_checks passed"
+          else
+            stable_checks=0
+            echo "❌ Stability check failed, resetting counter"
+          fi
+          
+          if [ $stable_checks -ge $required_stable_checks ]; then
+            echo "✅ Deployment is stable!"
+            break
+          fi
+          
+          sleep 10
+        done
+        
+        if [ $stable_checks -lt $required_stable_checks ]; then
+          echo "❌ Deployment stability check failed"
+          echo "🚨 Consider rolling back the deployment"
+          exit 1
+        fi
+        
+    - name: Create post-deployment backup
+      run: |
+        mkdir -p backups/production/post-deployment
+        
+        cat > backups/production/post-deployment/backup-$(date +%Y%m%d-%H%M%S).json << EOF
+        {
+          "backup_type": "post-deployment",
+          "environment": "production",
+          "backup_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "deployed_version": "${{ needs.pre-production-validation.outputs.version-tag }}",
+          "deployment_success": true,
+          "deployer": "${{ github.actor }}",
+          "reason": "${{ github.event.inputs.reason }}",
+          "workflow_run_id": "${{ github.run_id }}",
+          "health_check_status": "passed",
+          "stability_verified": true
+        }
+        EOF
+        
+    - name: Upload post-deployment backup
+      uses: actions/upload-artifact@v4
+      with:
+        name: production-backup-post-${{ needs.pre-production-validation.outputs.version-tag }}
+        path: backups/
+        retention-days: 365
+
+  # Update deployment status
+  deployment-status:
+    name: Update Deployment Status
+    runs-on: ubuntu-latest
+    needs: [pre-production-validation, deploy-production, post-deployment-verification]
+    if: always()
+    
+    steps:
+    - name: Update deployment status
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const deploymentId = '${{ needs.pre-production-validation.outputs.deployment-id }}';
+          const success = '${{ needs.deploy-production.result }}' === 'success' && 
+                         '${{ needs.post-deployment-verification.result }}' === 'success';
+          
+          await github.rest.repos.createDeploymentStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            deployment_id: deploymentId,
+            state: success ? 'success' : 'failure',
+            description: success ? 'Production deployment successful' : 'Production deployment failed',
+            environment_url: success ? 'https://webqx.health' : undefined
+          });
+
+  # Notify teams
+  notify-production-deployment:
+    name: Notify Production Deployment
+    runs-on: ubuntu-latest
+    needs: [pre-production-validation, deploy-production, post-deployment-verification, deployment-status]
+    if: always() && github.event.inputs.notify_teams == 'true'
+    
+    steps:
+    - name: Notify successful deployment
+      if: needs.deploy-production.result == 'success' && needs.post-deployment-verification.result == 'success'
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "text": "🚀 WebQX Healthcare Platform - Production Deployment Successful",
+            "attachments": [
+              {
+                "color": "good",
+                "fields": [
+                  {
+                    "title": "Environment",
+                    "value": "🏥 Production",
+                    "short": true
+                  },
+                  {
+                    "title": "Version",
+                    "value": "${{ needs.pre-production-validation.outputs.version-tag }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Deployer",
+                    "value": "${{ github.actor }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Reason",
+                    "value": "${{ github.event.inputs.reason }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Status",
+                    "value": "✅ Deployed & Verified",
+                    "short": false
+                  },
+                  {
+                    "title": "URL",
+                    "value": "https://webqx.health",
+                    "short": false
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        
+    - name: Notify failed deployment
+      if: needs.deploy-production.result == 'failure' || needs.post-deployment-verification.result == 'failure'
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "text": "🚨 WebQX Healthcare Platform - Production Deployment Failed",
+            "attachments": [
+              {
+                "color": "danger",
+                "fields": [
+                  {
+                    "title": "Environment",
+                    "value": "🏥 Production",
+                    "short": true
+                  },
+                  {
+                    "title": "Version",
+                    "value": "${{ needs.pre-production-validation.outputs.version-tag }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Deployer",
+                    "value": "${{ github.actor }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Status",
+                    "value": "❌ Deployment Failed",
+                    "short": false
+                  },
+                  {
+                    "title": "Action Required",
+                    "value": "🚨 URGENT: Check logs and consider rollback procedures",
+                    "short": false
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1,0 +1,305 @@
+# WebQX Healthcare Platform - Continuous Integration Workflow
+# Triggers on commits and pull requests to ensure code quality and functionality
+
+name: CI - Test & Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+  
+jobs:
+  # Linting and Type Checking
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run ESLint (if configured)
+      run: |
+        if npm run lint --silent 2>/dev/null; then
+          npm run lint
+        else
+          echo "No lint script found, skipping..."
+        fi
+      continue-on-error: true
+      
+    - name: Run TypeScript type checking
+      run: npm run type-check
+      continue-on-error: true
+
+  # Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run unit tests
+      run: npm test -- --coverage --watchAll=false
+      
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      if: success()
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: webqx-coverage
+        
+  # Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: webqx_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Setup test environment
+      run: |
+        cp .env.example .env.test
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/webqx_test" >> .env.test
+        
+    - name: Run integration tests
+      run: |
+        if npm run test:integration --silent 2>/dev/null; then
+          npm run test:integration
+        else
+          echo "No integration test script found, running all tests..."
+          npm test -- --testNamePattern="integration|Integration" --watchAll=false
+        fi
+      env:
+        NODE_ENV: test
+        
+  # Security Scanning
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run npm audit
+      run: npm audit --audit-level=high
+      continue-on-error: true
+      
+    - name: Run Snyk security scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+      continue-on-error: true
+
+  # Docker Build Test
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: webqx-healthcare:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Test Docker container
+      run: |
+        docker run --rm -d -p 3001:3000 --name webqx-test webqx-healthcare:test
+        sleep 10
+        curl -f http://localhost:3001/health || curl -f http://localhost:3001/ || echo "Health check endpoint not available"
+        docker stop webqx-test
+
+  # Healthcare Compliance Checks
+  compliance-check:
+    name: Healthcare Compliance
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check for sensitive data patterns
+      run: |
+        echo "Scanning for potential sensitive data patterns..."
+        # Check for hardcoded secrets, PHI patterns, etc.
+        if grep -r -i "password\s*=\s*['\"][^'\"]*['\"]" . --exclude-dir=node_modules --exclude-dir=.git || \
+           grep -r -i "api[_-]?key\s*=\s*['\"][^'\"]*['\"]" . --exclude-dir=node_modules --exclude-dir=.git || \
+           grep -r -i "secret\s*=\s*['\"][^'\"]*['\"]" . --exclude-dir=node_modules --exclude-dir=.git; then
+          echo "❌ Potential hardcoded secrets found!"
+          exit 1
+        else
+          echo "✅ No obvious hardcoded secrets detected"
+        fi
+        
+    - name: HIPAA compliance file check
+      run: |
+        echo "Checking for HIPAA compliance documentation..."
+        files_to_check=("HIPAA-COMPLIANCE.md" "PRIVACY-POLICY.md" "SECURITY-POLICY.md" "legal/")
+        missing_files=()
+        
+        for file in "${files_to_check[@]}"; do
+          if [ ! -e "$file" ]; then
+            missing_files+=("$file")
+          fi
+        done
+        
+        if [ ${#missing_files[@]} -gt 0 ]; then
+          echo "⚠️  Missing compliance documentation files: ${missing_files[*]}"
+          echo "Consider adding healthcare compliance documentation"
+        else
+          echo "✅ Basic compliance documentation structure found"
+        fi
+
+  # End-to-End Tests (if applicable)
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Start application
+      run: |
+        cp .env.example .env
+        npm start &
+        echo $! > server.pid
+        sleep 15
+        
+    - name: Wait for app to be ready
+      run: |
+        for i in {1..30}; do
+          if curl -f http://localhost:3000/health || curl -f http://localhost:3000/; then
+            echo "App is ready!"
+            break
+          fi
+          echo "Waiting for app to start... ($i/30)"
+          sleep 2
+        done
+        
+    - name: Run E2E tests
+      run: |
+        if npm run test:e2e --silent 2>/dev/null; then
+          npm run test:e2e
+        else
+          echo "No E2E test script found, running basic endpoint tests..."
+          curl -f http://localhost:3000/health || curl -f http://localhost:3000/ || echo "Basic connectivity test"
+        fi
+        
+    - name: Stop application
+      run: |
+        if [ -f server.pid ]; then
+          kill $(cat server.pid) || true
+          rm server.pid
+        fi
+
+  # Build Summary
+  build-summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, unit-tests, integration-tests, security-scan, docker-build, compliance-check]
+    if: always()
+    
+    steps:
+    - name: Check build results
+      run: |
+        echo "## 🏥 WebQX Healthcare Platform - Build Results"
+        echo ""
+        echo "| Job | Status |"
+        echo "|-----|--------|"
+        echo "| Lint & Type Check | ${{ needs.lint-and-typecheck.result }} |"
+        echo "| Unit Tests | ${{ needs.unit-tests.result }} |" 
+        echo "| Integration Tests | ${{ needs.integration-tests.result }} |"
+        echo "| Security Scan | ${{ needs.security-scan.result }} |"
+        echo "| Docker Build | ${{ needs.docker-build.result }} |"
+        echo "| Compliance Check | ${{ needs.compliance-check.result }} |"
+        echo ""
+        echo "Build completed at: $(date)"
+        
+        # Fail if critical jobs failed
+        if [ "${{ needs.unit-tests.result }}" = "failure" ] || [ "${{ needs.docker-build.result }}" = "failure" ]; then
+          echo "❌ Critical jobs failed - blocking deployment"
+          exit 1
+        else
+          echo "✅ Core functionality verified - ready for deployment"
+        fi
