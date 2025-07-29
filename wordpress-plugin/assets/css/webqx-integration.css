@@ -1,0 +1,519 @@
+/**
+ * WebQX Integration Plugin Styles
+ * Version: 1.0.0
+ */
+
+/* ==========================================================================
+   Base WebQX Styles
+   ========================================================================== */
+
+.webqx-module {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.webqx-loading {
+    text-align: center;
+    padding: 2rem;
+    color: #007cba;
+    font-style: italic;
+}
+
+.webqx-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.webqx-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.webqx-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    background: none;
+}
+
+.webqx-btn-primary {
+    color: #fff;
+    background-color: #007cba;
+    border-color: #007cba;
+}
+
+.webqx-btn-primary:hover {
+    background-color: #005a87;
+    border-color: #004c75;
+    color: #fff;
+}
+
+.webqx-btn-secondary {
+    color: #6c757d;
+    background-color: transparent;
+    border-color: #6c757d;
+}
+
+.webqx-btn-secondary:hover {
+    color: #fff;
+    background-color: #6c757d;
+}
+
+.webqx-btn-outline {
+    color: #007cba;
+    background-color: transparent;
+    border-color: #007cba;
+}
+
+.webqx-btn-outline:hover {
+    color: #fff;
+    background-color: #007cba;
+}
+
+.webqx-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Form Elements
+   ========================================================================== */
+
+.webqx-form-group {
+    margin-bottom: 1rem;
+}
+
+.webqx-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.webqx-form-control {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.webqx-form-control:focus {
+    color: #495057;
+    background-color: #fff;
+    border-color: #007cba;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 124, 186, 0.25);
+}
+
+/* ==========================================================================
+   Patient Portal
+   ========================================================================== */
+
+.webqx-patient-portal {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+.webqx-portal-header {
+    margin-bottom: 2rem;
+}
+
+.webqx-portal-header h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.75rem;
+}
+
+.webqx-portal-nav {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.webqx-nav-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.webqx-nav-btn:hover,
+.webqx-nav-btn.active {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.webqx-portal-content {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+/* ==========================================================================
+   Provider Panel
+   ========================================================================== */
+
+.webqx-provider-panel {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+.webqx-panel-header {
+    margin-bottom: 2rem;
+}
+
+.webqx-panel-header h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.75rem;
+}
+
+.webqx-panel-content {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+/* ==========================================================================
+   EHR Dashboard
+   ========================================================================== */
+
+.webqx-ehr-dashboard {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.webqx-ehr-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.webqx-stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.webqx-stat-card h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.875rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.webqx-stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007cba;
+}
+
+.webqx-stat-status {
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background: #d4edda;
+    color: #155724;
+}
+
+/* ==========================================================================
+   Appointment Booking
+   ========================================================================== */
+
+.webqx-appointment-booking {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.webqx-booking-form {
+    max-width: 500px;
+}
+
+.webqx-booking-result {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   Medical Records
+   ========================================================================== */
+
+.webqx-medical-records {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.webqx-records-filter {
+    margin-bottom: 1rem;
+    max-width: 300px;
+}
+
+.webqx-records-content {
+    min-height: 200px;
+}
+
+.webqx-record-item {
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    transition: box-shadow 0.2s ease;
+}
+
+.webqx-record-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   Secure Messaging
+   ========================================================================== */
+
+.webqx-secure-messaging {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.webqx-message-interface {
+    display: flex;
+    flex-direction: column;
+    height: 400px;
+}
+
+.webqx-message-threads {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.webqx-message-composer {
+    border-top: 1px solid #e9ecef;
+    padding-top: 1rem;
+}
+
+.webqx-message-composer textarea {
+    width: 100%;
+    min-height: 80px;
+    margin-bottom: 0.5rem;
+    resize: vertical;
+}
+
+/* ==========================================================================
+   Voice Transcription
+   ========================================================================== */
+
+.webqx-voice-transcription {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.webqx-transcription-controls {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.webqx-transcription-output {
+    margin: 1rem 0;
+}
+
+.webqx-transcription-output textarea {
+    width: 100%;
+    min-height: 150px;
+    font-family: monospace;
+    resize: vertical;
+}
+
+.webqx-transcription-actions {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+/* ==========================================================================
+   PACS Viewer
+   ========================================================================== */
+
+.webqx-pacs-viewer {
+    background: #2c3e50;
+    color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    min-height: 400px;
+}
+
+.webqx-pacs-content {
+    background: #34495e;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+    min-height: 300px;
+}
+
+/* ==========================================================================
+   FHIR Tester
+   ========================================================================== */
+
+.webqx-fhir-tester {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.webqx-fhir-form {
+    max-width: 500px;
+    margin-bottom: 2rem;
+}
+
+.webqx-fhir-response {
+    background: #2c3e50;
+    color: #ecf0f1;
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.webqx-fhir-response pre {
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    font-size: 0.875rem;
+    overflow-x: auto;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .webqx-portal-nav,
+    .webqx-panel-nav {
+        flex-direction: column;
+    }
+    
+    .webqx-nav-btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .webqx-ehr-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .webqx-message-interface {
+        height: auto;
+        min-height: 300px;
+    }
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+.webqx-btn:focus,
+.webqx-form-control:focus,
+.webqx-nav-btn:focus {
+    outline: 2px solid #007cba;
+    outline-offset: 2px;
+}
+
+.webqx-screen-reader-text {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ==========================================================================
+   Animation and Transitions
+   ========================================================================== */
+
+.webqx-loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-left: 0.5rem;
+    border: 2px solid #007cba;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: webqx-spin 1s linear infinite;
+}
+
+@keyframes webqx-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.webqx-fade-in {
+    animation: webqx-fadeIn 0.5s ease-in;
+}
+
+@keyframes webqx-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
