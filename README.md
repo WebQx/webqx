@@ -2,6 +2,8 @@
 # 🌐 WebQX™: Modular Healthcare Platform  
 _A multilingual, specialty-aware, and privacy-first blueprint for global clinical care._
 
+**Repository:** https://github.com/WebQx/webqx
+
 ## 🚀 Overview  
 WebQX™ is a comprehensive modular healthcare stack designed to empower both patients and providers across 12 core medical specialties, including Primary Care, Psychiatry, Radiology, Pediatrics, Oncology, Cardiology, and more. Our platform champions multilingual support, health equity, and enhanced health literacy to ensure accessible care for diverse global communities.
 
