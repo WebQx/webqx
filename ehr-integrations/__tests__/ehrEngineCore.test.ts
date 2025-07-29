@@ -69,6 +69,8 @@ describe('EHR Engine Integration', () => {
   describe('FHIR Resource Management', () => {
     beforeEach(async () => {
       await ehrEngine.initialize();
+      // Set test authentication token
+      ehrEngine.fhirClient.setAccessToken('test-token-for-integration-tests', 3600);
     });
 
     test('should create FHIR patient resource', async () => {
