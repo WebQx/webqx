@@ -289,7 +289,7 @@ describe('Header Component', () => {
       
       // The announcement element should be created and removed
       // We can't easily test this in JSDOM, but we can verify the effect happened
-      expect(select.value).toBe('es');
+      expect((select as HTMLSelectElement).value).toBe('es');
     });
   });
 
