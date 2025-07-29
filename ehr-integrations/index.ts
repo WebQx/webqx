@@ -71,6 +71,25 @@ export type {
 } from './services/ehrEngineCore';
 
 // ============================================================================
+// EHR System Integrations
+// ============================================================================
+
+// OpenEMR Integration
+export * from './openemr';
+
+// OpenMRS Integration
+export * from './openmrs';
+
+// LibreHealth Integration
+export * from './librehealth';
+
+// GNU Health Integration
+export * from './gnuhealth';
+
+// HospitalRun Integration
+export * from './hospitalrun';
+
+// ============================================================================
 // Components
 // ============================================================================
 
@@ -194,8 +213,67 @@ export const SLOT_STATUS = {
 // ============================================================================
 
 /**
- * Create a basic SMART on FHIR configuration
+ * Create an EHR integration instance
  */
+export function createEHRIntegration(system: 'openemr' | 'openmrs' | 'librehealth' | 'gnuhealth' | 'hospitalrun', config: any) {
+  switch (system) {
+    case 'openemr':
+      return import('./openemr').then(m => new m.OpenEMRIntegration(config));
+    case 'openmrs':
+      return import('./openmrs').then(m => new m.OpenMRSIntegration(config));
+    case 'librehealth':
+      return import('./librehealth').then(m => new m.LibreHealthIntegration(config));
+    case 'gnuhealth':
+      return import('./gnuhealth').then(m => new m.GNUHealthIntegration(config));
+    case 'hospitalrun':
+      return import('./hospitalrun').then(m => new m.HospitalRunIntegration(config));
+    default:
+      throw new Error(`Unsupported EHR system: ${system}`);
+  }
+}
+
+/**
+ * Get available EHR integrations
+ */
+export function getAvailableEHRSystems() {
+  return [
+    {
+      id: 'openemr',
+      name: 'OpenEMR',
+      description: 'Full-featured electronic health records and medical practice management',
+      features: ['OAuth2', 'FHIR R4', 'Appointments', 'Clinical Data'],
+      status: 'ready'
+    },
+    {
+      id: 'openmrs',
+      name: 'OpenMRS',
+      description: 'Enterprise electronic medical record system platform',
+      features: ['REST API', 'FHIR R4', 'Visit Management', 'Concept Dictionary'],
+      status: 'ready'
+    },
+    {
+      id: 'librehealth',
+      name: 'LibreHealth',
+      description: 'Open source health IT tools and systems',
+      features: ['API Integration', 'Clinical Workflows', 'Billing'],
+      status: 'ready'
+    },
+    {
+      id: 'gnuhealth',
+      name: 'GNU Health',
+      description: 'Hospital and health information system',
+      features: ['Hospital Management', 'LIS', 'Pharmacy', 'Public Health'],
+      status: 'ready'
+    },
+    {
+      id: 'hospitalrun',
+      name: 'HospitalRun',
+      description: 'Modern hospital information system for developing world',
+      features: ['Offline-First', 'Photo Management', 'Inventory', 'Billing'],
+      status: 'ready'
+    }
+  ];
+}
 export function createSMARTConfig(
   fhirBaseUrl: string,
   clientId: string,
