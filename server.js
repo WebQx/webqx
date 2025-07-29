@@ -8,6 +8,8 @@ require('dotenv').config();
 // FHIR imports
 const patientRoutes = require('./fhir/routes/patient');
 const appointmentRoutes = require('./fhir/routes/appointment');
+const reportsRoutes = require('./fhir/routes/reports');
+const glossaryRoutes = require('./api/routes/glossary');
 const { 
     authenticateToken, 
     requireScopes, 
@@ -87,6 +89,12 @@ app.use('/fhir/Patient', authenticateToken, requireScopes(['patient/*.read', 'pa
 
 // FHIR Appointment resource routes with authentication
 app.use('/fhir/Appointment', authenticateToken, requireScopes(['user/*.read', 'user/*.write', 'patient/*.read']), appointmentRoutes);
+
+// FHIR DiagnosticReport resource routes with authentication
+app.use('/fhir/DiagnosticReport', authenticateToken, requireScopes(['patient/*.read', 'user/*.read']), reportsRoutes);
+
+// API routes for glossary (publicly accessible for demo, but would require auth in production)
+app.use('/api/glossary', glossaryRoutes);
 
 // Development endpoint to get test token
 if (process.env.NODE_ENV === 'development') {
