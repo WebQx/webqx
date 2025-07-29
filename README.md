@@ -45,6 +45,40 @@ Role-based access and modular configuration for deployment:
 - 💰 **Billing Logic** → JSON-based rule engine  
 - 🗄️ **Compliance Modules** → PostgreSQL + Vault + audit logging  
 
+## 🔧 Modular Architecture Enhancements
+
+### 👥 Patient Portal
+
+#### 🖼️ Secure Imaging Viewer
+- Limited OHIF viewer with annotations turned off.
+- Multilingual glossary for imaging terms.
+- Request-to-release flow for sensitive results.
+
+#### 📋 Report Access Features
+- PDF and audio formats for imaging reports using Whisper-generated transcription.
+- Multilingual voice playback for reports.
+- Feature for patients to request provider clarifications.
+
+#### 🛡️ Consent Management
+- Full audit trail for patient image views.
+- Patient-controlled sharing permissions.
+
+### 🩺 Provider Panel
+
+#### 🔐 Single Sign-On (SSO)
+- OAuth2/SAML for authentication.
+- Role-based access control for radiologists and cardiologists.
+
+#### 🌐 Multilingual Transcription Overlay
+- Whisper for batch transcription of radiology reports.
+- Plugins for specialty-specific terminologies (e.g., cardiology, neurology).
+- Inline translations in the UI.
+
+#### 🔗 Clinical Module Sync
+- Imaging requests using HL7 ORM messages.
+- Results sent back to EHR systems via HL7 ORU messages.
+- openEHR tagging for semantic linking.
+
 ## 📁 WebQx-EHR Directory Structure  
 The WebQx-EHR project follows a modular directory structure designed for scalability and maintainability across healthcare specialties and integrations:
 
