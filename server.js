@@ -3,7 +3,11 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
+
+// Import secure authentication routes
+const authRoutes = require('./auth/routes/auth.js');
 
 // FHIR imports
 const patientRoutes = require('./fhir/routes/patient');
@@ -70,6 +74,10 @@ app.use('/fhir', fhirLimiter);
 // Middleware for parsing JSON bodies
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Secure authentication routes
+app.use('/auth', authRoutes);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '.')));
@@ -213,6 +221,11 @@ app.post('/api/whisper/translate', (req, res) => {
             code: 'INTERNAL_ERROR'
         });
     }
+});
+
+// Serve the login page
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
 });
 
 // Serve the main patient portal
