@@ -569,6 +569,22 @@ export interface SyncOperation {
 }
 
 /**
+ * Synchronization progress tracking
+ */
+export interface SyncProgress {
+  /** Operation ID */
+  operationId: string;
+  /** Current step */
+  currentStep: string;
+  /** Progress percentage (0-100) */
+  percentage: number;
+  /** Estimated time remaining (seconds) */
+  estimatedTimeRemaining?: number;
+  /** Last updated timestamp */
+  lastUpdated: Date;
+}
+
+/**
  * Synchronizable data types
  */
 export type SyncDataType = 
