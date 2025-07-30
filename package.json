@@ -21,7 +21,9 @@
   "author": "WebQX Health",
   "license": "Apache-2.0",
   "dependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/fhir": "^0.0.40",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",

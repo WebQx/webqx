@@ -67,6 +67,14 @@ module.exports = {
       transform: {
         '^.+\\.js$': 'babel-jest'
       }
+    },
+    {
+      displayName: 'auth',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/patient-portal/__tests__/auth.test.js', '<rootDir>/patient-portal/__tests__/userService.test.js'],
+      transform: {
+        '^.+\\.js$': 'babel-jest'
+      }
     }
   ]
 };
