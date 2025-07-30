@@ -1,64 +1,153 @@
 /**
  * EHR Exporter Service for export and reporting functionality
- * Provides multiple format exports and prescription summaries
+ * 
+ * Enhanced with comprehensive error handling, loading states, TypeScript types,
+ * accessibility features, detailed logging, and comprehensive documentation.
+ * Provides multiple format exports and prescription summaries with full audit trail.
+ * 
+ * @author WebQX Health
+ * @version 2.0.0 - Enhanced for comprehensive EHR integration
  */
 
+/**
+ * Enhanced prescription data interface with comprehensive type safety
+ */
 export interface PrescriptionData {
+  /** Unique prescription identifier */
   id: string;
+  /** Patient identifier */
   patientId: string;
+  /** Patient name (encrypted/secured in production) */
   patientName: string;
+  /** Medication details */
   medication: {
+    /** Medication name */
     name: string;
+    /** RxCUI identifier */
     rxcui: string;
+    /** Dosage instructions */
     dosage: string;
+    /** Frequency of administration */
     frequency: string;
+    /** Duration of treatment */
     duration: string;
   };
+  /** Prescriber information */
   prescriber: {
+    /** Prescriber name */
     name: string;
+    /** Prescriber identifier */
     id: string;
+    /** Medical license number */
     license: string;
   };
+  /** Date prescription was issued */
   dateIssued: Date;
+  /** Optional expiration date */
   dateExpires?: Date;
+  /** Patient instructions */
   instructions: string;
+  /** Quantity prescribed */
   quantity: number;
+  /** Number of refills allowed */
   refills: number;
+  /** Current prescription status */
   status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
 }
 
+/**
+ * Supported export formats with MIME types
+ */
 export interface ExportFormat {
+  /** Export format type */
   type: 'PDF' | 'CSV' | 'JSON' | 'XML' | 'HL7_FHIR';
+  /** MIME type for HTTP responses */
   mimeType: string;
+  /** File extension */
   extension: string;
 }
 
+/**
+ * Export options configuration
+ */
 export interface ExportOptions {
+  /** Desired export format */
   format: ExportFormat['type'];
+  /** Whether to include patient information */
   includePatientInfo: boolean;
+  /** Whether to include prescriber details */
   includePrescriber: boolean;
+  /** Optional date range filter */
   dateRange?: {
     start: Date;
     end: Date;
   };
+  /** Specific fields to include in export */
   fields?: string[];
 }
 
+/**
+ * Loading state interface for UI components
+ */
+export interface LoadingState {
+  /** Whether operation is currently loading */
+  isLoading: boolean;
+  /** Loading message for user feedback */
+  message?: string;
+  /** Progress percentage (0-100) */
+  progress?: number;
+}
+
+/**
+ * Error state interface for comprehensive error handling
+ */
+export interface ErrorState {
+  /** Whether an error has occurred */
+  hasError: boolean;
+  /** Human-readable error message */
+  message?: string;
+  /** Error code for programmatic handling */
+  code?: string;
+  /** Whether the operation can be retried */
+  retryable?: boolean;
+  /** Detailed error information for debugging */
+  details?: string;
+}
+
+/**
+ * Enhanced prescription summary with detailed analytics
+ */
 export interface PrescriptionSummary {
+  /** Total number of prescriptions */
   totalPrescriptions: number;
+  /** Number of active prescriptions */
   activePrescriptions: number;
+  /** Number of expired prescriptions */
   expiredPrescriptions: number;
+  /** Most frequently prescribed medications */
   mostPrescribedMedications: Array<{
+    /** Medication name */
     medication: string;
+    /** Prescription count */
     count: number;
+    /** Percentage of total prescriptions */
     percentage: number;
   }>;
+  /** Prescription trends by month */
   prescriptionsByMonth: Array<{
+    /** Month identifier (YYYY-MM) */
     month: string;
+    /** Number of prescriptions in month */
     count: number;
   }>;
+  /** Average number of refills per prescription */
   averageRefills: number;
 }
+
+/**
+ * Enhanced EHR Exporter class with comprehensive error handling,
+ * loading states, TypeScript types, accessibility features, and detailed logging
+ */
 
 class EHRExporter {
   private readonly supportedFormats: ExportFormat[] = [

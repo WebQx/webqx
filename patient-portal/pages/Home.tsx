@@ -95,6 +95,7 @@ const Home: React.FC<HomeProps> = ({
   const handleDosageChoice = (dosage: any) => {
     alert(`You selected: ${dosage.amount} ${dosage.frequency}\nInstructions: ${dosage.instructions || 'None'}`);
   };
+
   return (
     <main 
       className={`portal ${className}`}
