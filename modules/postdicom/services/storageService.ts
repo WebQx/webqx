@@ -280,7 +280,7 @@ export class PostDICOMStorageService implements IStorageService {
         
         const metadata = {
           patientID: request.patientID,
-          studyInstanceUID: studyInstanceUID,
+          studyInstanceUID,
           modality: request.modality,
           accessLevel: request.accessLevel,
           uploadedAt: new Date().toISOString(),

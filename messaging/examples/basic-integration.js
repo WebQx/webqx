@@ -336,7 +336,7 @@ class WebQXMessagingExample {
         
         async onMessage(message, channel) {
           console.log(`📝 Plugin logged message in ${channel.channelType} channel:`, {
-            content: message.body?.substring(0, 50) + '...',
+            content: `${message.body?.substring(0, 50)  }...`,
             sender: message['webqx.metadata']?.senderId,
             specialty: message['webqx.metadata']?.specialty
           });

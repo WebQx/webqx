@@ -431,7 +431,7 @@ class PatientProviderChannel {
 
   updatePatientProviderMapping(patientId, providerId, roomId) {
     const key = `${patientId}:${providerId}`;
-    let mapping = this.patientProviderMappings.get(key) || { channels: [] };
+    const mapping = this.patientProviderMappings.get(key) || { channels: [] };
     mapping.channels.push(roomId);
     this.patientProviderMappings.set(key, mapping);
   }

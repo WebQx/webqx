@@ -36,7 +36,6 @@ function validateCommitMessage(message) {
   // Extract commit type and description
   const match = message.match(/^([^(:]+)(\([^)]+\))?: (.+)/);
   const type = match[1];
-  const scope = match[2] || '';
   const description = match[3];
 
   // Check message length

@@ -357,7 +357,7 @@ class AppointmentService {
         
         return {
             total: results.length,
-            offset: offset,
+            offset,
             count: Math.min(count, results.length - offset),
             appointments: results.slice(offset, offset + count)
         };

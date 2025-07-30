@@ -46,7 +46,7 @@ class SpecialtyChannels {
         name: channelName,
         topic: options.topic || specialtyConfig.description,
         channelType: 'specialty',
-        specialty: specialty,
+        specialty,
         visibility: 'private',
         inviteUsers: [createdBy, ...(specialtyConfig.defaultMembers || [])],
         disableEncryption: !this.options.enableEncryption,
@@ -140,7 +140,7 @@ class SpecialtyChannels {
         topic: `Cross-specialty consultation: ${primarySpecialty} consulting ${consultingSpecialty}`,
         channelType: 'consultation',
         specialty: primarySpecialty,
-        consultingSpecialty: consultingSpecialty,
+        consultingSpecialty,
         visibility: 'private',
         inviteUsers: [requestedBy],
         disableEncryption: !this.options.enableEncryption,
@@ -302,7 +302,7 @@ class SpecialtyChannels {
         patientId: options.patientId || channel.patientId,
         isHealthcareDocument: true,
         documentType: options.documentType || 'specialty_document',
-        specialty: specialty,
+        specialty,
         consultationId: channel.consultationId,
         senderId
       });
@@ -314,7 +314,7 @@ class SpecialtyChannels {
         filename: file.name,
         fileSize: file.size,
         documentType: options.documentType,
-        specialty: specialty,
+        specialty,
         consultationId: channel.consultationId
       });
 
@@ -352,9 +352,9 @@ class SpecialtyChannels {
       // Update consultation metadata
       consultation.participants.push({
         userId: specialistId,
-        role: role,
+        role,
         specialty: consultation.consultingSpecialty,
-        addedBy: addedBy,
+        addedBy,
         addedAt: new Date().toISOString()
       });
 

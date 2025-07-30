@@ -16,7 +16,6 @@ class BranchProtectionValidator {
   }
 
   log(message, type = 'info') {
-    const timestamp = new Date().toISOString();
     const prefix = {
       error: '❌',
       warning: '⚠️ ',
@@ -320,7 +319,7 @@ class BranchProtectionValidator {
 // Run validation if called directly
 if (require.main === module) {
   const validator = new BranchProtectionValidator();
-  const results = validator.validateInfrastructure();
+  validator.validateInfrastructure();
   const success = validator.generateReport();
   
   process.exit(success ? 0 : 1);

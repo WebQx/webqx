@@ -258,7 +258,7 @@ class PatientService {
         
         return {
             total: results.length,
-            offset: offset,
+            offset,
             count: Math.min(count, results.length - offset),
             patients: results.slice(offset, offset + count)
         };

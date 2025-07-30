@@ -89,13 +89,15 @@
       }
     },
     {
-      "files": ["demo-*.js", "server.js"],
+      "files": ["demo-*.js", "server.js", "scripts/*.js"],
       "rules": {
         "no-console": "off",
         "complexity": "off",
         "max-lines-per-function": "off",
         "security/detect-object-injection": "warn",
-        "security/detect-unsafe-regex": "warn"
+        "security/detect-unsafe-regex": "warn",
+        "security/detect-non-literal-fs-filename": "off",
+        "no-unused-vars": "warn"
       }
     }
   ]

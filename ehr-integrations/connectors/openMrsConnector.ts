@@ -848,7 +848,7 @@ export class OpenMRSConnector implements ExternalEHRConnector {
       person: this.extractPatientId(observation),
       concept: this.getConceptUuid(observation.code?.text || 'Unknown'),
       obsDatetime: observation.effectiveDateTime || new Date().toISOString(),
-      value: value,
+      value,
       encounter: observation.encounter?.reference?.replace('Encounter/', ''),
       location: this.config!.defaultLocationUuid
     };

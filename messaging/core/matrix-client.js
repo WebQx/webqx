@@ -140,7 +140,7 @@ class MatrixMessaging {
   async createChannel(name, options = {}) {
     try {
       const roomOptions = {
-        name: name,
+        name,
         topic: options.topic || `WebQX™ ${name}`,
         visibility: options.visibility || 'private',
         preset: options.preset || 'private_chat',

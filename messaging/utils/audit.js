@@ -138,7 +138,7 @@ class AuditLogger {
     const details = Object.keys(entry.details).length > 0 ? 
       JSON.stringify(entry.details, null, 2) : '';
 
-    console.log(`[Audit Logger] ${message}${details ? ' ' + details : ''}`);
+    console.log(`[Audit Logger] ${message}${details ? ` ${  details}` : ''}`);
   }
 
   /**
@@ -146,7 +146,7 @@ class AuditLogger {
    */
   async logToFile(entry) {
     try {
-      const logLine = JSON.stringify(entry) + '\n';
+      const logLine = `${JSON.stringify(entry)  }\n`;
       await fs.appendFile(this.config.logFilePath, logLine);
     } catch (error) {
       console.error('Failed to write audit log to file:', error.message);
@@ -339,7 +339,7 @@ class AuditLogger {
       sessionId: this.sessionId,
       totalEntries: logs.length,
       timeRange: timeRange || { start: this.startTime, end: new Date().toISOString() },
-      logs: logs
+      logs
     };
 
     switch (format.toLowerCase()) {

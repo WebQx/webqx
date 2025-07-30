@@ -286,7 +286,7 @@ export class AuditLogger {
       });
 
       // Filter in-memory logs based on criteria
-      let filteredEntries = this.inMemoryLogs.filter(entry => 
+      const filteredEntries = this.inMemoryLogs.filter(entry => 
         this.matchesCriteria(entry, criteria)
       );
 
@@ -704,10 +704,10 @@ export class AuditLogger {
     const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>\n';
     const entriesXml = entries.map(entry => this.entryToXML(entry)).join('\n');
     
-    return xmlHeader + 
-           `<auditExport exportDate="${new Date().toISOString()}" totalEntries="${entries.length}">\n` +
-           entriesXml +
-           '\n</auditExport>';
+    return `${xmlHeader  
+           }<auditExport exportDate="${new Date().toISOString()}" totalEntries="${entries.length}">\n${ 
+           entriesXml 
+           }\n</auditExport>`;
   }
 
   /**

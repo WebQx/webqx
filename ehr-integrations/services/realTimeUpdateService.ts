@@ -504,7 +504,7 @@ export class RealTimeUpdateService extends EventEmitter {
       mockEvents.push({
         type: 'observation_added',
         resourceType: 'Observation',
-        resourceId: 'obs-' + Date.now(),
+        resourceId: `obs-${  Date.now()}`,
         patientId: 'patient-123',
         ehrSystem: 'OpenEMR',
         timestamp: new Date(),

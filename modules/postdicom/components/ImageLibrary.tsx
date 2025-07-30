@@ -23,7 +23,7 @@ const ImageLibrary: React.FC<ImageLibraryProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentSearch, setCurrentSearch] = useState<StudySearchParams>({
-    patientID: patientID,
+    patientID,
     limit: 20,
     offset: 0,
     sortBy: 'studyDate',

@@ -455,7 +455,7 @@ class EHRIntegrationDemo {
       type: 'observation_added',
       resourceType: 'Observation',
       resourceId: 'obs-demo-001',
-      patientId: patientId,
+      patientId,
       ehrSystem: 'Demo',
       timestamp: new Date(),
       data: {
@@ -471,7 +471,7 @@ class EHRIntegrationDemo {
         type: 'observation_added',
         resourceType: 'Observation',
         resourceId: 'obs-demo-002',
-        patientId: patientId,
+        patientId,
         ehrSystem: 'Demo',
         timestamp: new Date(),
         data: {
@@ -488,7 +488,7 @@ class EHRIntegrationDemo {
         type: 'appointment_booked',
         resourceType: 'Appointment',
         resourceId: 'appt-demo-001',
-        patientId: patientId,
+        patientId,
         ehrSystem: 'Demo',
         timestamp: new Date(),
         data: {

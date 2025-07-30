@@ -241,7 +241,7 @@ export const EnhancedVoiceTranscription: React.FC<EnhancedVoiceTranscriptionProp
             id: Date.now().toString(),
             text,
             language: language || 'en',
-            confidence: confidence,
+            confidence,
             timestamp: new Date(),
             type: 'realtime'
           };

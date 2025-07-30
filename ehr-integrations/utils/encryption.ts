@@ -420,7 +420,7 @@ export class EncryptionService {
     const keyBits = await crypto.subtle.deriveBits(
       {
         name: 'PBKDF2',
-        salt: salt,
+        salt,
         iterations: iterations || this.config.iterations,
         hash: 'SHA-256'
       },
@@ -571,13 +571,13 @@ export class EncryptionService {
     if (algorithm.includes('gcm')) {
       return {
         name: 'AES-GCM',
-        iv: iv,
+        iv,
         tagLength: this.config.tagLength * 8 // Convert bytes to bits
       } as AesGcmParams;
     } else if (algorithm.includes('cbc')) {
       return {
         name: 'AES-CBC',
-        iv: iv
+        iv
       } as AesCbcParams;
     }
     throw new Error(`Unsupported algorithm: ${algorithm}`);

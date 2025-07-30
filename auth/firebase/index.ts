@@ -125,7 +125,7 @@ export class FirebaseAuthProvider implements AuthProvider {
       return {
         success: true,
         user: mockUser,
-        session: session
+        session
       };
 
     } catch (error) {
@@ -238,7 +238,7 @@ export class FirebaseAuthProvider implements AuthProvider {
 
       await this.logAuthEvent({
         eventType: 'LOGOUT',
-        sessionId: sessionId,
+        sessionId,
         success: true,
         details: { sessionId }
       });

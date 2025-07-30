@@ -882,7 +882,7 @@ export const EHRIntegrationPanel: React.FC<EHRIntegrationPanelProps> = ({
                     gap: '0.5rem',
                     padding: '0.25rem 0.75rem',
                     borderRadius: '1rem',
-                    backgroundColor: getStatusColor(connectionStatuses.get(config.id) || 'disconnected') + '20',
+                    backgroundColor: `${getStatusColor(connectionStatuses.get(config.id) || 'disconnected')  }20`,
                     color: getStatusColor(connectionStatuses.get(config.id) || 'disconnected')
                   }}>
                     <span aria-hidden="true">

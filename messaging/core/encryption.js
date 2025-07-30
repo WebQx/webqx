@@ -294,7 +294,7 @@ class EncryptionManager {
       this.auditLogger.log('crypto', 'File encrypted', {
         originalSize: fileBuffer.length,
         encryptedSize: encrypted.length,
-        hash: hash.substring(0, 16) + '...' // Log partial hash for audit
+        hash: `${hash.substring(0, 16)  }...` // Log partial hash for audit
       });
 
       return {
