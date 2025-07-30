@@ -1,0 +1,291 @@
+name: Deploy to AWS Lambda
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  AWS_REGION: us-east-1
+  LAMBDA_FUNCTION_NAME: webqx-healthcare-platform
+  API_GATEWAY_NAME: webqx-api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run type checking
+      run: npm run type-check
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Create Lambda package directory
+      run: |
+        mkdir -p lambda-package
+        cp -r . lambda-package/
+        cd lambda-package
+        # Remove development dependencies and unnecessary files
+        rm -rf .git .github node_modules/.cache
+        # Remove test files to reduce package size
+        find . -name "*.test.ts" -delete
+        find . -name "*.test.js" -delete
+        find . -name "__tests__" -type d -exec rm -rf {} + 2>/dev/null || true
+
+    - name: Install production dependencies
+      working-directory: lambda-package
+      run: npm ci --production
+
+    - name: Create deployment package
+      run: |
+        cd lambda-package
+        # Create a lambda handler wrapper for Express app
+        cat > lambda-handler.js << 'EOF'
+        const serverlessExpress = require('@aws-sdk/middleware-sdk-node');
+        const app = require('./server.js');
+        
+        // For AWS Lambda, we need to export the handler
+        const { createServer, proxy } = require('aws-serverless-express');
+        
+        const server = createServer(app);
+        
+        exports.handler = (event, context) => {
+          return proxy(server, event, context, 'PROMISE').promise;
+        };
+        EOF
+        
+        # Install aws-serverless-express for Lambda compatibility
+        npm install aws-serverless-express
+        
+        # Create ZIP package
+        zip -r ../webqx-lambda-deployment.zip . -x "*.git*" "*.DS_Store*"
+
+    - name: Check if Lambda function exists
+      id: check-function
+      run: |
+        if aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }} >/dev/null 2>&1; then
+          echo "function-exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "function-exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create Lambda function
+      if: steps.check-function.outputs.function-exists == 'false'
+      run: |
+        aws lambda create-function \
+          --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+          --runtime nodejs18.x \
+          --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/lambda-execution-role \
+          --handler lambda-handler.handler \
+          --zip-file fileb://webqx-lambda-deployment.zip \
+          --timeout 30 \
+          --memory-size 512 \
+          --environment Variables="{
+            NODE_ENV=production,
+            PORT=3000,
+            JWT_SECRET=${{ secrets.JWT_SECRET }},
+            ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }},
+            FHIR_SERVER_URL=${{ secrets.FHIR_SERVER_URL }},
+            DATABASE_URL=${{ secrets.DATABASE_URL }},
+            HIPAA_COMPLIANT_MODE=true,
+            ENABLE_AUDIT_LOGGING=true,
+            ENABLE_DATA_ENCRYPTION=true
+          }"
+
+    - name: Update Lambda function code
+      if: steps.check-function.outputs.function-exists == 'true'
+      run: |
+        aws lambda update-function-code \
+          --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+          --zip-file fileb://webqx-lambda-deployment.zip
+
+    - name: Update Lambda function configuration
+      run: |
+        aws lambda update-function-configuration \
+          --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+          --environment Variables="{
+            NODE_ENV=production,
+            PORT=3000,
+            JWT_SECRET=${{ secrets.JWT_SECRET }},
+            ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }},
+            FHIR_SERVER_URL=${{ secrets.FHIR_SERVER_URL }},
+            DATABASE_URL=${{ secrets.DATABASE_URL }},
+            HIPAA_COMPLIANT_MODE=true,
+            ENABLE_AUDIT_LOGGING=true,
+            ENABLE_DATA_ENCRYPTION=true,
+            WHISPER_API_KEY=${{ secrets.WHISPER_API_KEY }},
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          }"
+
+    - name: Wait for function update to complete
+      run: |
+        aws lambda wait function-updated \
+          --function-name ${{ env.LAMBDA_FUNCTION_NAME }}
+
+    - name: Check if API Gateway exists
+      id: check-api
+      run: |
+        api_id=$(aws apigateway get-rest-apis --query "items[?name=='${{ env.API_GATEWAY_NAME }}'].id" --output text)
+        if [ -n "$api_id" ] && [ "$api_id" != "None" ]; then
+          echo "api-exists=true" >> $GITHUB_OUTPUT
+          echo "api-id=$api_id" >> $GITHUB_OUTPUT
+        else
+          echo "api-exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create API Gateway
+      if: steps.check-api.outputs.api-exists == 'false'
+      id: create-api
+      run: |
+        # Create REST API
+        api_id=$(aws apigateway create-rest-api \
+          --name ${{ env.API_GATEWAY_NAME }} \
+          --description "API Gateway for WebQx Healthcare Platform" \
+          --endpoint-configuration types=REGIONAL \
+          --query 'id' --output text)
+        
+        echo "api-id=$api_id" >> $GITHUB_OUTPUT
+        
+        # Get root resource ID
+        root_resource_id=$(aws apigateway get-resources \
+          --rest-api-id $api_id \
+          --query 'items[?path==`/`].id' --output text)
+        
+        # Create proxy resource
+        proxy_resource_id=$(aws apigateway create-resource \
+          --rest-api-id $api_id \
+          --parent-id $root_resource_id \
+          --path-part "{proxy+}" \
+          --query 'id' --output text)
+        
+        # Create ANY method for proxy resource
+        aws apigateway put-method \
+          --rest-api-id $api_id \
+          --resource-id $proxy_resource_id \
+          --http-method ANY \
+          --authorization-type NONE
+        
+        # Set up Lambda integration for proxy resource
+        lambda_arn="arn:aws:lambda:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:${{ env.LAMBDA_FUNCTION_NAME }}"
+        integration_uri="arn:aws:apigateway:${{ env.AWS_REGION }}:lambda:path/2015-03-31/functions/$lambda_arn/invocations"
+        
+        aws apigateway put-integration \
+          --rest-api-id $api_id \
+          --resource-id $proxy_resource_id \
+          --http-method ANY \
+          --type AWS_PROXY \
+          --integration-http-method POST \
+          --uri $integration_uri
+        
+        # Create ANY method for root resource
+        aws apigateway put-method \
+          --rest-api-id $api_id \
+          --resource-id $root_resource_id \
+          --http-method ANY \
+          --authorization-type NONE
+        
+        # Set up Lambda integration for root resource
+        aws apigateway put-integration \
+          --rest-api-id $api_id \
+          --resource-id $root_resource_id \
+          --http-method ANY \
+          --type AWS_PROXY \
+          --integration-http-method POST \
+          --uri $integration_uri
+        
+        # Add Lambda permission for API Gateway
+        aws lambda add-permission \
+          --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+          --statement-id api-gateway-invoke \
+          --action lambda:InvokeFunction \
+          --principal apigateway.amazonaws.com \
+          --source-arn "arn:aws:execute-api:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:$api_id/*/*" || true
+
+    - name: Deploy API Gateway
+      run: |
+        if [ "${{ steps.check-api.outputs.api-exists }}" == "true" ]; then
+          api_id="${{ steps.check-api.outputs.api-id }}"
+        else
+          api_id="${{ steps.create-api.outputs.api-id }}"
+        fi
+        
+        # Create deployment
+        aws apigateway create-deployment \
+          --rest-api-id $api_id \
+          --stage-name prod \
+          --stage-description "Production stage for WebQx Healthcare Platform"
+
+    - name: Get API Gateway endpoint
+      id: get-endpoint
+      run: |
+        if [ "${{ steps.check-api.outputs.api-exists }}" == "true" ]; then
+          api_id="${{ steps.check-api.outputs.api-id }}"
+        else
+          api_id="${{ steps.create-api.outputs.api-id }}"
+        fi
+        
+        endpoint="https://$api_id.execute-api.${{ env.AWS_REGION }}.amazonaws.com/prod"
+        echo "endpoint=$endpoint" >> $GITHUB_OUTPUT
+        echo "API Gateway Endpoint: $endpoint"
+
+    - name: Verify Lambda deployment
+      run: |
+        echo "Testing Lambda function invocation..."
+        
+        # Test direct Lambda invocation
+        aws lambda invoke \
+          --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+          --payload '{"httpMethod":"GET","path":"/health","headers":{},"queryStringParameters":null,"body":null}' \
+          response.json
+        
+        echo "Lambda response:"
+        cat response.json
+        
+        # Test via API Gateway
+        endpoint="${{ steps.get-endpoint.outputs.endpoint }}"
+        echo "Testing API Gateway endpoint: $endpoint/health"
+        
+        # Wait a moment for API Gateway to be ready
+        sleep 10
+        
+        # Test health endpoint
+        response=$(curl -s -w "%{http_code}" -o health_response.json "$endpoint/health" || echo "000")
+        
+        if [ "$response" == "200" ]; then
+          echo "✅ Deployment verification successful!"
+          echo "Health check response:"
+          cat health_response.json
+        else
+          echo "⚠️ Deployment verification returned status: $response"
+          echo "Response content:"
+          cat health_response.json || echo "No response content"
+        fi
+
+    - name: Output deployment information
+      run: |
+        echo "🚀 Deployment Summary:"
+        echo "- Lambda Function: ${{ env.LAMBDA_FUNCTION_NAME }}"
+        echo "- API Gateway: ${{ env.API_GATEWAY_NAME }}"
+        echo "- Endpoint: ${{ steps.get-endpoint.outputs.endpoint }}"
+        echo "- Region: ${{ env.AWS_REGION }}"
+        echo ""
+        echo "🔗 Available endpoints:"
+        echo "- Health Check: ${{ steps.get-endpoint.outputs.endpoint }}/health"
+        echo "- FHIR Metadata: ${{ steps.get-endpoint.outputs.endpoint }}/fhir/metadata"
+        echo "- Patient Portal: ${{ steps.get-endpoint.outputs.endpoint }}/"

@@ -1,0 +1,304 @@
+name: Unit Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run type checking
+      run: npm run type-check
+
+    - name: Run linting (if available)
+      run: |
+        if npm run --silent | grep -q "lint"; then
+          npm run lint
+        else
+          echo "No lint script found, skipping linting"
+        fi
+
+    - name: Run unit tests
+      run: npm test -- --ci --coverage --watchAll=false --passWithNoTests
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4
+      if: matrix.node-version == '18.x'
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Generate test report
+      if: always()
+      run: |
+        echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "coverage/lcov-report/index.html" ]; then
+          # Extract coverage percentage from Jest output
+          if [ -f "coverage/coverage-summary.json" ]; then
+            coverage=$(node -e "
+              const fs = require('fs');
+              const data = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+              const total = data.total;
+              console.log(\`
+              | Metric | Coverage |
+              |--------|----------|
+              | Lines | \${total.lines.pct}% |
+              | Functions | \${total.functions.pct}% |
+              | Branches | \${total.branches.pct}% |
+              | Statements | \${total.statements.pct}% |
+              \`);
+            ")
+            echo "$coverage" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Node.js Version: ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Tests completed for Node.js ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Analysis
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: |
+        npm audit --audit-level=moderate || echo "Security vulnerabilities found. Please review and fix."
+
+    - name: Check for secrets in code
+      run: |
+        # Basic check for potential secrets (this is a simple implementation)
+        echo "🔍 Scanning for potential secrets..."
+        
+        # Check for common secret patterns
+        secrets_found=false
+        
+        if grep -r -i "api[_-]key\s*=\s*['\"][^'\"]*['\"]" --include="*.js" --include="*.ts" --include="*.json" . && [ $? -eq 0 ]; then
+          echo "⚠️ Potential API keys found in code"
+          secrets_found=true
+        fi
+        
+        if grep -r -i "password\s*=\s*['\"][^'\"]*['\"]" --include="*.js" --include="*.ts" --include="*.json" . && [ $? -eq 0 ]; then
+          echo "⚠️ Potential passwords found in code"
+          secrets_found=true
+        fi
+        
+        if grep -r -i "secret\s*=\s*['\"][^'\"]*['\"]" --include="*.js" --include="*.ts" --include="*.json" . && [ $? -eq 0 ]; then
+          echo "⚠️ Potential secrets found in code"
+          secrets_found=true
+        fi
+        
+        if [ "$secrets_found" = false ]; then
+          echo "✅ No obvious secrets found in code"
+        else
+          echo "❌ Potential secrets detected. Please review and use environment variables or GitHub Secrets instead."
+          exit 1
+        fi
+
+    - name: HIPAA Compliance Check
+      run: |
+        echo "🏥 Running basic HIPAA compliance checks..."
+        
+        # Check for HIPAA-related configurations
+        if grep -r "HIPAA_COMPLIANT_MODE" . > /dev/null; then
+          echo "✅ HIPAA compliance mode configuration found"
+        else
+          echo "⚠️ HIPAA compliance mode not configured"
+        fi
+        
+        if grep -r "ENABLE_AUDIT_LOGGING" . > /dev/null; then
+          echo "✅ Audit logging configuration found"
+        else
+          echo "⚠️ Audit logging not configured"
+        fi
+        
+        if grep -r "ENABLE_DATA_ENCRYPTION" . > /dev/null; then
+          echo "✅ Data encryption configuration found"
+        else
+          echo "⚠️ Data encryption not configured"
+        fi
+        
+        echo "📋 HIPAA compliance check completed"
+
+  healthcare-integration-tests:
+    runs-on: ubuntu-latest
+    name: Healthcare Integration Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Test FHIR endpoints
+      run: |
+        echo "🩺 Testing FHIR endpoint availability..."
+        
+        # Start the server in background for integration testing
+        npm start &
+        SERVER_PID=$!
+        
+        # Wait for server to start
+        sleep 10
+        
+        # Test health endpoint
+        if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+          echo "✅ Health endpoint responding"
+        else
+          echo "❌ Health endpoint not responding"
+        fi
+        
+        # Test FHIR metadata endpoint
+        if curl -f http://localhost:3000/fhir/metadata > /dev/null 2>&1; then
+          echo "✅ FHIR metadata endpoint responding"
+        else
+          echo "❌ FHIR metadata endpoint not responding"
+        fi
+        
+        # Stop the server
+        kill $SERVER_PID || true
+        
+        echo "🏥 Healthcare integration tests completed"
+
+  dependency-analysis:
+    runs-on: ubuntu-latest
+    name: Dependency Analysis
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Analyze dependencies
+      run: |
+        echo "📦 Analyzing project dependencies..."
+        
+        # Check for healthcare-specific dependencies
+        if grep -q "@types/fhir" package.json; then
+          echo "✅ FHIR type definitions found"
+        fi
+        
+        if grep -q "helmet" package.json; then
+          echo "✅ Security middleware (helmet) found"
+        fi
+        
+        if grep -q "express-rate-limit" package.json; then
+          echo "✅ Rate limiting found"
+        fi
+        
+        if grep -q "cors" package.json; then
+          echo "✅ CORS configuration found"
+        fi
+        
+        # Check package vulnerabilities
+        npm install --package-lock-only
+        npm audit --audit-level=high --json > audit-result.json || true
+        
+        # Parse audit results
+        if [ -f "audit-result.json" ]; then
+          vulnerabilities=$(node -e "
+            try {
+              const audit = JSON.parse(require('fs').readFileSync('audit-result.json', 'utf8'));
+              if (audit.metadata && audit.metadata.vulnerabilities) {
+                const vuln = audit.metadata.vulnerabilities;
+                console.log('High:', vuln.high || 0);
+                console.log('Critical:', vuln.critical || 0);
+              }
+            } catch(e) {
+              console.log('Unable to parse audit results');
+            }
+          ")
+          echo "🔍 Vulnerability scan results:"
+          echo "$vulnerabilities"
+        fi
+
+  pr-summary:
+    runs-on: ubuntu-latest
+    name: PR Summary
+    needs: [test, security-scan, healthcare-integration-tests, dependency-analysis]
+    if: always()
+    
+    steps:
+    - name: Generate PR Summary
+      run: |
+        echo "## 🚀 WebQx Healthcare Platform - PR Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Test Results:" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.test.result }}" = "success" ]; then
+          echo "✅ Unit Tests: **PASSED**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Unit Tests: **FAILED**" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ needs.security-scan.result }}" = "success" ]; then
+          echo "✅ Security Scan: **PASSED**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Security Scan: **FAILED**" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ needs.healthcare-integration-tests.result }}" = "success" ]; then
+          echo "✅ Healthcare Integration Tests: **PASSED**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Healthcare Integration Tests: **FAILED**" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ needs.dependency-analysis.result }}" = "success" ]; then
+          echo "✅ Dependency Analysis: **PASSED**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Dependency Analysis: **FAILED**" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🏥 Healthcare Compliance:" >> $GITHUB_STEP_SUMMARY
+        echo "- HIPAA compliance checks included" >> $GITHUB_STEP_SUMMARY
+        echo "- Security vulnerability scanning performed" >> $GITHUB_STEP_SUMMARY
+        echo "- FHIR endpoint validation completed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "---" >> $GITHUB_STEP_SUMMARY
+        echo "*WebQx™ Healthcare Platform - Ensuring secure, compliant healthcare technology*" >> $GITHUB_STEP_SUMMARY

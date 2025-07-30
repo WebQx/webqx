@@ -46,3 +46,10 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# GitHub Actions and CI/CD artifacts
+lambda-package/
+*.zip
+response.json
+health_response.json
+audit-result.json
