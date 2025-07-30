@@ -16,7 +16,9 @@
     "format:check": "prettier --check .",
     "precommit": "npm run lint && npm run format:check && npm run type-check",
     "security:audit": "npm audit --audit-level=moderate",
-    "security:check": "npm run security:audit && npm run lint"
+    "security:check": "npm run security:audit && npm run lint",
+    "prepare": "husky install",
+    "validate:branch-protection": "node scripts/validate-branch-protection.js"
   },
   "keywords": [
     "healthcare",
@@ -63,14 +65,31 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jest": "^28.8.3",
     "eslint-plugin-security": "^3.0.1",
+    "husky": "^8.0.3",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
+    "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "supertest": "^6.3.4",
     "ts-jest": "^29.4.0",
     "typescript": "^5.8.3"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "node scripts/validate-commit-msg.js"
+    }
   }
 }
