@@ -786,35 +786,4 @@ export interface FHIRBatchRequest {
   useTransaction?: boolean;
 }
 
-export default {
-  // Resource interfaces
-  FHIRResource,
-  FHIRPatient,
-  FHIRPractitioner,
-  FHIRAppointment,
-  FHIRSchedule,
-  FHIRSlot,
-  FHIROrganization,
-  FHIRBundle,
-  FHIROperationOutcome,
-  
-  // Element interfaces
-  FHIRMeta,
-  FHIRCoding,
-  FHIRCodeableConcept,
-  FHIRIdentifier,
-  FHIRPeriod,
-  FHIRReference,
-  FHIRHumanName,
-  FHIRContactPoint,
-  FHIRAddress,
-  FHIRAttachment,
-  
-  // Search and request interfaces
-  FHIRAppointmentSearchParams,
-  FHIRSlotSearchParams,
-  FHIRCreateAppointmentRequest,
-  FHIRUpdateAppointmentRequest,
-  FHIRBatchRequest,
-  FHIRApiResponse
-};
+// All types are exported individually above, no default export needed for types

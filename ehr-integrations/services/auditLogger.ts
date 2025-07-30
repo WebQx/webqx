@@ -790,7 +790,7 @@ export class AuditLogger {
       if (['password', 'token', 'secret', 'key'].some(sensitive => key.toLowerCase().includes(sensitive))) {
         sanitized[key] = '[REDACTED]';
       } else {
-        sanitized[key] = context[key];
+        sanitized[key] = (context as Record<string, unknown>)[key];
       }
     });
 

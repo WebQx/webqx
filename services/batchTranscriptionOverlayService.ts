@@ -322,10 +322,16 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
       };
 
     } catch (error) {
-      this.auditLogger?.logError('OVERLAY_ERROR', {
-        imageId,
-        error: error.message,
-        timestamp: new Date().toISOString()
+      this.auditLogger?.log({
+        action: 'edit_patient_data',
+        resourceType: 'OVERLAY_GENERATION',
+        resourceId: imageId,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        context: {
+          imageId,
+          timestamp: new Date().toISOString()
+        }
       });
 
       return { success: false };

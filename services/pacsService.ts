@@ -76,11 +76,11 @@ export class PACSService extends EventEmitter {
   constructor(config: PACSConfig) {
     super();
     this.config = {
-      maxConcurrentDownloads: 3,
-      cacheEnabled: true,
-      auditLogging: true,
-      enableDICOMWeb: true,
-      ...config
+      ...config,
+      maxConcurrentDownloads: config.maxConcurrentDownloads ?? 3,
+      cacheEnabled: config.cacheEnabled ?? true,
+      auditLogging: config.auditLogging ?? true,
+      enableDICOMWeb: config.enableDICOMWeb ?? true
     };
 
     if (this.config.auditLogging) {
@@ -99,10 +99,16 @@ export class PACSService extends EventEmitter {
    */
   async getStudies(patientId: string): Promise<StudyInfo[]> {
     try {
-      this.auditLogger?.logAccess('PACS_STUDY_ACCESS', {
-        patientId,
-        action: 'GET_STUDIES',
-        timestamp: new Date().toISOString()
+      await this.auditLogger?.log({
+        action: 'view_patient_data',
+        resourceType: 'PACS_STUDY',
+        resourceId: patientId,
+        patientMrn: patientId,
+        success: true,
+        context: {
+          action: 'GET_STUDIES',
+          timestamp: new Date().toISOString()
+        }
       });
 
       const cacheKey = `studies_${patientId}`;
@@ -128,12 +134,19 @@ export class PACSService extends EventEmitter {
       return studies;
 
     } catch (error) {
-      this.auditLogger?.logError('PACS_STUDY_ERROR', {
-        patientId,
-        error: error.message,
-        timestamp: new Date().toISOString()
+      await this.auditLogger?.log({
+        action: 'view_patient_data',
+        resourceType: 'PACS_STUDY',
+        resourceId: patientId,
+        patientMrn: patientId,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        context: {
+          action: 'GET_STUDIES_ERROR',
+          timestamp: new Date().toISOString()
+        }
       });
-      throw new Error(`Failed to retrieve studies for patient ${patientId}: ${error.message}`);
+      throw new Error(`Failed to retrieve studies for patient ${patientId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -244,9 +257,15 @@ export class PACSService extends EventEmitter {
     studyDescription?: string;
   }): Promise<StudyInfo[]> {
     try {
-      this.auditLogger?.logAccess('PACS_STUDY_SEARCH', {
-        criteria,
-        timestamp: new Date().toISOString()
+      await this.auditLogger?.log({
+        action: 'view_patient_data',
+        resourceType: 'PACS_STUDY_SEARCH',
+        resourceId: 'search_operation',
+        success: true,
+        context: {
+          criteria,
+          timestamp: new Date().toISOString()
+        }
       });
 
       const searchParams = new URLSearchParams();
@@ -276,12 +295,18 @@ export class PACSService extends EventEmitter {
       return studies;
 
     } catch (error) {
-      this.auditLogger?.logError('PACS_SEARCH_ERROR', {
-        criteria,
-        error: error.message,
-        timestamp: new Date().toISOString()
+      await this.auditLogger?.log({
+        action: 'view_patient_data',
+        resourceType: 'PACS_STUDY_SEARCH',
+        resourceId: 'search_operation',
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        context: {
+          criteria,
+          timestamp: new Date().toISOString()
+        }
       });
-      throw new Error(`Search failed: ${error.message}`);
+      throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -310,14 +335,32 @@ export class PACSService extends EventEmitter {
         body: file
       });
 
+      await this.auditLogger?.log({
+        action: 'edit_patient_data',
+        resourceType: 'DICOM_UPLOAD',
+        resourceId: filename,
+        success: true,
+        context: {
+          filename,
+          instanceId: response.ID,
+          timestamp: new Date().toISOString()
+        }
+      });
+
       this.emit('dicomUploaded', { filename, instanceId: response.ID });
       return { success: true, instanceId: response.ID };
 
     } catch (error) {
-      this.auditLogger?.logError('PACS_UPLOAD_ERROR', {
-        filename,
-        error: error.message,
-        timestamp: new Date().toISOString()
+      await this.auditLogger?.log({
+        action: 'edit_patient_data',
+        resourceType: 'DICOM_UPLOAD',
+        resourceId: filename,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        context: {
+          filename,
+          timestamp: new Date().toISOString()
+        }
       });
       return { success: false };
     }
