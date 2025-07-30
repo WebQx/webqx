@@ -3,7 +3,11 @@
 _A multilingual, specialty-aware, and privacy-first blueprint for global clinical care._
 
 ## 🚀 Overview  
-WebQX™ is an open-source healthcare stack designed to support all 12 core medical specialties, including Primary Care, Radiology, Pediatrics, Oncology, Cardiology, Psychiatry, and more. Its modular design supports multilingual documentation, AI-powered assistance, and global interoperability—from remote clinics to urban hospitals.
+WebQX™ is a comprehensive modular healthcare stack designed to empower both patients and providers across 12 core medical specialties, including Primary Care, Psychiatry, Radiology, Pediatrics, Oncology, Cardiology, and more. Our platform champions multilingual support, health equity, and enhanced health literacy to ensure accessible care for diverse global communities.
+
+Built with compliance at its core, WebQX™ adheres to global healthcare standards including HIPAA and FHIR, providing healthcare organizations with confidence in data security and interoperability. The platform's modular architecture enables seamless scalability and customization, adapting to the unique needs of healthcare settings from rural clinics to major urban hospitals.
+
+At the heart of WebQX™ is our commitment to accessibility, collaborative care, and patient empowerment—leveraging technology to break down barriers and improve global healthcare access for all.
 
 ## 🧩 Modular Architecture
 
@@ -41,6 +45,105 @@ Role-based access and modular configuration for deployment:
 - 💰 **Billing Logic** → JSON-based rule engine  
 - 🗄️ **Compliance Modules** → PostgreSQL + Vault + audit logging  
 
+## 📁 WebQx-EHR Directory Structure  
+The WebQx-EHR project follows a modular directory structure designed for scalability and maintainability across healthcare specialties and integrations:
+
+```
+webqx-ehr/
+├── modules/
+│   ├── transcription/
+│   ├── specialty-primary-care/
+│   ├── specialty-radiology/
+│   ├── specialty-cardiology/
+│   ├── specialty-neurology/
+│   ├── specialty-pulmonology/
+│   └── specialty-oncology/
+├── ehr-integrations/
+│   ├── openemr/
+│   ├── openmrs/
+│   ├── librehealth/
+│   ├── gnuhealth/
+│   └── hospitalrun/
+├── auth/
+│   ├── firebase/
+│   ├── specialty-access-control/
+│   └── provider-verification/
+├── interoperability/
+│   ├── openEHR-layer/
+│   ├── terminology-maps/
+│   └── fhir-interfaces/
+├── messaging/
+│   └── matrix-overlay/
+└── docs/
+    ├── CONTRIBUTING.md
+    ├── LICENSING.md
+    ├── NDAs/
+    └── IP-assignment/
+```
+
+**Key Directories:**
+- 🧩 **modules/** → Specialty-specific clinical modules and transcription services
+- 🔗 **ehr-integrations/** → Ready-to-deploy integrations with popular open-source EHR systems
+- 🔐 **auth/** → Authentication and access control mechanisms including provider verification
+- 🌐 **interoperability/** → Standards-compliant data exchange layers (HL7 FHIR, openEHR)
+- 💬 **messaging/** → Secure communication infrastructure using Matrix protocol
+- 📚 **docs/** → Legal documentation, contribution guidelines, and IP management
+
+# 🌐 WebQX™ Modular PACS Ecosystem
+
+A robust, open-source PACS integration built on Orthanc, Dicoogle, OHIF, and PostDICOM—designed for specialty-aware workflows, multilingual transcription, and secure patient access.
+
+## 🧠 Vision
+
+The WebQX™ PACS Ecosystem unifies diagnostic imaging, specialty-specific dashboards, and inclusive patient engagement into one modular platform. Built for clinicians, optimized for global equity.
+
+---
+
+## 🏗️ Architecture Overview
+
+- **DICOM Server**: Orthanc for lightweight and scalable imaging storage  
+- **Advanced Search & Plugins**: Dicoogle for metadata filtering and indexing  
+- **DICOM Viewer**: OHIF Viewer embedded in WebQX™ clinical dashboards  
+- **Cloud Access**: PostDICOM for remote storage, API-driven imaging access  
+
+---
+
+## 🔐 Provider Features
+
+- 🔑 **Single Sign-On (SSO)** via WebQX™ OAuth2/SAML  
+- 🗂️ **Specialty Routing**: Radiology, cardiology, primary care views  
+- 📝 **Multilingual Transcription** using Whisper-based batch overlay  
+- 🔄 **Clinical Sync**: HL7 ORM/ORU + openEHR tagging  
+
+---
+
+## 🧑‍⚕️ Patient Portal Features
+
+- 🖼️ Secure OHIF-based viewer (annotation-free)  
+- 🗣️ Transcription playback + multilingual audio readouts  
+- 📑 Annotated report access with glossary support  
+- 🔏 Consent-based sharing with full audit trail  
+
+---
+
+## 🧰 Technical Highlights
+
+| Component     | Functionality                             | Tech Stack        |
+|---------------|--------------------------------------------|-------------------|
+| Orthanc       | DICOM storage & REST API                  | C++ / REST        |
+| Dicoogle      | Metadata indexing & plugin SDK            | Java / Lucene     |
+| OHIF Viewer   | Embeddable specialty-aware viewer         | React / Cornerstone |
+| PostDICOM     | Cloud PACS & API endpoints                | REST / Cloud-native |
+| Whisper       | Transcription overlay (multilingual)      | PyTorch / Python  |
+| WebQX™        | Frontend + clinical logic                 | Modular / WebQX™ Core |
+
+---
+
+## 🚀 Getting Started
+
+1. Clone the repo:  
+   ```bash
+   git clone https://github.com/webqx/pacs-ecosystem
 ## 🧬 Supported Specialties  
 Modular workflows are designed for:
 
@@ -58,6 +161,52 @@ Modular workflows are designed for:
 - Dermatology  
 - OBGYN  
 
+# 🌐 WebQX™ Transcription + PACS Module
+
+A modular, specialty-aware clinical documentation panel for WebQX™. Designed for multilingual transcription, PACS imaging reference, and role-specific workflows across Provider, Reviewer, and Admin interfaces.
+
+---
+
+## 🚀 Features
+
+- 🎙️ **Live Dictation Panel** for real-time clinical transcription
+- 🌍 **Multilingual & Specialty Support** including Radiology, Cardiology, Primary Care
+- 🖼️ **PACS Imaging Preview** integrated into Provider dashboard
+- 📡 **Whisper-style Sync** with timestamped transcript segments
+- 🔐 **Privacy & Offline Modes** for secure, resilient recording
+- ✅ **EMR Submission + Reviewer Queue** for quality control
+- 📊 **Audit Logs + Specialty Analytics** for Admin oversight
+
+---
+
+## 🧠 Tech Stack
+
+| Layer        | Tech                      |
+|--------------|---------------------------|
+| UI Framework | React Native + Expo       |
+| State Mgmt   | useState, useEffect Hooks |
+| Transcription| Simulated Whisper Sync    |
+| PACS Preview | ScrollView + Image fetch  |
+
+---
+
+## 🧪 Module Overview
+
+```plaintext
+📱 Mobile UX
+│
+├── 🎙️ Provider Panel
+│   ├── Dictation Controls
+│   ├── Transcript Input + Segment Sync
+│   ├── Privacy + Offline Toggles
+│   └── 🖼️ PACS Imaging Preview
+│
+├── 🧐 Reviewer Panel
+│   └── Transcript Queue + Flag/Approve
+│
+└── 📋 Admin Panel
+    ├── Audit Logs
+    └── Specialty Transcript Analytics
 ## 🛡️ Security & Compliance  
 - TLS encryption for data in transit  
 - Audit-ready backend with IP protection options  

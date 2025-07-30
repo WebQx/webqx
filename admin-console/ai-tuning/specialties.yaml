@@ -1,0 +1,324 @@
+# WebQX Healthcare Platform - Medical Specialties Configuration
+# This file defines the medical specialties and areas of expertise that contributors
+# can specify when submitting approval requests or contributing to the platform.
+
+version: "1.0.0"
+last_updated: "2024-01-01"
+description: "Medical specialties supported by the WebQX healthcare platform"
+
+specialties:
+  # Primary Care Specialties
+  primary_care:
+    name: "Primary Care"
+    category: "primary"
+    description: "General medical care focusing on prevention, health maintenance, and treatment of common conditions. Serves as the first point of contact for patients and coordinates care with specialists."
+    scope:
+      - "Preventive care and health screenings"
+      - "Management of chronic diseases"
+      - "Acute care for common illnesses"
+      - "Patient education and counseling"
+      - "Care coordination and referrals"
+
+  family_medicine:
+    name: "Family Medicine"
+    category: "primary"
+    description: "Comprehensive medical care for individuals and families across all ages, genders, and medical conditions."
+    scope:
+      - "Pediatric to geriatric care"
+      - "Obstetrical care"
+      - "Minor surgical procedures"
+      - "Behavioral health integration"
+
+  internal_medicine:
+    name: "Internal Medicine"
+    category: "primary"
+    description: "Medical care focused on the prevention, diagnosis, and treatment of diseases in adults."
+    scope:
+      - "Adult medicine (18+ years)"
+      - "Complex medical conditions"
+      - "Hospital medicine"
+      - "Subspecialty consultation"
+
+  # Surgical Specialties
+  general_surgery:
+    name: "General Surgery"
+    category: "surgical"
+    description: "Surgical treatment of diseases affecting the abdomen, soft tissues, endocrine system, and other general surgical conditions."
+    scope:
+      - "Abdominal surgery"
+      - "Trauma surgery"
+      - "Endocrine surgery"
+      - "Breast surgery"
+      - "Emergency surgical procedures"
+
+  orthopedics:
+    name: "Orthopedics"
+    category: "surgical"
+    description: "Diagnosis and treatment of musculoskeletal system disorders including bones, joints, ligaments, tendons, and muscles."
+    scope:
+      - "Fracture repair and trauma"
+      - "Joint replacement surgery"
+      - "Sports medicine"
+      - "Spine surgery"
+      - "Pediatric orthopedics"
+
+  # Medical Specialties
+  cardiology:
+    name: "Cardiology"
+    category: "medical"
+    description: "Diagnosis and treatment of cardiovascular diseases including heart and blood vessel conditions."
+    scope:
+      - "Heart disease diagnosis and treatment"
+      - "Cardiac catheterization"
+      - "Electrophysiology"
+      - "Heart failure management"
+      - "Preventive cardiology"
+
+  oncology:
+    name: "Oncology"
+    category: "medical"
+    description: "Diagnosis and treatment of cancer and tumors through medical therapies including chemotherapy, immunotherapy, and targeted therapy."
+    scope:
+      - "Cancer diagnosis and staging"
+      - "Chemotherapy administration"
+      - "Immunotherapy and targeted therapy"
+      - "Palliative care"
+      - "Clinical trial management"
+
+  neurology:
+    name: "Neurology"
+    category: "medical"
+    description: "Diagnosis and treatment of disorders of the nervous system including the brain, spinal cord, and peripheral nerves."
+    scope:
+      - "Stroke care"
+      - "Epilepsy management"
+      - "Movement disorders"
+      - "Neurodegenerative diseases"
+      - "Headache and migraine treatment"
+
+  gastroenterology:
+    name: "Gastroenterology"
+    category: "medical"
+    description: "Diagnosis and treatment of digestive system disorders including the gastrointestinal tract, liver, and pancreas."
+    scope:
+      - "Endoscopic procedures"
+      - "Inflammatory bowel disease"
+      - "Liver disease management"
+      - "Gastrointestinal cancer screening"
+      - "Functional GI disorders"
+
+  pulmonology:
+    name: "Pulmonology"
+    category: "medical"
+    description: "Diagnosis and treatment of respiratory system diseases including lungs, airways, and breathing disorders."
+    scope:
+      - "Asthma and COPD management"
+      - "Sleep medicine"
+      - "Interventional pulmonology"
+      - "Critical care medicine"
+      - "Lung cancer diagnosis"
+
+  endocrinology:
+    name: "Endocrinology"
+    category: "medical"
+    description: "Diagnosis and treatment of hormonal disorders and diseases of the endocrine system."
+    scope:
+      - "Diabetes management"
+      - "Thyroid disorders"
+      - "Metabolic disorders"
+      - "Reproductive endocrinology"
+      - "Adrenal and pituitary disorders"
+
+  rheumatology:
+    name: "Rheumatology"
+    category: "medical"
+    description: "Diagnosis and treatment of autoimmune, inflammatory, and degenerative diseases affecting joints, muscles, and connective tissues."
+    scope:
+      - "Arthritis management"
+      - "Autoimmune diseases"
+      - "Connective tissue disorders"
+      - "Vasculitis treatment"
+      - "Osteoporosis management"
+
+  infectious_disease:
+    name: "Infectious Disease"
+    category: "medical"
+    description: "Diagnosis and treatment of infections caused by bacteria, viruses, fungi, and parasites."
+    scope:
+      - "Complex infection management"
+      - "Antimicrobial stewardship"
+      - "Travel medicine"
+      - "Immunocompromised patient care"
+      - "Infection prevention and control"
+
+  # Pediatric Specialties
+  pediatrics:
+    name: "Pediatrics"
+    category: "pediatric"
+    description: "Medical care for infants, children, and adolescents from birth through age 18."
+    scope:
+      - "Well-child care and development"
+      - "Pediatric acute and chronic diseases"
+      - "Growth and development monitoring"
+      - "Adolescent medicine"
+      - "Pediatric emergency care"
+
+  # Women's Health
+  obstetrics_gynecology:
+    name: "Obstetrics and Gynecology"
+    category: "womens_health"
+    description: "Medical and surgical care of the female reproductive system and pregnancy-related care."
+    scope:
+      - "Prenatal and obstetric care"
+      - "Gynecological surgery"
+      - "Reproductive health"
+      - "Menopause management"
+      - "Family planning"
+
+  # Mental Health
+  psychiatry:
+    name: "Psychiatry"
+    category: "mental_health"
+    description: "Diagnosis and treatment of mental health disorders, emotional problems, and behavioral conditions."
+    scope:
+      - "Mental health assessment"
+      - "Psychopharmacology"
+      - "Crisis intervention"
+      - "Substance abuse treatment"
+      - "Psychotherapy and counseling"
+
+  # Diagnostic Specialties
+  radiology:
+    name: "Radiology"
+    category: "diagnostic"
+    description: "Medical imaging and interpretation for diagnosis and treatment guidance using various imaging modalities."
+    scope:
+      - "Diagnostic imaging interpretation"
+      - "Interventional radiology procedures"
+      - "Nuclear medicine"
+      - "Radiation oncology"
+      - "Medical imaging technology"
+
+  pathology:
+    name: "Pathology"
+    category: "diagnostic"
+    description: "Diagnosis of disease through examination of organs, tissues, body fluids, and laboratory analysis."
+    scope:
+      - "Anatomical pathology"
+      - "Clinical pathology"
+      - "Laboratory medicine"
+      - "Molecular diagnostics"
+      - "Forensic pathology"
+
+  # Emergency and Critical Care
+  emergency_medicine:
+    name: "Emergency Medicine"
+    category: "emergency"
+    description: "Immediate medical care for acute illnesses and injuries in emergency department settings."
+    scope:
+      - "Emergency department management"
+      - "Trauma care"
+      - "Critical care procedures"
+      - "Disaster medicine"
+      - "Toxicology and poisoning"
+
+  critical_care:
+    name: "Critical Care Medicine"
+    category: "emergency"
+    description: "Intensive care for critically ill patients requiring close monitoring and advanced life support."
+    scope:
+      - "ICU patient management"
+      - "Mechanical ventilation"
+      - "Hemodynamic monitoring"
+      - "Multiorgan failure"
+      - "End-of-life care"
+
+  anesthesiology:
+    name: "Anesthesiology"
+    category: "perioperative"
+    description: "Perioperative care including anesthesia administration, pain management, and critical care medicine."
+    scope:
+      - "General and regional anesthesia"
+      - "Pain management"
+      - "Perioperative medicine"
+      - "Critical care anesthesia"
+      - "Pediatric anesthesia"
+
+  # Specialized Medical Fields
+  dermatology:
+    name: "Dermatology"
+    category: "specialized"
+    description: "Diagnosis and treatment of skin, hair, and nail disorders including medical and surgical dermatology."
+    scope:
+      - "Skin cancer diagnosis and treatment"
+      - "Dermatologic surgery"
+      - "Cosmetic dermatology"
+      - "Pediatric dermatology"
+      - "Dermatopathology"
+
+  ophthalmology:
+    name: "Ophthalmology"
+    category: "specialized"
+    description: "Medical and surgical care of the eye and visual system disorders."
+    scope:
+      - "Cataract and refractive surgery"
+      - "Retinal diseases"
+      - "Glaucoma management"
+      - "Corneal disorders"
+      - "Pediatric ophthalmology"
+
+  otolaryngology:
+    name: "Otolaryngology (ENT)"
+    category: "specialized"
+    description: "Medical and surgical treatment of ear, nose, throat, head, and neck disorders."
+    scope:
+      - "Hearing and balance disorders"
+      - "Sinus and nasal conditions"
+      - "Head and neck surgery"
+      - "Voice and swallowing disorders"
+      - "Pediatric ENT"
+
+  urology:
+    name: "Urology"
+    category: "specialized"
+    description: "Medical and surgical treatment of urinary tract and male reproductive system disorders."
+    scope:
+      - "Kidney stone management"
+      - "Prostate disorders"
+      - "Urologic oncology"
+      - "Male fertility"
+      - "Pediatric urology"
+
+# Platform Integration Settings
+integration:
+  approval_workflow:
+    enabled: true
+    description: "Contributors can specify their specialty when submitting approval requests"
+  
+  specialty_validation:
+    enabled: true
+    description: "Validate contributor expertise against specialty requirements"
+  
+  cross_specialty_collaboration:
+    enabled: true
+    description: "Enable collaboration between different medical specialties"
+
+# Extensibility Guidelines
+extensibility:
+  adding_specialties:
+    - "New specialties should include name, category, description, and scope"
+    - "Categories help organize related specialties"
+    - "Descriptions should be clear and informative for contributors"
+    - "Scope should define specific areas of expertise"
+  
+  category_types:
+    - "primary: Primary care specialties"
+    - "medical: Medical specialties (non-surgical)"
+    - "surgical: Surgical specialties"
+    - "diagnostic: Diagnostic and laboratory specialties"
+    - "emergency: Emergency and critical care"
+    - "pediatric: Pediatric specialties"
+    - "mental_health: Mental health and psychiatry"
+    - "womens_health: Women's health specialties"
+    - "perioperative: Anesthesia and perioperative care"
+    - "specialized: Other specialized medical fields"
