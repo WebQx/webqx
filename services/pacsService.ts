@@ -70,7 +70,7 @@ export interface TranscriptionOverlay {
 
 export class PACSService extends EventEmitter {
   private config: PACSConfig;
-  private auditLogger: AuditLogger;
+  private auditLogger?: AuditLogger;
   private cache: Map<string, any> = new Map();
 
   constructor(config: PACSConfig) {
@@ -177,7 +177,8 @@ export class PACSService extends EventEmitter {
       };
 
     } catch (error) {
-      throw new Error(`Failed to get study details: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get study details: ${errorMessage}`);
     }
   }
 
@@ -205,7 +206,8 @@ export class PACSService extends EventEmitter {
       };
 
     } catch (error) {
-      throw new Error(`Failed to get series details: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get series details: ${errorMessage}`);
     }
   }
 
@@ -232,7 +234,8 @@ export class PACSService extends EventEmitter {
       };
 
     } catch (error) {
-      throw new Error(`Failed to get image details: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get image details: ${errorMessage}`);
     }
   }
 
@@ -382,7 +385,7 @@ export class PACSService extends EventEmitter {
     } catch (error) {
       return {
         connected: false,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       };
     }
   }
