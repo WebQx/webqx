@@ -45,17 +45,17 @@ const Header: React.FC<HeaderProps> = React.memo(({
   /**
    * Handle language selection change with visual feedback
    */
-  const handleLanguageChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newLanguage = event.target.value as SupportedLanguage;
     setIsLanguageChanging(true);
     
-    // Use a Promise with setTimeout for better React compatibility
-    await new Promise(resolve => setTimeout(resolve, 150));
-    
-    // Call the callback first to update parent state
+    // Call the callback immediately to update parent state
     onLanguageChange(newLanguage);
-    // Then update local loading state
-    setIsLanguageChanging(false);
+    
+    // Use a much shorter delay for visual feedback
+    setTimeout(() => {
+      setIsLanguageChanging(false);
+    }, 50);
   };
 
   /**

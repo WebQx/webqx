@@ -116,7 +116,7 @@ describe('Header Component', () => {
       
       // Wait for the timeout delay using act
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
       });
       
       expect(mockOnLanguageChange).toHaveBeenCalledWith('es');
@@ -134,17 +134,17 @@ describe('Header Component', () => {
       // Change to different languages with delays
       await user.selectOptions(select, 'fr');
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
       });
       
       await user.selectOptions(select, 'de');
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
       });
       
       await user.selectOptions(select, 'zh');
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
       });
       
       expect(mockOnLanguageChange).toHaveBeenCalledTimes(3);
@@ -170,7 +170,7 @@ describe('Header Component', () => {
       
       // Wait for the timeout delay using act
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
       });
       
       // After delay, select should be enabled again
@@ -308,7 +308,9 @@ describe('Header Component', () => {
       await user.selectOptions(select, 'es');
       
       // Wait for the timeout delay
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
       
       // Verify callback was called
       expect(mockOnLanguageChange).toHaveBeenCalledWith('es');
