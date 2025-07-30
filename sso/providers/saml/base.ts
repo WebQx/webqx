@@ -101,7 +101,7 @@ export abstract class BaseSAMLProvider implements SAMLProvider {
       if (error instanceof SSOAuthenticationError) {
         throw error;
       }
-      throw new SSOAuthenticationError(`SAML assertion validation failed: ${error.message}`);
+      throw new SSOAuthenticationError(`SAML assertion validation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

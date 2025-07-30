@@ -106,7 +106,7 @@ export class SSOManager {
 
       return { user, token, session };
     } catch (error) {
-      this.auditLogger.logLoginFailure(provider, 'oauth2', error.message, {
+      this.auditLogger.logLoginFailure(provider, 'oauth2', error instanceof Error ? error.message : String(error), {
         ip: req.ip,
         userAgent: req.get('User-Agent')
       });
@@ -140,7 +140,7 @@ export class SSOManager {
 
       return { user, token, session };
     } catch (error) {
-      this.auditLogger.logLoginFailure(provider, 'saml', error.message, {
+      this.auditLogger.logLoginFailure(provider, 'saml', error instanceof Error ? error.message : String(error), {
         ip: req.ip,
         userAgent: req.get('User-Agent')
       });

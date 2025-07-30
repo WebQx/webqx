@@ -26,7 +26,7 @@ export interface BatchJob {
   id: string;
   name: string;
   imageIds: string[];
-  audioFiles: { imageId: string; audioFile: File; language?: string }[];
+  audioFiles: { imageId: string; audioFile: File | Buffer; language?: string }[];
   status: 'pending' | 'processing' | 'completed' | 'failed';
   progress: number;
   startTime?: Date;
@@ -94,7 +94,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
   async createBatchJob(
     name: string,
     imageIds: string[],
-    audioFiles: { imageId: string; audioFile: File; language?: string }[]
+    audioFiles: { imageId: string; audioFile: File | Buffer; language?: string }[]
   ): Promise<string> {
     const jobId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -260,7 +260,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
    */
   private async processAudioForImage(
     imageId: string,
-    audioFile: File,
+    audioFile: File | Buffer,
     language: string
   ): Promise<TranscriptionOverlay> {
     try {

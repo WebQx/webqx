@@ -61,7 +61,7 @@ export class GoogleOAuth2Provider extends BaseOAuth2Provider {
 
   protected mapToSSOUser(userInfo: OAuth2UserInfo): SSOUser {
     return {
-      id: userInfo.id || userInfo.sub,
+      id: userInfo.id || userInfo.sub || userInfo.email || 'unknown',
       email: userInfo.email || '',
       name: userInfo.name || '',
       roles: userInfo.roles || [],

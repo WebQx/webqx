@@ -45,6 +45,8 @@ export interface OAuth2Provider extends SSOProvider {
   config: OAuth2Config;
   exchangeCodeForToken(code: string, state?: string): Promise<OAuth2TokenResponse>;
   fetchUserInfo(accessToken: string): Promise<OAuth2UserInfo>;
+  createState(redirectUri?: string): OAuth2State;
+  generateAuthUrl(state?: string): string;
 }
 
 export interface OAuth2State {

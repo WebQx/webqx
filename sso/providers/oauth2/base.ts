@@ -82,7 +82,7 @@ export abstract class BaseOAuth2Provider implements OAuth2Provider {
       if (error instanceof SSOAuthenticationError) {
         throw error;
       }
-      throw new SSOAuthenticationError(`Token exchange error: ${error.message}`);
+      throw new SSOAuthenticationError(`Token exchange error: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -111,7 +111,7 @@ export abstract class BaseOAuth2Provider implements OAuth2Provider {
       if (error instanceof SSOAuthenticationError) {
         throw error;
       }
-      throw new SSOAuthenticationError(`User info fetch error: ${error.message}`);
+      throw new SSOAuthenticationError(`User info fetch error: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

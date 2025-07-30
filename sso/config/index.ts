@@ -178,7 +178,7 @@ export class SSOConfigManager {
       const configData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
       return new SSOConfigManager(configData);
     } catch (error) {
-      throw new SSOConfigurationError(`Failed to load configuration from ${filePath}: ${error.message}`);
+      throw new SSOConfigurationError(`Failed to load configuration from ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

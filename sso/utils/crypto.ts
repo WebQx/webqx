@@ -64,8 +64,7 @@ export class CryptoUtils {
       const key = crypto.scryptSync(secretKey, 'salt', this.keyLength);
       const iv = crypto.randomBytes(16);
       
-      const cipher = crypto.createCipher(this.algorithm, key);
-      cipher.setAAD(Buffer.from('sso-data', 'utf8'));
+      const cipher = crypto.createCipheriv(this.algorithm, key, iv) as crypto.CipherGCM;
       
       let encrypted = cipher.update(text, 'utf8', 'hex');
       encrypted += cipher.final('hex');
@@ -96,9 +95,8 @@ export class CryptoUtils {
       // Derive key from secret
       const key = crypto.scryptSync(secretKey, 'salt', this.keyLength);
       
-      const decipher = crypto.createDecipher(this.algorithm, key);
+      const decipher = crypto.createDecipheriv(this.algorithm, key, iv) as crypto.DecipherGCM;
       decipher.setAuthTag(authTag);
-      decipher.setAAD(Buffer.from('sso-data', 'utf8'));
       
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
       decrypted += decipher.final('utf8');

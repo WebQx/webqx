@@ -1,4 +1,4 @@
-import * as jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { SSOUser, SSOSession, SSOError, SSOValidationError } from '../types/common';
 
 /**
@@ -39,10 +39,10 @@ export class JWTUtils {
       }
     };
 
-    const options: jwt.SignOptions = {
+    const options: SignOptions = {
       issuer: this.issuer,
       audience: 'webqx-healthcare',
-      expiresIn: expiresIn || this.defaultExpiresIn,
+      expiresIn: (expiresIn || this.defaultExpiresIn) as any,
       algorithm: 'HS256'
     };
 
@@ -124,10 +124,10 @@ export class JWTUtils {
     delete newPayload.aud;
     delete newPayload.iss;
 
-    const options: jwt.SignOptions = {
+    const options: SignOptions = {
       issuer: this.issuer,
       audience: 'webqx-healthcare',
-      expiresIn: expiresIn || this.defaultExpiresIn,
+      expiresIn: (expiresIn || this.defaultExpiresIn) as any,
       algorithm: 'HS256'
     };
 
@@ -177,10 +177,10 @@ export class JWTUtils {
       iat: Math.floor(Date.now() / 1000)
     };
 
-    const options: jwt.SignOptions = {
+    const options: SignOptions = {
       issuer: this.issuer,
       audience: 'webqx-healthcare',
-      expiresIn,
+      expiresIn: expiresIn as any,
       algorithm: 'HS256'
     };
 
