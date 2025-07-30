@@ -226,6 +226,38 @@ A modular, specialty-aware clinical documentation panel for WebQX™. Designed f
 
 ## 🚀 Deployment
 
+### Mock FHIR and openEHR Servers
+
+WebQX includes built-in mock servers for local development and testing:
+
+- **Mock FHIR Server**: Complete FHIR R4 implementation at `/fhir/*` endpoints
+- **Mock openEHR Server**: Full openEHR REST API at `/openehr/v1/*` endpoints
+
+#### Quick Start
+```bash
+# Install dependencies
+npm install
+
+# Start with mock servers (development mode)
+NODE_ENV=development npm start
+
+# Verify servers are running
+curl http://localhost:3000/health
+```
+
+#### Features
+- ✅ **FHIR Resources**: Patient, Observation, Appointment with full CRUD
+- ✅ **openEHR Resources**: EHR, Composition, AQL queries
+- ✅ **Authentication**: OAuth2 for FHIR (test tokens provided)
+- ✅ **Validation**: Schema validation for both standards
+- ✅ **Test Data**: Pre-populated with sample healthcare data
+- ✅ **Documentation**: Complete API examples and setup guides
+
+📚 **Documentation:**
+- [Mock Servers Setup Guide](./docs/MOCK_SERVERS_SETUP.md)
+- [FHIR API Examples](./docs/FHIR_API_EXAMPLES.md)
+- [openEHR API Examples](./docs/OPENEHR_API_EXAMPLES.md)
+
 ### Railway Deployment
 
 This project is ready for deployment on [Railway](https://railway.app) with zero-configuration:
