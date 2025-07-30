@@ -8,6 +8,7 @@ require('dotenv').config();
 // FHIR imports
 const patientRoutes = require('./fhir/routes/patient');
 const appointmentRoutes = require('./fhir/routes/appointment');
+const observationRoutes = require('./fhir/routes/observation');
 const { 
     authenticateToken, 
     requireScopes, 
@@ -19,6 +20,11 @@ const {
 
 // PostDICOM imports
 const postdicomRouter = require('./modules/postdicom/routes/dicom.js');
+
+// openEHR imports
+const openEHREHRRoutes = require('./openehr/routes/ehr');
+const openEHRCompositionRoutes = require('./openehr/routes/composition');
+const openEHRQueryRoutes = require('./openehr/routes/query');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -74,6 +80,7 @@ app.get('/health', (req, res) => {
         status: 'healthy', 
         service: 'WebQX Healthcare Platform',
         fhir: 'enabled',
+        openehr: 'enabled',
         timestamp: new Date().toISOString()
     });
 });
@@ -91,8 +98,16 @@ app.use('/fhir/Patient', authenticateToken, requireScopes(['patient/*.read', 'pa
 // FHIR Appointment resource routes with authentication
 app.use('/fhir/Appointment', authenticateToken, requireScopes(['user/*.read', 'user/*.write', 'patient/*.read']), appointmentRoutes);
 
+// FHIR Observation resource routes with authentication
+app.use('/fhir/Observation', authenticateToken, requireScopes(['patient/*.read', 'patient/*.write', 'user/*.read']), observationRoutes);
+
 // PostDICOM API routes
 app.use('/postdicom', postdicomRouter);
+
+// openEHR API routes (no authentication for demo purposes)
+app.use('/openehr/v1/ehr', openEHREHRRoutes);
+app.use('/openehr/v1', openEHRCompositionRoutes);
+app.use('/openehr/v1/query', openEHRQueryRoutes);
 
 // Development endpoint to get test token
 if (process.env.NODE_ENV === 'development') {

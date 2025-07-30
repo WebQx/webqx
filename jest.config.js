@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/auth', '<rootDir>/interoperability'],
+  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/openehr', '<rootDir>/auth', '<rootDir>/interoperability'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
@@ -17,6 +17,7 @@ module.exports = {
     'ehr-integrations/**/*.{ts,tsx}',
     'modules/**/*.{ts,tsx}',
     'fhir/**/*.{js}',
+    'openehr/**/*.{js}',
     'auth/**/*.{ts,tsx}',
     'interoperability/**/*.{ts,tsx}',
     '!patient-portal/**/*.d.ts',
@@ -24,6 +25,7 @@ module.exports = {
     '!ehr-integrations/**/*.d.ts',
     '!modules/**/*.d.ts',
     '!fhir/**/*.d.ts',
+    '!openehr/**/*.d.ts',
     '!auth/**/*.d.ts',
     '!interoperability/**/*.d.ts',
   ],
@@ -54,6 +56,14 @@ module.exports = {
       displayName: 'fhir',
       testEnvironment: 'node',
       testMatch: ['<rootDir>/fhir/**/*.(test|spec).+(js)'],
+      transform: {
+        '^.+\\.js$': 'babel-jest'
+      }
+    },
+    {
+      displayName: 'openehr',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/openehr/**/*.(test|spec).+(js)'],
       transform: {
         '^.+\\.js$': 'babel-jest'
       }
