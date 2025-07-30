@@ -279,7 +279,6 @@ const Home: React.FC<HomeProps> = ({
             title="Alternative Medication (Currently Unavailable)"
             className="portal-prescription-dosage"
           />
-          />
         </section>
 
         {/* Health Literacy Assistant */}

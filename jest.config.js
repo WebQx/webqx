@@ -31,7 +31,7 @@ module.exports = {
     '!auth/**/*.d.ts',
     '!interoperability/**/*.d.ts',
   ],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '\\.(css|less|scss)$': 'identity-obj-proxy'
   },
   testEnvironmentOptions: {
