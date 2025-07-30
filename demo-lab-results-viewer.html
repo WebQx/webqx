@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Results Viewer Demo - WebQX</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .demo-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1 class="text-3xl font-bold mb-2">🧪 Lab Results Viewer Demo</h1>
+            <p class="text-xl opacity-90">WebQX Patient Portal Component</p>
+            <p class="mt-2 opacity-80">Interactive demonstration of FHIR Observation display with filtering and sorting</p>
+        </div>
+        
+        <div id="lab-results-demo"></div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // Mock FHIR data for demonstration
+        const mockLabData = {
+            resourceType: 'Bundle',
+            entry: [
+                {
+                    resource: {
+                        resourceType: 'Observation',
+                        id: 'obs-hemoglobin-1',
+                        status: 'final',
+                        category: [{
+                            coding: [{
+                                system: 'http://terminology.hl7.org/CodeSystem/observation-category',
+                                code: 'laboratory',
+                                display: 'Laboratory'
+                            }]
+                        }],
+                        code: {
+                            coding: [{
+                                system: 'http://loinc.org',
+                                code: '789-8',
+                                display: 'Hemoglobin'
+                            }],
+                            text: 'Hemoglobin'
+                        },
+                        subject: {
+                            reference: 'Patient/demo-patient',
+                            display: 'John Doe'
+                        },
+                        effectiveDateTime: '2025-01-15T11:00:00Z',
+                        issued: '2025-01-15T12:00:00Z',
+                        valueQuantity: {
+                            value: 13.5,
+                            unit: 'g/dL',
+                            system: 'http://unitsofmeasure.org'
+                        },
+                        referenceRange: [{
+                            text: '12.0-16.0',
+                            low: { value: 12.0, unit: 'g/dL' },
+                            high: { value: 16.0, unit: 'g/dL' }
+                        }],
+                        interpretation: [{
+                            coding: [{
+                                system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',
+                                code: 'N',
+                                display: 'Normal'
+                            }]
+                        }],
+                        performer: [{
+                            display: 'Central Lab'
+                        }]
+                    }
+                },
+                {
+                    resource: {
+                        resourceType: 'Observation',
+                        id: 'obs-glucose-1',
+                        status: 'final',
+                        category: [{
+                            coding: [{
+                                system: 'http://terminology.hl7.org/CodeSystem/observation-category',
+                                code: 'laboratory',
+                                display: 'Laboratory'
+                            }]
+                        }],
+                        code: {
+                            coding: [{
+                                system: 'http://loinc.org',
+                                code: '33747-0',
+                                display: 'Glucose [Mass/volume] in Blood'
+                            }],
+                            text: 'Glucose'
+                        },
+                        subject: {
+                            reference: 'Patient/demo-patient',
+                            display: 'John Doe'
+                        },
+                        effectiveDateTime: '2025-01-15T11:00:00Z',
+                        issued: '2025-01-15T12:00:00Z',
+                        valueQuantity: {
+                            value: 145,
+                            unit: 'mg/dL',
+                            system: 'http://unitsofmeasure.org'
+                        },
+                        referenceRange: [{
+                            text: '70-140',
+                            low: { value: 70, unit: 'mg/dL' },
+                            high: { value: 140, unit: 'mg/dL' }
+                        }],
+                        interpretation: [{
+                            coding: [{
+                                system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',
+                                code: 'H',
+                                display: 'High'
+                            }]
+                        }],
+                        performer: [{
+                            display: 'Central Lab'
+                        }]
+                    }
+                },
+                {
+                    resource: {
+                        resourceType: 'Observation',
+                        id: 'obs-wbc-1',
+                        status: 'final',
+                        category: [{
+                            coding: [{
+                                system: 'http://terminology.hl7.org/CodeSystem/observation-category',
+                                code: 'laboratory',
+                                display: 'Laboratory'
+                            }]
+                        }],
+                        code: {
+                            coding: [{
+                                system: 'http://loinc.org',
+                                code: '6690-2',
+                                display: 'Leukocytes [#/volume] in Blood by Automated count'
+                            }],
+                            text: 'White Blood Cell Count'
+                        },
+                        subject: {
+                            reference: 'Patient/demo-patient',
+                            display: 'John Doe'
+                        },
+                        effectiveDateTime: '2025-01-14T09:30:00Z',
+                        issued: '2025-01-14T11:30:00Z',
+                        valueQuantity: {
+                            value: 7.2,
+                            unit: '10*3/uL',
+                            system: 'http://unitsofmeasure.org'
+                        },
+                        referenceRange: [{
+                            text: '4.0-11.0',
+                            low: { value: 4.0, unit: '10*3/uL' },
+                            high: { value: 11.0, unit: '10*3/uL' }
+                        }],
+                        interpretation: [{
+                            coding: [{
+                                system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',
+                                code: 'N',
+                                display: 'Normal'
+                            }]
+                        }],
+                        performer: [{
+                            display: 'Hematology Lab'
+                        }]
+                    }
+                },
+                {
+                    resource: {
+                        resourceType: 'Observation',
+                        id: 'obs-culture-1',
+                        status: 'final',
+                        category: [{
+                            coding: [{
+                                system: 'http://terminology.hl7.org/CodeSystem/observation-category',
+                                code: 'laboratory',
+                                display: 'Laboratory'
+                            }]
+                        }],
+                        code: {
+                            coding: [{
+                                system: 'http://loinc.org',
+                                code: '600-7',
+                                display: 'Bacteria identified in Blood by Culture'
+                            }],
+                            text: 'Blood Culture'
+                        },
+                        subject: {
+                            reference: 'Patient/demo-patient',
+                            display: 'John Doe'
+                        },
+                        effectiveDateTime: '2025-01-13T14:00:00Z',
+                        issued: '2025-01-16T08:00:00Z',
+                        valueString: 'No growth after 5 days',
+                        interpretation: [{
+                            coding: [{
+                                system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',
+                                code: 'N',
+                                display: 'Normal'
+                            }]
+                        }],
+                        performer: [{
+                            display: 'Microbiology Lab'
+                        }]
+                    }
+                }
+            ]
+        };
+
+        // Simplified Lab Results Viewer Component for Demo
+        const LabResultsViewerDemo = ({ patientId }) => {
+            const [labResults, setLabResults] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [selectedResult, setSelectedResult] = useState(null);
+            const [filters, setFilters] = useState({
+                dateRange: 'all',
+                status: 'all',
+                category: 'all',
+                abnormalOnly: false
+            });
+            const [sort, setSort] = useState({
+                field: 'date',
+                direction: 'desc'
+            });
+
+            // Transform FHIR Observation to LabResult
+            const transformObservationToLabResult = (observation) => {
+                const getValue = () => {
+                    if (observation.valueQuantity) {
+                        return observation.valueQuantity.value || 0;
+                    }
+                    if (observation.valueString) {
+                        return observation.valueString;
+                    }
+                    if (observation.valueCodeableConcept) {
+                        return observation.valueCodeableConcept.coding?.[0]?.display || 
+                               observation.valueCodeableConcept.text || 'N/A';
+                    }
+                    return 'N/A';
+                };
+
+                const getInterpretation = () => {
+                    if (!observation.interpretation || observation.interpretation.length === 0) {
+                        return 'normal';
+                    }
+                    
+                    const code = observation.interpretation[0].coding?.[0]?.code;
+                    const mapping = {
+                        'N': 'normal',
+                        'H': 'high',
+                        'L': 'low',
+                        'HH': 'critical',
+                        'LL': 'critical',
+                        'A': 'abnormal'
+                    };
+                    
+                    return mapping[code] || 'normal';
+                };
+
+                const getReferenceRange = () => {
+                    if (!observation.referenceRange || observation.referenceRange.length === 0) {
+                        return undefined;
+                    }
+                    
+                    const range = observation.referenceRange[0];
+                    if (range.text) {
+                        return range.text;
+                    }
+                    
+                    if (range.low && range.high) {
+                        return `${range.low.value}-${range.high.value} ${range.low.unit || ''}`;
+                    }
+                    
+                    return undefined;
+                };
+
+                return {
+                    id: observation.id || '',
+                    patientId: observation.subject?.reference?.split('/')[1] || patientId,
+                    patientName: observation.subject?.display || 'Unknown',
+                    testName: observation.code.text || observation.code.coding?.[0]?.display || 'Unknown Test',
+                    testCode: observation.code.coding?.[0]?.code || '',
+                    value: getValue(),
+                    unit: observation.valueQuantity?.unit,
+                    normalRange: getReferenceRange(),
+                    status: observation.status,
+                    interpretation: getInterpretation(),
+                    collectionDate: observation.effectiveDateTime || observation.issued || new Date().toISOString(),
+                    resultDate: observation.issued || observation.effectiveDateTime || new Date().toISOString(),
+                    performingLab: observation.performer?.[0]?.display
+                };
+            };
+
+            // Load mock data
+            useEffect(() => {
+                setTimeout(() => {
+                    const observations = mockLabData.entry.map(entry => entry.resource);
+                    const transformedResults = observations.map(transformObservationToLabResult);
+                    setLabResults(transformedResults);
+                    setLoading(false);
+                }, 500);
+            }, []);
+
+            // Filter and sort lab results
+            const filteredAndSortedResults = useMemo(() => {
+                let filtered = [...labResults];
+
+                // Apply abnormal only filter
+                if (filters.abnormalOnly) {
+                    filtered = filtered.filter(result => 
+                        result.interpretation && result.interpretation !== 'normal'
+                    );
+                }
+
+                // Apply status filter
+                if (filters.status !== 'all') {
+                    filtered = filtered.filter(result => result.status === filters.status);
+                }
+
+                // Apply sorting
+                filtered.sort((a, b) => {
+                    let comparison = 0;
+                    
+                    switch (sort.field) {
+                        case 'date':
+                            comparison = new Date(a.collectionDate).getTime() - new Date(b.collectionDate).getTime();
+                            break;
+                        case 'name':
+                            comparison = a.testName.localeCompare(b.testName);
+                            break;
+                        case 'value':
+                            comparison = String(a.value).localeCompare(String(b.value));
+                            break;
+                        case 'status':
+                            comparison = a.status.localeCompare(b.status);
+                            break;
+                    }
+                    
+                    return sort.direction === 'asc' ? comparison : -comparison;
+                });
+
+                return filtered;
+            }, [labResults, filters, sort]);
+
+            // Group results by collection date
+            const groupedResults = useMemo(() => {
+                const groups = [];
+                const groupMap = new Map();
+
+                filteredAndSortedResults.forEach(result => {
+                    const dateKey = result.collectionDate.split('T')[0];
+                    if (!groupMap.has(dateKey)) {
+                        groupMap.set(dateKey, []);
+                    }
+                    groupMap.get(dateKey).push(result);
+                });
+
+                groupMap.forEach((results, date) => {
+                    groups.push({
+                        patientId: results[0].patientId,
+                        patientName: results[0].patientName,
+                        collectionDate: date,
+                        results,
+                        status: 'complete'
+                    });
+                });
+
+                return groups.sort((a, b) => 
+                    new Date(b.collectionDate).getTime() - new Date(a.collectionDate).getTime()
+                );
+            }, [filteredAndSortedResults]);
+
+            const getStatusBadgeColor = (status) => {
+                const colors = {
+                    'final': 'bg-green-100 text-green-800',
+                    'preliminary': 'bg-yellow-100 text-yellow-800',
+                    'corrected': 'bg-blue-100 text-blue-800',
+                    'cancelled': 'bg-red-100 text-red-800'
+                };
+                return colors[status] || colors.final;
+            };
+
+            const getInterpretationColor = (interpretation) => {
+                const colors = {
+                    'normal': 'text-green-600',
+                    'high': 'text-orange-600',
+                    'low': 'text-blue-600',
+                    'critical': 'text-red-600',
+                    'abnormal': 'text-red-600'
+                };
+                return colors[interpretation] || 'text-gray-600';
+            };
+
+            if (loading) {
+                return (
+                    <div className="flex justify-center items-center h-64 bg-white rounded-lg shadow">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                        <span className="ml-3 text-gray-600">Loading lab results...</span>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="bg-white shadow rounded-lg">
+                    <div className="px-4 py-5 sm:p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg leading-6 font-medium text-gray-900">
+                                Lab Results
+                            </h3>
+                            <span className="text-sm text-gray-500">
+                                {filteredAndSortedResults.length} results
+                            </span>
+                        </div>
+
+                        {/* Filters */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Status
+                                </label>
+                                <select
+                                    value={filters.status}
+                                    onChange={(e) => setFilters({...filters, status: e.target.value})}
+                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                >
+                                    <option value="all">All Statuses</option>
+                                    <option value="final">Final</option>
+                                    <option value="preliminary">Preliminary</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Sort by
+                                </label>
+                                <select
+                                    value={sort.field}
+                                    onChange={(e) => setSort({...sort, field: e.target.value})}
+                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                >
+                                    <option value="date">Date</option>
+                                    <option value="name">Test Name</option>
+                                    <option value="value">Value</option>
+                                    <option value="status">Status</option>
+                                </select>
+                            </div>
+
+                            <div className="flex items-end">
+                                <label className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={filters.abnormalOnly}
+                                        onChange={(e) => setFilters({...filters, abnormalOnly: e.target.checked})}
+                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">Abnormal only</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Results */}
+                        {groupedResults.length === 0 ? (
+                            <div className="text-center py-8">
+                                <div className="text-6xl mb-4">🧪</div>
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">No lab results found</h3>
+                                <p className="text-gray-500">
+                                    Try adjusting your filters or check back later for new results.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {groupedResults.map((group) => (
+                                    <div key={group.collectionDate} className="border border-gray-200 rounded-lg overflow-hidden">
+                                        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                                            <h4 className="text-sm font-medium text-gray-900">
+                                                📅 {new Date(group.collectionDate).toLocaleDateString('en-US', {
+                                                    weekday: 'long',
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric'
+                                                })}
+                                            </h4>
+                                            <p className="text-sm text-gray-500">{group.results.length} tests</p>
+                                        </div>
+                                        <div className="divide-y divide-gray-200">
+                                            {group.results.map((result) => (
+                                                <div
+                                                    key={result.id}
+                                                    className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                                                    onClick={() => setSelectedResult(result)}
+                                                >
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="flex-1">
+                                                            <h5 className="text-sm font-medium text-gray-900">{result.testName}</h5>
+                                                            <p className="text-sm text-gray-500">{result.testCode}</p>
+                                                            {result.performingLab && (
+                                                                <p className="text-xs text-gray-400">🏥 {result.performingLab}</p>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center space-x-4">
+                                                            <div className="text-right">
+                                                                <p className={`text-sm font-medium ${getInterpretationColor(result.interpretation)}`}>
+                                                                    {result.value} {result.unit}
+                                                                </p>
+                                                                {result.normalRange && (
+                                                                    <p className="text-xs text-gray-500">Normal: {result.normalRange}</p>
+                                                                )}
+                                                            </div>
+                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(result.status)}`}>
+                                                                {result.status}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {result.interpretation && result.interpretation !== 'normal' && (
+                                                        <div className="mt-2">
+                                                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${getInterpretationColor(result.interpretation)} bg-opacity-10`}>
+                                                                ⚠️ {result.interpretation.toUpperCase()}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Result Detail Modal */}
+                    {selectedResult && (
+                        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-medium text-gray-900">🧪 Lab Result Details</h3>
+                                    <button
+                                        onClick={() => setSelectedResult(null)}
+                                        className="text-gray-400 hover:text-gray-600"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Test Name</label>
+                                        <p className="text-sm text-gray-900">{selectedResult.testName}</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Result</label>
+                                        <p className={`text-sm font-medium ${getInterpretationColor(selectedResult.interpretation)}`}>
+                                            {selectedResult.value} {selectedResult.unit}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Normal Range</label>
+                                        <p className="text-sm text-gray-900">{selectedResult.normalRange || 'Not specified'}</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Status</label>
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(selectedResult.status)}`}>
+                                            {selectedResult.status}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Collection Date</label>
+                                        <p className="text-sm text-gray-900">
+                                            {new Date(selectedResult.collectionDate).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    {selectedResult.performingLab && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Performing Lab</label>
+                                            <p className="text-sm text-gray-900">{selectedResult.performingLab}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Demo App
+        const DemoApp = () => {
+            return (
+                <div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <h2 className="text-lg font-semibold text-blue-900 mb-2">🎯 Demo Features</h2>
+                        <ul className="text-sm text-blue-800 space-y-1">
+                            <li>• Mock FHIR Observation data (Hemoglobin, Glucose, WBC, Blood Culture)</li>
+                            <li>• Real-time filtering by status and abnormal values only</li>
+                            <li>• Dynamic sorting by date, test name, value, or status</li>
+                            <li>• Responsive design with mobile-friendly interface</li>
+                            <li>• Interactive result details modal</li>
+                            <li>• Color-coded interpretations (Normal, High, Low, Critical)</li>
+                        </ul>
+                    </div>
+                    
+                    <LabResultsViewerDemo patientId="demo-patient" />
+                    
+                    <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h3 className="text-lg font-semibold text-green-900 mb-2">✅ Implementation Complete</h3>
+                        <p className="text-sm text-green-800">
+                            This demo showcases the fully functional Lab Results Viewer component. 
+                            In production, it connects to a FHIR R4 server to display real patient lab data 
+                            transformed from HL7 messages via Mirth Connect.
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the demo
+        ReactDOM.render(<DemoApp />, document.getElementById('lab-results-demo'));
+    </script>
+</body>
+</html>
