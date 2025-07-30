@@ -1,0 +1,214 @@
+name: Automated Merge Conflict Resolution
+
+on:
+  schedule:
+    # Run every 12 hours (at 00:00 and 12:00 UTC)
+    - cron: '0 0,12 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+    inputs:
+      resolution_method:
+        description: 'Conflict resolution method'
+        required: false
+        default: 'python'
+        type: choice
+        options:
+          - python
+          - nodejs
+          - bash
+
+jobs:
+  resolve-conflicts:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name 'WebQx AutoResolver'
+          git config --global user.email 'autoresolver@webqx.health'
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Check for merge conflicts across branches
+        id: check_conflicts
+        run: |
+          echo "Checking for potential merge conflicts..."
+          
+          # Get list of active branches (excluding main)
+          BRANCHES=$(git branch -r --no-merged main | grep -v HEAD | grep -v main | sed 's/origin\///' | head -5)
+          
+          echo "Active branches to check: $BRANCHES"
+          
+          CONFLICT_FOUND=false
+          CONFLICTED_BRANCHES=()
+          
+          for BRANCH in $BRANCHES; do
+            echo "Checking branch: $BRANCH"
+            
+            # Try to merge the branch to see if there are conflicts
+            git checkout main
+            git reset --hard origin/main
+            
+            if ! git merge --no-commit --no-ff origin/$BRANCH 2>/dev/null; then
+              echo "Conflicts detected in branch: $BRANCH"
+              CONFLICT_FOUND=true
+              CONFLICTED_BRANCHES+=($BRANCH)
+              
+              # Abort the merge to clean up
+              git merge --abort 2>/dev/null || true
+            else
+              echo "No conflicts in branch: $BRANCH"
+              # Reset to clean state
+              git reset --hard HEAD 2>/dev/null || true
+            fi
+          done
+          
+          echo "conflict_found=$CONFLICT_FOUND" >> $GITHUB_OUTPUT
+          echo "conflicted_branches=${CONFLICTED_BRANCHES[*]}" >> $GITHUB_OUTPUT
+      
+      - name: Resolve conflicts with Python script
+        if: steps.check_conflicts.outputs.conflict_found == 'true' && (github.event.inputs.resolution_method == 'python' || github.event.inputs.resolution_method == '')
+        run: |
+          echo "Resolving conflicts using Python script..."
+          
+          # Get the conflicted branches
+          BRANCHES="${{ steps.check_conflicts.outputs.conflicted_branches }}"
+          
+          for BRANCH in $BRANCHES; do
+            echo "Processing branch: $BRANCH"
+            
+            # Checkout main and try to merge
+            git checkout main
+            git reset --hard origin/main
+            
+            if ! git merge --no-ff origin/$BRANCH; then
+              echo "Conflicts detected, running Python resolver..."
+              python3 scripts/conflict-resolution.py
+              
+              # Complete the merge if resolution was successful
+              if [ $? -eq 0 ]; then
+                echo "Conflicts resolved for branch: $BRANCH"
+                
+                # Push the resolved merge to main
+                git push origin main
+              else
+                echo "Failed to resolve conflicts for branch: $BRANCH"
+                git merge --abort 2>/dev/null || true
+              fi
+            else
+              echo "Branch $BRANCH merged without conflicts"
+            fi
+          done
+      
+      - name: Resolve conflicts with Node.js script
+        if: steps.check_conflicts.outputs.conflict_found == 'true' && github.event.inputs.resolution_method == 'nodejs'
+        run: |
+          echo "Resolving conflicts using Node.js script..."
+          
+          # Get the conflicted branches
+          BRANCHES="${{ steps.check_conflicts.outputs.conflicted_branches }}"
+          
+          for BRANCH in $BRANCHES; do
+            echo "Processing branch: $BRANCH"
+            
+            # Checkout main and try to merge
+            git checkout main
+            git reset --hard origin/main
+            
+            if ! git merge --no-ff origin/$BRANCH; then
+              echo "Conflicts detected, running Node.js resolver..."
+              node scripts/conflict-resolution.js
+              
+              # Complete the merge if resolution was successful
+              if [ $? -eq 0 ]; then
+                echo "Conflicts resolved for branch: $BRANCH"
+                
+                # Push the resolved merge to main
+                git push origin main
+              else
+                echo "Failed to resolve conflicts for branch: $BRANCH"
+                git merge --abort 2>/dev/null || true
+              fi
+            else
+              echo "Branch $BRANCH merged without conflicts"
+            fi
+          done
+      
+      - name: Resolve conflicts with Bash script
+        if: steps.check_conflicts.outputs.conflict_found == 'true' && github.event.inputs.resolution_method == 'bash'
+        run: |
+          echo "Resolving conflicts using Bash script..."
+          
+          # Get the conflicted branches
+          BRANCHES="${{ steps.check_conflicts.outputs.conflicted_branches }}"
+          
+          for BRANCH in $BRANCHES; do
+            echo "Processing branch: $BRANCH"
+            
+            # Checkout main and try to merge
+            git checkout main
+            git reset --hard origin/main
+            
+            if ! git merge --no-ff origin/$BRANCH; then
+              echo "Conflicts detected, running Bash resolver..."
+              bash scripts/conflict-resolution.sh
+              
+              # Complete the merge if resolution was successful
+              if [ $? -eq 0 ]; then
+                echo "Conflicts resolved for branch: $BRANCH"
+                
+                # Push the resolved merge to main
+                git push origin main
+              else
+                echo "Failed to resolve conflicts for branch: $BRANCH"
+                git merge --abort 2>/dev/null || true
+              fi
+            else
+              echo "Branch $BRANCH merged without conflicts"
+            fi
+          done
+      
+      - name: Create summary report
+        if: always()
+        run: |
+          echo "## Conflict Resolution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Resolution Method:** ${{ github.event.inputs.resolution_method || 'python' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Conflicts Found:** ${{ steps.check_conflicts.outputs.conflict_found }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.check_conflicts.outputs.conflict_found }}" == "true" ]; then
+            echo "**Conflicted Branches:** ${{ steps.check_conflicts.outputs.conflicted_branches }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Result:** No merge conflicts detected across active branches." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Conflict Resolution Rules Applied:" >> $GITHUB_STEP_SUMMARY
+          echo "1. **Default:** Always prefer changes from the \`main\` branch" >> $GITHUB_STEP_SUMMARY
+          echo "2. **README.md:** Always preserve from source branch during conflicts" >> $GITHUB_STEP_SUMMARY
+          echo "3. **JSON/Config files:** Intelligently merge by retaining unique keys from both branches" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Automated conflict resolution failed!"
+          echo "Manual intervention may be required."
+          echo "Check the workflow logs for details."

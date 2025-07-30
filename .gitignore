@@ -45,4 +45,4 @@ Thumbs.db
 
 # Build outputs
 dist/
-build/
+build/scripts/__pycache__/
