@@ -1,0 +1,120 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [ main, develop ]
+
+jobs:
+  validate-pr:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Validate commit messages
+      run: |
+        # Check if commits follow conventional commit format
+        git log --format="%s" origin/${{ github.base_ref }}..${{ github.head_ref }} | while read commit_msg; do
+          if ! echo "$commit_msg" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf)(\(.+\))?: .+'; then
+            echo "❌ Invalid commit message: $commit_msg"
+            echo "Commit messages must follow conventional commit format:"
+            echo "type(scope): description"
+            echo "Valid types: feat, fix, docs, style, refactor, test, chore, ci, build, perf"
+            exit 1
+          fi
+        done
+        echo "✅ All commit messages are valid"
+    
+    - name: Check PR title
+      run: |
+        PR_TITLE="${{ github.event.pull_request.title }}"
+        if ! echo "$PR_TITLE" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf)(\(.+\))?: .+'; then
+          echo "❌ Invalid PR title: $PR_TITLE"
+          echo "PR title must follow conventional commit format"
+          exit 1
+        fi
+        echo "✅ PR title is valid"
+    
+    - name: Run tests with coverage
+      run: npm test -- --coverage --watchAll=false --testResultsProcessor=jest-sonar-reporter
+    
+    - name: Check test coverage threshold
+      run: |
+        # Extract coverage percentage from jest output
+        COVERAGE=$(npm test -- --coverage --watchAll=false --silent | grep -o '[0-9]\+\.[0-9]\+%' | head -1 | sed 's/%//')
+        THRESHOLD=80
+        if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+          echo "❌ Test coverage ($COVERAGE%) is below threshold ($THRESHOLD%)"
+          exit 1
+        fi
+        echo "✅ Test coverage ($COVERAGE%) meets threshold"
+    
+    - name: Check for sensitive data
+      run: |
+        # Check for potential secrets in the diff
+        if git diff origin/${{ github.base_ref }}..HEAD | grep -iE '(password|secret|key|token|credential).*=.*[a-zA-Z0-9]{8,}'; then
+          echo "❌ Potential sensitive data detected in changes"
+          echo "Please ensure no secrets are committed to the repository"
+          exit 1
+        fi
+        echo "✅ No sensitive data detected"
+    
+    - name: Validate file changes
+      run: |
+        # Check if critical files are being modified
+        CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}..HEAD)
+        for file in $CHANGED_FILES; do
+          case $file in
+            package.json|package-lock.json)
+              echo "⚠️  Critical file modified: $file"
+              echo "Ensure dependency changes are necessary and secure"
+              ;;
+            .github/workflows/*)
+              echo "⚠️  Workflow file modified: $file"
+              echo "Workflow changes will affect CI/CD pipeline"
+              ;;
+          esac
+        done
+        echo "✅ File change validation complete"
+
+  size-check:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Check PR size
+      run: |
+        ADDED=$(git diff --stat origin/${{ github.base_ref }}..HEAD | tail -1 | grep -o '[0-9]\+ insertions' | cut -d' ' -f1 || echo 0)
+        DELETED=$(git diff --stat origin/${{ github.base_ref }}..HEAD | tail -1 | grep -o '[0-9]\+ deletions' | cut -d' ' -f1 || echo 0)
+        TOTAL=$((ADDED + DELETED))
+        
+        echo "Lines added: $ADDED"
+        echo "Lines deleted: $DELETED"
+        echo "Total changes: $TOTAL"
+        
+        if [ $TOTAL -gt 1000 ]; then
+          echo "⚠️  Large PR detected ($TOTAL lines changed)"
+          echo "Consider breaking this into smaller PRs for easier review"
+        else
+          echo "✅ PR size is reasonable"
+        fi

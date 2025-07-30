@@ -1,0 +1,41 @@
+# Global code owners - require approval for all changes
+* @webqx-health
+
+# Critical infrastructure files require additional review
+/.github/ @webqx-health
+/package.json @webqx-health
+/package-lock.json @webqx-health
+/tsconfig.json @webqx-health
+/jest.config.js @webqx-health
+/server.js @webqx-health
+
+# Healthcare compliance and legal files require legal team review
+/docs/HEALTHCARE_COMPLIANCE.md @webqx-health
+/legal/ @webqx-health
+/LICENSE.md @webqx-health
+
+# EHR integrations require healthcare IT specialists
+/ehr-integrations/ @webqx-health
+/fhir/ @webqx-health
+/interoperability/ @webqx-health
+
+# Authentication and security files require security team
+/auth/ @webqx-health
+/services/auth* @webqx-health
+
+# Admin console requires additional oversight
+/admin-console/ @webqx-health
+
+# Specialty modules require clinical review
+/modules/specialty-* @webqx-health
+
+# Patient portal requires UX and security review
+/patient-portal/ @webqx-health
+
+# Messaging systems require security review
+/messaging/ @webqx-health
+
+# Documentation changes require technical writing review
+/docs/ @webqx-health
+/README.md @webqx-health
+/*.md @webqx-health
