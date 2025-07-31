@@ -13,9 +13,12 @@ export {
   MemoryTokenStorage,
   LocalStorageTokenStorage,
   type OttehrAuthConfig,
+  type KeycloakConfig,
   type TokenStorage,
   type TokenInfo,
-  type AuthResult
+  type AuthResult,
+  type OIDCTokenPayload,
+  type KeycloakUserInfo
 } from './authManager';
 
 export default OttehrAuthManager;
