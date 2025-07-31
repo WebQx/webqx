@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎤 WebQX Whisper-OpenEMR Integration Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #718096;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-color: #4299e1;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .feature-description {
+            color: #4a5568;
+            line-height: 1.6;
+        }
+
+        .demo-section {
+            background: #edf2f7;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .demo-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-display {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .status-label {
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .status-value {
+            color: #2d3748;
+        }
+
+        .recording-indicator {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            color: #e53e3e;
+            font-weight: 500;
+        }
+
+        .recording-indicator.active {
+            display: flex;
+        }
+
+        .pulse-dot {
+            width: 12px;
+            height: 12px;
+            background: #e53e3e;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .transcription-display {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 150px;
+            margin: 20px 0;
+        }
+
+        .transcription-text {
+            color: #2d3748;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .transcription-placeholder {
+            color: #a0aec0;
+            font-style: italic;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .integration-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .status-card.healthy {
+            border-color: #48bb78;
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+        }
+
+        .status-card.error {
+            border-color: #e53e3e;
+            background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+        }
+
+        .status-card-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .status-card.healthy .status-card-title {
+            color: #22543d;
+        }
+
+        .status-card.error .status-card-title {
+            color: #742a2a;
+        }
+
+        .getting-started {
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid #90cdf4;
+        }
+
+        .getting-started h3 {
+            color: #2c5aa0;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+        }
+
+        .step {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .step-number {
+            background: #4299e1;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+        }
+
+        .highlight {
+            color: #81e6d9;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-controls {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎤 WebQX Whisper-OpenEMR Integration</h1>
+            <p>Advanced speech recognition for clinical documentation</p>
+        </div>
+
+        <!-- Integration Status -->
+        <div class="integration-status">
+            <div class="status-card healthy">
+                <div class="status-card-title">✅ Whisper Service</div>
+                <div>Ready for transcription</div>
+            </div>
+            <div class="status-card healthy">
+                <div class="status-card-title">🏥 OpenEMR Integration</div>
+                <div>Connected and authenticated</div>
+            </div>
+            <div class="status-card healthy">
+                <div class="status-card-title">🔒 Security</div>
+                <div>HIPAA compliant with PHI protection</div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎙️</div>
+                <div class="feature-title">Real-time Transcription</div>
+                <div class="feature-description">
+                    Stream audio directly into clinical documentation with live transcription and voice activity detection.
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🏥</div>
+                <div class="feature-title">OpenEMR Integration</div>
+                <div class="feature-description">
+                    Seamlessly save transcriptions to encounter notes, assessments, treatment plans, and medication records.
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🩺</div>
+                <div class="feature-title">Medical Vocabulary</div>
+                <div class="feature-description">
+                    Enhanced accuracy with medical terminology recognition for different clinical documentation types.
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌍</div>
+                <div class="feature-title">Multilingual Support</div>
+                <div class="feature-description">
+                    Auto-detect language and transcribe in 12+ languages with medical terminology support.
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <div class="feature-title">PHI Protection</div>
+                <div class="feature-description">
+                    Automatic detection and redaction of personally identifiable information for HIPAA compliance.
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">♿</div>
+                <div class="feature-title">Accessibility</div>
+                <div class="feature-description">
+                    WCAG 2.1 AA compliant interface with screen reader support and keyboard navigation.
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Demo Section -->
+        <div class="demo-section">
+            <div class="demo-title">
+                🎯 Live Transcription Demo
+            </div>
+
+            <div class="demo-controls">
+                <button class="btn btn-primary" id="startRecording">
+                    <span>🎤</span> Start Recording
+                </button>
+                <button class="btn btn-danger" id="stopRecording" disabled>
+                    <span>⏹️</span> Stop Recording
+                </button>
+                <button class="btn btn-secondary" id="clearTranscription">
+                    <span>🗑️</span> Clear
+                </button>
+            </div>
+
+            <div class="recording-indicator" id="recordingIndicator">
+                <div class="pulse-dot"></div>
+                <span>Recording in progress...</span>
+            </div>
+
+            <div class="status-display">
+                <div class="status-item">
+                    <span class="status-label">Transcription Type:</span>
+                    <span class="status-value">Encounter Note</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Patient ID:</span>
+                    <span class="status-value">demo-patient-12345</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Language:</span>
+                    <span class="status-value">Auto-detect</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Medical Vocabulary:</span>
+                    <span class="status-value">Enabled</span>
+                </div>
+            </div>
+
+            <div class="transcription-display" id="transcriptionDisplay">
+                <div class="transcription-placeholder">
+                    Click "Start Recording" to begin voice transcription for clinical documentation.
+                    <br><br>
+                    <small>Note: This is a demonstration interface. In production, audio would be processed through OpenAI Whisper API and saved to OpenEMR encounter records.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Getting Started Section -->
+        <div class="getting-started">
+            <h3>🚀 Getting Started</h3>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div>
+                    <strong>Install Dependencies</strong><br>
+                    Run <code>npm install</code> to install the WebQX platform and dependencies
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">2</div>
+                <div>
+                    <strong>Configure Environment</strong><br>
+                    Set up your OpenEMR instance URL, OAuth credentials, and Whisper API key
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">3</div>
+                <div>
+                    <strong>Initialize Integration</strong><br>
+                    Create and configure the Whisper-OpenEMR integration service
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">4</div>
+                <div>
+                    <strong>Add to Your App</strong><br>
+                    Include the ClinicalVoiceTranscription component in your healthcare application
+                </div>
+            </div>
+
+            <div class="code-block">
+<span class="highlight">import</span> { WhisperOpenEMRIntegration } <span class="highlight">from</span> './ehr-integrations/openemr/services/whisperIntegration';
+<span class="highlight">import</span> { ClinicalVoiceTranscription } <span class="highlight">from</span> './ehr-integrations/openemr/components/ClinicalVoiceTranscription';
+
+<span class="highlight">const</span> integration = <span class="highlight">new</span> WhisperOpenEMRIntegration(config);
+<span class="highlight">await</span> integration.initialize();
+
+&lt;<span class="highlight">ClinicalVoiceTranscription</span>
+  patientId="patient-123"
+  encounterId="encounter-456"
+  providerId="provider-789"
+  transcriptionType="encounter_note"
+  integrationService={integration}
+  enableStreaming={true}
+/&gt;
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo functionality
+        let isRecording = false;
+        let demoText = [
+            "Patient presents with chief complaint of headache lasting three days.",
+            "No fever, nausea, or visual disturbances reported.",
+            "Physical examination reveals normal vital signs.",
+            "Neurological examination is within normal limits.",
+            "Assessment: tension-type headache.",
+            "Plan: recommend over-the-counter analgesics and stress management."
+        ];
+        let currentIndex = 0;
+
+        const startBtn = document.getElementById('startRecording');
+        const stopBtn = document.getElementById('stopRecording');
+        const clearBtn = document.getElementById('clearTranscription');
+        const indicator = document.getElementById('recordingIndicator');
+        const display = document.getElementById('transcriptionDisplay');
+
+        startBtn.addEventListener('click', startRecording);
+        stopBtn.addEventListener('click', stopRecording);
+        clearBtn.addEventListener('click', clearTranscription);
+
+        function startRecording() {
+            if (isRecording) return;
+            
+            isRecording = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            indicator.classList.add('active');
+            
+            display.innerHTML = '<div class="transcription-text" id="liveText"></div>';
+            
+            // Simulate real-time transcription
+            simulateTranscription();
+        }
+
+        function stopRecording() {
+            if (!isRecording) return;
+            
+            isRecording = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            indicator.classList.remove('active');
+            
+            // Add completion message
+            const textElement = document.getElementById('liveText');
+            if (textElement) {
+                textElement.innerHTML += '<br><br><em style="color: #48bb78;">✅ Transcription completed and saved to OpenEMR encounter record.</em>';
+            }
+        }
+
+        function clearTranscription() {
+            currentIndex = 0;
+            display.innerHTML = `
+                <div class="transcription-placeholder">
+                    Click "Start Recording" to begin voice transcription for clinical documentation.
+                    <br><br>
+                    <small>Note: This is a demonstration interface. In production, audio would be processed through OpenAI Whisper API and saved to OpenEMR encounter records.</small>
+                </div>
+            `;
+        }
+
+        function simulateTranscription() {
+            if (!isRecording || currentIndex >= demoText.length) {
+                if (isRecording) {
+                    stopRecording();
+                }
+                return;
+            }
+            
+            const textElement = document.getElementById('liveText');
+            if (textElement) {
+                if (currentIndex > 0) {
+                    textElement.innerHTML += ' ';
+                }
+                textElement.innerHTML += demoText[currentIndex];
+                currentIndex++;
+                
+                // Continue with next phrase after delay
+                setTimeout(simulateTranscription, 2000 + Math.random() * 1000);
+            }
+        }
+
+        // Add some interactive feedback
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate feature cards
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.style.animation = 'fadeInUp 0.6s ease forwards';
+            });
+        });
+
+        // Add CSS animation for fade in
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
