@@ -372,7 +372,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError<FHIRPatient>(error);
     }
   }
 
@@ -395,7 +395,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError<FHIRBundle>(error);
     }
   }
 
@@ -443,7 +443,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError<FHIRBundle>(error);
     }
   }
 
@@ -465,7 +465,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError<FHIRAppointment>(error);
     }
   }
 
@@ -495,7 +495,7 @@ export class FHIRR4Client {
         headers: response.headers
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError<FHIRAppointment>(error);
     }
   }
 
@@ -525,7 +525,7 @@ export class FHIRR4Client {
         headers: response.headers
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError<FHIRAppointment>(error);
     }
   }
 
@@ -578,7 +578,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError<FHIRBundle>(error);
     }
   }
 
@@ -601,7 +601,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError<FHIRBundle>(error);
     }
   }
 
@@ -652,7 +652,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError<FHIRBundle>(error);
     }
   }
 
@@ -753,7 +753,7 @@ export class FHIRR4Client {
   /**
    * Handle and format errors
    */
-  private handleError(error: unknown): FHIRApiResponse {
+  private handleError<T = any>(error: unknown): FHIRApiResponse<T> {
     let errorMessage = 'Unknown error';
     let operationOutcome: FHIROperationOutcome | undefined;
 

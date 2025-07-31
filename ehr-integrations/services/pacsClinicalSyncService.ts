@@ -406,7 +406,17 @@ export class PACSClinicalSyncService {
         };
         
         operation.errors.push(syncError);
-        this.logError('Order processing error', syncError);
+        this.logError('Order processing error', { 
+          id: syncError.id,
+          type: syncError.type,
+          code: syncError.code,
+          message: syncError.message,
+          details: syncError.details,
+          severity: syncError.severity,
+          retryable: syncError.retryable,
+          timestamp: syncError.timestamp.toISOString(),
+          context: syncError.context
+        });
       }
     }
   }

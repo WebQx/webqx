@@ -712,6 +712,8 @@ export interface FHIRAppointmentSearchParams {
   _offset?: number;
   /** Sort order */
   _sort?: string;
+  /** Filter by last updated timestamp */
+  _lastUpdated?: string;
 }
 
 /**

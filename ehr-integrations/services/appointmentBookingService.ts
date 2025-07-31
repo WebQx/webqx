@@ -835,7 +835,7 @@ export class AppointmentBookingService {
       {
         actor: typeof request.patient === 'object' && 'id' in request.patient 
           ? { reference: `Patient/${request.patient.id}` }
-          : request.patient,
+          : request.patient as FHIRReference,
         status: 'accepted',
         required: 'required'
       }
