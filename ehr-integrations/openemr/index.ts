@@ -1,7 +1,8 @@
 /**
  * OpenEMR Integration Module
  * 
- * Ready-to-deploy integration with OpenEMR EHR system
+ * Ready-to-deploy integration with OpenEMR EHR system including
+ * modular connectors for Unified Provider Login System integration
  */
 
 export { OpenEMRIntegration } from './services/integration';
@@ -19,6 +20,37 @@ export type {
   OpenEMROperationResult,
   OpenEMRAuditEvent
 } from './types';
+
+// Export modular connectors for Unified Provider Login System
+export {
+  OpenEMRConnectorManager,
+  createConnectorManager,
+  createConnectorApp,
+  OAuth2Connector,
+  APIGateway,
+  AuthProxyMiddleware
+} from './connectors';
+
+export type {
+  ConnectorManagerConfig,
+  ConnectorStatus,
+  OAuth2ConnectorConfig,
+  TokenExchangeRequest,
+  TokenExchangeResult,
+  APIGatewayConfig,
+  RouteConfig,
+  AuthProxyConfig
+} from './connectors';
+
+// Export configuration utilities
+export {
+  defaultOAuth2Config,
+  defaultAPIGatewayConfig,
+  defaultAuthProxyConfig,
+  loadConfigFromEnvironment,
+  createConfig,
+  validateConfig
+} from './config/connectors/default';
 
 // Configuration helper
 export const createOpenEMRConfig = (options: {
