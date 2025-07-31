@@ -120,7 +120,69 @@ webqx-ehr/
     ├── NDAs/
     └── IP-assignment/
 ```
+# 🏥 Modular Health Interoperability Infrastructure
 
+A scalable, patient-centered infrastructure designed to integrate diverse Electronic Health Record (EHR) systems through secure adapters and open standards. Built with community clinics, research partnerships, and multilingual accessibility in mind.
+
+---
+
+## 📌 Project Goals
+
+- Enable seamless data exchange across disparate EHRs (e.g. OpenEMR, Epic, Cerner)
+- Leverage HL7/FHIR standards via Mirth Connect and custom API adapters
+- Empower clinics with open-source tools while supporting enterprise security
+- Promote equity through multilingual support and modular access models
+
+---
+
+## 🧱 Architecture Overview
+
+- **Authentication Layer**: OAuth2 / Keycloak federation
+- **Adapter Plugins**: Modular connectors for OpenEMR, Epic, Cerner, etc.
+- **API Gateway**: FHIR-compliant endpoints for interoperability
+- **Session Control**: Stateless tokens and audit trails
+- **Frontend Module**: React-based dashboard for clinicians and staff
+- **Multilingual Support**: i18n-ready UI, patient-facing modules
+
+![Diagram Placeholder]  
+_Use `docs/assets/infra_map.png` to render your infrastructure map here._
+
+---
+
+## 🔧 Technologies Used
+
+| Layer           | Tech Stack                  |
+|----------------|-----------------------------|
+| Backend         | Node.js, Express, Mirth Connect |
+| Authentication  | Keycloak, OAuth2            |
+| Interoperability| HL7 v2/v3, FHIR, REST APIs  |
+| Frontend        | React.js, Tailwind CSS      |
+| Data Storage    | PostgreSQL, Redis           |
+| DevOps          | Docker, GitHub Actions      |
+
+---
+
+## 🚀 Getting Started
+
+1. Clone the repository  
+   `git clone https://github.com/your-username/health-infra-map.git`
+
+2. Install dependencies  
+   `npm install`
+
+3. Set environment variables  
+   See `.env.example` for guidance.
+
+4. Launch the stack  
+   `docker-compose up`
+
+---
+
+## 🧪 Testing Modules
+
+Run unit tests with:
+```bash
+npm run test
 **Key Directories:**
 - 🧩 **modules/** → Specialty-specific clinical modules and transcription services
 - 🔗 **ehr-integrations/** → Ready-to-deploy integrations with popular open-source EHR systems
