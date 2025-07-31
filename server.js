@@ -29,6 +29,9 @@ const openEHRQueryRoutes = require('./openehr/routes/query');
 // Patient Portal Authentication imports
 const authRoutes = require('./patient-portal/auth/authRoutes');
 
+// Ottehr Integration imports
+const ottehrRoutes = require('./auth/ottehr/routes');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -114,6 +117,9 @@ app.use('/openehr/v1/query', openEHRQueryRoutes);
 
 // Patient Portal Authentication routes
 app.use('/api/auth', authRoutes);
+
+// Ottehr API routes
+app.use('/api/ottehr', ottehrRoutes);
 
 // Serve login page
 app.get('/login', (req, res) => {
