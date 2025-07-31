@@ -68,6 +68,7 @@ const Home: React.FC<HomeProps> = ({
       onLanguageChange(newLanguage);
     }
   };
+
   // Sample dosage data for demonstration
   const sampleDosages = [
     {

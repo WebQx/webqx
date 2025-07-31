@@ -99,7 +99,8 @@ function prescriptionsReducer(state: PrescriptionsState, action: PrescriptionsAc
           p.id === action.payload.id 
             ? { ...p, ...action.payload.updates }
             : p
-        )
+        ),
+        isLoading: false
       };
     default:
       return state;
