@@ -9,6 +9,25 @@ require('dotenv').config();
 const patientRoutes = require('./fhir/routes/patient');
 const appointmentRoutes = require('./fhir/routes/appointment');
 const observationRoutes = require('./fhir/routes/observation');
+const existingFHIRAuth = require('./fhir/middleware/auth');
+
+// OAuth2 imports
+const { createOAuth2Instance, enhanceFHIRAuth, createOAuth2Router } = require('./auth/oauth2');
+
+// Initialize OAuth2
+let oauth2Instance;
+let enhancedAuth;
+
+try {
+    oauth2Instance = createOAuth2Instance();
+    enhancedAuth = enhanceFHIRAuth(existingFHIRAuth, oauth2Instance);
+    console.log('✅ OAuth2 authentication system initialized');
+} catch (error) {
+    console.warn('⚠️ OAuth2 initialization failed, using fallback auth:', error.message);
+    enhancedAuth = existingFHIRAuth;
+}
+
+// Extract auth functions (now enhanced with OAuth2 support)
 const { 
     authenticateToken, 
     requireScopes, 
@@ -16,7 +35,7 @@ const {
     createTokenEndpoint, 
     createCapabilityEndpoint,
     generateTestToken
-} = require('./fhir/middleware/auth');
+} = enhancedAuth;
 
 // PostDICOM imports
 const postdicomRouter = require('./modules/postdicom/routes/dicom.js');
@@ -79,18 +98,36 @@ app.use(express.static(path.join(__dirname, '.')));
 
 // Health check endpoint for Railway
 app.get('/health', (req, res) => {
-    res.status(200).json({ 
+    const healthData = { 
         status: 'healthy', 
         service: 'WebQX Healthcare Platform',
         fhir: 'enabled',
         openehr: 'enabled',
+        oauth2: oauth2Instance ? 'enabled' : 'fallback',
         timestamp: new Date().toISOString()
-    });
+    };
+
+    // Add OAuth2 status if available
+    if (oauth2Instance) {
+        try {
+            healthData.oauth2Status = oauth2Instance.getStatus();
+        } catch (error) {
+            healthData.oauth2Status = { error: error.message };
+        }
+    }
+
+    res.status(200).json(healthData);
 });
 
-// FHIR OAuth2 endpoints
+// FHIR OAuth2 endpoints (existing)
 app.get('/oauth/authorize', createAuthEndpoint());
 app.post('/oauth/token', createTokenEndpoint());
+
+// New OAuth2 endpoints
+if (oauth2Instance) {
+    app.use('/auth/oauth2', createOAuth2Router(oauth2Instance));
+    console.log('✅ OAuth2 endpoints mounted at /auth/oauth2');
+}
 
 // FHIR metadata/capability statement
 app.get('/fhir/metadata', createCapabilityEndpoint());
