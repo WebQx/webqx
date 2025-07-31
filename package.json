@@ -23,6 +23,8 @@
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/fhir": "^0.0.40",
+    "@types/keycloak-connect": "^4.5.4",
+    "@types/keycloak-js": "^2.5.4",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -35,6 +37,9 @@
     "i18next-browser-languagedetector": "^8.2.0",
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.2.0",
+    "keycloak-connect": "^26.1.1",
+    "keycloak-js": "^26.2.0",
     "react-i18next": "^15.6.1",
     "uuid": "^9.0.1"
   },
