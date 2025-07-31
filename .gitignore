@@ -46,3 +46,6 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# Demo and temporary files
+demo-*.js

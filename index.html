@@ -134,13 +134,21 @@
 <body>
     <div class="container">
         <div class="lang-selector">
-            <label for="language-select">🌍 Language:</label>
-            <select id="language-select" onchange="changeLanguage()">
-                <option value="en">English</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
-                <option value="de">Deutsch</option>
-            </select>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <label for="language-select">🌍 Language:</label>
+                    <select id="language-select" onchange="changeLanguage()">
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                    </select>
+                </div>
+                <div>
+                    <span id="user-welcome" class="loading">Loading user...</span>
+                    <button class="btn btn-secondary" onclick="logout()" style="margin-left: 10px;">Logout</button>
+                </div>
+            </div>
         </div>
 
         <h1>🌐 WebQX™ Patient Portal</h1>
@@ -278,11 +286,48 @@
         let accessToken = null;
         let currentLanguage = 'en';
         let currentPatient = null;
+        let isAuthenticated = false;
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
+            checkAuthentication();
         });
+
+        function checkAuthentication() {
+            const token = localStorage.getItem('authToken');
+            const user = localStorage.getItem('user');
+            
+            if (!token || !user) {
+                // No authentication, redirect to login
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Verify token is still valid
+            fetch('/api/auth/profile', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    isAuthenticated = true;
+                    currentPatient = JSON.parse(user);
+                    initializeApp();
+                } else {
+                    // Token is invalid, remove and redirect
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
+                }
+            })
+            .catch(error => {
+                console.error('Authentication check failed:', error);
+                // Network error, redirect to login to be safe
+                window.location.href = '/login';
+            });
+        }
 
         async function initializeApp() {
             try {
@@ -345,8 +390,19 @@
 
         async function loadPatientInfo() {
             try {
+                // If we have a logged-in user, display their info
+                if (currentPatient) {
+                    displayLoggedInUser(currentPatient);
+                    
+                    // Also update the welcome message
+                    const welcomeElement = document.getElementById('user-welcome');
+                    welcomeElement.textContent = `Welcome, ${currentPatient.name}`;
+                    welcomeElement.classList.remove('loading');
+                }
+
+                // Still try to load FHIR patient data if available
                 if (!accessToken) {
-                    throw new Error('No access token available');
+                    await getAccessToken();
                 }
 
                 const response = await fetch('/fhir/Patient', {
@@ -357,42 +413,77 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to load patient data');
+                    throw new Error('Failed to load FHIR patient data');
                 }
 
                 const data = await response.json();
                 
                 if (data.entry && data.entry.length > 0) {
-                    // Use the first patient for demo
-                    currentPatient = data.entry[0].resource;
-                    displayPatientInfo(currentPatient);
+                    // Use the first patient for demo, but merge with logged-in user data
+                    const fhirPatient = data.entry[0].resource;
+                    displayPatientInfo(fhirPatient, currentPatient);
                     
                     // Update email in the Smart Data Import section
                     const emailElement = document.getElementById('patient-email');
-                    const email = currentPatient.telecom?.find(t => t.system === 'email')?.value || 'Not available';
+                    const email = fhirPatient.telecom?.find(t => t.system === 'email')?.value || currentPatient?.email || 'Not available';
                     emailElement.textContent = email;
+                    emailElement.classList.remove('loading');
+                } else if (currentPatient) {
+                    // Show logged-in user info even if no FHIR data
+                    displayPatientInfo(null, currentPatient);
+                    
+                    const emailElement = document.getElementById('patient-email');
+                    emailElement.textContent = currentPatient.email;
                     emailElement.classList.remove('loading');
                 } else {
                     showError('patient-info', 'No patient data available');
                 }
             } catch (error) {
                 console.error('Error loading patient info:', error);
-                showError('patient-info', 'Failed to load patient information');
+                // If FHIR fails but we have logged-in user, show that
+                if (currentPatient) {
+                    displayLoggedInUser(currentPatient);
+                } else {
+                    showError('patient-info', 'Failed to load patient information');
+                }
             }
         }
 
-        function displayPatientInfo(patient) {
-            const name = patient.name?.[0] ? `${patient.name[0].given?.join(' ')} ${patient.name[0].family}` : 'Unknown';
-            const birthDate = patient.birthDate ? new Date(patient.birthDate).toLocaleDateString() : 'Unknown';
-            const gender = patient.gender || 'Unknown';
-            const patientId = patient.identifier?.[0]?.value || patient.id;
+        function displayLoggedInUser(user) {
+            const patientHtml = `
+                <div class="patient-info">
+                    <h3>👤 Welcome, ${user.name}!</h3>
+                    <p><strong>Patient ID:</strong> ${user.id}</p>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                    <p><strong>Account Status:</strong> <span class="success">${user.accountStatus}</span></p>
+                </div>
+            `;
+            
+            document.getElementById('patient-info').innerHTML = patientHtml;
+            
+            // Update personalized care overview
+            document.getElementById('personalized-care').textContent = `Personalized Care Overview for ${user.name}`;
+        }
+
+        function displayPatientInfo(fhirPatient, loggedInUser) {
+            // Prefer FHIR data but fall back to logged-in user
+            const name = fhirPatient?.name?.[0] ? 
+                `${fhirPatient.name[0].given?.join(' ')} ${fhirPatient.name[0].family}` : 
+                loggedInUser?.name || 'Unknown';
+            const birthDate = fhirPatient?.birthDate ? 
+                new Date(fhirPatient.birthDate).toLocaleDateString() : 'Unknown';
+            const gender = fhirPatient?.gender || 'Unknown';
+            const patientId = fhirPatient?.identifier?.[0]?.value || 
+                fhirPatient?.id || 
+                loggedInUser?.id || 'Unknown';
 
             const patientHtml = `
                 <div class="patient-info">
                     <h3>👤 Welcome, ${name}!</h3>
                     <p><strong>Patient ID:</strong> ${patientId}</p>
-                    <p><strong>Date of Birth:</strong> ${birthDate}</p>
-                    <p><strong>Gender:</strong> ${gender}</p>
+                    ${birthDate !== 'Unknown' ? `<p><strong>Date of Birth:</strong> ${birthDate}</p>` : ''}
+                    ${gender !== 'Unknown' ? `<p><strong>Gender:</strong> ${gender}</p>` : ''}
+                    <p><strong>Email:</strong> ${loggedInUser?.email || 'Not available'}</p>
                     <p><strong>Status:</strong> <span class="success">Active Patient</span></p>
                 </div>
             `;
@@ -551,6 +642,15 @@
         function showError(elementId, message) {
             const element = document.getElementById(elementId);
             element.innerHTML = `<div class="error">❌ ${message}</div>`;
+        }
+
+        function logout() {
+            // Clear local storage
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            
+            // Redirect to login page
+            window.location.href = '/login';
         }
     </script>
 </body>

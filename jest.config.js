@@ -7,7 +7,11 @@ module.exports = {
     '**/*.(test|spec).+(ts|tsx|js)'
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: {
+        jsx: 'react-jsx'
+      }
+    }]
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
@@ -42,14 +46,11 @@ module.exports = {
       testMatch: ['<rootDir>/patient-portal/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/services/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/ehr-integrations/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/modules/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/interoperability/**/*.(test|spec).+(ts|tsx|js)'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
       transform: {
-        '^.+\\.(ts|tsx)$': 'ts-jest'
-      },
-      globals: {
-        'ts-jest': {
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
           tsconfig: {
             jsx: 'react-jsx'
           }
-        }
+        }]
       }
     },
     {
@@ -72,6 +73,14 @@ module.exports = {
       displayName: 'openehr',
       testEnvironment: 'node',
       testMatch: ['<rootDir>/openehr/**/*.(test|spec).+(js)'],
+      transform: {
+        '^.+\\.js$': 'babel-jest'
+      }
+    },
+    {
+      displayName: 'auth',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/patient-portal/__tests__/auth.test.js', '<rootDir>/patient-portal/__tests__/userService.test.js'],
       transform: {
         '^.+\\.js$': 'babel-jest'
       }

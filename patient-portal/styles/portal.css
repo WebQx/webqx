@@ -651,12 +651,29 @@
     gap: 1rem;
   }
   
+  .language-selector-label {
+    text-align: center;
+    font-size: 0.75rem;
+  }
+  
+  .language-selector {
+    min-width: 140px;
+    font-size: 0.875rem;
+    text-align: center;
+    width: 100%;
+  }
+  
+  .header-content {
+    margin-top: 0;
+  }
+
   .footer-links a {
     padding: 0.5rem;
     min-height: 44px; /* Better touch target */
     display: flex;
     align-items: center;
     justify-content: center;
+  }
   }
 }
 

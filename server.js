@@ -30,6 +30,12 @@ const openEHREHRRoutes = require('./openehr/routes/ehr');
 const openEHRCompositionRoutes = require('./openehr/routes/composition');
 const openEHRQueryRoutes = require('./openehr/routes/query');
 
+// Patient Portal Authentication imports
+const authRoutes = require('./patient-portal/auth/authRoutes');
+
+// Ottehr Integration imports
+const ottehrRoutes = require('./auth/ottehr/routes');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -116,6 +122,29 @@ app.use('/postdicom', postdicomRouter);
 app.use('/openehr/v1/ehr', openEHREHRRoutes);
 app.use('/openehr/v1', openEHRCompositionRoutes);
 app.use('/openehr/v1/query', openEHRQueryRoutes);
+
+// Patient Portal Authentication routes
+app.use('/api/auth', authRoutes);
+
+// Ottehr API routes
+app.use('/api/ottehr', ottehrRoutes);
+
+// Serve login page
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+// Authentication middleware for patient portal
+const authenticatePortalAccess = (req, res, next) => {
+    // Skip authentication for login page and auth API
+    if (req.path === '/login' || req.path.startsWith('/api/auth')) {
+        return next();
+    }
+    
+    // For demo purposes, allow access without authentication
+    // In production, you would check for valid session/token
+    next();
+};
 
 // Development endpoint to get test token
 if (process.env.NODE_ENV === 'development') {
