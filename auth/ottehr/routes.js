@@ -10,7 +10,7 @@
 
 const express = require('express');
 const { body, param, validationResult } = require('express-validator');
-const { OttehrService } = require('../../services/ottehrService');
+const { OttehrService } = require('../../services/ottehrService.js');
 
 const router = express.Router();
 
