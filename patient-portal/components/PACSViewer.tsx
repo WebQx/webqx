@@ -110,9 +110,10 @@ const PACSViewer: React.FC<PACSViewerProps> = ({
         selectStudy(studies[0]);
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       setState(prev => ({ 
         ...prev, 
-        error: error.message, 
+        error: errorMessage, 
         isLoading: false 
       }));
     }
@@ -134,9 +135,10 @@ const PACSViewer: React.FC<PACSViewerProps> = ({
       
       selectStudy(study);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       setState(prev => ({ 
         ...prev, 
-        error: error.message, 
+        error: errorMessage, 
         isLoading: false 
       }));
     }
@@ -190,7 +192,8 @@ const PACSViewer: React.FC<PACSViewerProps> = ({
       setTimeout(() => loadImageOverlays(state.selectedImage!.id), 1000);
       
     } catch (error) {
-      setState(prev => ({ ...prev, error: error.message }));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setState(prev => ({ ...prev, error: errorMessage }));
     }
   };
 
@@ -211,7 +214,8 @@ const PACSViewer: React.FC<PACSViewerProps> = ({
       console.log('Batch job created:', jobId);
       
     } catch (error) {
-      setState(prev => ({ ...prev, error: error.message }));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setState(prev => ({ ...prev, error: errorMessage }));
     }
   };
 
@@ -229,7 +233,8 @@ const PACSViewer: React.FC<PACSViewerProps> = ({
         console.log('Overlay applied successfully:', result.overlayImageUrl);
       }
     } catch (error) {
-      setState(prev => ({ ...prev, error: error.message }));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setState(prev => ({ ...prev, error: errorMessage }));
     }
   };
 

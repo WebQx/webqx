@@ -8,6 +8,22 @@ export interface SSOUser {
   metadata?: Record<string, any>;
 }
 
+// Legacy user interface for backward compatibility with existing modules
+export interface LegacyUser {
+  userId: string;
+  role: string;
+  specialties: string[];
+  sessionId: string;
+}
+
+// Extended SSO user that includes legacy compatibility
+export interface CompatibleSSOUser extends SSOUser {
+  userId: string;
+  role: string;
+  specialties: string[];
+  sessionId: string;
+}
+
 export interface SSOSession {
   sessionId: string;
   userId: string;
@@ -100,3 +116,27 @@ export class SSOSessionError extends SSOError {
     this.name = 'SSOSessionError';
   }
 }
+
+// Utility functions for user conversion
+export const convertSSOUserToLegacy = (ssoUser: SSOUser, sessionId: string): LegacyUser => {
+  return {
+    userId: ssoUser.id,
+    role: ssoUser.roles?.[0] || 'user',
+    specialties: ssoUser.groups || [],
+    sessionId
+  };
+};
+
+export const convertLegacyToSSOUser = (legacyUser: LegacyUser): CompatibleSSOUser => {
+  return {
+    id: legacyUser.userId,
+    userId: legacyUser.userId,
+    email: `${legacyUser.userId}@system.local`, // Default email if not available
+    name: legacyUser.userId, // Default name if not available
+    roles: [legacyUser.role],
+    groups: legacyUser.specialties,
+    role: legacyUser.role,
+    specialties: legacyUser.specialties,
+    sessionId: legacyUser.sessionId
+  };
+};

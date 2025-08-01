@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { SSOUser, SSOSession, SSOAuthenticationError, SSOSessionError } from '../types/common';
+import { SSOUser, SSOSession, SSOAuthenticationError, SSOSessionError, LegacyUser, CompatibleSSOUser, convertSSOUserToLegacy } from '../types/common';
 import { JWTUtils } from '../utils/jwt';
 import { AuditLogger } from '../utils/audit';
 
@@ -101,7 +101,12 @@ export class AuthMiddleware {
           throw new SSOAuthenticationError('Authentication required');
         }
 
-        const userRoles = req.user.roles || [];
+        // Get roles based on user type
+        const userRoles = ('roles' in req.user && req.user.roles) 
+          ? req.user.roles 
+          : ('role' in req.user && req.user.role) 
+            ? [req.user.role] 
+            : [];
         const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
 
         if (!hasRequiredRole) {
@@ -127,7 +132,12 @@ export class AuthMiddleware {
           throw new SSOAuthenticationError('Authentication required');
         }
 
-        const userGroups = req.user.groups || [];
+        // Get groups based on user type
+        const userGroups = ('groups' in req.user && req.user.groups) 
+          ? req.user.groups 
+          : ('specialties' in req.user && req.user.specialties) 
+            ? req.user.specialties 
+            : [];
         const hasRequiredGroup = requiredGroups.some(group => userGroups.includes(group));
 
         if (!hasRequiredGroup) {
@@ -289,7 +299,7 @@ export class AuthMiddleware {
 declare global {
   namespace Express {
     interface Request {
-      user?: SSOUser;
+      user?: SSOUser | LegacyUser | CompatibleSSOUser;
       session?: SSOSession;
     }
   }

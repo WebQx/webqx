@@ -264,8 +264,19 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
     language: string
   ): Promise<TranscriptionOverlay> {
     try {
+      // Convert Buffer to File if necessary for whisper service compatibility
+      let fileToProcess: File;
+      
+      if (audioFile instanceof Buffer) {
+        // Create a File-like object from Buffer for Node.js environment
+        const blob = new Blob([audioFile], { type: 'audio/wav' });
+        fileToProcess = new File([blob], 'audio-buffer.wav', { type: 'audio/wav' });
+      } else {
+        fileToProcess = audioFile as File;
+      }
+
       // Transcribe audio using Whisper service
-      const transcriptionResult = await this.whisperService.transcribeAudio(audioFile, {
+      const transcriptionResult = await this.whisperService.transcribeAudio(fileToProcess, {
         language: language === 'auto' ? undefined : language,
         temperature: 0.2,
         prompt: 'Medical imaging description with anatomical and clinical terminology'
