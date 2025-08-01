@@ -156,6 +156,12 @@ app.use('/fhir/Appointment', authenticateToken, requireScopes(['user/*.read', 'u
 // FHIR Observation resource routes with authentication
 app.use('/fhir/Observation', authenticateToken, requireScopes(['patient/*.read', 'patient/*.write', 'user/*.read']), observationRoutes);
 
+// Telehealth API routes
+const TelehealthService = require('./modules/telehealth/TelehealthService');
+const createTelehealthRoutes = require('./modules/telehealth/routes/telehealth');
+const telehealthService = new TelehealthService(oauth2Instance);
+app.use('/api/telehealth', createTelehealthRoutes(telehealthService, authenticateToken));
+
 // PostDICOM API routes
 app.use('/postdicom', postdicomRouter);
 
