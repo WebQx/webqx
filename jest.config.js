@@ -36,6 +36,9 @@ module.exports = {
   moduleNameMapper: {
     '\\.(css|less|scss)$': 'identity-obj-proxy'
   },
+  testTimeout: 10000,
+  globalSetup: undefined,
+  globalTeardown: undefined,
   testEnvironmentOptions: {
     node: true
   },

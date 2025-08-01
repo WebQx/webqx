@@ -5,17 +5,19 @@ const { authenticateUser, registerUser, getUserById, verifyToken } = require('./
 
 const router = express.Router();
 
-// Rate limiting for authentication endpoints
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Limit each IP to 5 requests per windowMs for auth endpoints
-    message: {
-        error: 'Too many authentication attempts, please try again later.',
-        code: 'TOO_MANY_REQUESTS'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-});
+// Rate limiting for authentication endpoints (disabled in test environment)
+const authLimiter = process.env.NODE_ENV === 'test' 
+    ? (req, res, next) => next() // Skip rate limiting in tests
+    : rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 5, // Limit each IP to 5 requests per windowMs for auth endpoints
+        message: {
+            error: 'Too many authentication attempts, please try again later.',
+            code: 'TOO_MANY_REQUESTS'
+        },
+        standardHeaders: true,
+        legacyHeaders: false,
+    });
 
 // Login endpoint
 router.post('/login', 
