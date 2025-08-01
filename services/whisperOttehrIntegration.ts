@@ -104,7 +104,7 @@ export class WhisperOttehrIntegration extends EventEmitter {
     // Initialize default configuration
     this.config = {
       whisper: {
-        apiUrl: config.whisper?.apiUrl || process.env.WHISPER_API_URL || 'https://api.openai.com/v1/audio/transcriptions',
+        apiUrl: config.whisper?.apiUrl ?? process.env.WHISPER_API_URL ?? 'https://api.openai.com/v1/audio/transcriptions',
         timeout: config.whisper?.timeout || 30000,
         maxFileSize: config.whisper?.maxFileSize || 25 * 1024 * 1024,
         allowedFileTypes: config.whisper?.allowedFileTypes || [
@@ -112,10 +112,10 @@ export class WhisperOttehrIntegration extends EventEmitter {
         ]
       },
       ottehr: {
-        apiBaseUrl: config.ottehr?.apiBaseUrl || process.env.OTTEHR_API_BASE_URL || 'https://api.ottehr.com',
-        apiKey: config.ottehr?.apiKey || process.env.OTTEHR_API_KEY || '',
-        clientId: config.ottehr?.clientId || process.env.OTTEHR_CLIENT_ID || '',
-        clientSecret: config.ottehr?.clientSecret || process.env.OTTEHR_CLIENT_SECRET || '',
+        apiBaseUrl: config.ottehr?.apiBaseUrl ?? process.env.OTTEHR_API_BASE_URL ?? 'https://api.ottehr.com',
+        apiKey: config.ottehr?.apiKey ?? process.env.OTTEHR_API_KEY ?? '',
+        clientId: config.ottehr?.clientId ?? process.env.OTTEHR_CLIENT_ID ?? '',
+        clientSecret: config.ottehr?.clientSecret ?? process.env.OTTEHR_CLIENT_SECRET ?? '',
         environment: config.ottehr?.environment || process.env.OTTEHR_ENVIRONMENT || 'sandbox',
         webhookSecret: config.ottehr?.webhookSecret || process.env.OTTEHR_WEBHOOK_SECRET || '',
         timeout: config.ottehr?.timeout || 30000,
@@ -153,15 +153,24 @@ export class WhisperOttehrIntegration extends EventEmitter {
    * Set up event forwarding between services
    */
   private setupEventForwarding(): void {
-    // Forward Ottehr events
-    this.ottehrService.on('orderCreated', (data) => this.emit('ottehrOrderCreated', data));
-    this.ottehrService.on('notificationSent', (data) => this.emit('ottehrNotificationSent', data));
-    this.ottehrService.on('authenticated', (data) => this.emit('ottehrAuthenticated', data));
+    try {
+      // Forward Ottehr events if the service supports them
+      if (typeof this.ottehrService.on === 'function') {
+        this.ottehrService.on('orderCreated', (data) => this.emit('ottehrOrderCreated', data));
+        this.ottehrService.on('notificationSent', (data) => this.emit('ottehrNotificationSent', data));
+        this.ottehrService.on('authenticated', (data) => this.emit('ottehrAuthenticated', data));
+      }
 
-    // Forward Whisper loading state events
-    this.whisperService.onLoadingStateChange((state) => {
-      this.emit('whisperLoadingStateChanged', state);
-    });
+      // Forward Whisper loading state events if the service supports them
+      if (typeof this.whisperService.onLoadingStateChange === 'function') {
+        this.whisperService.onLoadingStateChange((state) => {
+          this.emit('whisperLoadingStateChanged', state);
+        });
+      }
+    } catch (error) {
+      // Services might not support events - this is acceptable
+      this.logInfo('Event forwarding setup skipped - services do not support events');
+    }
   }
 
   /**

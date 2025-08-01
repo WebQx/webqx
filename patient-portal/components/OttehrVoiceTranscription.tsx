@@ -8,6 +8,7 @@
  * @version 1.0.0
  */
 
+import * as React from 'react';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { 
   WhisperOttehrIntegration, 
