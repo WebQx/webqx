@@ -524,11 +524,14 @@ export class PostDICOMAPIService {
         return response;
 
       } catch (error) {
-        lastError = error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         
         // Don't retry for certain error types
-        if (error.statusCode === 401 || error.statusCode === 403 || error.statusCode === 404) {
-          break;
+        if (error instanceof Error && 'statusCode' in error) {
+          const statusCode = (error as any).statusCode;
+          if (statusCode === 401 || statusCode === 403 || statusCode === 404) {
+            break;
+          }
         }
 
         // Exponential backoff
@@ -543,10 +546,10 @@ export class PostDICOMAPIService {
   }
 
   private handleError<T>(error: any): APIResponse<T> {
-    let errorCode = ERROR_CODES.NETWORK_ERROR;
+    let errorCode: string = ERROR_CODES.NETWORK_ERROR;
     let statusCode = 500;
 
-    if (error.statusCode) {
+    if (error && typeof error === 'object' && error.statusCode) {
       statusCode = error.statusCode;
       
       switch (statusCode) {
@@ -568,12 +571,12 @@ export class PostDICOMAPIService {
     return {
       success: false,
       error: {
-        code: error.code || errorCode,
-        message: error.message || 'Unknown API error',
+        code: (error && typeof error === 'object' && error.code) || errorCode,
+        message: (error instanceof Error ? error.message : String(error)) || 'Unknown API error',
         details: {
           statusCode,
           timestamp: new Date().toISOString(),
-          retryAfter: error.retryAfter
+          retryAfter: error && typeof error === 'object' ? error.retryAfter : undefined
         }
       }
     };

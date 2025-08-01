@@ -31,7 +31,7 @@ const mockAudioContext = {
 // Mock navigator.mediaDevices
 Object.defineProperty(navigator, 'mediaDevices', {
   value: {
-    getUserMedia: jest.fn().mockResolvedValue(mockMediaStream as any)
+    getUserMedia: jest.fn().mockResolvedValue(mockMediaStream as unknown as MediaStream)
   },
   writable: true
 });
@@ -122,7 +122,7 @@ describe('WhisperStreamingService', () => {
 
     test('should handle microphone access denial', async () => {
       const error = new Error('Permission denied');
-      (navigator.mediaDevices.getUserMedia as jest.Mock).mockRejectedValueOnce(error as any);
+      (navigator.mediaDevices.getUserMedia as jest.Mock).mockRejectedValueOnce(error);
       
       await expect(streamingService.startTranscription()).rejects.toThrow();
       expect(mockEvents.onError).toHaveBeenCalledWith(
@@ -291,7 +291,7 @@ describe('Streaming Service Integration', () => {
         text: 'Hello world',
         confidence: 0.95,
         language: 'en'
-      } as any)
+      })
     };
     
     const events = {
@@ -321,7 +321,7 @@ describe('Streaming Service Integration', () => {
 
   test('should handle API errors during processing', async () => {
     const mockWhisperService = {
-      transcribeAudio: jest.fn().mockRejectedValue(new Error('API Error') as any)
+      transcribeAudio: jest.fn().mockRejectedValue(new Error('API Error'))
     };
     
     const events = {
