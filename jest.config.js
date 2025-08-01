@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/openehr', '<rootDir>/auth', '<rootDir>/interoperability', '<rootDir>/sso'],
+  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/openehr', '<rootDir>/auth', '<rootDir>/interoperability', '<rootDir>/sso', '<rootDir>/telehealth'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
@@ -25,6 +25,7 @@ module.exports = {
     'openehr/**/*.{js}',
     'auth/**/*.{ts,tsx}',
     'interoperability/**/*.{ts,tsx}',
+    'telehealth/**/*.{js}',
     '!patient-portal/**/*.d.ts',
     '!services/**/*.d.ts',
     '!ehr-integrations/**/*.d.ts',
@@ -34,6 +35,7 @@ module.exports = {
     '!openehr/**/*.d.ts',
     '!auth/**/*.d.ts',
     '!interoperability/**/*.d.ts',
+    '!telehealth/**/*.d.ts',
   ],
   moduleNameMapper: {
     '\\.(css|less|scss)$': 'identity-obj-proxy'
@@ -75,6 +77,14 @@ module.exports = {
       displayName: 'openehr',
       testEnvironment: 'node',
       testMatch: ['<rootDir>/openehr/**/*.(test|spec).+(js)'],
+      transform: {
+        '^.+\\.js$': 'babel-jest'
+      }
+    },
+    {
+      displayName: 'telehealth',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/telehealth/**/*.(test|spec).+(js)'],
       transform: {
         '^.+\\.js$': 'babel-jest'
       }
