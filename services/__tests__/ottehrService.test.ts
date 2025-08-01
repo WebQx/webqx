@@ -147,7 +147,8 @@ describe('OttehrService', () => {
 
     beforeEach(() => {
       // Mock HTTP responses for order operations
-      mockFetch.mockImplementation((url: string) => {
+      mockFetch.mockImplementation((input: string | URL | Request) => {
+        const url = typeof input === 'string' ? input : input.toString();
         if (url.includes('/orders')) {
           return Promise.resolve({
             ok: true,
@@ -213,7 +214,8 @@ describe('OttehrService', () => {
 
     beforeEach(() => {
       // Mock HTTP responses for notification operations
-      mockFetch.mockImplementation((url: string) => {
+      mockFetch.mockImplementation((input: string | URL | Request) => {
+        const url = typeof input === 'string' ? input : input.toString();
         if (url.includes('/notifications')) {
           return Promise.resolve({
             ok: true,

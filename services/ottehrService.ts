@@ -792,7 +792,7 @@ if (typeof process !== 'undefined' &&
   try {
     ottehrService = new OttehrService();
   } catch (error) {
-    console.warn('[Ottehr Service] Failed to create default instance:', error.message);
+    console.warn('[Ottehr Service] Failed to create default instance:', error instanceof Error ? error.message : String(error));
   }
 }
 

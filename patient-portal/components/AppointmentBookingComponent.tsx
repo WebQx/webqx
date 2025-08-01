@@ -16,13 +16,13 @@ import {
   AppointmentBookingResult,
   SlotAvailability,
   RealTimeUpdateEvent
-} from '../../services/appointmentBookingService';
+} from '../../ehr-integrations/services/appointmentBookingService';
 import {
   FHIRAppointment,
   FHIRCodeableConcept,
   FHIRReference,
   FHIRPatient
-} from '../../types/fhir-r4';
+} from '../../ehr-integrations/types/fhir-r4';
 
 /**
  * Component props interface
@@ -375,7 +375,7 @@ export const AppointmentBookingComponent: React.FC<AppointmentBookingComponentPr
         startOfDay.toISOString(),
         endOfDay.toISOString(),
         selectedService?.text,
-        selectedPractitioner
+        selectedPractitioner || undefined
       );
 
       setAvailableSlots(slots);
@@ -1107,7 +1107,7 @@ export const AppointmentBookingComponent: React.FC<AppointmentBookingComponentPr
                   Next Steps:
                 </h3>
                 <ul style={{ textAlign: 'left', paddingLeft: '1.5rem' }}>
-                  {bookingResult.confirmation.nextSteps.map((step, index) => (
+                  {bookingResult.confirmation.nextSteps.map((step: string, index: number) => (
                     <li key={index} style={{ marginBottom: '0.25rem' }}>
                       {step}
                     </li>
@@ -1204,7 +1204,7 @@ export const AppointmentBookingComponent: React.FC<AppointmentBookingComponentPr
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
-            {bookingResult.alternatives.map((alternative, index) => (
+            {bookingResult.alternatives.map((alternative: any, index: number) => (
               <button
                 key={index}
                 onClick={() => {

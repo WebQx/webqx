@@ -880,7 +880,7 @@ export class FHIRR4Client {
     await this.ensureValidToken();
     
     if (!resource.id) {
-      return this.handleError(new Error('Resource ID is required for update'));
+      return this.handleError(new Error('Resource ID is required for update')) as FHIRApiResponse<T>;
     }
 
     try {

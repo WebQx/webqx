@@ -354,7 +354,7 @@ export class OpenEHRIntegrationService {
       }
 
       // Apply transformation if specified
-      let transformedValue = sourceValue;
+      let transformedValue: any = sourceValue;
       if (mappingRule.transformation) {
         transformedValue = this.applyTransformation(sourceValue, mappingRule.transformation);
       }

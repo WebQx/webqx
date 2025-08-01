@@ -26,7 +26,7 @@ export interface BatchJob {
   id: string;
   name: string;
   imageIds: string[];
-  audioFiles: { imageId: string; audioFile: File | Buffer; language?: string }[];
+  audioFiles: { imageId: string; audioFile: File; language?: string }[];
   status: 'pending' | 'processing' | 'completed' | 'failed';
   progress: number;
   startTime?: Date;
@@ -54,7 +54,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
   private config: BatchOverlayConfig;
   private pacsService: PACSService;
   private whisperService: WhisperService;
-  private auditLogger: AuditLogger;
+  private auditLogger?: AuditLogger;
   private jobs: Map<string, BatchJob> = new Map();
   private overlayStorage: Map<string, TranscriptionOverlay[]> = new Map();
 
@@ -65,14 +65,14 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
   ) {
     super();
     this.config = {
-      maxConcurrentProcessing: 3,
-      supportedLanguages: ['en', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ar', 'hi', 'pt', 'it', 'ru'],
-      defaultLanguage: 'en',
-      overlayOpacity: 0.8,
-      fontSizes: { small: 12, medium: 16, large: 20 },
-      auditLogging: true,
-      autoSaveEnabled: true,
-      ...config
+      ...config,
+      maxConcurrentProcessing: config.maxConcurrentProcessing ?? 3,
+      supportedLanguages: config.supportedLanguages ?? ['en', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ar', 'hi', 'pt', 'it', 'ru'],
+      defaultLanguage: config.defaultLanguage ?? 'en',
+      overlayOpacity: config.overlayOpacity ?? 0.8,
+      fontSizes: config.fontSizes ?? { small: 12, medium: 16, large: 20 },
+      auditLogging: config.auditLogging ?? true,
+      autoSaveEnabled: config.autoSaveEnabled ?? true
     };
 
     this.pacsService = pacsService;
@@ -95,7 +95,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
   async createBatchJob(
     name: string,
     imageIds: string[],
-    audioFiles: { imageId: string; audioFile: File | Buffer; language?: string }[]
+    audioFiles: { imageId: string; audioFile: File; language?: string }[]
   ): Promise<string> {
     const jobId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -171,11 +171,12 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
             this.emit('jobProgress', { jobId, progress: job.progress, overlay });
             
           } catch (error) {
-            job.errors.push(`Error processing ${audioItem.imageId}: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            job.errors.push(`Error processing ${audioItem.imageId}: ${errorMessage}`);
             this.auditLogger?.logError('BATCH_ITEM_ERROR', {
               jobId,
               imageId: audioItem.imageId,
-              error: error.message,
+              error: errorMessage,
               timestamp: new Date().toISOString()
             });
           }
@@ -206,11 +207,12 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
     } catch (error) {
       job.status = 'failed';
       job.endTime = new Date();
-      job.errors.push(`Job failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      job.errors.push(`Job failed: ${errorMessage}`);
 
       this.auditLogger?.logError('BATCH_JOB_FAILED', {
         jobId,
-        error: error.message,
+        error: errorMessage,
         timestamp: new Date().toISOString()
       });
 
@@ -223,7 +225,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
    */
   private async processAudioForImage(
     imageId: string,
-    audioFile: File | Buffer,
+    audioFile: File,
     language: string
   ): Promise<TranscriptionOverlay> {
     try {
@@ -242,14 +244,14 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
         confidence: this.calculateConfidence(transcriptionResult),
         timestamp: new Date(),
         position: this.getDefaultOverlayPosition(),
-        speaker: transcriptionResult.segments?.[0]?.speaker,
+        speaker: undefined, // Speaker identification not available in current WhisperResponse
         annotations: this.extractMedicalTerms(transcriptionResult.text)
       };
 
       return overlay;
 
     } catch (error) {
-      throw new Error(`Failed to process audio for image ${imageId}: ${error.message}`);
+      throw new Error(`Failed to process audio for image ${imageId}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -281,7 +283,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
     } catch (error) {
       this.auditLogger?.logError('OVERLAY_ERROR', {
         imageId,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       });
 
@@ -380,7 +382,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
    * Generate supported languages list
    */
   getSupportedLanguages(): { code: string; name: string; rtl: boolean }[] {
-    const languageMap = {
+    const languageMap: Record<string, { name: string; rtl: boolean }> = {
       'en': { name: 'English', rtl: false },
       'es': { name: 'Spanish', rtl: false },
       'fr': { name: 'French', rtl: false },

@@ -506,7 +506,7 @@ describe('EnhancedVoiceTranscription', () => {
       whisperService.validateFile.mockReturnValue({ isValid: true });
       
       // Mock loading state
-      whisperService.onLoadingStateChange.mockImplementation((callback) => {
+      whisperService.onLoadingStateChange.mockImplementation((callback: any) => {
         setTimeout(() => {
           callback({ isLoading: true, message: 'Processing...', progress: 50 });
         }, 100);

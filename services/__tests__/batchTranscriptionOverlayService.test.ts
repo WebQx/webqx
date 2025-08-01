@@ -67,8 +67,8 @@ describe('BatchTranscriptionOverlayService', () => {
     test('should create batch job successfully', async () => {
       const imageIds = ['image-1', 'image-2'];
       const audioFiles = [
-        { imageId: 'image-1', audioFile: Buffer.from('audio1'), language: 'en' },
-        { imageId: 'image-2', audioFile: Buffer.from('audio2'), language: 'es' }
+        { imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }), language: 'en' },
+        { imageId: 'image-2', audioFile: new File(['audio2'], 'audio2.wav', { type: 'audio/wav' }), language: 'es' }
       ];
 
       const jobId = await overlayService.createBatchJob(
@@ -97,7 +97,7 @@ describe('BatchTranscriptionOverlayService', () => {
       overlayService.createBatchJob(
         'Test Job',
         ['image-1'],
-        [{ imageId: 'image-1', audioFile: Buffer.from('audio1') }]
+        [{ imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }) }]
       );
     });
   });
@@ -112,7 +112,7 @@ describe('BatchTranscriptionOverlayService', () => {
       } as any);
 
       const audioFiles = [
-        { imageId: 'image-1', audioFile: Buffer.from('audio1'), language: 'en' }
+        { imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }), language: 'en' }
       ];
 
       const jobId = await overlayService.createBatchJob(
@@ -135,7 +135,7 @@ describe('BatchTranscriptionOverlayService', () => {
       mockWhisperService.transcribeAudio.mockRejectedValue(new Error('Transcription failed'));
 
       const audioFiles = [
-        { imageId: 'image-1', audioFile: Buffer.from('audio1'), language: 'en' }
+        { imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }), language: 'en' }
       ];
 
       const jobId = await overlayService.createBatchJob(
@@ -169,7 +169,7 @@ describe('BatchTranscriptionOverlayService', () => {
       } as any);
 
       const audioFiles = [
-        { imageId: 'image-1', audioFile: Buffer.from('audio1'), language: 'en' }
+        { imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }), language: 'en' }
       ];
 
       overlayService.createBatchJob('Test Job', ['image-1'], audioFiles)
@@ -184,9 +184,9 @@ describe('BatchTranscriptionOverlayService', () => {
       );
 
       const audioFiles = [
-        { imageId: 'image-1', audioFile: Buffer.from('audio1'), language: 'en' },
-        { imageId: 'image-2', audioFile: Buffer.from('audio2'), language: 'en' },
-        { imageId: 'image-3', audioFile: Buffer.from('audio3'), language: 'en' }
+        { imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }), language: 'en' },
+        { imageId: 'image-2', audioFile: new File(['audio2'], 'audio2.wav', { type: 'audio/wav' }), language: 'en' },
+        { imageId: 'image-3', audioFile: new File(['audio3'], 'audio3.wav', { type: 'audio/wav' }), language: 'en' }
       ];
 
       const jobId = await overlayService.createBatchJob(
@@ -209,7 +209,7 @@ describe('BatchTranscriptionOverlayService', () => {
       const jobId = await overlayService.createBatchJob(
         'Test Job',
         ['image-1'],
-        [{ imageId: 'image-1', audioFile: Buffer.from('audio1') }]
+        [{ imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }) }]
       );
 
       const status = overlayService.getJobStatus(jobId);
@@ -239,7 +239,7 @@ describe('BatchTranscriptionOverlayService', () => {
       const jobId = await overlayService.createBatchJob(
         'Test Job',
         ['image-1'],
-        [{ imageId: 'image-1', audioFile: Buffer.from('audio1') }]
+        [{ imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }) }]
       );
 
       // Start processing but don't await
@@ -258,7 +258,7 @@ describe('BatchTranscriptionOverlayService', () => {
       const jobId = await overlayService.createBatchJob(
         'Test Job',
         ['image-1'],
-        [{ imageId: 'image-1', audioFile: Buffer.from('audio1') }]
+        [{ imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }) }]
       );
 
       const cancelled = overlayService.cancelJob(jobId);
@@ -274,7 +274,7 @@ describe('BatchTranscriptionOverlayService', () => {
       const jobId = await overlayService.createBatchJob(
         'Test Job',
         ['image-1'],
-        [{ imageId: 'image-1', audioFile: Buffer.from('audio1') }]
+        [{ imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }) }]
       );
 
       await overlayService.processBatchJob(jobId);
@@ -330,7 +330,7 @@ describe('BatchTranscriptionOverlayService', () => {
       const jobId = await overlayService.createBatchJob(
         'Test Job',
         ['image-1'],
-        [{ imageId: 'image-1', audioFile: Buffer.from('audio1') }]
+        [{ imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }) }]
       );
 
       await overlayService.processBatchJob(jobId);
@@ -386,7 +386,7 @@ describe('BatchTranscriptionOverlayService', () => {
       const jobId = await overlayService.createBatchJob(
         'Test Job',
         ['image-1'],
-        [{ imageId: 'image-1', audioFile: Buffer.from('audio1') }]
+        [{ imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }) }]
       );
 
       // Manually set status to completed
@@ -414,7 +414,7 @@ describe('BatchTranscriptionOverlayService', () => {
       overlayService.createBatchJob(
         'Test Job',
         ['image-1'],
-        [{ imageId: 'image-1', audioFile: Buffer.from('audio1') }]
+        [{ imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }) }]
       ).then(jobId => overlayService.processBatchJob(jobId));
     });
 
@@ -433,7 +433,7 @@ describe('BatchTranscriptionOverlayService', () => {
       overlayService.createBatchJob(
         'Test Job',
         ['image-1'],
-        [{ imageId: 'image-1', audioFile: Buffer.from('audio1') }]
+        [{ imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }) }]
       ).then(jobId => overlayService.processBatchJob(jobId));
     });
 
@@ -450,7 +450,7 @@ describe('BatchTranscriptionOverlayService', () => {
       overlayService.createBatchJob(
         'Test Job',
         ['image-1'],
-        [{ imageId: 'image-1', audioFile: Buffer.from('audio1') }]
+        [{ imageId: 'image-1', audioFile: new File(['audio1'], 'audio1.wav', { type: 'audio/wav' }) }]
       ).then(jobId => overlayService.processBatchJob(jobId));
     });
   });

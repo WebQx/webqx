@@ -505,7 +505,7 @@ const PACSViewer: React.FC<PACSViewerProps> = ({
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .pacs-viewer {
           display: flex;
           flex-direction: column;

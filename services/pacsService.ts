@@ -70,17 +70,17 @@ export interface TranscriptionOverlay {
 
 export class PACSService extends EventEmitter {
   private config: PACSConfig;
-  private auditLogger: AuditLogger;
+  private auditLogger?: AuditLogger;
   private cache: Map<string, any> = new Map();
 
   constructor(config: PACSConfig) {
     super();
     this.config = {
-      maxConcurrentDownloads: 3,
-      cacheEnabled: true,
-      auditLogging: true,
-      enableDICOMWeb: true,
-      ...config
+      ...config,
+      maxConcurrentDownloads: config.maxConcurrentDownloads ?? 3,
+      cacheEnabled: config.cacheEnabled ?? true,
+      auditLogging: config.auditLogging ?? true,
+      enableDICOMWeb: config.enableDICOMWeb ?? true
     };
 
     if (this.config.auditLogging) {
