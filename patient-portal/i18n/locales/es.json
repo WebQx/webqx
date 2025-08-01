@@ -88,6 +88,133 @@
     "current": "Idioma actual: {{language}}",
     "changeLanguage": "Cambiar idioma a {{language}}"
   },
+  "telehealth": {
+    "session": {
+      "title": "Sesión de Telesalud",
+      "status": {
+        "scheduled": "Programada",
+        "waiting_room": "Sala de Espera",
+        "in_progress": "En Progreso",
+        "completed": "Completada",
+        "cancelled": "Cancelada",
+        "no_show": "No Se Presentó"
+      },
+      "details": {
+        "sessionId": "ID de Sesión:",
+        "status": "Estado:",
+        "scheduled": "Programada:",
+        "chiefComplaint": "Motivo Principal:",
+        "participants": "Participantes"
+      },
+      "room": {
+        "title": "Sala de Videoconferencia",
+        "room": "Sala:",
+        "password": "Contraseña:",
+        "joinButton": "Unirse a la Videollamada",
+        "copyLink": "Copiar Enlace",
+        "linkCopied": "¡Enlace de la sala copiado al portapapeles!",
+        "copyFailed": "Error al copiar el enlace al portapapeles"
+      },
+      "participants": {
+        "title": "Participantes",
+        "noParticipants": "Aún no se han unido participantes.",
+        "online": "En Línea",
+        "left": "Se Fue",
+        "types": {
+          "patient": "Paciente",
+          "provider": "Proveedor",
+          "caregiver": "Cuidador",
+          "observer": "Observador"
+        }
+      },
+      "controls": {
+        "endSession": "Finalizar Sesión",
+        "leaveSession": "Salir de la Sesión"
+      },
+      "notes": {
+        "title": "Notas de la Sesión"
+      },
+      "technical": {
+        "title": "Información Técnica",
+        "roomName": "Nombre de la Sala:",
+        "server": "Servidor:",
+        "webLink": "Enlace Web:",
+        "mobileLink": "Enlace Móvil:"
+      },
+      "loading": "Configurando su sesión de telesalud...",
+      "error": {
+        "title": "Error de Sesión",
+        "retry": "Reintentar"
+      }
+    },
+    "dashboard": {
+      "title": "Panel de Análisis de Telesalud",
+      "lastUpdated": "Última actualización: {{time}}",
+      "loading": "Cargando análisis de telesalud...",
+      "error": {
+        "title": "Error del Panel",
+        "retry": "Reintentar"
+      },
+      "noData": "No hay datos de sesiones de telesalud disponibles.",
+      "sections": {
+        "overview": "Resumen de Sesiones",
+        "recentSessions": "Sesiones Recientes",
+        "qualityInsights": "Información de Calidad",
+        "usageAnalytics": "Análisis de Uso"
+      },
+      "stats": {
+        "totalSessions": "Total de Sesiones",
+        "today": "Hoy",
+        "thisWeek": "Esta Semana",
+        "thisMonth": "Este Mes",
+        "completionRate": "Tasa de Finalización",
+        "avgDuration": "Duración Promedio"
+      },
+      "sessions": {
+        "noSessions": "No se encontraron sesiones recientes.",
+        "participantsSingle": "participante",
+        "participantsPlural": "participantes",
+        "duration": "min"
+      },
+      "quality": {
+        "commonIssues": "Problemas Comunes",
+        "noIssues": "¡No se reportaron problemas de calidad! 🎉",
+        "qualityByDevice": "Calidad por Dispositivo",
+        "noDeviceData": "No hay datos de calidad de dispositivos disponibles.",
+        "score": "/5"
+      },
+      "analytics": {
+        "deviceTypes": "Tipos de Dispositivos",
+        "languages": "Idiomas",
+        "noData": "No hay datos disponibles."
+      }
+    },
+    "translation": {
+      "transcribing": "Transcribiendo audio...",
+      "translating": "Traduciendo a {{language}}...",
+      "detectingLanguage": "Detectando idioma...",
+      "originalLanguage": "Idioma Original:",
+      "translatedTo": "Traducido a {{language}}:",
+      "confidence": "Confianza: {{score}}%",
+      "error": {
+        "transcriptionFailed": "Error en la transcripción de audio",
+        "translationFailed": "Error en la traducción",
+        "languageDetectionFailed": "Error en la detección de idioma",
+        "unsupportedLanguage": "Idioma no compatible para traducción"
+      },
+      "languages": {
+        "en": "Inglés",
+        "es": "Español",
+        "fr": "Francés",
+        "de": "Alemán",
+        "pt": "Portugués",
+        "zh": "Chino",
+        "ar": "Árabe",
+        "hi": "Hindi",
+        "ja": "Japonés"
+      }
+    }
+  },
   "aria": {
     "dashboard": "Panel de Control del Portal de Pacientes WebQX",
     "personalizedWelcome": "Bienvenida personalizada",
