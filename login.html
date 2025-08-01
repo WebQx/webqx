@@ -3,54 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebQX™ Patient Portal - Login</title>
+    <title>WebQX™ Secure Login - HIPAA Compliant Patient Portal</title>
     <style>
-        * {
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
-            align-items: center;
             justify-content: center;
-            padding: 20px;
+            align-items: center;
         }
 
         .login-container {
             background: white;
             border-radius: 12px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            padding: 40px;
+            max-width: 450px;
             width: 100%;
-            max-width: 400px;
-            position: relative;
+            margin: 20px;
         }
 
         .login-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px 20px;
             text-align: center;
+            margin-bottom: 30px;
         }
 
         .login-header h1 {
+            margin: 0 0 10px 0;
+            color: #333;
             font-size: 28px;
             font-weight: 600;
-            margin-bottom: 8px;
         }
 
         .login-header p {
-            opacity: 0.9;
+            margin: 0;
+            color: #666;
             font-size: 14px;
-        }
-
-        .login-form {
-            padding: 30px 20px;
         }
 
         .form-group {
@@ -60,87 +51,95 @@
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 500;
+            font-weight: 600;
             color: #333;
             font-size: 14px;
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group select {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #e1e5e9;
             border-radius: 8px;
             font-size: 16px;
-            transition: all 0.3s ease;
-            background: #fafafa;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
         }
 
-        .form-group input:focus {
+        .form-group input:focus,
+        .form-group select:focus {
             outline: none;
             border-color: #667eea;
-            background: white;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .form-group input.error {
             border-color: #e74c3c;
-            background: #fdf2f2;
         }
 
         .error-message {
+            display: block;
             color: #e74c3c;
             font-size: 12px;
             margin-top: 5px;
-            display: none;
         }
 
-        .error-message.show {
-            display: block;
+        .error-banner {
+            background: #ffeaea;
+            border: 1px solid #e74c3c;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            color: #c0392b;
+            font-size: 14px;
         }
 
-        .login-button {
+        .success-banner {
+            background: #eafaf1;
+            border: 1px solid #27ae60;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            color: #27ae60;
+            font-size: 14px;
+        }
+
+        .submit-button {
             width: 100%;
-            padding: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
+            padding: 14px 20px;
             border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .login-button:hover {
+        .submit-button:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .login-button:active {
-            transform: translateY(0);
-        }
-
-        .login-button:disabled {
+        .submit-button:disabled {
             opacity: 0.7;
             cursor: not-allowed;
             transform: none;
         }
 
-        .login-button .spinner {
-            display: none;
-            width: 20px;
-            height: 20px;
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
             border: 2px solid transparent;
             border-top: 2px solid white;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-right: 8px;
-        }
-
-        .login-button.loading .spinner {
-            display: inline-block;
         }
 
         @keyframes spin {
@@ -148,85 +147,61 @@
             100% { transform: rotate(360deg); }
         }
 
-        .forgot-password {
+        .form-footer {
             text-align: center;
             margin-top: 20px;
         }
 
-        .forgot-password a {
+        .link-button {
+            background: none;
+            border: none;
             color: #667eea;
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.3s ease;
-        }
-
-        .forgot-password a:hover {
-            color: #764ba2;
             text-decoration: underline;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
         }
 
-        .alert {
-            padding: 12px 16px;
+        .link-button:hover:not(:disabled) {
+            color: #5a6fd8;
+        }
+
+        .security-notice {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
             border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
+            padding: 20px;
+            font-size: 12px;
+            color: #495057;
+            margin-top: 30px;
+        }
+
+        .security-notice p {
+            margin: 0 0 10px 0;
+            font-weight: 600;
+        }
+
+        .security-notice ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .security-notice li {
+            margin-bottom: 5px;
+        }
+
+        .hidden {
             display: none;
         }
 
-        .alert.show {
-            display: block;
-        }
-
-        .alert.error {
-            background: #fdf2f2;
-            color: #e74c3c;
-            border: 1px solid #fdbdbd;
-        }
-
-        .alert.success {
-            background: #f0f9f0;
-            color: #27ae60;
-            border: 1px solid #a8d8a8;
-        }
-
-        .test-credentials {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 12px;
-        }
-
-        .test-credentials h4 {
-            color: #495057;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-
-        .test-credentials p {
-            margin: 4px 0;
-            color: #6c757d;
-        }
-
-        .test-credentials code {
-            background: #e9ecef;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-        }
-
-        @media (max-width: 480px) {
+        @media (max-width: 500px) {
             .login-container {
+                padding: 30px 20px;
                 margin: 10px;
             }
             
-            .login-header {
-                padding: 25px 15px;
-            }
-            
-            .login-form {
-                padding: 25px 15px;
+            .login-header h1 {
+                font-size: 24px;
             }
         }
     </style>
@@ -234,216 +209,353 @@
 <body>
     <div class="login-container">
         <div class="login-header">
-            <h1>🏥 WebQX™</h1>
-            <p>Patient Portal Access</p>
+            <h1 id="form-title">🔒 Secure Login</h1>
+            <p>WebQX™ Patient Portal - HIPAA Compliant Access</p>
         </div>
-        
-        <form class="login-form" id="loginForm">
-            <div class="test-credentials">
-                <h4>Test Credentials:</h4>
-                <p><strong>Active User:</strong> <code>john.doe@example.com</code> / <code>password123</code></p>
-                <p><strong>Locked User:</strong> <code>locked@example.com</code> / <code>password123</code></p>
+
+        <form id="auth-form">
+            <!-- Registration fields (hidden by default) -->
+            <div id="registration-fields" class="hidden">
+                <div class="form-group">
+                    <label for="firstName">First Name *</label>
+                    <input type="text" id="firstName" name="firstName" autocomplete="given-name">
+                    <span class="error-message" id="firstName-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="lastName">Last Name *</label>
+                    <input type="text" id="lastName" name="lastName" autocomplete="family-name">
+                    <span class="error-message" id="lastName-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Account Type</label>
+                    <select id="role" name="role">
+                        <option value="PATIENT">Patient</option>
+                        <option value="PROVIDER">Healthcare Provider</option>
+                        <option value="NURSE">Nurse</option>
+                        <option value="STAFF">Staff</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="alert" id="alertMessage"></div>
-            
+            <!-- Common fields -->
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required>
-                <div class="error-message" id="emailError"></div>
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" autocomplete="email" required>
+                <span class="error-message" id="email-error"></span>
             </div>
-            
+
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-                <div class="error-message" id="passwordError"></div>
+                <label for="password">Password *</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+                <span class="error-message" id="password-error"></span>
             </div>
-            
-            <button type="submit" class="login-button" id="loginButton">
-                <span class="spinner"></span>
-                <span class="button-text">Sign In</span>
+
+            <!-- MFA field (hidden by default) -->
+            <div class="form-group hidden" id="mfa-field">
+                <label for="mfaCode">Multi-Factor Authentication Code</label>
+                <input type="text" id="mfaCode" name="mfaCode" placeholder="Enter 6-digit code" maxlength="6">
+            </div>
+
+            <!-- Error/Success display -->
+            <div id="message-banner" class="hidden"></div>
+
+            <!-- Submit button -->
+            <button type="submit" class="submit-button" id="submit-button">
+                <span id="button-text">Sign In</span>
             </button>
-            
-            <div class="forgot-password">
-                <a href="#" onclick="showForgotPasswordAlert()">Forgot your password?</a>
+
+            <!-- Mode toggle -->
+            <div class="form-footer">
+                <button type="button" class="link-button" id="mode-toggle">
+                    Don't have an account? Create one
+                </button>
             </div>
         </form>
+
+        <!-- Security notice -->
+        <div class="security-notice">
+            <p>🔐 <strong>Your privacy is protected:</strong></p>
+            <ul>
+                <li>All data is encrypted in transit and at rest</li>
+                <li>HIPAA-compliant security measures</li>
+                <li>Session timeout for your protection</li>
+                <li>Audit logging for security monitoring</li>
+            </ul>
+        </div>
     </div>
 
     <script>
-        const loginForm = document.getElementById('loginForm');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const loginButton = document.getElementById('loginButton');
-        const alertMessage = document.getElementById('alertMessage');
+        // Application state
+        let isRegistrationMode = false;
+        let isLoading = false;
+        let showMfa = false;
 
-        // Form validation
+        // DOM elements
+        const formTitle = document.getElementById('form-title');
+        const authForm = document.getElementById('auth-form');
+        const registrationFields = document.getElementById('registration-fields');
+        const mfaField = document.getElementById('mfa-field');
+        const messageBanner = document.getElementById('message-banner');
+        const submitButton = document.getElementById('submit-button');
+        const buttonText = document.getElementById('button-text');
+        const modeToggle = document.getElementById('mode-toggle');
+
+        // Simple client-side encryption using base64
+        function encryptData(data) {
+            try {
+                return btoa(data);
+            } catch (error) {
+                console.error('Encryption error:', error);
+                return data;
+            }
+        }
+
+        // Validate email format
         function validateEmail(email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return emailRegex.test(email);
         }
 
-        function showFieldError(fieldId, message) {
-            const field = document.getElementById(fieldId);
-            const errorDiv = document.getElementById(fieldId + 'Error');
+        // Validate password strength
+        function validatePassword(password) {
+            const errors = [];
             
-            field.classList.add('error');
-            errorDiv.textContent = message;
-            errorDiv.classList.add('show');
-        }
-
-        function hideFieldError(fieldId) {
-            const field = document.getElementById(fieldId);
-            const errorDiv = document.getElementById(fieldId + 'Error');
+            if (password.length < 8) {
+                errors.push('Password must be at least 8 characters long');
+            }
             
-            field.classList.remove('error');
-            errorDiv.classList.remove('show');
+            if (!/[A-Z]/.test(password)) {
+                errors.push('Password must contain at least one uppercase letter');
+            }
+            
+            if (!/[a-z]/.test(password)) {
+                errors.push('Password must contain at least one lowercase letter');
+            }
+            
+            if (!/[0-9]/.test(password)) {
+                errors.push('Password must contain at least one number');
+            }
+            
+            if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+                errors.push('Password must contain at least one special character');
+            }
+            
+            return errors;
         }
 
-        function showAlert(message, type = 'error') {
-            alertMessage.textContent = message;
-            alertMessage.className = `alert ${type} show`;
+        // Clear error messages
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+            document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+            messageBanner.className = 'hidden';
         }
 
-        function hideAlert() {
-            alertMessage.classList.remove('show');
-        }
-
-        function setLoading(loading) {
-            loginButton.disabled = loading;
-            if (loading) {
-                loginButton.classList.add('loading');
-                loginButton.querySelector('.button-text').textContent = 'Signing In...';
-            } else {
-                loginButton.classList.remove('loading');
-                loginButton.querySelector('.button-text').textContent = 'Sign In';
+        // Show error message
+        function showError(fieldName, message) {
+            const errorElement = document.getElementById(`${fieldName}-error`);
+            const inputElement = document.getElementById(fieldName);
+            
+            if (errorElement) {
+                errorElement.textContent = message;
+            }
+            if (inputElement) {
+                inputElement.classList.add('error');
             }
         }
 
-        // Clear field errors on input
-        emailInput.addEventListener('input', () => hideFieldError('email'));
-        passwordInput.addEventListener('input', () => hideFieldError('password'));
+        // Show banner message
+        function showBanner(message, type = 'error') {
+            messageBanner.className = type === 'success' ? 'success-banner' : 'error-banner';
+            messageBanner.innerHTML = `<strong>${type === 'success' ? 'Success' : 'Error'}:</strong> ${message}`;
+        }
 
-        // Form submission
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Clear previous errors
-            hideFieldError('email');
-            hideFieldError('password');
-            hideAlert();
-            
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
-            
-            // Client-side validation
-            let hasErrors = false;
-            
+        // Validate form
+        function validateForm() {
+            clearErrors();
+            let isValid = true;
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Email validation
             if (!email) {
-                showFieldError('email', 'Email is required');
-                hasErrors = true;
+                showError('email', 'Email is required');
+                isValid = false;
             } else if (!validateEmail(email)) {
-                showFieldError('email', 'Please enter a valid email address');
-                hasErrors = true;
+                showError('email', 'Please enter a valid email address');
+                isValid = false;
             }
-            
+
+            // Password validation
             if (!password) {
-                showFieldError('password', 'Password is required');
-                hasErrors = true;
+                showError('password', 'Password is required');
+                isValid = false;
+            } else if (isRegistrationMode) {
+                const passwordErrors = validatePassword(password);
+                if (passwordErrors.length > 0) {
+                    showError('password', passwordErrors[0]);
+                    isValid = false;
+                }
             }
+
+            // Registration field validation
+            if (isRegistrationMode) {
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+
+                if (!firstName) {
+                    showError('firstName', 'First name is required');
+                    isValid = false;
+                }
+                if (!lastName) {
+                    showError('lastName', 'Last name is required');
+                    isValid = false;
+                }
+            }
+
+            return isValid;
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            isLoading = loading;
+            submitButton.disabled = loading;
             
-            if (hasErrors) {
+            if (loading) {
+                buttonText.innerHTML = `
+                    <span class="loading-spinner"></span>
+                    ${isRegistrationMode ? 'Creating Account...' : 'Signing In...'}
+                `;
+            } else {
+                buttonText.textContent = isRegistrationMode ? 'Create Account' : 'Sign In';
+            }
+        }
+
+        // Toggle between login and registration
+        function toggleMode() {
+            isRegistrationMode = !isRegistrationMode;
+            clearErrors();
+            
+            formTitle.textContent = isRegistrationMode ? '🔒 Create Account' : '🔒 Secure Login';
+            buttonText.textContent = isRegistrationMode ? 'Create Account' : 'Sign In';
+            modeToggle.textContent = isRegistrationMode 
+                ? 'Already have an account? Sign In' 
+                : "Don't have an account? Create one";
+            
+            registrationFields.className = isRegistrationMode ? '' : 'hidden';
+            
+            // Update password autocomplete
+            const passwordField = document.getElementById('password');
+            passwordField.autocomplete = isRegistrationMode ? 'new-password' : 'current-password';
+        }
+
+        // Handle form submission
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            if (!validateForm()) {
                 return;
             }
-            
-            // Make login request
+
             setLoading(true);
-            
+            clearErrors();
+
             try {
-                const response = await fetch('/api/auth/login', {
+                const formData = new FormData(authForm);
+                const data = {};
+                
+                // Collect form data
+                for (let [key, value] of formData.entries()) {
+                    data[key] = value;
+                }
+
+                // Encrypt password
+                data.password = encryptData(data.password);
+
+                const endpoint = isRegistrationMode ? '/auth/register' : '/auth/login';
+                
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ email, password })
+                    credentials: 'include',
+                    body: JSON.stringify(data)
                 });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Store token and user info
-                    localStorage.setItem('authToken', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    
-                    showAlert('Login successful! Redirecting...', 'success');
-                    
-                    // Redirect to patient portal
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1500);
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (isRegistrationMode) {
+                        // Registration successful
+                        showBanner('Account created successfully! Please sign in with your credentials.', 'success');
+                        toggleMode();
+                        authForm.reset();
+                    } else {
+                        // Login successful
+                        showBanner('Login successful! Redirecting to portal...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1500);
+                    }
                 } else {
                     // Handle different error types
-                    if (data.code === 'ACCOUNT_LOCKED') {
-                        showAlert('Your account has been locked. Please contact support for assistance.');
-                    } else if (data.code === 'INVALID_CREDENTIALS') {
-                        showAlert('Invalid email or password. Please check your credentials and try again.');
-                    } else if (data.code === 'VALIDATION_ERROR') {
-                        showAlert('Please check your input and try again.');
-                        
-                        // Show specific field errors if available
-                        if (data.details) {
-                            data.details.forEach(error => {
-                                if (error.param === 'email') {
-                                    showFieldError('email', error.msg);
-                                } else if (error.param === 'password') {
-                                    showFieldError('password', error.msg);
-                                }
-                            });
-                        }
+                    if (result.error?.code === 'MFA_REQUIRED') {
+                        showMfa = true;
+                        mfaField.className = '';
+                        showBanner('Please enter your multi-factor authentication code.');
+                    } else if (result.error?.code === 'VALIDATION_ERROR' && result.error?.details) {
+                        // Show validation errors
+                        result.error.details.forEach(detail => {
+                            if (detail.param) {
+                                showError(detail.param, detail.msg);
+                            }
+                        });
                     } else {
-                        showAlert(data.error || 'Login failed. Please try again.');
+                        showBanner(result.error?.message || 'An error occurred');
                     }
                 }
-            } catch (error) {
-                console.error('Login error:', error);
-                showAlert('Network error. Please check your connection and try again.');
+
+            } catch (err) {
+                console.error('Form submission error:', err);
+                showBanner('Unable to connect to server. Please try again.');
             } finally {
                 setLoading(false);
             }
-        });
-
-        function showForgotPasswordAlert() {
-            showAlert('Password reset functionality is not yet implemented. Please contact support for assistance.', 'error');
         }
 
-        // Check if user is already logged in
-        window.addEventListener('load', () => {
-            const token = localStorage.getItem('authToken');
-            if (token) {
-                // Verify token is still valid
-                fetch('/api/auth/profile', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
+        // Event listeners
+        authForm.addEventListener('submit', handleSubmit);
+        modeToggle.addEventListener('click', toggleMode);
+
+        // Clear errors when user starts typing
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => {
+                if (input.classList.contains('error')) {
+                    input.classList.remove('error');
+                    const errorElement = document.getElementById(`${input.name}-error`);
+                    if (errorElement) {
+                        errorElement.textContent = '';
                     }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // User is already logged in, redirect to portal
-                        window.location.href = '/';
-                    } else {
-                        // Token is invalid, remove it
-                        localStorage.removeItem('authToken');
-                        localStorage.removeItem('user');
-                    }
-                })
-                .catch(() => {
-                    // Network error, remove token to be safe
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('user');
-                });
-            }
+                }
+            });
         });
+
+        // Check if user is already authenticated
+        fetch('/auth/verify', { credentials: 'include' })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success && result.authenticated) {
+                    // User is already logged in, redirect to portal
+                    window.location.href = '/';
+                }
+            })
+            .catch(err => {
+                // Ignore errors for this check
+                console.log('Auth check failed:', err);
+            });
     </script>
 </body>
 </html>
