@@ -19,7 +19,9 @@ import {
   SyncOperation,
   SyncStatus,
   PatientDemographics,
-  MedicalRecord
+  MedicalRecord,
+  LoadingState,
+  ErrorState
 } from '../types';
 import { 
   validateEHRConfiguration, 
@@ -266,7 +268,7 @@ describe('EHR Integration System', () => {
 
       const statusResult = await ehrService.getSyncStatus(operationId);
       expect(statusResult.success).toBe(true);
-      expect(statusResult.data?.operationId).toBe(operationId);
+      expect(statusResult.data?.id).toBe(operationId);
       expect(['syncing', 'completed', 'failed']).toContain(statusResult.data?.status);
     });
 
@@ -552,7 +554,7 @@ describe('EHR Integration System', () => {
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
-      } as EHRConfiguration;
+      } as unknown as EHRConfiguration;
 
       const errors = validateEHRConfiguration(invalidConfig);
       expect(errors.length).toBeGreaterThan(0);
@@ -715,13 +717,12 @@ describe('EHR Integration System', () => {
         hasError: true,
         message: 'Connection failed',
         code: 'CONNECTION_ERROR',
-        retryable: true,
-        details: 'Network timeout after 30 seconds'
+        retryable: true
       };
 
       expect(errorState.hasError).toBe(true);
       expect(errorState.retryable).toBe(true);
-      expect(errorState.details).toBeDefined();
+      expect(errorState.message).toBeDefined();
     });
   });
 

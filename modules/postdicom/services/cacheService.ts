@@ -160,7 +160,7 @@ class RedisCacheProvider extends CacheProvider {
       return value ? JSON.parse(value) : null;
     } catch (error) {
       throw new PostDICOMError(
-        `Redis cache get error: ${error.message}`,
+        `Redis cache get error: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.CACHE_ERROR,
         500
       );
@@ -173,7 +173,7 @@ class RedisCacheProvider extends CacheProvider {
       await this.redisClient.set(key, serialized, ttl || this.config.cacheTTL);
     } catch (error) {
       throw new PostDICOMError(
-        `Redis cache set error: ${error.message}`,
+        `Redis cache set error: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.CACHE_ERROR,
         500
       );
@@ -185,7 +185,7 @@ class RedisCacheProvider extends CacheProvider {
       await this.redisClient.del(key);
     } catch (error) {
       throw new PostDICOMError(
-        `Redis cache delete error: ${error.message}`,
+        `Redis cache delete error: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.CACHE_ERROR,
         500
       );
@@ -197,7 +197,7 @@ class RedisCacheProvider extends CacheProvider {
       await this.redisClient.flushall();
     } catch (error) {
       throw new PostDICOMError(
-        `Redis cache clear error: ${error.message}`,
+        `Redis cache clear error: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.CACHE_ERROR,
         500
       );
@@ -209,7 +209,7 @@ class RedisCacheProvider extends CacheProvider {
       return await this.redisClient.keys(pattern || '*');
     } catch (error) {
       throw new PostDICOMError(
-        `Redis cache keys error: ${error.message}`,
+        `Redis cache keys error: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.CACHE_ERROR,
         500
       );
@@ -284,7 +284,7 @@ class FilesystemCacheProvider extends CacheProvider {
       await this.fs.writeFile(filePath, data);
     } catch (error) {
       throw new PostDICOMError(
-        `Filesystem cache set error: ${error.message}`,
+        `Filesystem cache set error: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.CACHE_ERROR,
         500
       );
@@ -308,7 +308,7 @@ class FilesystemCacheProvider extends CacheProvider {
       ));
     } catch (error) {
       throw new PostDICOMError(
-        `Filesystem cache clear error: ${error.message}`,
+        `Filesystem cache clear error: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.CACHE_ERROR,
         500
       );
@@ -323,7 +323,7 @@ class FilesystemCacheProvider extends CacheProvider {
       if (!pattern) return keys;
       
       const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-      return keys.filter(key => regex.test(key));
+      return keys.filter((key: string) => regex.test(key));
     } catch (error) {
       return [];
     }
@@ -459,7 +459,7 @@ export class PostDICOMCacheService implements ICacheService {
       try {
         await this.executePreFetchRule(rule);
       } catch (error) {
-        console.warn(`Pre-fetch rule '${rule.name}' failed:`, error.message);
+        console.warn(`Pre-fetch rule '${rule.name}' failed:`, error instanceof Error ? error.message : String(error));
       }
     }
   }
@@ -564,7 +564,7 @@ export class PostDICOMCacheService implements ICacheService {
 
         await this.cacheStudyMetadata(mockStudy);
       } catch (error) {
-        console.warn(`Failed to warm up cache for study ${studyUID}:`, error.message);
+        console.warn(`Failed to warm up cache for study ${studyUID}:`, error instanceof Error ? error.message : String(error));
       }
     }
   }

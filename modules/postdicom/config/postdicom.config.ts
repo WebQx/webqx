@@ -235,7 +235,8 @@ export class PostDICOMConfigManager {
       const importedConfig = JSON.parse(configJson);
       this.updateConfig(importedConfig);
     } catch (error) {
-      throw new Error(`Invalid configuration JSON: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Invalid configuration JSON: ${errorMessage}`);
     }
   }
 

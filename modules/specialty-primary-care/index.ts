@@ -10,12 +10,12 @@
  */
 
 export * from './types';
-export * from './components/PrimaryCareInterface';
-export * from './components/ChronicDiseaseManager';
-export * from './components/PreventiveCareScheduler';
+// export * from './components/PrimaryCareInterface'; // TODO: Component not yet implemented
+// export * from './components/ChronicDiseaseManager'; // TODO: Component not yet implemented  
+// export * from './components/PreventiveCareScheduler'; // TODO: Component not yet implemented
 export * from './services/primaryCareService';
-export * from './services/chronicDiseaseService';
-export * from './utils/primaryCareValidation';
+// export * from './services/chronicDiseaseService'; // TODO: Service not yet implemented
+// export * from './utils/primaryCareValidation'; // TODO: Utilities not yet implemented
 
 // Default export for convenience
 export { PrimaryCareService as default } from './services/primaryCareService';

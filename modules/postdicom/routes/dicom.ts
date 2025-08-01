@@ -14,17 +14,54 @@ import {
 import PostDICOMAPIService from '../services/apiService';
 import PostDICOMRBACService from '../services/rbacService';
 import PostDICOMCacheService from '../services/cacheService';
+import { SSOUser, LegacyUser, CompatibleSSOUser } from '../../../sso/types/common';
 
 /**
- * Extended request interface with user context
+ * Type guard to check if user is legacy format
+ */
+function isLegacyUser(user: any): user is LegacyUser {
+  return user && typeof user.userId === 'string' && typeof user.role === 'string' && Array.isArray(user.specialties);
+}
+
+/**
+ * Type guard to check if user is SSO format
+ */
+function isSSOUser(user: any): user is SSOUser {
+  return user && typeof user.id === 'string' && typeof user.email === 'string';
+}
+
+/**
+ * Convert any user format to legacy format for backward compatibility
+ */
+function toLegacyUser(user: SSOUser | LegacyUser | CompatibleSSOUser, sessionId?: string): LegacyUser {
+  if (isLegacyUser(user)) {
+    return user;
+  }
+  
+  if (isSSOUser(user)) {
+    return {
+      userId: user.id,
+      role: user.roles?.[0] || 'user',
+      specialties: user.groups || [],
+      sessionId: sessionId || 'default-session'
+    };
+  }
+  
+  // CompatibleSSOUser case
+  return {
+    userId: (user as any).userId || (user as any).id,
+    role: (user as any).role || (user as any).roles?.[0] || 'user',
+    specialties: (user as any).specialties || (user as any).groups || [],
+    sessionId: (user as any).sessionId || sessionId || 'default-session'
+  };
+}
+
+/**
+ * Extended request interface with user context and file upload support
  */
 interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    role: string;
-    specialties: string[];
-    sessionId: string;
-  };
+  user?: SSOUser | LegacyUser | CompatibleSSOUser;
+  files?: any; // Support for uploaded files
 }
 
 /**
@@ -87,14 +124,17 @@ export function createPostDICOMRouter(): Router {
           });
         }
 
+        // Convert user to legacy format for RBAC compatibility
+        const legacyUser = toLegacyUser(req.user);
+
         const accessRequest = {
           user: {
-            userId: req.user.userId,
-            role: req.user.role as any,
-            specialties: req.user.specialties,
+            userId: legacyUser.userId,
+            role: legacyUser.role as any,
+            specialties: legacyUser.specialties,
             permissions: [],
-            sessionId: req.user.sessionId,
-            ipAddress: req.ip,
+            sessionId: legacyUser.sessionId,
+            ipAddress: req.ip || '',
             userAgent: req.get('User-Agent') || ''
           },
           resourceType: resourceType as any,
@@ -275,7 +315,7 @@ export function createPostDICOMRouter(): Router {
   router.post('/studies/upload', authenticate, authorize('upload', 'study'),
     async (req: AuthenticatedRequest, res: Response) => {
       try {
-        const files = req.files as Express.Multer.File[];
+        const files = req.files as any[];
         if (!files || files.length === 0) {
           return res.status(400).json({
             success: false,
@@ -286,7 +326,7 @@ export function createPostDICOMRouter(): Router {
           });
         }
 
-        // Convert Express.Multer.File to File interface
+        // Convert uploaded files to proper format
         const dicomFiles = files.map(file => ({
           name: file.originalname,
           size: file.size,
@@ -472,7 +512,7 @@ export function createPostDICOMRouter(): Router {
           specialties: ['radiology'],
           permissions: [],
           sessionId: 'session-123',
-          ipAddress: req.ip,
+          ipAddress: req.ip || 'unknown',
           userAgent: req.get('User-Agent') || ''
         };
 

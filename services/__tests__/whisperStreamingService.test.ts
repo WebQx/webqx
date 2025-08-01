@@ -31,7 +31,7 @@ const mockAudioContext = {
 // Mock navigator.mediaDevices
 Object.defineProperty(navigator, 'mediaDevices', {
   value: {
-    getUserMedia: jest.fn().mockResolvedValue(mockMediaStream)
+    getUserMedia: jest.fn().mockResolvedValue(mockMediaStream as unknown as MediaStream)
   },
   writable: true
 });
@@ -279,7 +279,7 @@ describe('WhisperStreamingService', () => {
       await streamingService.stopTranscription();
       
       expect(mockAudioContext.close).toHaveBeenCalled();
-      expect(mockMediaStream.getTracks()[0].stop).toHaveBeenCalled();
+      expect((mockMediaStream as any).getTracks()[0].stop).toHaveBeenCalled();
     });
   });
 });

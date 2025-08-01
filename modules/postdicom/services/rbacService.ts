@@ -137,7 +137,7 @@ export class PostDICOMRBACService {
       };
 
     } catch (error) {
-      await this.logAccess(request, false, `Access check error: ${error.message}`);
+      await this.logAccess(request, false, `Access check error: ${error instanceof Error ? error.message : String(error)}`);
       return {
         granted: false,
         reason: 'Internal access control error',

@@ -54,7 +54,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
   private config: BatchOverlayConfig;
   private pacsService: PACSService;
   private whisperService: WhisperService;
-  private auditLogger: AuditLogger;
+  private auditLogger?: AuditLogger;
   private jobs: Map<string, BatchJob> = new Map();
   private overlayStorage: Map<string, TranscriptionOverlay[]> = new Map();
 
@@ -65,14 +65,13 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
   ) {
     super();
     this.config = {
-      maxConcurrentProcessing: 3,
-      supportedLanguages: ['en', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ar', 'hi', 'pt', 'it', 'ru'],
-      defaultLanguage: 'en',
-      overlayOpacity: 0.8,
-      fontSizes: { small: 12, medium: 16, large: 20 },
-      auditLogging: true,
-      autoSaveEnabled: true,
-      ...config
+      maxConcurrentProcessing: config.maxConcurrentProcessing ?? 3,
+      supportedLanguages: config.supportedLanguages ?? ['en', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'ar', 'hi', 'pt', 'it', 'ru'],
+      defaultLanguage: config.defaultLanguage ?? 'en',
+      overlayOpacity: config.overlayOpacity ?? 0.8,
+      fontSizes: config.fontSizes ?? { small: 12, medium: 16, large: 20 },
+      auditLogging: config.auditLogging ?? true,
+      autoSaveEnabled: config.autoSaveEnabled ?? true
     };
 
     this.pacsService = pacsService;
@@ -112,12 +111,17 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
 
     this.jobs.set(jobId, job);
 
-    this.auditLogger?.logActivity('BATCH_JOB_CREATED', {
-      jobId,
-      name,
-      imageCount: imageIds.length,
-      audioFileCount: audioFiles.length,
-      timestamp: new Date().toISOString()
+    this.auditLogger?.log({
+      action: 'system_backup', // Using closest available action for batch job operations
+      resourceType: 'batch_transcription_job',
+      resourceId: jobId,
+      success: true,
+      context: {
+        jobName: name,
+        imageCount: imageIds.length,
+        audioFileCount: audioFiles.length,
+        timestamp: new Date().toISOString()
+      }
     });
 
     this.emit('jobCreated', { jobId, job });
@@ -141,9 +145,15 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
     job.startTime = new Date();
     job.progress = 0;
 
-    this.auditLogger?.logActivity('BATCH_JOB_STARTED', {
-      jobId,
-      timestamp: new Date().toISOString()
+    this.auditLogger?.log({
+      action: 'system_backup',
+      resourceType: 'batch_transcription_job',
+      resourceId: jobId,
+      success: true,
+      context: {
+        operation: 'job_started',
+        timestamp: new Date().toISOString()
+      }
     });
 
     this.emit('jobStarted', { jobId, job });
@@ -171,12 +181,21 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
             this.emit('jobProgress', { jobId, progress: job.progress, overlay });
             
           } catch (error) {
-            job.errors.push(`Error processing ${audioItem.imageId}: ${error.message}`);
-            this.auditLogger?.logError('BATCH_ITEM_ERROR', {
-              jobId,
-              imageId: audioItem.imageId,
-              error: error.message,
-              timestamp: new Date().toISOString()
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            job.errors.push(`Error processing ${audioItem.imageId}: ${errorMessage}`);
+            this.auditLogger?.log({
+              action: 'system_backup',
+              resourceType: 'batch_transcription_item',
+              resourceId: audioItem.imageId,
+              success: false,
+              errorMessage,
+              context: {
+                operation: 'batch_item_error',
+                jobId,
+                imageId: audioItem.imageId,
+                error: errorMessage,
+                timestamp: new Date().toISOString()
+              }
             });
           }
         });
@@ -192,26 +211,44 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
         await this.saveOverlaysToStorage(jobId, job.results);
       }
 
-      this.auditLogger?.logActivity('BATCH_JOB_COMPLETED', {
-        jobId,
-        status: job.status,
-        resultCount: job.results.length,
-        errorCount: job.errors.length,
-        duration: job.endTime.getTime() - job.startTime!.getTime(),
-        timestamp: new Date().toISOString()
+      this.auditLogger?.log({
+        action: 'system_backup',
+        resourceType: 'batch_transcription_job',
+        resourceId: jobId,
+        success: job.status === 'completed',
+        context: {
+          operation: job.status === 'completed' ? 'job_completed' : 'job_failed',
+          status: job.status,
+          resultCount: job.results.length,
+          errorCount: job.errors.length,
+          duration: job.endTime.getTime() - job.startTime!.getTime(),
+          timestamp: new Date().toISOString()
+        }
       });
 
-      this.emit('jobCompleted', { jobId, job });
+      if (job.status === 'failed') {
+        this.emit('jobFailed', { jobId, job, error: new Error(`Job failed with ${job.errors.length} errors`) });
+      } else {
+        this.emit('jobCompleted', { jobId, job });
+      }
 
     } catch (error) {
       job.status = 'failed';
       job.endTime = new Date();
-      job.errors.push(`Job failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      job.errors.push(`Job failed: ${errorMessage}`);
 
-      this.auditLogger?.logError('BATCH_JOB_FAILED', {
-        jobId,
-        error: error.message,
-        timestamp: new Date().toISOString()
+      this.auditLogger?.log({
+        action: 'system_backup',
+        resourceType: 'batch_transcription_job',
+        resourceId: jobId,
+        success: false,
+        errorMessage,
+        context: {
+          operation: 'job_failed',
+          error: errorMessage,
+          timestamp: new Date().toISOString()
+        }
       });
 
       this.emit('jobFailed', { jobId, job, error });
@@ -227,8 +264,19 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
     language: string
   ): Promise<TranscriptionOverlay> {
     try {
+      // Convert Buffer to File if necessary for whisper service compatibility
+      let fileToProcess: File;
+      
+      if (audioFile instanceof Buffer) {
+        // Create a File-like object from Buffer for Node.js environment
+        const blob = new Blob([audioFile], { type: 'audio/wav' });
+        fileToProcess = new File([blob], 'audio-buffer.wav', { type: 'audio/wav' });
+      } else {
+        fileToProcess = audioFile as File;
+      }
+
       // Transcribe audio using Whisper service
-      const transcriptionResult = await this.whisperService.transcribeAudio(audioFile, {
+      const transcriptionResult = await this.whisperService.transcribeAudio(fileToProcess, {
         language: language === 'auto' ? undefined : language,
         temperature: 0.2,
         prompt: 'Medical imaging description with anatomical and clinical terminology'
@@ -242,14 +290,15 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
         confidence: this.calculateConfidence(transcriptionResult),
         timestamp: new Date(),
         position: this.getDefaultOverlayPosition(),
-        speaker: transcriptionResult.segments?.[0]?.speaker,
+        speaker: 'Unknown', // WhisperResponse doesn't include segment info
         annotations: this.extractMedicalTerms(transcriptionResult.text)
       };
 
       return overlay;
 
     } catch (error) {
-      throw new Error(`Failed to process audio for image ${imageId}: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to process audio for image ${imageId}: ${errorMessage}`);
     }
   }
 
@@ -262,11 +311,18 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
     settings: OverlaySettings
   ): Promise<{ success: boolean; overlayImageUrl?: string }> {
     try {
-      this.auditLogger?.logActivity('OVERLAY_APPLIED', {
-        imageId,
-        overlayId: `${imageId}_${overlay.timestamp.getTime()}`,
-        language: overlay.language,
-        timestamp: new Date().toISOString()
+      this.auditLogger?.log({
+        action: 'edit_patient_data',
+        resourceType: 'transcription_overlay',
+        resourceId: `${imageId}_${overlay.timestamp.getTime()}`,
+        success: true,
+        context: {
+          operation: 'overlay_applied',
+          imageId,
+          overlayId: `${imageId}_${overlay.timestamp.getTime()}`,
+          language: overlay.language,
+          timestamp: new Date().toISOString()
+        }
       });
 
       // In a real implementation, this would use image processing libraries
@@ -279,10 +335,16 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
       };
 
     } catch (error) {
-      this.auditLogger?.logError('OVERLAY_ERROR', {
-        imageId,
-        error: error.message,
-        timestamp: new Date().toISOString()
+      this.auditLogger?.log({
+        action: 'edit_patient_data',
+        resourceType: 'OVERLAY_GENERATION',
+        resourceId: imageId,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        context: {
+          imageId,
+          timestamp: new Date().toISOString()
+        }
       });
 
       return { success: false };
@@ -306,10 +368,16 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
       this.overlayStorage.set(overlay.imageId, existingOverlays);
     });
 
-    this.auditLogger?.logActivity('OVERLAYS_SAVED', {
-      jobId,
-      overlayCount: overlays.length,
-      timestamp: new Date().toISOString()
+    this.auditLogger?.log({
+      action: 'system_backup',
+      resourceType: 'transcription_overlay_storage',
+      resourceId: jobId,
+      success: true,
+      context: {
+        operation: 'overlays_saved',
+        overlayCount: overlays.length,
+        timestamp: new Date().toISOString()
+      }
     });
   }
 
@@ -340,9 +408,15 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
     job.endTime = new Date();
     job.errors.push('Job cancelled by user');
 
-    this.auditLogger?.logActivity('BATCH_JOB_CANCELLED', {
-      jobId,
-      timestamp: new Date().toISOString()
+    this.auditLogger?.log({
+      action: 'system_backup',
+      resourceType: 'batch_transcription_job',
+      resourceId: jobId,
+      success: false,
+      context: {
+        operation: 'job_cancelled',
+        timestamp: new Date().toISOString()
+      }
     });
 
     this.emit('jobCancelled', { jobId, job });
@@ -367,9 +441,15 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
 
     this.jobs.delete(jobId);
 
-    this.auditLogger?.logActivity('BATCH_JOB_DELETED', {
-      jobId,
-      timestamp: new Date().toISOString()
+    this.auditLogger?.log({
+      action: 'delete_patient',
+      resourceType: 'batch_transcription_job',
+      resourceId: jobId,
+      success: true,
+      context: {
+        operation: 'job_deleted',
+        timestamp: new Date().toISOString()
+      }
     });
 
     this.emit('jobDeleted', { jobId });
@@ -380,7 +460,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
    * Generate supported languages list
    */
   getSupportedLanguages(): { code: string; name: string; rtl: boolean }[] {
-    const languageMap = {
+    const languageMap: { [key: string]: { name: string; rtl: boolean } } = {
       'en': { name: 'English', rtl: false },
       'es': { name: 'Spanish', rtl: false },
       'fr': { name: 'French', rtl: false },

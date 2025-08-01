@@ -55,6 +55,14 @@ export type {
   RealTimeEventListener
 } from './services/appointmentBookingService';
 
+// Import types for function signatures
+import type { SMARTOnFHIRConfig, FHIRR4ClientOptions } from './services/fhirR4Client';
+import type { AppointmentBookingConfig } from './services/appointmentBookingService';
+import { FHIRR4Client } from './services/fhirR4Client';
+import { AppointmentBookingService } from './services/appointmentBookingService';
+import { EHRService } from './services/ehrService';
+import { EHRIntegrationPanel } from './components/EHRIntegrationPanel';
+
 export type {
   RealTimeUpdateEvent as RealTimeEvent,
   RealTimeEventType,

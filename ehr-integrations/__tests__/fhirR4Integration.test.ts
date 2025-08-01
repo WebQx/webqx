@@ -27,33 +27,34 @@ import {
 // Mock fetch for testing
 global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 
+// Mock configurations for testing
+const mockSmartConfig: SMARTOnFHIRConfig = {
+  fhirBaseUrl: 'https://test-fhir.example.com',
+  clientId: 'test-client-id',
+  clientSecret: 'test-client-secret',
+  redirectUri: 'https://app.example.com/callback',
+  scopes: ['patient/read', 'patient/Appointment.read', 'patient/Appointment.write']
+};
+
+const mockBookingConfig: AppointmentBookingConfig = {
+  fhirConfig: {
+    baseUrl: 'https://test-fhir.example.com',
+    smartConfig: mockSmartConfig
+  },
+  realTimeConfig: {
+    enableWebSocket: false,
+    pollingInterval: 5000
+  },
+  constraints: {
+    minAdvanceBooking: 60, // 1 hour
+    maxAdvanceBooking: 90, // 90 days
+    allowOverbooking: false
+  }
+};
+
 describe('FHIR R4 Integration', () => {
   let fhirClient: FHIRR4Client;
   let bookingService: AppointmentBookingService;
-  
-  const mockSmartConfig: SMARTOnFHIRConfig = {
-    fhirBaseUrl: 'https://test-fhir.example.com',
-    clientId: 'test-client-id',
-    clientSecret: 'test-client-secret',
-    redirectUri: 'https://app.example.com/callback',
-    scopes: ['patient/read', 'patient/Appointment.read', 'patient/Appointment.write']
-  };
-
-  const mockBookingConfig: AppointmentBookingConfig = {
-    fhirConfig: {
-      baseUrl: 'https://test-fhir.example.com',
-      smartConfig: mockSmartConfig
-    },
-    realTimeConfig: {
-      enableWebSocket: false,
-      pollingInterval: 5000
-    },
-    constraints: {
-      minAdvanceBooking: 60, // 1 hour
-      maxAdvanceBooking: 90, // 90 days
-      allowOverbooking: false
-    }
-  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -223,7 +224,7 @@ describe('FHIR R4 Integration', () => {
               resourceType: 'Patient',
               id: 'patient-123',
               name: [{ given: ['John'], family: 'Doe' }]
-            }
+            } as FHIRPatient
           }]
         };
 
@@ -263,7 +264,7 @@ describe('FHIR R4 Integration', () => {
               start: '2024-01-15T10:00:00Z',
               end: '2024-01-15T10:30:00Z',
               participant: []
-            }
+            } as FHIRAppointment
           }]
         };
 
@@ -758,16 +759,13 @@ describe('FHIR R4 Integration', () => {
       expect(result.confirmation?.confirmationNumber).toBeDefined();
     });
   });
-});
 
-// ============================================================================
-// Performance Tests
-// ============================================================================
+  // ============================================================================
+  // Performance Tests
+  // ============================================================================
 
   describe('Performance Tests', () => {
     test('should handle multiple concurrent bookings', async () => {
-      const bookingService = new AppointmentBookingService(mockBookingConfig);
-      
       // Mock successful responses
       jest.spyOn(bookingService, 'getAvailableSlots').mockResolvedValue([{
         slot: {
@@ -824,26 +822,28 @@ describe('FHIR R4 Integration', () => {
     });
   });
 
-// ============================================================================
-// Accessibility Tests
-// ============================================================================
+  // ============================================================================
+  // Accessibility Tests
+  // ============================================================================
 
-describe('Accessibility Tests', () => {
-  test('should provide proper ARIA labels and roles', () => {
-    // These would typically be tested with React Testing Library
-    // in a separate component test file
-    expect(true).toBe(true); // Placeholder
-  });
+  describe('Accessibility Tests', () => {
+    test('should provide proper ARIA labels and roles', () => {
+      // These would typically be tested with React Testing Library
+      // in a separate component test file
+      expect(true).toBe(true); // Placeholder
+    });
 
-  test('should support keyboard navigation', () => {
-    // Component-specific accessibility tests
-    expect(true).toBe(true); // Placeholder
-  });
+    test('should support keyboard navigation', () => {
+      // Component-specific accessibility tests
+      expect(true).toBe(true); // Placeholder
+    });
 
-  test('should provide screen reader announcements', () => {
-    // Test for proper screen reader support
-    expect(true).toBe(true); // Placeholder
+    test('should provide screen reader announcements', () => {
+      // Test for proper screen reader support
+      expect(true).toBe(true); // Placeholder
+    });
   });
 });
 
+// Export mock configurations for use in other test files
 export { mockSmartConfig, mockBookingConfig };

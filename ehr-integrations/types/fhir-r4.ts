@@ -712,6 +712,8 @@ export interface FHIRAppointmentSearchParams {
   _offset?: number;
   /** Sort order */
   _sort?: string;
+  /** Filter by last updated timestamp */
+  _lastUpdated?: string;
 }
 
 /**
@@ -786,8 +788,6 @@ export interface FHIRBatchRequest {
   useTransaction?: boolean;
 }
 
-// ============================================================================
-// FHIR R4 MedicationRequest Resource
 // ============================================================================
 
 /**

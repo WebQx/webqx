@@ -87,7 +87,7 @@ class AWSS3Provider extends CloudStorageProvider {
       return result.Location;
     } catch (error) {
       throw new PostDICOMError(
-        `Failed to upload to S3: ${error.message}`,
+        `Failed to upload to S3: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.STORAGE_QUOTA_EXCEEDED,
         500
       );
@@ -105,7 +105,7 @@ class AWSS3Provider extends CloudStorageProvider {
       return result.Body;
     } catch (error) {
       throw new PostDICOMError(
-        `Failed to download from S3: ${error.message}`,
+        `Failed to download from S3: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.STUDY_NOT_FOUND,
         404
       );
@@ -122,7 +122,7 @@ class AWSS3Provider extends CloudStorageProvider {
       await this.s3Client.deleteObject(params);
     } catch (error) {
       throw new PostDICOMError(
-        `Failed to delete from S3: ${error.message}`,
+        `Failed to delete from S3: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.NETWORK_ERROR,
         500
       );
@@ -140,7 +140,7 @@ class AWSS3Provider extends CloudStorageProvider {
       return result.Contents?.map((obj: any) => obj.Key) || [];
     } catch (error) {
       throw new PostDICOMError(
-        `Failed to list S3 objects: ${error.message}`,
+        `Failed to list S3 objects: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.NETWORK_ERROR,
         500
       );
@@ -162,7 +162,7 @@ class AWSS3Provider extends CloudStorageProvider {
       };
     } catch (error) {
       throw new PostDICOMError(
-        `Failed to get S3 metadata: ${error.message}`,
+        `Failed to get S3 metadata: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.STUDY_NOT_FOUND,
         404
       );
@@ -180,7 +180,7 @@ class AWSS3Provider extends CloudStorageProvider {
       return await this.s3Client.getSignedUrl('getObject', params);
     } catch (error) {
       throw new PostDICOMError(
-        `Failed to generate S3 presigned URL: ${error.message}`,
+        `Failed to generate S3 presigned URL: ${error instanceof Error ? error.message : String(error)}`,
         ERROR_CODES.NETWORK_ERROR,
         500
       );
@@ -318,9 +318,9 @@ export class PostDICOMStorageService implements IStorageService {
       return {
         success: false,
         error: {
-          code: error.code || ERROR_CODES.NETWORK_ERROR,
-          message: error.message,
-          details: error.details
+          code: (error && typeof error === 'object' && 'code' in error ? String(error.code) : null) || ERROR_CODES.NETWORK_ERROR,
+          message: error instanceof Error ? error.message : String(error),
+          details: error && typeof error === 'object' && 'details' in error ? error.details : undefined
         }
       };
     }
@@ -352,8 +352,8 @@ export class PostDICOMStorageService implements IStorageService {
       return {
         success: false,
         error: {
-          code: error.code || ERROR_CODES.NETWORK_ERROR,
-          message: error.message
+          code: (error && typeof error === 'object' && 'code' in error ? String(error.code) : null) || ERROR_CODES.NETWORK_ERROR,
+          message: error instanceof Error ? error.message : String(error)
         }
       };
     }
@@ -381,8 +381,8 @@ export class PostDICOMStorageService implements IStorageService {
       return {
         success: false,
         error: {
-          code: error.code || ERROR_CODES.NETWORK_ERROR,
-          message: error.message
+          code: (error && typeof error === 'object' && 'code' in error ? String(error.code) : null) || ERROR_CODES.NETWORK_ERROR,
+          message: error instanceof Error ? error.message : String(error)
         }
       };
     }
@@ -424,8 +424,8 @@ export class PostDICOMStorageService implements IStorageService {
       return {
         success: false,
         error: {
-          code: error.code || ERROR_CODES.NETWORK_ERROR,
-          message: error.message
+          code: (error && typeof error === 'object' && 'code' in error ? String(error.code) : null) || ERROR_CODES.NETWORK_ERROR,
+          message: error instanceof Error ? error.message : String(error)
         }
       };
     }
@@ -457,8 +457,8 @@ export class PostDICOMStorageService implements IStorageService {
       return {
         success: false,
         error: {
-          code: error.code || ERROR_CODES.RETENTION_POLICY_ERROR,
-          message: error.message
+          code: (error && typeof error === 'object' && 'code' in error ? String(error.code) : null) || ERROR_CODES.RETENTION_POLICY_ERROR,
+          message: error instanceof Error ? error.message : String(error)
         }
       };
     }

@@ -98,6 +98,13 @@ webqx-ehr/
 │   ├── specialty-neurology/
 │   ├── specialty-pulmonology/
 │   └── specialty-oncology/
+├── sso/
+│   ├── providers/
+│   │   ├── oauth2/
+│   │   └── saml/
+│   ├── middleware/
+│   ├── utils/
+│   └── types/
 ├── ehr-integrations/
 │   ├── openemr/
 │   ├── openmrs/
@@ -185,6 +192,7 @@ Run unit tests with:
 npm run test
 **Key Directories:**
 - 🧩 **modules/** → Specialty-specific clinical modules and transcription services
+- 🔐 **sso/** → Single Sign-On module with OAuth2/SAML provider support
 - 🔗 **ehr-integrations/** → Ready-to-deploy integrations with popular open-source EHR systems
 - 🔐 **auth/** → Authentication and access control mechanisms including provider verification
 - 🌐 **interoperability/** → Standards-compliant data exchange layers (HL7 FHIR, openEHR)
@@ -228,10 +236,54 @@ The WebQX™ PACS Ecosystem unifies diagnostic imaging, specialty-specific dashb
 
 ---
 
+## 🔐 Single Sign-On (SSO) Module
+
+WebQX™ now includes a comprehensive SSO implementation supporting both OAuth2 and SAML protocols for seamless integration with enterprise identity providers.
+
+### 🚀 Features
+- **OAuth2 2.0 Support**: Azure AD, Google, and custom providers
+- **SAML 2.0 Support**: Enterprise federated identity management
+- **Multi-Provider**: Configure multiple identity providers simultaneously
+- **Security-First**: JWT tokens, encryption, audit logging, and session management
+- **Healthcare Compliance**: HIPAA-ready audit trails and secure session handling
+- **Modular Architecture**: Easy to extend with new providers
+
+### 🔧 Quick Start
+
+```typescript
+import { SSOManager } from './sso';
+
+const sso = new SSOManager({
+  secretKey: 'your-256-bit-secret-key',
+  sessionTimeout: 3600000,
+  providers: {
+    oauth2: {
+      azure: {
+        clientId: 'your-azure-client-id',
+        clientSecret: 'your-azure-client-secret',
+        redirectUri: 'https://your-app.com/auth/oauth2/azure/callback',
+        scope: ['openid', 'profile', 'email']
+      }
+    }
+  }
+});
+
+// Express.js integration
+app.get('/dashboard', sso.requireAuth, (req, res) => {
+  res.json({ user: req.user });
+});
+```
+
+### 📚 Documentation
+Complete setup and configuration guide available in [`sso/README.md`](./sso/README.md)
+
+---
+
 ## 🧰 Technical Highlights
 
 | Component     | Functionality                             | Tech Stack        |
 |---------------|--------------------------------------------|-------------------|
+| **SSO Module** | **OAuth2/SAML enterprise authentication** | **TypeScript / Express** |
 | Orthanc       | DICOM storage & REST API                  | C++ / REST        |
 | Dicoogle      | Metadata indexing & plugin SDK            | Java / Lucene     |
 | OHIF Viewer   | Embeddable specialty-aware viewer         | React / Cornerstone |
