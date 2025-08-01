@@ -1,0 +1,87 @@
+{
+  "telehealth": {
+    "title": "Consulta de Telesalud",
+    "session": {
+      "start": "Iniciar Sesión",
+      "end": "Finalizar Sesión",
+      "join": "Unirse a la Sesión",
+      "waiting": "Esperando participantes...",
+      "connected": "Conectado",
+      "disconnected": "Desconectado",
+      "reconnecting": "Reconectando..."
+    },
+    "documentation": {
+      "title": "Documentación Ambiental",
+      "enable": "Habilitar Transcripción",
+      "disable": "Deshabilitar Transcripción",
+      "recording": "Grabando...",
+      "processing": "Procesando transcripción...",
+      "completed": "Transcripción completada",
+      "save": "Guardar Nota Clínica",
+      "saved": "Nota clínica guardada exitosamente",
+      "error": "Error al procesar transcripción"
+    },
+    "video": {
+      "camera": "Cámara",
+      "microphone": "Micrófono",
+      "screen": "Compartir Pantalla",
+      "mute": "Silenciar",
+      "unmute": "Activar Audio",
+      "videoOn": "Video Activado",
+      "videoOff": "Video Desactivado",
+      "fullscreen": "Pantalla Completa",
+      "settings": "Configuración de Video"
+    },
+    "patient": {
+      "title": "Portal del Paciente - Telesalud",
+      "welcome": "Bienvenido a su cita de telesalud",
+      "instructions": "Por favor espere mientras su proveedor se une a la sesión",
+      "technical": "Soporte Técnico",
+      "feedback": "Comentarios de la Sesión"
+    },
+    "provider": {
+      "title": "Portal del Proveedor - Telesalud",
+      "patientInfo": "Información del Paciente",
+      "clinicalNotes": "Notas Clínicas",
+      "prescriptions": "Prescripciones",
+      "followUp": "Instrucciones de Seguimiento",
+      "endVisit": "Finalizar Visita"
+    },
+    "messaging": {
+      "postVisit": "Resumen Post-Visita",
+      "followUp": "Instrucciones de Seguimiento",
+      "sendSummary": "Enviar Resumen al Paciente",
+      "summaryTemplate": "Plantilla de Resumen de Visita",
+      "instructionsTemplate": "Plantilla de Instrucciones"
+    },
+    "language": {
+      "select": "Seleccionar Idioma",
+      "auto": "Detectar Automáticamente",
+      "translate": "Traducir",
+      "original": "Idioma Original",
+      "translation": "Traducción"
+    },
+    "accessibility": {
+      "transcription": "Transcripción en vivo disponible",
+      "captions": "Habilitar subtítulos",
+      "highContrast": "Modo alto contraste",
+      "largeText": "Modo texto grande",
+      "screenReader": "Soporte de lector de pantalla habilitado"
+    },
+    "errors": {
+      "sessionNotFound": "Sesión no encontrada",
+      "connectionFailed": "Falló la conexión",
+      "permissionDenied": "Permiso denegado",
+      "deviceError": "Error de acceso al dispositivo",
+      "transcriptionError": "Error del servicio de transcripción",
+      "saveFailed": "Error al guardar la nota clínica"
+    },
+    "status": {
+      "connecting": "Conectando...",
+      "connected": "Conectado",
+      "disconnected": "Desconectado",
+      "error": "Error",
+      "ready": "Listo"
+    }
+  }
+}

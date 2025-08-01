@@ -1,0 +1,87 @@
+{
+  "telehealth": {
+    "title": "Consultation de Télésanté",
+    "session": {
+      "start": "Démarrer la Session",
+      "end": "Terminer la Session",
+      "join": "Rejoindre la Session",
+      "waiting": "En attente des participants...",
+      "connected": "Connecté",
+      "disconnected": "Déconnecté",
+      "reconnecting": "Reconnexion..."
+    },
+    "documentation": {
+      "title": "Documentation Ambiante",
+      "enable": "Activer la Transcription",
+      "disable": "Désactiver la Transcription",
+      "recording": "Enregistrement...",
+      "processing": "Traitement de la transcription...",
+      "completed": "Transcription terminée",
+      "save": "Sauvegarder la Note Clinique",
+      "saved": "Note clinique sauvegardée avec succès",
+      "error": "Échec du traitement de la transcription"
+    },
+    "video": {
+      "camera": "Caméra",
+      "microphone": "Microphone",
+      "screen": "Partage d'Écran",
+      "mute": "Couper le Son",
+      "unmute": "Activer le Son",
+      "videoOn": "Vidéo Activée",
+      "videoOff": "Vidéo Désactivée",
+      "fullscreen": "Plein Écran",
+      "settings": "Paramètres Vidéo"
+    },
+    "patient": {
+      "title": "Portail Patient - Télésanté",
+      "welcome": "Bienvenue à votre rendez-vous de télésanté",
+      "instructions": "Veuillez patienter pendant que votre prestataire rejoint la session",
+      "technical": "Support Technique",
+      "feedback": "Retour sur la Session"
+    },
+    "provider": {
+      "title": "Portail Prestataire - Télésanté",
+      "patientInfo": "Informations Patient",
+      "clinicalNotes": "Notes Cliniques",
+      "prescriptions": "Prescriptions",
+      "followUp": "Instructions de Suivi",
+      "endVisit": "Terminer la Visite"
+    },
+    "messaging": {
+      "postVisit": "Résumé Post-Visite",
+      "followUp": "Instructions de Suivi",
+      "sendSummary": "Envoyer le Résumé au Patient",
+      "summaryTemplate": "Modèle de Résumé de Visite",
+      "instructionsTemplate": "Modèle d'Instructions"
+    },
+    "language": {
+      "select": "Sélectionner la Langue",
+      "auto": "Détection Automatique",
+      "translate": "Traduire",
+      "original": "Langue Originale",
+      "translation": "Traduction"
+    },
+    "accessibility": {
+      "transcription": "Transcription en direct disponible",
+      "captions": "Activer les sous-titres",
+      "highContrast": "Mode haut contraste",
+      "largeText": "Mode texte large",
+      "screenReader": "Support de lecteur d'écran activé"
+    },
+    "errors": {
+      "sessionNotFound": "Session non trouvée",
+      "connectionFailed": "Échec de la connexion",
+      "permissionDenied": "Permission refusée",
+      "deviceError": "Erreur d'accès au périphérique",
+      "transcriptionError": "Erreur du service de transcription",
+      "saveFailed": "Échec de la sauvegarde de la note clinique"
+    },
+    "status": {
+      "connecting": "Connexion...",
+      "connected": "Connecté",
+      "disconnected": "Déconnecté",
+      "error": "Erreur",
+      "ready": "Prêt"
+    }
+  }
+}

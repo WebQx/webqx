@@ -1,0 +1,87 @@
+{
+  "telehealth": {
+    "title": "Telehealth Consultation",
+    "session": {
+      "start": "Start Session",
+      "end": "End Session",
+      "join": "Join Session",
+      "waiting": "Waiting for participants...",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "reconnecting": "Reconnecting..."
+    },
+    "documentation": {
+      "title": "Ambient Documentation",
+      "enable": "Enable Transcription",
+      "disable": "Disable Transcription",
+      "recording": "Recording...",
+      "processing": "Processing transcription...",
+      "completed": "Transcription completed",
+      "save": "Save Clinical Note",
+      "saved": "Clinical note saved successfully",
+      "error": "Failed to process transcription"
+    },
+    "video": {
+      "camera": "Camera",
+      "microphone": "Microphone",
+      "screen": "Screen Share",
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "videoOn": "Video On",
+      "videoOff": "Video Off",
+      "fullscreen": "Fullscreen",
+      "settings": "Video Settings"
+    },
+    "patient": {
+      "title": "Patient Portal - Telehealth",
+      "welcome": "Welcome to your telehealth appointment",
+      "instructions": "Please wait while your provider joins the session",
+      "technical": "Technical Support",
+      "feedback": "Session Feedback"
+    },
+    "provider": {
+      "title": "Provider Portal - Telehealth",
+      "patientInfo": "Patient Information",
+      "clinicalNotes": "Clinical Notes",
+      "prescriptions": "Prescriptions",
+      "followUp": "Follow-up Instructions",
+      "endVisit": "End Visit"
+    },
+    "messaging": {
+      "postVisit": "Post-Visit Summary",
+      "followUp": "Follow-up Instructions",
+      "sendSummary": "Send Summary to Patient",
+      "summaryTemplate": "Visit Summary Template",
+      "instructionsTemplate": "Instructions Template"
+    },
+    "language": {
+      "select": "Select Language",
+      "auto": "Auto-detect",
+      "translate": "Translate",
+      "original": "Original Language",
+      "translation": "Translation"
+    },
+    "accessibility": {
+      "transcription": "Live transcription available",
+      "captions": "Enable captions",
+      "highContrast": "High contrast mode",
+      "largeText": "Large text mode",
+      "screenReader": "Screen reader support enabled"
+    },
+    "errors": {
+      "sessionNotFound": "Session not found",
+      "connectionFailed": "Connection failed",
+      "permissionDenied": "Permission denied",
+      "deviceError": "Device access error",
+      "transcriptionError": "Transcription service error",
+      "saveFailed": "Failed to save clinical note"
+    },
+    "status": {
+      "connecting": "Connecting...",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "error": "Error",
+      "ready": "Ready"
+    }
+  }
+}
