@@ -1,0 +1,237 @@
+version: '3.8'
+
+services:
+  # Main Telehealth Manager
+  telehealth-manager:
+    build:
+      context: ../../../
+      dockerfile: modules/telehealth/deployment/full-suite/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - TELEHEALTH_DEPLOYMENT_MODE=full-suite
+      - TELEHEALTH_ENABLED_COMPONENTS=video-consultation,messaging,ehr-integration,fhir-sync
+      - TELEHEALTH_SECRET_KEY=${TELEHEALTH_SECRET_KEY}
+      - TELEHEALTH_LOG_LEVEL=${TELEHEALTH_LOG_LEVEL:-info}
+      - TELEHEALTH_AUDIT_ENABLED=${TELEHEALTH_AUDIT_ENABLED:-true}
+      
+      # Video Consultation Config
+      - JITSI_DOMAIN=${JITSI_DOMAIN}
+      - JITSI_APP_ID=${JITSI_APP_ID}
+      - JITSI_JWT_APP_SECRET=${JITSI_JWT_APP_SECRET}
+      - VIDEO_RECORDING_ENABLED=${VIDEO_RECORDING_ENABLED:-false}
+      - VIDEO_RECORDING_STORAGE=${VIDEO_RECORDING_STORAGE:-local}
+      
+      # Messaging Config
+      - MATRIX_HOMESERVER_URL=${MATRIX_HOMESERVER_URL}
+      - MATRIX_ACCESS_TOKEN=${MATRIX_ACCESS_TOKEN}
+      - MATRIX_USER_ID=${MATRIX_USER_ID}
+      - MATRIX_DEVICE_ID=${MATRIX_DEVICE_ID}
+      - MATRIX_ENABLE_E2EE=${MATRIX_ENABLE_E2EE:-true}
+      
+      # EHR Integration Config
+      - OPENEMR_BASE_URL=${OPENEMR_BASE_URL}
+      - OPENEMR_API_KEY=${OPENEMR_API_KEY}
+      - OPENEMR_CLIENT_ID=${OPENEMR_CLIENT_ID}
+      - EHR_SYNC_INTERVAL=${EHR_SYNC_INTERVAL:-60000}
+      
+      # FHIR Sync Config
+      - FHIR_SERVER_BASE_URL=${FHIR_SERVER_BASE_URL}
+      - FHIR_SERVER_VERSION=${FHIR_SERVER_VERSION:-R4}
+      - FHIR_AUTH_TYPE=${FHIR_AUTH_TYPE:-oauth2}
+      - FHIR_CLIENT_ID=${FHIR_CLIENT_ID}
+      - FHIR_CLIENT_SECRET=${FHIR_CLIENT_SECRET}
+      - FHIR_SYNC_MODE=${FHIR_SYNC_MODE:-real-time}
+    ports:
+      - "3000:3000"
+    volumes:
+      - telehealth_data:/app/data
+      - telehealth_logs:/app/logs
+      - telehealth_recordings:/app/recordings
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - telehealth_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health/telehealth"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Redis for session management and caching
+  redis:
+    image: redis:7-alpine
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - telehealth_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL for audit logs and metadata
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-webqx_telehealth}
+      - POSTGRES_USER=${POSTGRES_USER:-webqx}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - telehealth_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-webqx}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx load balancer and reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - telehealth_static:/usr/share/nginx/html
+    depends_on:
+      - telehealth-manager
+    networks:
+      - telehealth_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - telehealth_network
+    restart: unless-stopped
+
+  # Grafana for monitoring dashboards
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - telehealth_network
+    restart: unless-stopped
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    volumes:
+      - jaeger_data:/tmp
+    networks:
+      - telehealth_network
+    restart: unless-stopped
+
+  # Elasticsearch for log aggregation
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - telehealth_network
+    restart: unless-stopped
+
+  # Logstash for log processing
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - telehealth_logs:/usr/share/logstash/logs
+    depends_on:
+      - elasticsearch
+    networks:
+      - telehealth_network
+    restart: unless-stopped
+
+  # Kibana for log visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - telehealth_network
+    restart: unless-stopped
+
+volumes:
+  telehealth_data:
+    driver: local
+  telehealth_logs:
+    driver: local
+  telehealth_recordings:
+    driver: local
+  telehealth_static:
+    driver: local
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  jaeger_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+
+networks:
+  telehealth_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

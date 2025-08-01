@@ -9,7 +9,15 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "telehealth:start:full": "cd modules/telehealth/deployment/full-suite && docker-compose up -d",
+    "telehealth:start:video": "cd modules/telehealth/deployment/standalone/video-consultation && docker-compose up -d",
+    "telehealth:start:messaging": "cd modules/telehealth/deployment/standalone/messaging && docker-compose up -d",
+    "telehealth:start:ehr": "cd modules/telehealth/deployment/standalone/ehr-integration && docker-compose up -d",
+    "telehealth:start:fhir": "cd modules/telehealth/deployment/standalone/fhir-sync && docker-compose up -d",
+    "telehealth:stop": "cd modules/telehealth/deployment && find . -name docker-compose.yml -execdir docker-compose down \\;",
+    "telehealth:test": "jest modules/telehealth/tests/",
+    "telehealth:health": "curl -f http://localhost:3000/health/telehealth"
   },
   "keywords": [
     "healthcare",
