@@ -189,6 +189,11 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
+// Serve telehealth demo page
+app.get('/telehealth-demo', (req, res) => {
+    res.sendFile(path.join(__dirname, 'telehealth-demo.html'));
+});
+
 // Authentication middleware for patient portal
 const authenticatePortalAccess = (req, res, next) => {
     // Skip authentication for login page and auth API
