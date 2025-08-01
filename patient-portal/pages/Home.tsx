@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 import LiteracyAssistant from '../components/LiteracyAssistant';
+import DrugInteractionChecker from '../components/DrugInteractionChecker';
 import Header from '../components/Header';
 import PrescriptionDosage from '../components/PrescriptionDosage';
 import SpecialtyPicker from '../components/SpecialtyPicker';
@@ -68,6 +69,7 @@ const Home: React.FC<HomeProps> = ({
       onLanguageChange(newLanguage);
     }
   };
+
   // Sample dosage data for demonstration
   const sampleDosages = [
     {
@@ -239,6 +241,20 @@ const Home: React.FC<HomeProps> = ({
               </ul>
             </div>
           </div>
+        </section>
+
+        {/* Drug Interaction Checker */}
+        <section 
+          className="drug-interaction-section"
+          role="region"
+          aria-labelledby="drug-interaction-heading"
+        >
+          <h2 id="drug-interaction-heading" className="section-title">
+            💊 Drug Safety Tools
+          </h2>
+          <DrugInteractionChecker 
+            className="portal-drug-checker"
+          />
         </section>
 
         {/* Prescription Dosage Section */}

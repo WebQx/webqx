@@ -1,0 +1,494 @@
+{
+  "id": "webqx-healthcare",
+  "realm": "webqx-healthcare",
+  "displayName": "WebQX Healthcare",
+  "displayNameHtml": "<strong>WebQX Healthcare</strong>",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": true,
+  "rememberMe": true,
+  "verifyEmail": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 30,
+  "requiredCredentials": ["password"],
+  "passwordPolicy": "hashIterations(27500) and specialChars(1) and upperCase(1) and lowerCase(1) and digits(1) and notUsername() and length(8)",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyInitialCounter": 0,
+  "otpPolicyDigits": 6,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyPeriod": 30,
+  "accessTokenLifespan": 3600,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanUserAction": 300,
+  "accessCodeLifespanLogin": 1800,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "actionTokenGeneratedByUserLifespan": 300,
+  "defaultRoles": ["default-roles-webqx-healthcare"],
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 10,
+      "config": {}
+    },
+    {
+      "alias": "terms_and_conditions",
+      "name": "Terms and Conditions",
+      "providerId": "terms_and_conditions",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 20,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PROFILE",
+      "name": "Update Profile",
+      "providerId": "UPDATE_PROFILE",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 40,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "id": "default-roles-webqx-healthcare",
+        "name": "default-roles-webqx-healthcare",
+        "description": "${role_default-roles}",
+        "composite": true,
+        "composites": {
+          "realm": ["offline_access", "uma_authorization"],
+          "client": {
+            "account": ["view-profile", "manage-account"]
+          }
+        }
+      },
+      {
+        "name": "patient",
+        "description": "Patient role with access to own records"
+      },
+      {
+        "name": "healthcare-provider",
+        "description": "General healthcare provider role"
+      },
+      {
+        "name": "primary-care-physician",
+        "description": "Primary care physician with full patient access"
+      },
+      {
+        "name": "specialist-physician",
+        "description": "Specialist physician with specialty-specific access"
+      },
+      {
+        "name": "nurse",
+        "description": "Nursing staff with patient care access"
+      },
+      {
+        "name": "resident",
+        "description": "Medical resident with supervised access"
+      },
+      {
+        "name": "fellow",
+        "description": "Medical fellow with advanced training access"
+      },
+      {
+        "name": "attending-physician",
+        "description": "Attending physician with full supervisory access"
+      },
+      {
+        "name": "healthcare-admin",
+        "description": "Healthcare administrator with system management access"
+      },
+      {
+        "name": "billing-staff",
+        "description": "Billing and administrative staff"
+      },
+      {
+        "name": "pharmacist",
+        "description": "Pharmacist with medication management access"
+      },
+      {
+        "name": "lab-technician",
+        "description": "Laboratory technician with lab results access"
+      },
+      {
+        "name": "radiology-technician",
+        "description": "Radiology technician with imaging access"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "Patients",
+      "path": "/Patients",
+      "realmRoles": ["patient"]
+    },
+    {
+      "name": "Healthcare Providers",
+      "path": "/Healthcare Providers",
+      "subGroups": [
+        {
+          "name": "Primary Care",
+          "path": "/Healthcare Providers/Primary Care",
+          "realmRoles": ["healthcare-provider", "primary-care-physician"]
+        },
+        {
+          "name": "Specialists",
+          "path": "/Healthcare Providers/Specialists",
+          "realmRoles": ["healthcare-provider", "specialist-physician"],
+          "subGroups": [
+            {
+              "name": "Cardiology",
+              "path": "/Healthcare Providers/Specialists/Cardiology",
+              "attributes": {
+                "specialty": ["CARDIOLOGY"]
+              }
+            },
+            {
+              "name": "Radiology", 
+              "path": "/Healthcare Providers/Specialists/Radiology",
+              "attributes": {
+                "specialty": ["RADIOLOGY"]
+              }
+            },
+            {
+              "name": "Oncology",
+              "path": "/Healthcare Providers/Specialists/Oncology", 
+              "attributes": {
+                "specialty": ["ONCOLOGY"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Nursing",
+          "path": "/Healthcare Providers/Nursing",
+          "realmRoles": ["nurse"]
+        },
+        {
+          "name": "Residents",
+          "path": "/Healthcare Providers/Residents",
+          "realmRoles": ["resident"]
+        },
+        {
+          "name": "Fellows",
+          "path": "/Healthcare Providers/Fellows", 
+          "realmRoles": ["fellow"]
+        },
+        {
+          "name": "Attending Physicians",
+          "path": "/Healthcare Providers/Attending Physicians",
+          "realmRoles": ["attending-physician"]
+        }
+      ]
+    },
+    {
+      "name": "Administrative Staff",
+      "path": "/Administrative Staff",
+      "subGroups": [
+        {
+          "name": "Healthcare Administrators",
+          "path": "/Administrative Staff/Healthcare Administrators",
+          "realmRoles": ["healthcare-admin"]
+        },
+        {
+          "name": "Billing Staff",
+          "path": "/Administrative Staff/Billing Staff",
+          "realmRoles": ["billing-staff"]
+        }
+      ]
+    },
+    {
+      "name": "Support Staff",
+      "path": "/Support Staff",
+      "subGroups": [
+        {
+          "name": "Pharmacists",
+          "path": "/Support Staff/Pharmacists",
+          "realmRoles": ["pharmacist"]
+        },
+        {
+          "name": "Lab Technicians",
+          "path": "/Support Staff/Lab Technicians",
+          "realmRoles": ["lab-technician"]
+        },
+        {
+          "name": "Radiology Technicians",
+          "path": "/Support Staff/Radiology Technicians",
+          "realmRoles": ["radiology-technician"]
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "id": "webqx-openemr",
+      "clientId": "webqx-openemr",
+      "name": "WebQX OpenEMR Integration",
+      "description": "OAuth2/OpenID Connect client for WebQX OpenEMR integration",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "your-client-secret-here",
+      "redirectUris": [
+        "http://localhost:3000/auth/callback",
+        "https://your-domain.com/auth/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "https://your-domain.com"
+      ],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "saml.assertion.signature": "false",
+        "saml.force.post.binding": "false",
+        "saml.multivalued.roles": "false",
+        "saml.encrypt": "false",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "backchannel.logout.revoke.offline.tokens": "false",
+        "saml.server.signature": "false",
+        "saml.server.signature.keyinfo.ext": "false",
+        "exclude.session.state.from.auth.response": "false",
+        "backchannel.logout.session.required": "true",
+        "client_credentials.use_refresh_token": "false",
+        "saml_force_name_id_format": "false",
+        "saml.client.signature": "false",
+        "tls.client.certificate.bound.access.tokens": "false",
+        "saml.authnstatement": "false",
+        "display.on.consent.screen": "false",
+        "saml.onetimeuse.condition": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "name": "email verified",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "emailVerified",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "email_verified",
+            "jsonType.label": "boolean"
+          }
+        },
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "foo",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "NPI Number",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "npi_number",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "npi_number",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "Medical License",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "medical_license",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "medical_license",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "DEA Number",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "dea_number",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "dea_number",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "Medical Specialty",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "specialty",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "specialty",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "Provider Verification Status",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "provider_verification_status",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "provider_verification_status",
+            "jsonType.label": "String"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "role_list",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "healthcare",
+      "description": "Healthcare-specific scopes",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "healthcare role",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "healthcare_roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "defaultDefaultClientScopes": [
+    "role_list",
+    "profile",
+    "email",
+    "web-origins"
+  ],
+  "defaultOptionalClientScopes": [
+    "offline_access",
+    "address",
+    "phone",
+    "microprofile-jwt",
+    "healthcare"
+  ],
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff",
+    "xRobotsTag": "none",
+    "xFrameOptions": "SAMEORIGIN",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+    "xXSSProtection": "1; mode=block",
+    "strictTransportSecurity": "max-age=31536000; includeSubDomains"
+  },
+  "smtpServer": {},
+  "eventsEnabled": true,
+  "eventsListeners": ["jboss-logging"],
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "LOGOUT",
+    "LOGOUT_ERROR",
+    "REGISTER",
+    "REGISTER_ERROR",
+    "UPDATE_PASSWORD",
+    "UPDATE_PASSWORD_ERROR",
+    "UPDATE_PROFILE",
+    "UPDATE_PROFILE_ERROR",
+    "VERIFY_EMAIL",
+    "VERIFY_EMAIL_ERROR"
+  ],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "identityProviders": [],
+  "identityProviderMappers": [],
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en", "es", "fr", "de", "pt"],
+  "defaultLocale": "en"
+}

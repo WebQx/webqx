@@ -1,0 +1,502 @@
+/**
+ * @fileoverview CSS Styles for Clinical Voice Transcription Component
+ * 
+ * Provides comprehensive styling for the clinical voice transcription interface
+ * with healthcare-focused design, accessibility features, and responsive layout.
+ * 
+ * @author WebQX Health
+ * @version 1.0.0
+ */
+
+.clinical-voice-transcription {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.transcription-header {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.transcription-title {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a365d;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.patient-info {
+  font-size: 0.9rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.recording-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.record-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  background: #3182ce;
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 180px;
+  justify-content: center;
+}
+
+.record-button:hover:not(:disabled) {
+  background: #2c5aa0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.record-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.record-button.recording {
+  background: #e53e3e;
+  animation: pulse 2s infinite;
+}
+
+.record-button.recording:hover:not(:disabled) {
+  background: #c53030;
+}
+
+.record-button.processing {
+  background: #ed8936;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.processing-spinner {
+  animation: spin 1s linear infinite;
+  font-size: 1.2em;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.record-icon,
+.stop-icon {
+  font-size: 1.2em;
+}
+
+.button-text {
+  font-weight: 600;
+}
+
+.recording-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #4a5568;
+  min-width: 200px;
+}
+
+.duration {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.audio-level-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.audio-level-label {
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.audio-level-bar {
+  width: 100px;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #cbd5e0;
+}
+
+.audio-level-fill {
+  height: 100%;
+  background: linear-gradient(to right, #48bb78, #38a169, #ed8936, #e53e3e);
+  transition: width 0.1s ease;
+  border-radius: 2px;
+}
+
+.mode-indicator {
+  font-size: 0.85rem;
+  color: #718096;
+  font-style: italic;
+  background: #edf2f7;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e0;
+}
+
+.transcription-display {
+  min-height: 150px;
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.current-transcription,
+.final-transcription {
+  margin-bottom: 15px;
+}
+
+.transcription-label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #2d3748;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.transcription-text {
+  line-height: 1.6;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 1rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.transcription-text.interim {
+  background: #fff5e6;
+  border: 1px dashed #ed8936;
+  color: #744210;
+  font-style: italic;
+  position: relative;
+}
+
+.transcription-text.interim::after {
+  content: '●';
+  color: #ed8936;
+  animation: blink 1s infinite;
+  margin-left: 4px;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.transcription-text.final {
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  color: #22543d;
+  font-weight: 500;
+}
+
+.transcription-placeholder {
+  color: #a0aec0;
+  font-style: italic;
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fed7d7;
+  border: 1px solid #feb2b2;
+  border-radius: 6px;
+  color: #742a2a;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+.error-icon {
+  font-size: 1.2em;
+  flex-shrink: 0;
+}
+
+.error-text {
+  flex: 1;
+}
+
+.clinical-context {
+  padding: 12px;
+  background: #ebf8ff;
+  border: 1px solid #90cdf4;
+  border-radius: 6px;
+  margin-top: 15px;
+}
+
+.context-label {
+  font-weight: 600;
+  color: #2c5aa0;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.context-text {
+  color: #2a4365;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.accessibility-info {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Focus styles for accessibility */
+.record-button:focus,
+.record-button:focus-visible {
+  outline: 2px solid #3182ce;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .clinical-voice-transcription {
+    border-color: #000;
+  }
+  
+  .transcription-text.interim {
+    border-color: #cc6600;
+    background: #fff8dc;
+  }
+  
+  .transcription-text.final {
+    border-color: #006600;
+    background: #f5fff5;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .record-button,
+  .processing-spinner,
+  .audio-level-fill,
+  .transcription-text.interim::after {
+    animation: none;
+    transition: none;
+  }
+  
+  .record-button:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .clinical-voice-transcription {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .transcription-header {
+    border-color: #4a5568;
+  }
+  
+  .transcription-title {
+    color: #e2e8f0;
+  }
+  
+  .patient-info {
+    color: #cbd5e0;
+  }
+  
+  .recording-controls {
+    background: #1a202c;
+    border-color: #4a5568;
+  }
+  
+  .transcription-display {
+    background: #1a202c;
+    border-color: #4a5568;
+  }
+  
+  .transcription-placeholder {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #718096;
+  }
+  
+  .mode-indicator {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #cbd5e0;
+  }
+}
+
+/* Mobile responsive design */
+@media (max-width: 768px) {
+  .clinical-voice-transcription {
+    padding: 15px;
+    margin: 10px;
+  }
+  
+  .recording-controls {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .control-section {
+    width: 100%;
+  }
+  
+  .record-button {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .recording-status {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .audio-level-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  
+  .audio-level-label {
+    min-width: auto;
+  }
+  
+  .audio-level-bar {
+    width: 100%;
+  }
+  
+  .transcription-title {
+    font-size: 1.3rem;
+  }
+  
+  .transcription-display {
+    min-height: 120px;
+    padding: 12px;
+  }
+  
+  .mode-indicator {
+    text-align: center;
+    width: 100%;
+  }
+}
+
+/* Print styles */
+@media print {
+  .clinical-voice-transcription {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+  
+  .recording-controls {
+    display: none;
+  }
+  
+  .error-message {
+    display: none;
+  }
+  
+  .transcription-text {
+    background: white !important;
+    border: 1px solid #000 !important;
+    color: #000 !important;
+  }
+}
+
+/* Animation for record button state changes */
+.record-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.record-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.record-button:hover::before {
+  left: 100%;
+}
+
+/* Enhanced visual feedback for audio levels */
+.audio-level-bar {
+  position: relative;
+}
+
+.audio-level-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to right, 
+    rgba(72, 187, 120, 0.3) 0%, 
+    rgba(56, 161, 105, 0.3) 25%, 
+    rgba(237, 137, 54, 0.3) 75%, 
+    rgba(229, 62, 62, 0.3) 100%);
+  border-radius: 3px;
+  pointer-events: none;
+}

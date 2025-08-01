@@ -16,7 +16,7 @@ Built with React, supporting user-friendly access to clinical services:
 
 - 📅 **Appointments & Scheduling** → LibreHealth Toolkit / OpenEMR calendar  
 - 💊 **Pharmacy Access** → OpenEMR Rx + FDA APIs  
-- 🧪 **Lab Results Viewer** → HL7/FHIR integration via Mirth Connect  
+- 🧪 **Lab Results Viewer** → HL7/FHIR integration via Mirth Connect with filtering and sorting  
 - 📬 **Secure Messaging** → Medplum or Matrix protocol with encryption  
 - 💵 **Billing & Insurance** → OpenMRS + Bahmni billing packages  
 - 📚 **Health Literacy Assistant** → Whisper + spaCy or Haystack NLP  
@@ -48,7 +48,47 @@ Role-based access and modular configuration for deployment:
 ## 📁 WebQx-EHR Directory Structure  
 The WebQx-EHR project follows a modular directory structure designed for scalability and maintainability across healthcare specialties and integrations:
 
-```
+# 🌐 Unified Provider Login System for Open-Source EHRs
+
+A modular authentication and access platform designed to enable healthcare providers to securely log into multiple open-source EHR systems from a single portal. Built for flexibility, interoperability, and accessibility.
+
+## 🔍 Overview
+
+This system enables unified access across diverse EHR platforms such as:
+- OpenEMR
+- OpenMRS
+- HospitalRun
+- GNU Health
+- Ottehr (FHIR-native)
+
+Using **Keycloak** for identity and access management, the architecture supports OAuth2, OpenID Connect, SAML, and LDAP integration—perfect for clinics, academic institutions, or digital health innovators.
+
+## 🚀 Features
+
+- ✅ Single Sign-On (SSO) across multiple EHRs
+- 🧩 Modular adapters for different EHR technologies
+- 🔐 Role-based access control (Provider, Nurse, Admin, etc.)
+- 📊 Shared services for audit logging, analytics, and multilingual support
+- 🧠 FHIR-native compatibility with HL7/FHIR bridge support
+- 💡 Customizable provider dashboard with shortcuts and notifications
+
+## 🛠️ Architecture
+
+> See [Architecture Diagram](./docs/architecture-diagram.png)
+
+```text
+Unified Provider Login
+├── Identity & Access (Keycloak, OAuth2/SAML)
+├── Provider Portal UI (Dashboard, Login, EHR Launchpad)
+├── EHR Integrations
+│   ├── OpenEMR: API Gateway + Plugin
+│   ├── HospitalRun: FHIR Adapter
+│   ├── Ottehr: Direct FHIR Auth
+│   └── GNU Health, OpenMRS: REST/SAML Bridges
+└── Shared Services
+    ├── Audit Logging
+    ├── Patient Search
+    └── Accessibility (Multilingual UI, WCAG)
 webqx-ehr/
 ├── modules/
 │   ├── transcription/
@@ -87,7 +127,69 @@ webqx-ehr/
     ├── NDAs/
     └── IP-assignment/
 ```
+# 🏥 Modular Health Interoperability Infrastructure
 
+A scalable, patient-centered infrastructure designed to integrate diverse Electronic Health Record (EHR) systems through secure adapters and open standards. Built with community clinics, research partnerships, and multilingual accessibility in mind.
+
+---
+
+## 📌 Project Goals
+
+- Enable seamless data exchange across disparate EHRs (e.g. OpenEMR, Epic, Cerner)
+- Leverage HL7/FHIR standards via Mirth Connect and custom API adapters
+- Empower clinics with open-source tools while supporting enterprise security
+- Promote equity through multilingual support and modular access models
+
+---
+
+## 🧱 Architecture Overview
+
+- **Authentication Layer**: OAuth2 / Keycloak federation
+- **Adapter Plugins**: Modular connectors for OpenEMR, Epic, Cerner, etc.
+- **API Gateway**: FHIR-compliant endpoints for interoperability
+- **Session Control**: Stateless tokens and audit trails
+- **Frontend Module**: React-based dashboard for clinicians and staff
+- **Multilingual Support**: i18n-ready UI, patient-facing modules
+
+![Diagram Placeholder]  
+_Use `docs/assets/infra_map.png` to render your infrastructure map here._
+
+---
+
+## 🔧 Technologies Used
+
+| Layer           | Tech Stack                  |
+|----------------|-----------------------------|
+| Backend         | Node.js, Express, Mirth Connect |
+| Authentication  | Keycloak, OAuth2            |
+| Interoperability| HL7 v2/v3, FHIR, REST APIs  |
+| Frontend        | React.js, Tailwind CSS      |
+| Data Storage    | PostgreSQL, Redis           |
+| DevOps          | Docker, GitHub Actions      |
+
+---
+
+## 🚀 Getting Started
+
+1. Clone the repository  
+   `git clone https://github.com/your-username/health-infra-map.git`
+
+2. Install dependencies  
+   `npm install`
+
+3. Set environment variables  
+   See `.env.example` for guidance.
+
+4. Launch the stack  
+   `docker-compose up`
+
+---
+
+## 🧪 Testing Modules
+
+Run unit tests with:
+```bash
+npm run test
 **Key Directories:**
 - 🧩 **modules/** → Specialty-specific clinical modules and transcription services
 - 🔐 **sso/** → Single Sign-On module with OAuth2/SAML provider support
@@ -278,6 +380,38 @@ A modular, specialty-aware clinical documentation panel for WebQX™. Designed f
 
 ## 🚀 Deployment
 
+### Mock FHIR and openEHR Servers
+
+WebQX includes built-in mock servers for local development and testing:
+
+- **Mock FHIR Server**: Complete FHIR R4 implementation at `/fhir/*` endpoints
+- **Mock openEHR Server**: Full openEHR REST API at `/openehr/v1/*` endpoints
+
+#### Quick Start
+```bash
+# Install dependencies
+npm install
+
+# Start with mock servers (development mode)
+NODE_ENV=development npm start
+
+# Verify servers are running
+curl http://localhost:3000/health
+```
+
+#### Features
+- ✅ **FHIR Resources**: Patient, Observation, Appointment with full CRUD
+- ✅ **openEHR Resources**: EHR, Composition, AQL queries
+- ✅ **Authentication**: OAuth2 for FHIR (test tokens provided)
+- ✅ **Validation**: Schema validation for both standards
+- ✅ **Test Data**: Pre-populated with sample healthcare data
+- ✅ **Documentation**: Complete API examples and setup guides
+
+📚 **Documentation:**
+- [Mock Servers Setup Guide](./docs/MOCK_SERVERS_SETUP.md)
+- [FHIR API Examples](./docs/FHIR_API_EXAMPLES.md)
+- [openEHR API Examples](./docs/OPENEHR_API_EXAMPLES.md)
+
 ### Railway Deployment
 
 This project is ready for deployment on [Railway](https://railway.app) with zero-configuration:
@@ -310,6 +444,197 @@ open http://localhost:3000
 ```
 
 The patient portal will be available at the root URL, and health checks at `/health`.
+
+## 🧪 Lab Results Integration with Mirth Connect
+
+### Overview
+WebQX includes a comprehensive lab results system that transforms HL7 v2 messages into FHIR R4 Observation resources using Mirth Connect, and displays them in a user-friendly Patient Portal interface.
+
+### Mirth Connect Setup
+
+#### Prerequisites
+- Mirth Connect 4.0.0 or higher
+- FHIR R4 server endpoint
+- Network access to receive HL7 messages
+
+#### Installation Steps
+
+1. **Import Channel Configuration**
+   ```bash
+   # Copy the Mirth Connect channel configuration
+   cp mirth-channel-config.xml /path/to/mirth/channels/
+   ```
+
+2. **Install JavaScript Transformer**
+   - Open Mirth Connect Administrator
+   - Navigate to Settings > Global Scripts
+   - Create a new script named `hl7ToFhirTransformer`
+   - Copy the contents of `hl7-to-fhir-transformer.js` into the script editor
+   - Save the script
+
+3. **Configure Channel Settings**
+   - Import the channel from `mirth-channel-config.xml`
+   - Update the following settings in the channel:
+     - Source Connector: Set the correct TCP port (default: 6661)
+     - Destination Connector: Update FHIR server URL
+     - Authentication: Configure FHIR server credentials if required
+
+4. **Deploy the Channel**
+   ```bash
+   # Deploy through Mirth Connect Administrator or CLI
+   # Channel name: "HL7 to FHIR Observation"
+   # Channel ID: "hl7-to-fhir-observation"
+   ```
+
+#### Channel Configuration Details
+
+**Source Connector (TCP Listener)**
+- Protocol: TCP
+- Port: 6661 (configurable)
+- Mode: Server
+- Data Type: HL7 v2
+- Supported Messages: ORU^R01 (Observation Result)
+
+**Destination Connector (HTTP Sender)**
+- Method: POST
+- Content-Type: application/fhir+json
+- Target: FHIR R4 Observation endpoint
+- Transformation: HL7 to FHIR Observation
+
+**Supported HL7 Segments**
+- MSH: Message Header
+- PID: Patient Identification
+- OBR: Observation Request
+- OBX: Observation Result (supports multiple)
+- PV1: Patient Visit (optional)
+
+#### Example HL7 Message
+```
+MSH|^~\&|LAB|XYZ|HOSPITAL|HOSPITAL|20250730120000||ORU^R01|123456|P|2.4
+PID|1||12345^^^HOSPITAL|67890|Doe^John||19800101|M|||123 Main St^^Metropolis^IL^12345
+OBR|1||54321^LAB|1234^Complete Blood Count^L|||20250730110000|||||||||67890
+OBX|1|NM|789-8^Hemoglobin^LN|1|13.5|g/dL|12.0-16.0|N|||F
+```
+
+#### Resulting FHIR Observation
+```json
+{
+  "resourceType": "Observation",
+  "status": "final",
+  "category": [{
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+      "code": "laboratory",
+      "display": "Laboratory"
+    }]
+  }],
+  "code": {
+    "coding": [{
+      "system": "http://loinc.org",
+      "code": "789-8",
+      "display": "Hemoglobin"
+    }]
+  },
+  "subject": {
+    "reference": "Patient/12345"
+  },
+  "effectiveDateTime": "2025-07-30T11:00:00Z",
+  "valueQuantity": {
+    "value": 13.5,
+    "unit": "g/dL",
+    "system": "http://unitsofmeasure.org"
+  },
+  "referenceRange": [{
+    "text": "12.0-16.0",
+    "low": {
+      "value": 12.0,
+      "unit": "g/dL"
+    },
+    "high": {
+      "value": 16.0,
+      "unit": "g/dL"
+    }
+  }]
+}
+```
+
+### Patient Portal Lab Results Viewer
+
+#### Features
+- **Real-time Lab Results**: Displays FHIR Observation resources from connected labs
+- **Advanced Filtering**: Filter by date range, status, category, and abnormal results only
+- **Smart Sorting**: Sort by date, test name, value, or status
+- **Detailed View**: Click any result for comprehensive details
+- **Responsive Design**: Optimized for desktop and mobile devices
+- **Accessibility**: Full screen reader and keyboard navigation support
+
+#### Integration
+
+1. **Add to Patient Portal**
+   ```tsx
+   import LabResultsViewer from './components/LabResultsViewer';
+   
+   function PatientDashboard({ patientId }) {
+     return (
+       <div>
+         <LabResultsViewer 
+           patientId={patientId}
+           fhirServerUrl="/fhir"
+           onError={(error) => console.error('Lab results error:', error)}
+           onLoadingChange={(loading) => setLoading(loading)}
+         />
+       </div>
+     );
+   }
+   ```
+
+2. **Configure FHIR Server**
+   - Ensure your FHIR server supports Observation resources
+   - Configure patient-specific access controls
+   - Set up proper CORS headers for web access
+
+#### Supported Lab Categories
+- **Chemistry**: Glucose, Sodium, Potassium, Creatinine
+- **Hematology**: Hemoglobin, Hematocrit, WBC, Platelets  
+- **Microbiology**: Cultures, Bacterial identification, Sensitivity testing
+- **Custom**: Configurable based on LOINC codes
+
+#### Security Considerations
+- All lab data transmission uses TLS encryption
+- Patient data access follows HIPAA compliance guidelines
+- Audit logging for all lab result access
+- Role-based access control integration
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Channel Not Receiving Messages**
+   - Check TCP port configuration and firewall settings
+   - Verify HL7 message format and encoding
+   - Review Mirth Connect logs for connection errors
+
+2. **Transformation Errors**
+   - Validate HL7 segment structure (MSH, PID, OBX required)
+   - Check JavaScript transformer script for syntax errors
+   - Verify LOINC code mappings in transformer
+
+3. **FHIR Server Issues**
+   - Confirm FHIR server endpoint accessibility
+   - Validate authentication credentials
+   - Check FHIR Observation resource schema compliance
+
+4. **Patient Portal Display Issues**
+   - Verify FHIR server CORS configuration
+   - Check browser network console for API errors
+   - Validate patient ID matching between systems
+
+#### Monitoring and Maintenance
+
+- **Mirth Connect Dashboard**: Monitor channel status and message throughput
+- **FHIR Server Logs**: Review successful Observation resource creation
+- **Patient Portal Analytics**: Track lab result viewing patterns
+- **Error Alerting**: Configure notifications for transformation failures
 
 ## 🤝 Contribution Guide  
 We welcome clinicians, developers, and researchers:

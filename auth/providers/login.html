@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX™ Provider Portal - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-slow': 'pulse 3s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Glass morphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* RTL Support */
+        [dir="rtl"] {
+            text-align: right;
+        }
+        
+        [dir="rtl"] .form-control {
+            text-align: right;
+        }
+        
+        [dir="rtl"] .checkbox-label {
+            flex-direction: row-reverse;
+        }
+        
+        /* Custom scrollbar for accessibility */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        /* Loading animation */
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-800 flex items-center justify-center p-4">
+    <!-- Background Animation -->
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-white opacity-10 rounded-full animate-pulse-slow"></div>
+        <div class="absolute -bottom-40 -left-40 w-60 h-60 bg-white opacity-10 rounded-full animate-pulse-slow" style="animation-delay: 1s;"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="relative w-full max-w-md animate-fade-in">
+        <!-- Security Notice -->
+        <div class="glass rounded-lg p-4 mb-6 text-white text-sm text-center">
+            <div class="flex items-center justify-center mb-2">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="font-semibold" data-i18n="security.hipaaCompliant">HIPAA Compliant</span>
+            </div>
+            <p data-i18n="security.encryptionNotice">All data is encrypted end-to-end and complies with healthcare privacy standards.</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="glass rounded-xl shadow-2xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center text-white">
+                <div class="mb-4">
+                    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl font-bold" data-i18n="provider.title">WebQX™ Provider Portal</h1>
+                    <p class="text-blue-100 mt-2" data-i18n="provider.subtitle">Secure Healthcare Professional Access</p>
+                </div>
+                
+                <!-- Language Selector -->
+                <div class="flex justify-center space-x-2">
+                    <button onclick="changeLanguage('en')" class="px-3 py-1 rounded-full text-xs bg-white bg-opacity-20 hover:bg-opacity-30 transition-all" id="lang-en">English</button>
+                    <button onclick="changeLanguage('es')" class="px-3 py-1 rounded-full text-xs bg-white bg-opacity-20 hover:bg-opacity-30 transition-all" id="lang-es">Español</button>
+                    <button onclick="changeLanguage('ar')" class="px-3 py-1 rounded-full text-xs bg-white bg-opacity-20 hover:bg-opacity-30 transition-all" id="lang-ar">العربية</button>
+                </div>
+            </div>
+
+            <!-- Alert Messages -->
+            <div id="alertContainer" class="p-6 pb-0 hidden">
+                <div id="alertMessage" class="p-4 rounded-lg text-sm"></div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="providerLoginForm" class="p-8 space-y-6">
+                <!-- Username Field -->
+                <div>
+                    <label for="username" class="block text-sm font-medium text-white mb-2" data-i18n="form.username">Username or Email</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username"
+                        class="form-control w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+                        placeholder="Enter your username or email"
+                        data-i18n-placeholder="form.usernamePlaceholder"
+                        required
+                        autocomplete="username"
+                    >
+                    <div class="error-message text-red-300 text-xs mt-1 hidden" id="usernameError"></div>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-white mb-2" data-i18n="form.password">Password</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            class="form-control w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all pr-12"
+                            placeholder="Enter your password"
+                            data-i18n-placeholder="form.passwordPlaceholder"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-colors">
+                            <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="error-message text-red-300 text-xs mt-1 hidden" id="passwordError"></div>
+                </div>
+
+                <!-- Remember Me Checkbox -->
+                <div class="flex items-center justify-between">
+                    <label class="checkbox-label flex items-center text-sm text-white cursor-pointer">
+                        <input type="checkbox" id="rememberMe" name="rememberMe" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0">
+                        <span data-i18n="form.rememberMe">Remember me</span>
+                    </label>
+                    <a href="#" onclick="showForgotPassword()" class="text-sm text-blue-200 hover:text-white transition-colors" data-i18n="form.forgotPassword">Forgot Password?</a>
+                </div>
+
+                <!-- Login Button -->
+                <button 
+                    type="submit" 
+                    id="loginButton"
+                    class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                    <span class="login-text" data-i18n="form.signIn">Sign In</span>
+                    <svg class="loading-spinner w-5 h-5 mx-auto hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </button>
+
+                <!-- SSO Options -->
+                <div class="mt-8">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-white border-opacity-20"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="bg-transparent px-2 text-white" data-i18n="sso.orSignInWith">Or sign in with</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-3 gap-3">
+                        <!-- Keycloak SSO -->
+                        <button type="button" onclick="initiateSSO('keycloak')" class="sso-button w-full inline-flex justify-center py-2 px-4 border border-white border-opacity-20 rounded-md shadow-sm bg-white bg-opacity-10 text-sm font-medium text-white hover:bg-opacity-20 transition-all">
+                            <span class="sr-only">Sign in with Keycloak</span>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2L2 7v10c0 5.55 3.84 9.95 9 11 5.16-1.05 9-5.45 9-11V7l-10-5z"/>
+                            </svg>
+                        </button>
+
+                        <!-- Microsoft SSO -->
+                        <button type="button" onclick="initiateSSO('microsoft')" class="sso-button w-full inline-flex justify-center py-2 px-4 border border-white border-opacity-20 rounded-md shadow-sm bg-white bg-opacity-10 text-sm font-medium text-white hover:bg-opacity-20 transition-all">
+                            <span class="sr-only">Sign in with Microsoft</span>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
+                            </svg>
+                        </button>
+
+                        <!-- SMART on FHIR SSO -->
+                        <button type="button" onclick="initiateSSO('smart-fhir')" class="sso-button w-full inline-flex justify-center py-2 px-4 border border-white border-opacity-20 rounded-md shadow-sm bg-white bg-opacity-10 text-sm font-medium text-white hover:bg-opacity-20 transition-all">
+                            <span class="sr-only">Sign in with SMART on FHIR</span>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Session Timeout Notice -->
+        <div class="text-center mt-4 text-white text-xs opacity-75">
+            <p data-i18n="security.sessionTimeout">Session will timeout after 30 minutes of inactivity for security.</p>
+        </div>
+    </div>
+
+    <!-- Role Confirmation Modal -->
+    <div id="roleModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="glass rounded-xl p-8 max-w-md w-full text-white animate-slide-up">
+            <h3 class="text-xl font-bold mb-4" data-i18n="roleModal.title">Confirm Your Role</h3>
+            <p class="text-gray-200 mb-6" data-i18n="roleModal.description">Please confirm your professional role to access the appropriate modules.</p>
+            
+            <div id="roleOptions" class="space-y-3">
+                <!-- Role options will be populated by JavaScript -->
+            </div>
+            
+            <div class="mt-6 flex space-x-3">
+                <button onclick="cancelRoleSelection()" class="flex-1 py-2 px-4 border border-white border-opacity-30 rounded-lg text-white hover:bg-white hover:bg-opacity-10 transition-all" data-i18n="roleModal.cancel">Cancel</button>
+                <button onclick="confirmRole()" id="confirmRoleBtn" class="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-all disabled:opacity-50" data-i18n="roleModal.confirm" disabled>Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="glass rounded-xl p-8 max-w-md w-full text-white animate-slide-up">
+            <h3 class="text-xl font-bold mb-4" data-i18n="forgotPassword.title">Reset Password</h3>
+            <p class="text-gray-200 mb-6" data-i18n="forgotPassword.description">Enter your email address and we'll send you instructions to reset your password.</p>
+            
+            <form id="forgotPasswordForm">
+                <input 
+                    type="email" 
+                    id="resetEmail" 
+                    name="resetEmail"
+                    class="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 mb-6"
+                    placeholder="Enter your email address"
+                    data-i18n-placeholder="forgotPassword.emailPlaceholder"
+                    required
+                >
+                
+                <div class="flex space-x-3">
+                    <button type="button" onclick="closeForgotPassword()" class="flex-1 py-2 px-4 border border-white border-opacity-30 rounded-lg text-white hover:bg-white hover:bg-opacity-10 transition-all" data-i18n="forgotPassword.cancel">Cancel</button>
+                    <button type="submit" class="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-all" data-i18n="forgotPassword.sendInstructions">Send Instructions</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="./js/i18n.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/sso.js"></script>
+</body>
+</html>

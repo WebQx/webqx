@@ -1,13 +1,17 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/sso'],
+  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/openehr', '<rootDir>/auth', '<rootDir>/interoperability', '<rootDir>/sso'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: {
+        jsx: 'react-jsx'
+      }
+    }]
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
@@ -18,12 +22,18 @@ module.exports = {
     'modules/**/*.{ts,tsx}',
     'fhir/**/*.{js}',
     'sso/**/*.{ts,tsx}',
+    'openehr/**/*.{js}',
+    'auth/**/*.{ts,tsx}',
+    'interoperability/**/*.{ts,tsx}',
     '!patient-portal/**/*.d.ts',
     '!services/**/*.d.ts',
     '!ehr-integrations/**/*.d.ts',
     '!modules/**/*.d.ts',
     '!fhir/**/*.d.ts',
     '!sso/**/*.d.ts',
+    '!openehr/**/*.d.ts',
+    '!auth/**/*.d.ts',
+    '!interoperability/**/*.d.ts',
   ],
   moduleNameMapper: {
     '\\.(css|less|scss)$': 'identity-obj-proxy'
@@ -35,23 +45,44 @@ module.exports = {
     {
       displayName: 'frontend',
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/patient-portal/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/services/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/ehr-integrations/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/modules/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/sso/**/*.(test|spec).+(ts|tsx|js)'],
+      testMatch: ['<rootDir>/patient-portal/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/services/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/ehr-integrations/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/modules/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/interoperability/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/sso/**/*.(test|spec).+(ts|tsx|js)'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
       transform: {
-        '^.+\\.(ts|tsx)$': 'ts-jest'
-      },
-      globals: {
-        'ts-jest': {
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
           tsconfig: {
             jsx: 'react-jsx'
           }
-        }
+        }]
+      }
+    },
+    {
+      displayName: 'auth',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/auth/**/*.(test|spec).+(js)'],
+      transform: {
+        '^.+\\.js$': 'babel-jest'
       }
     },
     {
       displayName: 'fhir',
       testEnvironment: 'node',
       testMatch: ['<rootDir>/fhir/**/*.(test|spec).+(js)'],
+      transform: {
+        '^.+\\.js$': 'babel-jest'
+      }
+    },
+    {
+      displayName: 'openehr',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/openehr/**/*.(test|spec).+(js)'],
+      transform: {
+        '^.+\\.js$': 'babel-jest'
+      }
+    },
+    {
+      displayName: 'auth',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/patient-portal/__tests__/auth.test.js', '<rootDir>/patient-portal/__tests__/userService.test.js'],
       transform: {
         '^.+\\.js$': 'babel-jest'
       }

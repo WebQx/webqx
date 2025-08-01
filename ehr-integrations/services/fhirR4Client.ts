@@ -803,6 +803,191 @@ export class FHIRR4Client {
   }
 
   // ============================================================================
+  // Core FHIR Resource Methods
+  // ============================================================================
+
+  /**
+   * Get FHIR server capabilities
+   */
+  async getCapabilities(): Promise<FHIRApiResponse<any>> {
+    try {
+      const response = await this.makeRequest({
+        method: 'GET',
+        url: `${this.baseUrl}/metadata`
+      });
+
+      return {
+        success: true,
+        data: JSON.parse(response.body),
+        statusCode: response.status
+      };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Create a FHIR resource
+   */
+  async createResource<T extends FHIRResource>(resource: T): Promise<FHIRApiResponse<T>> {
+    await this.ensureValidToken();
+    
+    try {
+      const response = await this.makeAuthenticatedRequest({
+        method: 'POST',
+        url: `${this.baseUrl}/${resource.resourceType}`,
+        body: JSON.stringify(resource)
+      });
+
+      return {
+        success: true,
+        data: JSON.parse(response.body) as T,
+        statusCode: response.status,
+        headers: response.headers
+      };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Get a FHIR resource by type and ID
+   */
+  async getResource<T extends FHIRResource>(resourceType: string, resourceId: string): Promise<FHIRApiResponse<T>> {
+    await this.ensureValidToken();
+    
+    try {
+      const response = await this.makeAuthenticatedRequest({
+        method: 'GET',
+        url: `${this.baseUrl}/${resourceType}/${resourceId}`
+      });
+
+      return {
+        success: true,
+        data: JSON.parse(response.body) as T,
+        statusCode: response.status,
+        headers: response.headers
+      };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Update a FHIR resource
+   */
+  async updateResource<T extends FHIRResource>(resource: T): Promise<FHIRApiResponse<T>> {
+    await this.ensureValidToken();
+    
+    if (!resource.id) {
+      return this.handleError(new Error('Resource ID is required for update'));
+    }
+
+    try {
+      const response = await this.makeAuthenticatedRequest({
+        method: 'PUT',
+        url: `${this.baseUrl}/${resource.resourceType}/${resource.id}`,
+        body: JSON.stringify(resource)
+      });
+
+      return {
+        success: true,
+        data: JSON.parse(response.body) as T,
+        statusCode: response.status,
+        headers: response.headers
+      };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Delete a FHIR resource
+   */
+  async deleteResource(resourceType: string, resourceId: string): Promise<FHIRApiResponse<any>> {
+    await this.ensureValidToken();
+    
+    try {
+      const response = await this.makeAuthenticatedRequest({
+        method: 'DELETE',
+        url: `${this.baseUrl}/${resourceType}/${resourceId}`
+      });
+
+      return {
+        success: true,
+        statusCode: response.status,
+        headers: response.headers
+      };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Search FHIR resources
+   */
+  async searchResources(resourceType: string, params: Record<string, string | string[]>): Promise<FHIRApiResponse<FHIRBundle>> {
+    await this.ensureValidToken();
+    
+    try {
+      const response = await this.makeAuthenticatedRequest({
+        method: 'GET',
+        url: `${this.baseUrl}/${resourceType}`,
+        params
+      });
+
+      return {
+        success: true,
+        data: JSON.parse(response.body) as FHIRBundle,
+        statusCode: response.status,
+        headers: response.headers
+      };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Submit a FHIR bundle (batch/transaction)
+   */
+  async submitBundle(bundle: FHIRBundle): Promise<FHIRApiResponse<FHIRBundle>> {
+    await this.ensureValidToken();
+    
+    try {
+      const response = await this.makeAuthenticatedRequest({
+        method: 'POST',
+        url: `${this.baseUrl}`,
+        body: JSON.stringify(bundle)
+      });
+
+      return {
+        success: true,
+        data: JSON.parse(response.body) as FHIRBundle,
+        statusCode: response.status,
+        headers: response.headers
+      };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Create or update a resource (upsert)
+   */
+  async createOrUpdateResource<T extends FHIRResource>(resource: T): Promise<FHIRApiResponse<T>> {
+    if (resource.id) {
+      // Try update first
+      const updateResult = await this.updateResource(resource);
+      if (updateResult.success) {
+        return updateResult;
+      }
+    }
+    
+    // Fall back to create
+    return this.createResource(resource);
+  }
+
+  // ============================================================================
   // Public Utility Methods
   // ============================================================================
 
