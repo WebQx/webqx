@@ -378,7 +378,7 @@ class TelehealthSessionService {
         const key = Buffer.from(this.options.encryptionKey, 'hex');
         const iv = crypto.randomBytes(16);
         
-        const cipher = crypto.createCipher('aes-256-cbc', key);
+        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
         
         let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'base64');
         encrypted += cipher.final('base64');
@@ -396,7 +396,7 @@ class TelehealthSessionService {
         const iv = buffer.slice(0, 16);
         const encrypted = buffer.slice(16);
         
-        const decipher = crypto.createDecipher('aes-256-cbc', key);
+        const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
         
         let decrypted = decipher.update(encrypted, null, 'utf8');
         decrypted += decipher.final('utf8');

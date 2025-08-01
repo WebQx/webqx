@@ -312,10 +312,7 @@ app.post('/api/whisper/translate', (req, res) => {
     }
 });
 
-// Serve the login page
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html'));
-});
+
 
 // Serve the main patient portal
 app.get('/', (req, res) => {
