@@ -50,7 +50,7 @@ const openEHRCompositionRoutes = require('./openehr/routes/composition');
 const openEHRQueryRoutes = require('./openehr/routes/query');
 
 // Patient Portal Authentication imports
-const authRoutes = require('./patient-portal/auth/authRoutes');
+const patientPortalAuthRoutes = require('./patient-portal/auth/authRoutes');
 
 // Provider Portal Authentication imports
 const providerAuthRoutes = require('./auth/providers/routes');
@@ -165,7 +165,7 @@ app.use('/openehr/v1', openEHRCompositionRoutes);
 app.use('/openehr/v1/query', openEHRQueryRoutes);
 
 // Patient Portal Authentication routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', patientPortalAuthRoutes);
 
 // Provider Portal Authentication routes
 app.use('/api/auth/provider', providerAuthRoutes);
