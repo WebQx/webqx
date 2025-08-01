@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Video Consultation Component (Standalone)
+  video-consultation:
+    build:
+      context: ../../../../
+      dockerfile: modules/telehealth/deployment/standalone/Dockerfile.video
+    environment:
+      - NODE_ENV=production
+      - TELEHEALTH_DEPLOYMENT_MODE=standalone
+      - TELEHEALTH_ENABLED_COMPONENTS=video-consultation
+      - TELEHEALTH_SECRET_KEY=${TELEHEALTH_SECRET_KEY}
+      - TELEHEALTH_LOG_LEVEL=${TELEHEALTH_LOG_LEVEL:-info}
+      
+      # Video Consultation Config
+      - JITSI_DOMAIN=${JITSI_DOMAIN:-meet.jitsi.org}
+      - JITSI_APP_ID=${JITSI_APP_ID:-webqx-video}
+      - JITSI_JWT_APP_SECRET=${JITSI_JWT_APP_SECRET}
+      - VIDEO_RECORDING_ENABLED=${VIDEO_RECORDING_ENABLED:-false}
+      - VIDEO_RECORDING_STORAGE=${VIDEO_RECORDING_STORAGE:-local}
+      - VIDEO_DEFAULT_RESOLUTION=${VIDEO_DEFAULT_RESOLUTION:-720p}
+    ports:
+      - "3001:3000"
+    volumes:
+      - video_data:/app/data
+      - video_logs:/app/logs
+      - video_recordings:/app/recordings
+    networks:
+      - video_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Nginx for video consultation frontend
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.video.conf:/etc/nginx/nginx.conf:ro
+      - video_static:/usr/share/nginx/html
+    depends_on:
+      - video-consultation
+    networks:
+      - video_network
+    restart: unless-stopped
+
+volumes:
+  video_data:
+    driver: local
+  video_logs:
+    driver: local
+  video_recordings:
+    driver: local
+  video_static:
+    driver: local
+
+networks:
+  video_network:
+    driver: bridge
