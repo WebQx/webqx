@@ -2,7 +2,6 @@
  * @fileoverview Tests for OttehrVoiceTranscription component
  */
 
-import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
@@ -31,7 +30,7 @@ Object.defineProperty(navigator, 'clipboard', {
 });
 
 // Mock MediaRecorder
-global.MediaRecorder = jest.fn().mockImplementation(() => ({
+(global as any).MediaRecorder = jest.fn().mockImplementation(() => ({
   start: jest.fn(),
   stop: jest.fn(),
   ondataavailable: null,
@@ -39,6 +38,7 @@ global.MediaRecorder = jest.fn().mockImplementation(() => ({
   state: 'inactive',
   mimeType: 'audio/webm'
 }));
+(global as any).MediaRecorder.isTypeSupported = jest.fn().mockReturnValue(true);
 
 // Mock AudioContext
 global.AudioContext = jest.fn().mockImplementation(() => ({

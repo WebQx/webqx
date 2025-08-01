@@ -154,7 +154,14 @@ describe('WhisperOttehrIntegration', () => {
       });
       mockOttehrService.sendNotification.mockResolvedValue({
         success: true,
-        data: { id: 'notification-123' }
+        data: { 
+          id: 'notification-123',
+          type: 'system_alert',
+          recipientId: 'patient-123',
+          title: 'Transcription Complete',
+          message: 'Your voice transcription has been processed',
+          channels: ['in_app']
+        }
       });
     });
 
@@ -384,7 +391,13 @@ describe('WhisperOttehrIntegration', () => {
 
       mockOttehrService.createOrder.mockResolvedValue({
         success: true,
-        data: { id: 'order-123' }
+        data: { 
+          id: 'order-123',
+          customerId: 'patient-123',
+          items: [],
+          totalAmount: 0,
+          currency: 'USD'
+        }
       });
 
       const result = await integration.createOrderWithTranscription('order-123', transcriptionResult);
@@ -481,6 +494,7 @@ describe('WhisperOttehrIntegration', () => {
         apiBaseUrl: 'https://api.ottehr.com',
         environment: 'sandbox',
         timeout: 30000,
+        clientId: 'test-client-id',
         enableNotifications: true,
         enableOrdering: true,
         enablePOSIntegration: true,

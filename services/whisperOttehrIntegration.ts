@@ -183,7 +183,7 @@ export class WhisperOttehrIntegration extends EventEmitter {
 
       // Prepare medical context prompt
       const medicalPrompt = this.generateMedicalPrompt(
-        request.specialty || this.config.integration.medicalSpecialty,
+        request.specialty || this.config.integration.medicalSpecialty || 'general',
         request.encounterType,
         request.customPrompt
       );
@@ -210,7 +210,7 @@ export class WhisperOttehrIntegration extends EventEmitter {
 
       // Handle translation if enabled
       if (this.config.integration.autoTranslate || request.targetLanguage) {
-        const targetLang = request.targetLanguage || this.config.integration.defaultTargetLanguage;
+        const targetLang = request.targetLanguage || this.config.integration.defaultTargetLanguage || 'en';
         if (transcriptionResult.language !== targetLang) {
           const translation = await this.translateText(transcriptionResult.text, transcriptionResult.language || 'auto', targetLang);
           healthcareResult.translation = translation;

@@ -8,7 +8,7 @@
  * @version 1.0.0
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { 
   WhisperOttehrIntegration, 
   AudioTranscriptionRequest, 
@@ -64,10 +64,10 @@ interface TranscriptionState {
 /**
  * OttehrVoiceTranscription component provides healthcare-integrated voice transcription
  */
-export const OttehrVoiceTranscription: React.FC<OttehrVoiceTranscriptionProps> = ({
+export const OttehrVoiceTranscription = ({
   patientId,
-  encounterType = 'consultation',
-  specialty = 'general',
+  encounterType = 'consultation' as const,
+  specialty = 'general' as const,
   enableTranslation = false,
   targetLanguage = 'en',
   customPrompt,
@@ -78,7 +78,7 @@ export const OttehrVoiceTranscription: React.FC<OttehrVoiceTranscriptionProps> =
   enableOrderCreation = false,
   className = '',
   ariaLabel = 'Healthcare voice transcription'
-}) => {
+}: OttehrVoiceTranscriptionProps) => {
   // Component state
   const [state, setState] = useState<TranscriptionState>({
     isRecording: false,
@@ -572,7 +572,7 @@ export const OttehrVoiceTranscription: React.FC<OttehrVoiceTranscriptionProps> =
       </div>
 
       {/* CSS Styles */}
-      <style jsx>{`
+      <style>{`
         .ottehr-voice-transcription {
           max-width: 800px;
           margin: 0 auto;
