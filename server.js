@@ -44,6 +44,10 @@ const {
 // PostDICOM imports
 const postdicomRouter = require('./modules/postdicom/routes/dicom.js');
 
+// Telehealth imports
+const telehealthAPIRoutes = require('./modules/telehealth/routes/telehealth.js');
+const telehealthWebRoutes = require('./modules/telehealth/routes/web.js');
+
 // openEHR imports
 const openEHREHRRoutes = require('./openehr/routes/ehr');
 const openEHRCompositionRoutes = require('./openehr/routes/composition');
@@ -159,6 +163,12 @@ app.use('/fhir/Observation', authenticateToken, requireScopes(['patient/*.read',
 // PostDICOM API routes
 app.use('/postdicom', postdicomRouter);
 
+// Telehealth API routes
+app.use('/api/telehealth', telehealthAPIRoutes);
+
+// Telehealth web routes
+app.use('/telehealth', telehealthWebRoutes);
+
 // openEHR API routes (no authentication for demo purposes)
 app.use('/openehr/v1/ehr', openEHREHRRoutes);
 app.use('/openehr/v1', openEHRCompositionRoutes);
@@ -177,6 +187,11 @@ app.use('/api/ottehr', ottehrRoutes);
 // Serve login page
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+// Serve telehealth demo page
+app.get('/telehealth-demo', (req, res) => {
+    res.sendFile(path.join(__dirname, 'telehealth-demo.html'));
 });
 
 // Authentication middleware for patient portal

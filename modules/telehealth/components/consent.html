@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telehealth Consent - WebQX</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #374151;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .consent-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .consent-header {
+            background: #2563eb;
+            color: white;
+            padding: 30px;
+            border-radius: 16px 16px 0 0;
+            text-align: center;
+        }
+
+        .consent-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .consent-header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .consent-content {
+            padding: 30px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .session-info {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2563eb;
+        }
+
+        .session-info h3 {
+            color: #1e40af;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .info-value {
+            color: #6b7280;
+        }
+
+        .consent-section {
+            margin-bottom: 30px;
+        }
+
+        .consent-section h3 {
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .consent-section h4 {
+            color: #374151;
+            margin: 20px 0 10px 0;
+            font-size: 16px;
+        }
+
+        .consent-section p {
+            margin-bottom: 15px;
+            color: #4b5563;
+            line-height: 1.7;
+        }
+
+        .consent-section ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        .consent-section li {
+            margin-bottom: 8px;
+            color: #4b5563;
+        }
+
+        .privacy-notice {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .privacy-notice h4 {
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+
+        .security-features {
+            background: #ecfdf5;
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .security-features h4 {
+            color: #047857;
+            margin-bottom: 10px;
+        }
+
+        .consent-checkbox {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            transition: border-color 0.3s;
+        }
+
+        .consent-checkbox.checked {
+            border-color: #16a34a;
+            background: #f0fdf4;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            flex: 1;
+            font-size: 16px;
+            line-height: 1.6;
+            cursor: pointer;
+        }
+
+        .consent-actions {
+            padding: 30px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #15803d;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #f87171;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .consent-container {
+                max-height: 95vh;
+            }
+
+            .consent-header,
+            .consent-content,
+            .consent-actions {
+                padding: 20px;
+            }
+
+            .consent-header h1 {
+                font-size: 24px;
+            }
+
+            .consent-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="consent-container">
+        <div class="consent-header">
+            <h1>🏥 Telehealth Consent</h1>
+            <p>Please review and provide your consent to participate in this telehealth session</p>
+        </div>
+
+        <div class="consent-content">
+            <div class="session-info">
+                <h3>📅 Session Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Provider:</span>
+                    <span class="info-value" id="providerName">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Session Type:</span>
+                    <span class="info-value" id="sessionType">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Scheduled Time:</span>
+                    <span class="info-value" id="scheduledTime">Loading...</span>
+                </div>
+                <div class="info-row" id="specialtyRow" style="display: none;">
+                    <span class="info-label">Specialty:</span>
+                    <span class="info-value" id="specialty"></span>
+                </div>
+            </div>
+
+            <div class="consent-section">
+                <h3>📋 Informed Consent for Telehealth Services</h3>
+                
+                <h4>What is Telehealth?</h4>
+                <p>Telehealth involves the use of electronic communications to enable healthcare providers to communicate with patients at a distance. This includes video conferencing, secure messaging, and other digital technologies to provide medical care, diagnosis, consultation, treatment, and patient education.</p>
+
+                <h4>Benefits of Telehealth</h4>
+                <ul>
+                    <li>Convenient access to healthcare from your home or preferred location</li>
+                    <li>Reduced travel time and costs</li>
+                    <li>Continuity of care during challenging circumstances</li>
+                    <li>Access to specialists who may not be locally available</li>
+                    <li>Reduced exposure to infectious diseases</li>
+                </ul>
+
+                <h4>Potential Risks and Limitations</h4>
+                <ul>
+                    <li>Technology failures could disrupt the session</li>
+                    <li>Physical examination capabilities are limited</li>
+                    <li>Emergency situations may require in-person care</li>
+                    <li>Audio or video quality may affect the consultation</li>
+                    <li>Not all medical conditions can be diagnosed or treated via telehealth</li>
+                </ul>
+
+                <div class="privacy-notice">
+                    <h4>🔒 Privacy and Confidentiality</h4>
+                    <p>Your telehealth session is conducted through HIPAA-compliant technology. All communications are encrypted and secure. However, you should ensure you are in a private location where others cannot overhear your conversation.</p>
+                </div>
+
+                <div class="security-features">
+                    <h4>🛡️ Security Features</h4>
+                    <ul>
+                        <li>End-to-end encryption for all communications</li>
+                        <li>Secure, authenticated access links</li>
+                        <li>No session recording without explicit consent</li>
+                        <li>Automatic session termination for security</li>
+                        <li>Compliance with healthcare privacy regulations</li>
+                    </ul>
+                </div>
+
+                <h4>Patient Responsibilities</h4>
+                <ul>
+                    <li>Ensure a stable internet connection and appropriate device</li>
+                    <li>Be in a private, quiet location for the session</li>
+                    <li>Have proper identification available if requested</li>
+                    <li>Provide accurate and complete medical information</li>
+                    <li>Follow all treatment recommendations as discussed</li>
+                </ul>
+
+                <h4>Emergency Situations</h4>
+                <p>If you experience a medical emergency during or after the telehealth session, do not rely on telehealth services. Call 911 immediately or go to the nearest emergency room. Your healthcare provider will provide you with emergency contact information.</p>
+
+                <h4>Technical Requirements</h4>
+                <ul>
+                    <li>Modern web browser (Chrome, Firefox, Safari, or Edge)</li>
+                    <li>Reliable broadband internet connection</li>
+                    <li>Webcam and microphone (built-in or external)</li>
+                    <li>Private space for confidential discussion</li>
+                </ul>
+            </div>
+
+            <div class="consent-checkbox" id="consentCheckbox">
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="consentAgreement" />
+                    <label for="consentAgreement" class="checkbox-label">
+                        <strong>I acknowledge that:</strong><br>
+                        • I have read and understand the information provided about telehealth services<br>
+                        • I understand the benefits, risks, and limitations of telehealth<br>
+                        • I understand that this telehealth session will be conducted over a secure, encrypted connection<br>
+                        • I consent to participate in this telehealth session with my healthcare provider<br>
+                        • I understand that I can withdraw my consent at any time<br>
+                        • I confirm that I am in a private, secure location for this consultation
+                    </label>
+                </div>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <div class="consent-actions">
+            <button type="button" class="btn btn-secondary" id="declineBtn">
+                ❌ Decline
+            </button>
+            <button type="button" class="btn btn-primary" id="acceptBtn" disabled>
+                ✅ Accept and Join Session
+            </button>
+        </div>
+
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <p>Processing your consent and joining the session...</p>
+        </div>
+    </div>
+
+    <script>
+        // Session data will be injected by the server
+        const sessionData = window.SESSION_DATA || {};
+        
+        // Initialize consent form
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeConsentForm();
+            loadSessionInfo();
+            setupEventListeners();
+        });
+
+        function initializeConsentForm() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const accessToken = urlParams.get('access');
+            
+            if (!accessToken) {
+                showError('Invalid session link. Please contact your healthcare provider.');
+                return;
+            }
+            
+            // Store access token for later use
+            window.sessionAccessToken = accessToken;
+        }
+
+        function loadSessionInfo() {
+            // In a real implementation, this would fetch session data from the server
+            // For now, using mock data
+            const mockSessionInfo = {
+                providerName: sessionData.providerName || 'Dr. Sarah Johnson',
+                sessionType: sessionData.sessionType || 'Consultation',
+                scheduledTime: sessionData.scheduledTime || new Date().toLocaleString(),
+                specialty: sessionData.specialty || null
+            };
+
+            document.getElementById('providerName').textContent = mockSessionInfo.providerName;
+            document.getElementById('sessionType').textContent = mockSessionInfo.sessionType;
+            document.getElementById('scheduledTime').textContent = mockSessionInfo.scheduledTime;
+            
+            if (mockSessionInfo.specialty) {
+                document.getElementById('specialty').textContent = mockSessionInfo.specialty;
+                document.getElementById('specialtyRow').style.display = 'flex';
+            }
+        }
+
+        function setupEventListeners() {
+            const consentCheckbox = document.getElementById('consentAgreement');
+            const acceptBtn = document.getElementById('acceptBtn');
+            const declineBtn = document.getElementById('declineBtn');
+            const checkboxContainer = document.getElementById('consentCheckbox');
+
+            // Handle consent checkbox changes
+            consentCheckbox.addEventListener('change', function() {
+                acceptBtn.disabled = !this.checked;
+                
+                if (this.checked) {
+                    checkboxContainer.classList.add('checked');
+                } else {
+                    checkboxContainer.classList.remove('checked');
+                }
+                
+                hideError();
+            });
+
+            // Handle accept button click
+            acceptBtn.addEventListener('click', async function() {
+                if (!consentCheckbox.checked) {
+                    showError('Please provide your consent to continue.');
+                    return;
+                }
+
+                await processConsent();
+            });
+
+            // Handle decline button click
+            declineBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to decline and exit? You will not be able to join the telehealth session.')) {
+                    window.location.href = '/';
+                }
+            });
+        }
+
+        async function processConsent() {
+            try {
+                showLoading();
+                hideError();
+
+                // Gather consent data
+                const consentData = {
+                    accessToken: window.sessionAccessToken,
+                    consentGiven: true,
+                    timestamp: new Date().toISOString(),
+                    ipAddress: await getClientIP(),
+                    userAgent: navigator.userAgent,
+                    method: 'electronic'
+                };
+
+                // Submit consent to server
+                const response = await fetch('/api/telehealth/consent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(consentData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Redirect to telehealth session
+                    window.location.href = `/telehealth/session?token=${encodeURIComponent(window.sessionAccessToken)}`;
+                } else {
+                    throw new Error(result.error || 'Failed to process consent');
+                }
+
+            } catch (error) {
+                console.error('Consent processing error:', error);
+                hideLoading();
+                showError('Failed to process consent. Please try again or contact support.');
+            }
+        }
+
+        async function getClientIP() {
+            try {
+                // In a real implementation, you might use a service to get the client IP
+                // For now, return a placeholder
+                return 'client-ip-placeholder';
+            } catch (error) {
+                return 'unknown';
+            }
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function hideError() {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.style.display = 'none';
+        }
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.querySelector('.consent-content').style.display = 'none';
+            document.querySelector('.consent-actions').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.querySelector('.consent-content').style.display = 'block';
+            document.querySelector('.consent-actions').style.display = 'flex';
+        }
+
+        // Auto-logout for security after extended inactivity
+        let inactivityTimer;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                alert('Session expired due to inactivity. Please use a new session link.');
+                window.location.href = '/';
+            }, 30 * 60 * 1000); // 30 minutes
+        }
+
+        // Reset timer on user activity
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer, { passive: true });
+        });
+
+        // Start the inactivity timer
+        resetInactivityTimer();
+    </script>
+</body>
+</html>
