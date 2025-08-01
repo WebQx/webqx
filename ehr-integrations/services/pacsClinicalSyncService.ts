@@ -189,12 +189,12 @@ export class PACSClinicalSyncService {
       });
 
       // Audit log
-      await this.auditLogger.logActivity({
+      await this.auditLogger.logActivity('sync_ehr_data', {
         userId: 'system',
-        action: 'sync_ehr_data',
         resourceType: 'clinical_sync_operation',
         resourceId: requestId,
-        details: { syncType: request.syncType, patientMrn: request.patientMrn },
+        patientMrn: request.patientMrn,
+        details: { syncType: request.syncType },
         success: true
       });
 
@@ -227,9 +227,8 @@ export class PACSClinicalSyncService {
       });
 
       // Audit log
-      await this.auditLogger.logActivity({
+      await this.auditLogger.logActivity('sync_ehr_data', {
         userId: 'system',
-        action: 'sync_ehr_data',
         resourceType: 'clinical_sync_operation',
         resourceId: requestId,
         details: { error: errorMessage },
@@ -400,7 +399,7 @@ export class PACSClinicalSyncService {
         };
         
         operation.errors.push(syncError);
-        this.logError('Order processing error', syncError);
+        this.logError('Order processing error', syncError as unknown as Record<string, unknown>);
       }
     }
   }

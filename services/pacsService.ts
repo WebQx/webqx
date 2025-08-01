@@ -130,10 +130,10 @@ export class PACSService extends EventEmitter {
     } catch (error) {
       this.auditLogger?.logError('PACS_STUDY_ERROR', {
         patientId,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       });
-      throw new Error(`Failed to retrieve studies for patient ${patientId}: ${error.message}`);
+      throw new Error(`Failed to retrieve studies for patient ${patientId}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -164,7 +164,7 @@ export class PACSService extends EventEmitter {
       };
 
     } catch (error) {
-      throw new Error(`Failed to get study details: ${error.message}`);
+      throw new Error(`Failed to get study details: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -192,7 +192,7 @@ export class PACSService extends EventEmitter {
       };
 
     } catch (error) {
-      throw new Error(`Failed to get series details: ${error.message}`);
+      throw new Error(`Failed to get series details: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -219,7 +219,7 @@ export class PACSService extends EventEmitter {
       };
 
     } catch (error) {
-      throw new Error(`Failed to get image details: ${error.message}`);
+      throw new Error(`Failed to get image details: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -278,10 +278,10 @@ export class PACSService extends EventEmitter {
     } catch (error) {
       this.auditLogger?.logError('PACS_SEARCH_ERROR', {
         criteria,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       });
-      throw new Error(`Search failed: ${error.message}`);
+      throw new Error(`Search failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -309,7 +309,7 @@ export class PACSService extends EventEmitter {
     } catch (error) {
       this.auditLogger?.logError('PACS_UPLOAD_ERROR', {
         filename,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       });
       return { success: false };
@@ -332,7 +332,7 @@ export class PACSService extends EventEmitter {
     } catch (error) {
       return {
         connected: false,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       };
     }
   }

@@ -866,9 +866,55 @@ export class AuditLogger {
    * @param error Error details
    * @param context Additional context
    */
-  private logError(message: string, error: EHRApiError, context?: Record<string, unknown>): void {
+  logError(message: string, error: EHRApiError | Record<string, unknown>, context?: Record<string, unknown>): void {
     if (this.config.logToConsole) {
       console.error(`[Audit Logger] ${message}`, { error, context: context || {} });
+    }
+  }
+
+  /**
+   * Log activity action with automatic audit entry creation
+   * @param action Activity action or event type
+   * @param details Activity details
+   */
+  async logActivity(action: string, details: Record<string, unknown>): Promise<void> {
+    try {
+      await this.log({
+        action: action as any, // Cast to AuditAction - will be expanded to include activity types
+        resourceType: details.resourceType as string || 'activity',
+        resourceId: details.resourceId as string || 'unknown',
+        patientMrn: details.patientMrn as string,
+        ehrSystem: details.ehrSystem as string,
+        success: true,
+        context: details
+      });
+    } catch (error) {
+      this.logError('Failed to log activity', { 
+        message: error instanceof Error ? error.message : String(error)
+      }, { action, details });
+    }
+  }
+
+  /**
+   * Log access event with automatic audit entry creation
+   * @param action Access action or event type
+   * @param details Access details
+   */
+  async logAccess(action: string, details: Record<string, unknown>): Promise<void> {
+    try {
+      await this.log({
+        action: action as any, // Cast to AuditAction - will be expanded to include access types
+        resourceType: details.resourceType as string || 'access',
+        resourceId: details.resourceId as string || 'unknown',
+        patientMrn: details.patientMrn as string,
+        ehrSystem: details.ehrSystem as string,
+        success: true,
+        context: details
+      });
+    } catch (error) {
+      this.logError('Failed to log access', { 
+        message: error instanceof Error ? error.message : String(error)
+      }, { action, details });
     }
   }
 }

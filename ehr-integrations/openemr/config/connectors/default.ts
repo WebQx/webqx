@@ -5,9 +5,9 @@
  * connectors including OAuth2, API Gateway, and Auth Proxy components.
  */
 
-import type { OAuth2ConnectorConfig } from '../connectors/oauth2-connector';
-import type { APIGatewayConfig } from '../gateway/api-gateway';
-import type { AuthProxyConfig } from '../middleware/auth-proxy';
+import type { OAuth2ConnectorConfig } from '../../connectors/oauth2-connector';
+import type { APIGatewayConfig } from '../../gateway/api-gateway';
+import type { AuthProxyConfig } from '../../middleware/auth-proxy';
 
 /**
  * Default OAuth2 Connector Configuration

@@ -676,7 +676,26 @@ export type AuditAction =
   | 'connection_established'
   | 'connection_lost'
   | 'appointment_booked'
-  | 'appointment_cancelled';
+  | 'appointment_cancelled'
+  // Real-time event types
+  | 'resource_created'
+  | 'resource_updated'
+  | 'resource_deleted'
+  // Activity and access logging
+  | 'PACS_STUDY_ACCESS'
+  | 'PACS_STUDY_ERROR'
+  | 'PACS_STUDY_SEARCH'
+  | 'PACS_SEARCH_ERROR'
+  | 'PACS_DICOM_UPLOAD'
+  | 'PACS_UPLOAD_ERROR'
+  | 'WHISPER_TRANSCRIPTION_START'
+  | 'WHISPER_TRANSCRIPTION_COMPLETE'
+  | 'WHISPER_TRANSLATION_START'
+  | 'WHISPER_TRANSLATION_COMPLETE'
+  | 'OTTEHR_INTEGRATION_START'
+  | 'OTTEHR_INTEGRATION_COMPLETE'
+  | 'BATCH_TRANSCRIPTION_START'
+  | 'BATCH_TRANSCRIPTION_COMPLETE';
 
 // ============================================================================
 // Utility Types

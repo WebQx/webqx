@@ -28,7 +28,8 @@ import {
 import {
   EHRConfiguration,
   EHRApiResponse,
-  EHRApiError
+  EHRApiError,
+  AuditAction
 } from '../types';
 
 /**
@@ -779,7 +780,7 @@ export class EHREngineCore extends EventEmitter {
       ],
       callback: async (event) => {
         await this.auditLogger.log({
-          action: event.type,
+          action: event.type as AuditAction,
           resourceType: event.resourceType || 'unknown',
           resourceId: event.resourceId || 'unknown',
           patientMrn: event.patientId,
