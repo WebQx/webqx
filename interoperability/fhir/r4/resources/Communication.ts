@@ -157,45 +157,61 @@ export interface TelehealthCommunicationContext {
 // Pre-defined communication categories for telehealth
 export const TELEHEALTH_COMMUNICATION_CATEGORIES = {
   PRE_VISIT_REMINDER: {
-    system: 'http://terminology.hl7.org/CodeSystem/communication-category',
-    code: 'notification',
-    display: 'Pre-Visit Reminder'
-  },
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/communication-category',
+      code: 'notification',
+      display: 'Pre-Visit Reminder'
+    }]
+  } as FHIRCodeableConcept,
   POST_VISIT_SUMMARY: {
-    system: 'http://terminology.hl7.org/CodeSystem/communication-category',
-    code: 'instruction',
-    display: 'Post-Visit Summary'
-  },
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/communication-category',
+      code: 'instruction',
+      display: 'Post-Visit Summary'
+    }]
+  } as FHIRCodeableConcept,
   TECHNICAL_SUPPORT: {
-    system: 'http://terminology.hl7.org/CodeSystem/communication-category',
-    code: 'notification',
-    display: 'Technical Support'
-  },
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/communication-category',
+      code: 'notification',
+      display: 'Technical Support'
+    }]
+  } as FHIRCodeableConcept,
   FOLLOW_UP_CARE: {
-    system: 'http://terminology.hl7.org/CodeSystem/communication-category',
-    code: 'reminder',
-    display: 'Follow-up Care Instructions'
-  },
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/communication-category',
+      code: 'reminder',
+      display: 'Follow-up Care Instructions'
+    }]
+  } as FHIRCodeableConcept,
   APPOINTMENT_CHANGE: {
-    system: 'http://terminology.hl7.org/CodeSystem/communication-category',
-    code: 'notification',
-    display: 'Appointment Change Notification'
-  },
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/communication-category',
+      code: 'notification',
+      display: 'Appointment Change Notification'
+    }]
+  } as FHIRCodeableConcept,
   PRESCRIPTION_INFORMATION: {
-    system: 'http://terminology.hl7.org/CodeSystem/communication-category',
-    code: 'instruction',
-    display: 'Prescription Information'
-  },
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/communication-category',
+      code: 'instruction',
+      display: 'Prescription Information'
+    }]
+  } as FHIRCodeableConcept,
   TEST_RESULTS: {
-    system: 'http://terminology.hl7.org/CodeSystem/communication-category',
-    code: 'alert',
-    display: 'Test Results Notification'
-  },
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/communication-category',
+      code: 'alert',
+      display: 'Test Results Notification'
+    }]
+  } as FHIRCodeableConcept,
   EDUCATION_MATERIAL: {
-    system: 'http://terminology.hl7.org/CodeSystem/communication-category',
-    code: 'instruction',
-    display: 'Patient Education Material'
-  }
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/communication-category',
+      code: 'instruction',
+      display: 'Patient Education Material'
+    }]
+  } as FHIRCodeableConcept
 } as const;
 
 // Communication medium codes for telehealth

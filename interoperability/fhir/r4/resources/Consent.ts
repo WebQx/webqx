@@ -207,23 +207,31 @@ export interface TelehealthConsentContext {
 // Pre-defined consent categories for telehealth
 export const TELEHEALTH_CONSENT_CATEGORIES = {
   SESSION_RECORDING: {
-    system: 'http://terminology.hl7.org/CodeSystem/consentcategorycodes',
-    code: 'research',
-    display: 'Telehealth Session Recording'
-  },
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/consentcategorycodes',
+      code: 'research',
+      display: 'Telehealth Session Recording'
+    }]
+  } as FHIRCodeableConcept,
   DATA_SHARING: {
-    system: 'http://terminology.hl7.org/CodeSystem/consentcategorycodes',
-    code: 'patient-privacy',
-    display: 'Telehealth Data Sharing'
-  },
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/consentcategorycodes',
+      code: 'patient-privacy',
+      display: 'Telehealth Data Sharing'
+    }]
+  } as FHIRCodeableConcept,
   EMERGENCY_ACCESS: {
-    system: 'http://terminology.hl7.org/CodeSystem/consentcategorycodes',
-    code: 'emrgonly',
-    display: 'Emergency Access to Telehealth Data'
-  },
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/consentcategorycodes',
+      code: 'emrgonly',
+      display: 'Emergency Access to Telehealth Data'
+    }]
+  } as FHIRCodeableConcept,
   PLATFORM_USAGE: {
-    system: 'http://terminology.hl7.org/CodeSystem/consentcategorycodes',
-    code: 'treatment',
-    display: 'Telehealth Platform Usage'
-  }
+    coding: [{
+      system: 'http://terminology.hl7.org/CodeSystem/consentcategorycodes',
+      code: 'treatment',
+      display: 'Telehealth Platform Usage'
+    }]
+  } as FHIRCodeableConcept
 } as const;

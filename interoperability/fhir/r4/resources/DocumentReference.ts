@@ -199,35 +199,47 @@ export interface AmbientDocumentationContext {
 // Pre-defined document types for clinical notes
 export const CLINICAL_NOTE_TYPES = {
   ENCOUNTER_NOTE: {
-    system: 'http://loinc.org',
-    code: '34109-9',
-    display: 'Note'
-  },
+    coding: [{
+      system: 'http://loinc.org',
+      code: '34109-9',
+      display: 'Note'
+    }]
+  } as FHIRCodeableConcept,
   PROGRESS_NOTE: {
-    system: 'http://loinc.org',
-    code: '11506-3',
-    display: 'Progress note'
-  },
+    coding: [{
+      system: 'http://loinc.org',
+      code: '11506-3',
+      display: 'Progress note'
+    }]
+  } as FHIRCodeableConcept,
   CONSULTATION_NOTE: {
-    system: 'http://loinc.org',
-    code: '11488-4',
-    display: 'Consultation note'
-  },
+    coding: [{
+      system: 'http://loinc.org',
+      code: '11488-4',
+      display: 'Consultation note'
+    }]
+  } as FHIRCodeableConcept,
   DISCHARGE_SUMMARY: {
-    system: 'http://loinc.org',
-    code: '18842-5',
-    display: 'Discharge summary'
-  },
+    coding: [{
+      system: 'http://loinc.org',
+      code: '18842-5',
+      display: 'Discharge summary'
+    }]
+  } as FHIRCodeableConcept,
   AMBIENT_DOCUMENTATION: {
-    system: 'http://loinc.org',
-    code: '34109-9',
-    display: 'Ambient clinical documentation'
-  },
+    coding: [{
+      system: 'http://loinc.org',
+      code: '34109-9',
+      display: 'Ambient clinical documentation'
+    }]
+  } as FHIRCodeableConcept,
   TELEHEALTH_NOTE: {
-    system: 'http://loinc.org',
-    code: '34109-9',
-    display: 'Telehealth encounter note'
-  }
+    coding: [{
+      system: 'http://loinc.org',
+      code: '34109-9',
+      display: 'Telehealth encounter note'
+    }]
+  } as FHIRCodeableConcept
 } as const;
 
 // Categories for clinical notes

@@ -131,7 +131,7 @@ describe('FHIR R4 Resources', () => {
 
       expect(consent.resourceType).toBe('Consent');
       expect(consent.status).toBe('active');
-      expect(consent.category?.[0]?.display).toBe('Telehealth Platform Usage');
+      expect(consent.category?.[0]?.coding?.[0]?.display).toBe('Telehealth Platform Usage');
     });
 
     it('should support all consent statuses', () => {
@@ -187,7 +187,7 @@ describe('FHIR R4 Resources', () => {
 
       expect(communication.resourceType).toBe('Communication');
       expect(communication.status).toBe('completed');
-      expect(communication.category?.[0]?.display).toBe('Post-Visit Summary');
+      expect(communication.category?.[0]?.coding?.[0]?.display).toBe('Post-Visit Summary');
       expect(communication.payload?.[0]?.contentString).toContain('Post-Visit Summary');
     });
 
