@@ -4,360 +4,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebQX™ Patient Portal - Login</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            width: 100%;
-            max-width: 400px;
-            position: relative;
-        }
-
-        .login-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px 20px;
-            text-align: center;
-        }
-
-        .login-header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .login-header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .login-form {
-            padding: 30px 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: #fafafa;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .form-group input.error {
-            border-color: #e74c3c;
-            background: #fdf2f2;
-        }
-
-        .error-message {
-            color: #e74c3c;
-            font-size: 12px;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-        }
-
-        .login-button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .login-button:active {
-            transform: translateY(0);
-        }
-
-        .login-button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .login-button .spinner {
-            display: none;
-            width: 20px;
-            height: 20px;
-            border: 2px solid transparent;
-            border-top: 2px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 8px;
-        }
-
-        .login-button.loading .spinner {
-            display: inline-block;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .forgot-password {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .forgot-password a {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.3s ease;
-        }
-
-        .forgot-password a:hover {
-            color: #764ba2;
-            text-decoration: underline;
-        }
-
-        .alert {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: none;
-        }
-
-        .alert.show {
-            display: block;
-        }
-
-        .alert.error {
-            background: #fdf2f2;
-            color: #e74c3c;
-            border: 1px solid #fdbdbd;
-        }
-
-        .alert.success {
-            background: #f0f9f0;
-            color: #27ae60;
-            border: 1px solid #a8d8a8;
-        }
-
-        .test-credentials {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 12px;
-        }
-
-        .test-credentials h4 {
-            color: #495057;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-
-        .test-credentials p {
-            margin: 4px 0;
-            color: #6c757d;
-        }
-
-        .test-credentials code {
-            background: #e9ecef;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-        }
-
-        @media (max-width: 480px) {
-            .login-container {
-                margin: 10px;
-            }
-            
-            .login-header {
-                padding: 25px 15px;
-            }
-            
-            .login-form {
-                padding: 25px 15px;
-            }
-        }
-    </style>
+    <link href="styles/output.css" rel="stylesheet">
 </head>
-<body>
-    <div class="login-container">
-        <div class="login-header">
-            <h1>🏥 WebQX™</h1>
-            <p>Patient Portal Access</p>
+<body class="portal-layout bg-gradient-medical min-h-screen flex items-center justify-center p-5">
+    <!-- Login Container -->
+    <div class="medical-card w-full max-w-md mx-auto overflow-hidden">
+        <!-- Login Header -->
+        <div class="bg-gradient-medical text-white p-8 text-center relative">
+            <div class="absolute inset-0 bg-black bg-opacity-10"></div>
+            <div class="relative z-10">
+                <h1 class="text-3xl font-bold mb-2">🏥 WebQX™</h1>
+                <p class="text-white text-opacity-90">Patient Portal Access</p>
+            </div>
         </div>
         
-        <form class="login-form" id="loginForm">
-            <div class="test-credentials">
-                <h4>Test Credentials:</h4>
-                <p><strong>Active User:</strong> <code>john.doe@example.com</code> / <code>password123</code></p>
-                <p><strong>Locked User:</strong> <code>locked@example.com</code> / <code>password123</code></p>
+        <!-- Login Form -->
+        <form class="p-8 space-y-6" id="loginForm">
+            <!-- Test Credentials Info -->
+            <div class="bg-blue-50 border border-blue-200 rounded-medical p-4 text-sm">
+                <h4 class="font-semibold text-medical-text mb-2">Test Credentials:</h4>
+                <p class="mb-1">
+                    <strong class="text-medical-text">Active User:</strong> 
+                    <code class="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">john.doe@example.com</code> / 
+                    <code class="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">password123</code>
+                </p>
+                <p>
+                    <strong class="text-medical-text">Locked User:</strong> 
+                    <code class="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">locked@example.com</code> / 
+                    <code class="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">password123</code>
+                </p>
             </div>
 
-            <div class="alert" id="alertMessage"></div>
+            <!-- Alert Message -->
+            <div class="alert hidden" id="alertMessage"></div>
             
+            <!-- Email Field -->
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required>
-                <div class="error-message" id="emailError"></div>
+                <label for="email" class="form-label">Email Address</label>
+                <input type="email" 
+                       id="email" 
+                       name="email" 
+                       required 
+                       class="form-input text-base">
+                <div class="form-error hidden" id="emailError"></div>
             </div>
             
+            <!-- Password Field -->
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-                <div class="error-message" id="passwordError"></div>
+                <label for="password" class="form-label">Password</label>
+                <input type="password" 
+                       id="password" 
+                       name="password" 
+                       required 
+                       class="form-input text-base">
+                <div class="form-error hidden" id="passwordError"></div>
             </div>
             
-            <button type="submit" class="login-button" id="loginButton">
-                <span class="spinner"></span>
-                <span class="button-text">Sign In</span>
+            <!-- Login Button -->
+            <button type="submit" 
+                    class="btn-primary w-full py-3.5 text-base font-semibold hover-lift 
+                           disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none
+                           flex items-center justify-center gap-2" 
+                    id="loginButton">
+                <span class="loading-spinner hidden" id="loginSpinner"></span>
+                <span id="loginButtonText">Sign In</span>
             </button>
             
-            <div class="forgot-password">
-                <a href="#" onclick="showForgotPasswordAlert()">Forgot your password?</a>
+            <!-- Forgot Password Link -->
+            <div class="text-center">
+                <a href="#" 
+                   class="text-primary-500 hover:text-primary-600 text-sm font-medium
+                          transition-colors underline-offset-4 hover:underline">
+                    Forgot your password?
+                </a>
             </div>
         </form>
     </div>
 
     <script>
-        const loginForm = document.getElementById('loginForm');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const loginButton = document.getElementById('loginButton');
-        const alertMessage = document.getElementById('alertMessage');
+        // Global variables
+        let isLoading = false;
 
-        // Form validation
-        function validateEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        }
+        // Initialize the form
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('loginForm');
+            form.addEventListener('submit', handleLogin);
+        });
 
-        function showFieldError(fieldId, message) {
-            const field = document.getElementById(fieldId);
-            const errorDiv = document.getElementById(fieldId + 'Error');
+        async function handleLogin(event) {
+            event.preventDefault();
             
-            field.classList.add('error');
-            errorDiv.textContent = message;
-            errorDiv.classList.add('show');
-        }
-
-        function hideFieldError(fieldId) {
-            const field = document.getElementById(fieldId);
-            const errorDiv = document.getElementById(fieldId + 'Error');
+            if (isLoading) return;
             
-            field.classList.remove('error');
-            errorDiv.classList.remove('show');
-        }
-
-        function showAlert(message, type = 'error') {
-            alertMessage.textContent = message;
-            alertMessage.className = `alert ${type} show`;
-        }
-
-        function hideAlert() {
-            alertMessage.classList.remove('show');
-        }
-
-        function setLoading(loading) {
-            loginButton.disabled = loading;
-            if (loading) {
-                loginButton.classList.add('loading');
-                loginButton.querySelector('.button-text').textContent = 'Signing In...';
-            } else {
-                loginButton.classList.remove('loading');
-                loginButton.querySelector('.button-text').textContent = 'Sign In';
-            }
-        }
-
-        // Clear field errors on input
-        emailInput.addEventListener('input', () => hideFieldError('email'));
-        passwordInput.addEventListener('input', () => hideFieldError('password'));
-
-        // Form submission
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
             
             // Clear previous errors
-            hideFieldError('email');
-            hideFieldError('password');
-            hideAlert();
+            clearErrors();
             
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
-            
-            // Client-side validation
-            let hasErrors = false;
-            
-            if (!email) {
-                showFieldError('email', 'Email is required');
-                hasErrors = true;
-            } else if (!validateEmail(email)) {
-                showFieldError('email', 'Please enter a valid email address');
-                hasErrors = true;
-            }
-            
-            if (!password) {
-                showFieldError('password', 'Password is required');
-                hasErrors = true;
-            }
-            
-            if (hasErrors) {
+            // Validate inputs
+            if (!validateInputs(email, password)) {
                 return;
             }
             
-            // Make login request
-            setLoading(true);
+            // Set loading state
+            setLoadingState(true);
             
             try {
                 const response = await fetch('/api/auth/login', {
@@ -370,79 +121,154 @@
                 
                 const data = await response.json();
                 
-                if (data.success) {
-                    // Store token and user info
+                if (response.ok && data.success) {
+                    // Store authentication data
                     localStorage.setItem('authToken', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
                     
+                    // Show success message
                     showAlert('Login successful! Redirecting...', 'success');
                     
-                    // Redirect to patient portal
+                    // Redirect after a short delay
                     setTimeout(() => {
                         window.location.href = '/';
                     }, 1500);
                 } else {
-                    // Handle different error types
-                    if (data.code === 'ACCOUNT_LOCKED') {
-                        showAlert('Your account has been locked. Please contact support for assistance.');
-                    } else if (data.code === 'INVALID_CREDENTIALS') {
-                        showAlert('Invalid email or password. Please check your credentials and try again.');
-                    } else if (data.code === 'VALIDATION_ERROR') {
-                        showAlert('Please check your input and try again.');
-                        
-                        // Show specific field errors if available
-                        if (data.details) {
-                            data.details.forEach(error => {
-                                if (error.param === 'email') {
-                                    showFieldError('email', error.msg);
-                                } else if (error.param === 'password') {
-                                    showFieldError('password', error.msg);
-                                }
-                            });
-                        }
-                    } else {
-                        showAlert(data.error || 'Login failed. Please try again.');
-                    }
+                    // Handle login error
+                    showAlert(data.message || 'Login failed. Please try again.', 'error');
+                    setLoadingState(false);
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                showAlert('Network error. Please check your connection and try again.');
-            } finally {
-                setLoading(false);
+                showAlert('Network error. Please check your connection and try again.', 'error');
+                setLoadingState(false);
+            }
+        }
+
+        function validateInputs(email, password) {
+            let isValid = true;
+            
+            // Email validation
+            if (!email) {
+                showFieldError('email', 'Email address is required.');
+                isValid = false;
+            } else if (!isValidEmail(email)) {
+                showFieldError('email', 'Please enter a valid email address.');
+                isValid = false;
+            }
+            
+            // Password validation
+            if (!password) {
+                showFieldError('password', 'Password is required.');
+                isValid = false;
+            } else if (password.length < 6) {
+                showFieldError('password', 'Password must be at least 6 characters long.');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function showFieldError(fieldName, message) {
+            const field = document.getElementById(fieldName);
+            const errorElement = document.getElementById(fieldName + 'Error');
+            
+            field.classList.add('border-red-500', 'bg-red-50');
+            field.classList.remove('border-medical-subtle');
+            
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
+
+        function clearErrors() {
+            const fields = ['email', 'password'];
+            fields.forEach(fieldName => {
+                const field = document.getElementById(fieldName);
+                const errorElement = document.getElementById(fieldName + 'Error');
+                
+                field.classList.remove('border-red-500', 'bg-red-50');
+                field.classList.add('border-medical-subtle');
+                
+                errorElement.classList.add('hidden');
+                errorElement.textContent = '';
+            });
+            
+            hideAlert();
+        }
+
+        function showAlert(message, type = 'info') {
+            const alert = document.getElementById('alertMessage');
+            
+            // Remove existing classes
+            alert.classList.remove('hidden', 'bg-green-50', 'text-green-800', 'border-green-200',
+                                   'bg-red-50', 'text-red-800', 'border-red-200',
+                                   'bg-blue-50', 'text-blue-800', 'border-blue-200');
+            
+            // Add base classes
+            alert.classList.add('p-3', 'rounded-medical', 'border', 'text-sm', 'font-medium');
+            
+            // Add type-specific classes
+            switch (type) {
+                case 'success':
+                    alert.classList.add('bg-green-50', 'text-green-800', 'border-green-200');
+                    break;
+                case 'error':
+                    alert.classList.add('bg-red-50', 'text-red-800', 'border-red-200');
+                    break;
+                default:
+                    alert.classList.add('bg-blue-50', 'text-blue-800', 'border-blue-200');
+            }
+            
+            alert.textContent = message;
+        }
+
+        function hideAlert() {
+            const alert = document.getElementById('alertMessage');
+            alert.classList.add('hidden');
+        }
+
+        function setLoadingState(loading) {
+            isLoading = loading;
+            const button = document.getElementById('loginButton');
+            const spinner = document.getElementById('loginSpinner');
+            const buttonText = document.getElementById('loginButtonText');
+            
+            if (loading) {
+                button.disabled = true;
+                spinner.classList.remove('hidden');
+                buttonText.textContent = 'Signing In...';
+            } else {
+                button.disabled = false;
+                spinner.classList.add('hidden');
+                buttonText.textContent = 'Sign In';
+            }
+        }
+
+        // Enhanced accessibility: Form submission on Enter key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !isLoading) {
+                event.preventDefault();
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
             }
         });
 
-        function showForgotPasswordAlert() {
-            showAlert('Password reset functionality is not yet implemented. Please contact support for assistance.', 'error');
-        }
-
-        // Check if user is already logged in
-        window.addEventListener('load', () => {
-            const token = localStorage.getItem('authToken');
-            if (token) {
-                // Verify token is still valid
-                fetch('/api/auth/profile', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // User is already logged in, redirect to portal
-                        window.location.href = '/';
-                    } else {
-                        // Token is invalid, remove it
-                        localStorage.removeItem('authToken');
-                        localStorage.removeItem('user');
-                    }
-                })
-                .catch(() => {
-                    // Network error, remove token to be safe
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('user');
-                });
-            }
+        // Auto-clear errors when user starts typing
+        ['email', 'password'].forEach(fieldName => {
+            document.getElementById(fieldName).addEventListener('input', function() {
+                const field = this;
+                const errorElement = document.getElementById(fieldName + 'Error');
+                
+                if (!errorElement.classList.contains('hidden')) {
+                    field.classList.remove('border-red-500', 'bg-red-50');
+                    field.classList.add('border-medical-subtle');
+                    errorElement.classList.add('hidden');
+                }
+            });
         });
     </script>
 </body>

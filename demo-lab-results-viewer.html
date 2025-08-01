@@ -7,29 +7,23 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .demo-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        .demo-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            margin-bottom: 2rem;
-        }
-    </style>
+    <link href="styles/output.css" rel="stylesheet">
 </head>
-<body class="bg-gray-50">
-    <div class="demo-container">
-        <div class="demo-header">
-            <h1 class="text-3xl font-bold mb-2">🧪 Lab Results Viewer Demo</h1>
-            <p class="text-xl opacity-90">WebQX Patient Portal Component</p>
-            <p class="mt-2 opacity-80">Interactive demonstration of FHIR Observation display with filtering and sorting</p>
-        </div>
+<body class="portal-layout">
+    <div class="portal-container">
+        <header class="portal-header">
+            <div class="relative z-10 max-w-4xl mx-auto text-center">
+                <h1 class="portal-title text-4xl md:text-5xl font-bold mb-4">
+                    🧪 Lab Results Viewer Demo
+                </h1>
+                <p class="portal-tagline text-lg md:text-xl text-medical-muted mb-6">
+                    WebQX Patient Portal Component
+                </p>
+                <p class="text-medical-muted opacity-80">
+                    Interactive demonstration of FHIR Observation display with filtering and sorting
+                </p>
+            </div>
+        </header>
         
         <div id="lab-results-demo"></div>
     </div>
