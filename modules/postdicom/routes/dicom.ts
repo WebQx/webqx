@@ -57,10 +57,11 @@ function toLegacyUser(user: SSOUser | LegacyUser | CompatibleSSOUser, sessionId?
 }
 
 /**
- * Extended request interface with user context
+ * Extended request interface with user context and file upload support
  */
 interface AuthenticatedRequest extends Request {
   user?: SSOUser | LegacyUser | CompatibleSSOUser;
+  files?: any; // Support for uploaded files
 }
 
 /**
@@ -314,7 +315,7 @@ export function createPostDICOMRouter(): Router {
   router.post('/studies/upload', authenticate, authorize('upload', 'study'),
     async (req: AuthenticatedRequest, res: Response) => {
       try {
-        const files = req.files as Express.Multer.File[];
+        const files = req.files as any[];
         if (!files || files.length === 0) {
           return res.status(400).json({
             success: false,
@@ -325,7 +326,7 @@ export function createPostDICOMRouter(): Router {
           });
         }
 
-        // Convert Express.Multer.File to File interface
+        // Convert uploaded files to proper format
         const dicomFiles = files.map(file => ({
           name: file.originalname,
           size: file.size,
@@ -511,7 +512,7 @@ export function createPostDICOMRouter(): Router {
           specialties: ['radiology'],
           permissions: [],
           sessionId: 'session-123',
-          ipAddress: req.ip,
+          ipAddress: req.ip || 'unknown',
           userAgent: req.get('User-Agent') || ''
         };
 

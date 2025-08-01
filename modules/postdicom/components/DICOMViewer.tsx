@@ -279,7 +279,7 @@ const DICOMViewer: React.FC<DICOMViewerProps> = ({
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .dicom-viewer {
           display: flex;
           flex-direction: column;

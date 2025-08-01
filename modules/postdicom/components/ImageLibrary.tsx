@@ -344,7 +344,7 @@ const ImageLibrary: React.FC<ImageLibraryProps> = ({
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .image-library {
           display: flex;
           flex-direction: column;
