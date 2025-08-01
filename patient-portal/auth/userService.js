@@ -14,6 +14,8 @@ const initializeTestUsers = async () => {
             name: 'John Doe',
             email: 'john.doe@example.com',
             password: 'password123',
+            phoneNumber: '+1-555-0123',
+            mfaEnabled: true,
             accountStatus: 'active'
         },
         {
@@ -21,6 +23,8 @@ const initializeTestUsers = async () => {
             name: 'Jane Smith',
             email: 'jane.smith@example.com',
             password: 'password123',
+            phoneNumber: '+1-555-0456',
+            mfaEnabled: false,
             accountStatus: 'active'
         },
         {
@@ -28,6 +32,8 @@ const initializeTestUsers = async () => {
             name: 'Locked User',
             email: 'locked@example.com',
             password: 'password123',
+            phoneNumber: '+1-555-0789',
+            mfaEnabled: true,
             accountStatus: 'locked'
         }
     ];
@@ -122,6 +128,8 @@ const authenticateUser = async (email, password) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
+                phoneNumber: user.phoneNumber,
+                mfaEnabled: user.mfaEnabled,
                 accountStatus: user.accountStatus
             },
             token
@@ -165,7 +173,7 @@ const verifyToken = (token) => {
  */
 const registerUser = async (userData) => {
     try {
-        const { name, email, password } = userData;
+        const { name, email, password, phoneNumber } = userData;
 
         // Input validation
         if (!name || !email || !password) {
@@ -184,6 +192,18 @@ const registerUser = async (userData) => {
                 error: 'Invalid email format',
                 code: 'INVALID_EMAIL'
             };
+        }
+
+        // Validate phone number format if provided
+        if (phoneNumber) {
+            const phoneRegex = /^\+[1-9]\d{1,14}$/; // E.164 format
+            if (!phoneRegex.test(phoneNumber)) {
+                return {
+                    success: false,
+                    error: 'Invalid phone number format. Use E.164 format (e.g., +1234567890)',
+                    code: 'INVALID_PHONE'
+                };
+            }
         }
 
         // Check password strength
@@ -213,6 +233,8 @@ const registerUser = async (userData) => {
             name: name.trim(),
             email: email.toLowerCase(),
             password: hashedPassword,
+            phoneNumber: phoneNumber || null,
+            mfaEnabled: false, // Default to false, can be enabled later
             accountStatus: 'active'
         };
 
@@ -224,6 +246,8 @@ const registerUser = async (userData) => {
                 id: newUser.id,
                 name: newUser.name,
                 email: newUser.email,
+                phoneNumber: newUser.phoneNumber,
+                mfaEnabled: newUser.mfaEnabled,
                 accountStatus: newUser.accountStatus
             }
         };
@@ -250,9 +274,62 @@ const getUserById = (userId) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
+                phoneNumber: user.phoneNumber,
+                mfaEnabled: user.mfaEnabled,
                 accountStatus: user.accountStatus
             };
         }
+    }
+    return null;
+};
+
+/**
+ * Update user MFA settings
+ * @param {string} userId - User ID
+ * @param {boolean} enabled - MFA enabled status
+ * @returns {Object} Update result
+ */
+const updateUserMFA = (userId, enabled) => {
+    for (const [email, user] of users.entries()) {
+        if (user.id === userId) {
+            user.mfaEnabled = enabled;
+            users.set(email, user);
+            return {
+                success: true,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    phoneNumber: user.phoneNumber,
+                    mfaEnabled: user.mfaEnabled,
+                    accountStatus: user.accountStatus
+                }
+            };
+        }
+    }
+    return {
+        success: false,
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+    };
+};
+
+/**
+ * Get user by email
+ * @param {string} email - User email
+ * @returns {Object} User data or null
+ */
+const getUserByEmail = (email) => {
+    const user = users.get(email.toLowerCase());
+    if (user) {
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            mfaEnabled: user.mfaEnabled,
+            accountStatus: user.accountStatus
+        };
     }
     return null;
 };
@@ -261,5 +338,7 @@ module.exports = {
     authenticateUser,
     verifyToken,
     registerUser,
-    getUserById
+    getUserById,
+    updateUserMFA,
+    getUserByEmail
 };
