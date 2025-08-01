@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX™ Telehealth Module Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .demo-section {
+            padding: 40px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            border-left: 5px solid #3498db;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        
+        .feature-card h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+        
+        .feature-card p {
+            margin: 0 0 20px 0;
+            line-height: 1.6;
+            color: #666;
+        }
+        
+        .demo-button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.2s ease;
+        }
+        
+        .demo-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .code-example {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        .language-selector {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-connected { background: #27ae60; }
+        .status-waiting { background: #f39c12; }
+        .status-error { background: #e74c3c; }
+        
+        .mock-interface {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .video-placeholder {
+            background: #000;
+            color: white;
+            text-align: center;
+            padding: 60px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 18px;
+        }
+        
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        
+        .control-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .control-button.active {
+            background: #28a745;
+        }
+        
+        .transcription-panel {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            min-height: 100px;
+        }
+        
+        .message-example {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .feature-highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .implementation-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🩺 WebQX™ Telehealth Module</h1>
+            <p>Ambient Documentation • Multilingual Support • FHIR Messaging</p>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🚀 Feature Overview</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🎙️ Ambient Documentation</h3>
+                    <p>Real-time speech transcription using Whisper integration with automatic conversion to FHIR ClinicalNote resources. Supports medical terminology optimization for different specialties.</p>
+                    <button class="demo-button" onclick="showAmbientDocDemo()">Try Demo</button>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🌐 Multilingual Interface</h3>
+                    <p>Support for 12+ languages with automatic detection, localized UI for both provider and patient interfaces, and real-time translation capabilities.</p>
+                    <button class="demo-button" onclick="showLanguageDemo()">Try Demo</button>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>📧 FHIR Messaging</h3>
+                    <p>Post-visit summary generation and delivery, follow-up instruction templates, patient notification system, and compliance with FHIR Messaging standards.</p>
+                    <button class="demo-button" onclick="showMessagingDemo()">Try Demo</button>
+                </div>
+            </div>
+            
+            <div class="implementation-stats">
+                <div class="stat-card">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Core Services</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">UI Components</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">12+</div>
+                    <div class="stat-label">Supported Languages</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">43</div>
+                    <div class="stat-label">Test Cases</div>
+                </div>
+            </div>
+            
+            <div class="feature-highlight">
+                <h2>🔬 Implementation Details</h2>
+                <p>Built with TypeScript, React, and comprehensive FHIR R4 compliance. Integrates seamlessly with existing WebQX™ infrastructure including Whisper services, Matrix messaging, and i18next localization.</p>
+            </div>
+            
+            <!-- Demo Areas -->
+            <div id="ambient-demo" class="mock-interface" style="display: none;">
+                <h3>🎙️ Ambient Documentation Demo</h3>
+                <div class="video-placeholder">
+                    📹 Provider Video Interface
+                    <div style="margin-top: 15px; font-size: 14px;">
+                        <span class="status-indicator status-connected"></span>Connected
+                    </div>
+                </div>
+                
+                <div class="control-panel">
+                    <button class="control-button active" onclick="toggleTranscription(this)">🎙️ Recording</button>
+                    <button class="control-button" onclick="processAudio()">📄 Process Audio</button>
+                    <button class="control-button" onclick="saveClinicalNote()">💾 Save Note</button>
+                </div>
+                
+                <div class="transcription-panel" id="transcription-output">
+                    <strong>Live Transcription:</strong><br>
+                    <em style="color: #666;">Ambient transcription will appear here as the provider speaks...</em>
+                </div>
+                
+                <div class="code-example">
+<pre>// Create clinical note from transcription
+const result = await ambientService.processAudioFile(audioFile, {
+  sessionId: 'session-123',
+  patientId: 'patient-456', 
+  providerId: 'provider-789',
+  specialtyContext: 'cardiology',
+  language: 'en'
+});
+
+if (result.success) {
+  console.log('Clinical Note:', result.clinicalNote);
+}</pre>
+                </div>
+            </div>
+            
+            <div id="language-demo" class="mock-interface" style="display: none;">
+                <h3>🌐 Multilingual Interface Demo</h3>
+                <div style="margin-bottom: 20px;">
+                    <label>Select Language: </label>
+                    <select class="language-selector" onchange="changeLanguage(this.value)">
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                        <option value="fr">Français</option>
+                    </select>
+                </div>
+                
+                <div class="mock-interface">
+                    <h4 id="interface-title">Patient Portal - Telehealth</h4>
+                    <p id="interface-welcome">Welcome to your telehealth appointment</p>
+                    <button class="demo-button" id="interface-join">Join Session</button>
+                    <div style="margin-top: 15px;">
+                        <label>
+                            <input type="checkbox" id="interface-captions"> 
+                            <span id="interface-captions-label">Enable captions</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="code-example">
+<pre>// Language switching
+await languageManager.changeLanguage('es');
+
+// Component usage
+&lt;TelehealthPatient 
+  sessionId="session-789"
+  language="es"
+  enableAutoTranslation={true}
+/&gt;</pre>
+                </div>
+            </div>
+            
+            <div id="messaging-demo" class="mock-interface" style="display: none;">
+                <h3>📧 FHIR Messaging Demo</h3>
+                
+                <div class="message-example">
+                    <strong>Post-Visit Summary</strong>
+                    <p><strong>Visit Date:</strong> <span id="visit-date"></span></p>
+                    <p><strong>Summary:</strong> Routine consultation completed. Patient is stable and responding well to treatment.</p>
+                    <p><strong>Diagnosis:</strong> • Hypertension • Type 2 Diabetes</p>
+                    <p><strong>Medications:</strong> • Metformin 500mg twice daily • Lisinopril 10mg once daily</p>
+                    <p><strong>Follow-up:</strong> Continue current medications. Return in 3 months for follow-up.</p>
+                </div>
+                
+                <div class="control-panel">
+                    <button class="demo-button" onclick="sendSummary()">📧 Send Summary</button>
+                    <button class="demo-button" onclick="sendInstructions()">📝 Send Instructions</button>
+                </div>
+                
+                <div id="message-status" style="margin-top: 15px; color: #28a745; display: none;">
+                    ✅ FHIR Message sent successfully!
+                </div>
+                
+                <div class="code-example">
+<pre>// Send post-visit summary
+const summary = {
+  sessionId: 'session-123',
+  patientId: 'patient-456',
+  providerId: 'provider-789',
+  visitDate: '2023-12-01T10:00:00Z',
+  summary: 'Consultation completed',
+  language: 'en'
+};
+
+const result = await messagingService.sendPostVisitSummary(summary);</pre>
+                </div>
+            </div>
+            
+            <h2>📚 Integration Guide</h2>
+            
+            <div class="code-example">
+<pre>// Import telehealth components
+import { 
+  TelehealthProvider, 
+  TelehealthPatient,
+  AmbientDocumentationService,
+  TelehealthMessagingService 
+} from './modules/telehealth';
+
+// Provider interface
+&lt;TelehealthProvider 
+  patientId="patient-123"
+  providerId="provider-456" 
+  sessionId="session-789"
+  enableTranscription={true}
+  language="en"
+  specialtyContext="cardiology"
+/&gt;
+
+// Patient interface  
+&lt;TelehealthPatient
+  sessionId="session-789"
+  language="es"
+  enableAutoTranslation={true}
+/&gt;</pre>
+            </div>
+            
+            <h2>🧪 Test Coverage</h2>
+            <p>The telehealth module includes comprehensive test suites covering:</p>
+            <ul>
+                <li><strong>ClinicalNote Model:</strong> 17 test cases covering FHIR compliance, validation, and content management</li>
+                <li><strong>Ambient Documentation Service:</strong> Audio processing, real-time transcription, and specialty context handling</li>
+                <li><strong>FHIR Messaging Service:</strong> Post-visit summaries, follow-up instructions, and message validation</li>
+                <li><strong>Multilingual Support:</strong> Language detection, switching, and localization</li>
+            </ul>
+            
+            <div class="feature-highlight">
+                <h2>🔒 Security & Compliance</h2>
+                <p>Built with HIPAA compliance in mind, featuring end-to-end encryption, secure storage and transmission of transcripts, audit logging for all telehealth activities, and patient consent management.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showAmbientDocDemo() {
+            hideAllDemos();
+            document.getElementById('ambient-demo').style.display = 'block';
+        }
+        
+        function showLanguageDemo() {
+            hideAllDemos();
+            document.getElementById('language-demo').style.display = 'block';
+        }
+        
+        function showMessagingDemo() {
+            hideAllDemos();
+            document.getElementById('messaging-demo').style.display = 'block';
+            document.getElementById('visit-date').textContent = new Date().toLocaleDateString();
+        }
+        
+        function hideAllDemos() {
+            document.getElementById('ambient-demo').style.display = 'none';
+            document.getElementById('language-demo').style.display = 'none';
+            document.getElementById('messaging-demo').style.display = 'none';
+        }
+        
+        function toggleTranscription(button) {
+            if (button.classList.contains('active')) {
+                button.classList.remove('active');
+                button.textContent = '🎙️ Start Recording';
+                document.getElementById('transcription-output').innerHTML = 
+                    '<strong>Transcription:</strong><br><em style="color: #666;">Click "Start Recording" to begin ambient documentation...</em>';
+            } else {
+                button.classList.add('active');
+                button.textContent = '⏹️ Stop Recording';
+                simulateTranscription();
+            }
+        }
+        
+        function simulateTranscription() {
+            const output = document.getElementById('transcription-output');
+            const sampleTexts = [
+                'Patient presents with chest pain and shortness of breath.',
+                'Physical examination reveals blood pressure 140/90.',
+                'Heart rate is regular at 78 beats per minute.',
+                'Lungs are clear bilaterally.',
+                'Assessment: Hypertension, well controlled.',
+                'Plan: Continue current medications, follow up in 3 months.'
+            ];
+            
+            let index = 0;
+            output.innerHTML = '<strong>Live Transcription:</strong><br>';
+            
+            const interval = setInterval(() => {
+                if (index < sampleTexts.length) {
+                    output.innerHTML += sampleTexts[index] + ' ';
+                    index++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 2000);
+        }
+        
+        function processAudio() {
+            alert('🎵 Audio file processed! Clinical note created with FHIR compliance.');
+        }
+        
+        function saveClinicalNote() {
+            alert('💾 Clinical note saved to FHIR server successfully!');
+        }
+        
+        const translations = {
+            en: {
+                title: 'Patient Portal - Telehealth',
+                welcome: 'Welcome to your telehealth appointment',
+                join: 'Join Session',
+                captions: 'Enable captions'
+            },
+            es: {
+                title: 'Portal del Paciente - Telesalud',
+                welcome: 'Bienvenido a su cita de telesalud',
+                join: 'Unirse a la Sesión',
+                captions: 'Habilitar subtítulos'
+            },
+            fr: {
+                title: 'Portail Patient - Télésanté',
+                welcome: 'Bienvenue à votre rendez-vous de télésanté',
+                join: 'Rejoindre la Session',
+                captions: 'Activer les sous-titres'
+            }
+        };
+        
+        function changeLanguage(lang) {
+            const trans = translations[lang];
+            document.getElementById('interface-title').textContent = trans.title;
+            document.getElementById('interface-welcome').textContent = trans.welcome;
+            document.getElementById('interface-join').textContent = trans.join;
+            document.getElementById('interface-captions-label').textContent = trans.captions;
+        }
+        
+        function sendSummary() {
+            document.getElementById('message-status').textContent = '📧 Sending post-visit summary via FHIR Messaging...';
+            document.getElementById('message-status').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('message-status').textContent = '✅ Post-visit summary sent successfully!';
+            }, 2000);
+        }
+        
+        function sendInstructions() {
+            document.getElementById('message-status').textContent = '📝 Sending follow-up instructions...';
+            document.getElementById('message-status').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('message-status').textContent = '✅ Follow-up instructions sent successfully!';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

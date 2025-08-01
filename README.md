@@ -1,4 +1,3 @@
-# 
 # 🌐 WebQX™: Modular Healthcare Platform  
 _A multilingual, specialty-aware, and privacy-first blueprint for global clinical care._
 
@@ -8,6 +7,17 @@ WebQX™ is a comprehensive modular healthcare stack designed to empower both pa
 Built with compliance at its core, WebQX™ adheres to global healthcare standards including HIPAA and FHIR, providing healthcare organizations with confidence in data security and interoperability. The platform's modular architecture enables seamless scalability and customization, adapting to the unique needs of healthcare settings from rural clinics to major urban hospitals.
 
 At the heart of WebQX™ is our commitment to accessibility, collaborative care, and patient empowerment—leveraging technology to break down barriers and improve global healthcare access for all.
+
+## 🩺 **NEW: Telehealth Module**
+Our latest enhancement includes a comprehensive telehealth solution with:
+
+- **🎙️ Ambient Documentation**: Real-time speech transcription using Whisper integration with automatic conversion to FHIR ClinicalNote resources
+- **🌐 Multilingual Interface**: Support for 12+ languages with automatic detection and real-time translation
+- **📧 FHIR Messaging**: Post-visit summaries, follow-up instructions, and patient notifications
+- **♿ Accessibility Features**: Full WCAG 2.1 AA compliance with screen reader support and voice controls
+- **🔒 HIPAA Compliance**: End-to-end encryption and secure handling of all clinical data
+
+**[View Telehealth Demo](./telehealth-demo.html)** | **[Integration Guide](./telehealth-integration-example.tsx)**
 
 ## 🧩 Modular Architecture
 
@@ -20,7 +30,8 @@ Built with React, supporting user-friendly access to clinical services:
 - 📬 **Secure Messaging** → Medplum or Matrix protocol with encryption  
 - 💵 **Billing & Insurance** → OpenMRS + Bahmni billing packages  
 - 📚 **Health Literacy Assistant** → Whisper + spaCy or Haystack NLP  
-- 🧭 **Care Navigation** → D3.js or Neo4j referral engine  
+- 🧭 **Care Navigation** → D3.js or Neo4j referral engine
+- 🩺 **Telehealth Module** → Ambient documentation, multilingual support, and FHIR messaging
 
 ### 🩺 Provider Panel  
 Modular EHR engine enhancements via OpenEMR / OpenMRS:
@@ -31,7 +42,8 @@ Modular EHR engine enhancements via OpenEMR / OpenMRS:
 - 📊 **Clinical Alerts / Decision Support** → OpenCDS or Drools rule engine  
 - 🧠 **CME Tracker** → Open Badges (BadgeOS/Moodle)  
 - 🤖 **Provider Assistant Bot** → LLM + private Whisper API  
-- 📝 **Transcription Suite** → Whisper + Google Cloud Speech-to-Text + specialty macros  
+- 📝 **Transcription Suite** → Whisper + Google Cloud Speech-to-Text + specialty macros
+- 🎥 **Telehealth Interface** → Video consultations with ambient documentation and real-time transcription  
 
 ### 🛠️ Admin Console  
 Role-based access and modular configuration for deployment:
@@ -92,6 +104,12 @@ Unified Provider Login
 webqx-ehr/
 ├── modules/
 │   ├── transcription/
+│   ├── telehealth/              # 🩺 NEW: Comprehensive telehealth solution
+│   │   ├── components/          # Provider & patient UI components
+│   │   ├── services/           # Ambient documentation & FHIR messaging
+│   │   ├── models/             # FHIR ClinicalNote and related models
+│   │   ├── locales/            # Multilingual support (12+ languages)
+│   │   └── utils/              # i18n and helper utilities
 │   ├── specialty-primary-care/
 │   ├── specialty-radiology/
 │   ├── specialty-cardiology/
