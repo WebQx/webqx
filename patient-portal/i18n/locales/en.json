@@ -88,6 +88,133 @@
     "current": "Current language: {{language}}",
     "changeLanguage": "Change language to {{language}}"
   },
+  "telehealth": {
+    "session": {
+      "title": "Telehealth Session",
+      "status": {
+        "scheduled": "Scheduled",
+        "waiting_room": "Waiting Room",
+        "in_progress": "In Progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "No Show"
+      },
+      "details": {
+        "sessionId": "Session ID:",
+        "status": "Status:",
+        "scheduled": "Scheduled:",
+        "chiefComplaint": "Chief Complaint:",
+        "participants": "Participants"
+      },
+      "room": {
+        "title": "Video Conference Room",
+        "room": "Room:",
+        "password": "Password:",
+        "joinButton": "Join Video Call",
+        "copyLink": "Copy Link",
+        "linkCopied": "Room link copied to clipboard!",
+        "copyFailed": "Failed to copy link to clipboard"
+      },
+      "participants": {
+        "title": "Participants",
+        "noParticipants": "No participants have joined yet.",
+        "online": "Online",
+        "left": "Left",
+        "types": {
+          "patient": "Patient",
+          "provider": "Provider",
+          "caregiver": "Caregiver",
+          "observer": "Observer"
+        }
+      },
+      "controls": {
+        "endSession": "End Session",
+        "leaveSession": "Leave Session"
+      },
+      "notes": {
+        "title": "Session Notes"
+      },
+      "technical": {
+        "title": "Technical Information",
+        "roomName": "Room Name:",
+        "server": "Server:",
+        "webLink": "Web Link:",
+        "mobileLink": "Mobile Link:"
+      },
+      "loading": "Setting up your telehealth session...",
+      "error": {
+        "title": "Session Error",
+        "retry": "Retry"
+      }
+    },
+    "dashboard": {
+      "title": "Telehealth Analytics Dashboard",
+      "lastUpdated": "Last updated: {{time}}",
+      "loading": "Loading telehealth analytics...",
+      "error": {
+        "title": "Dashboard Error",
+        "retry": "Retry"
+      },
+      "noData": "No telehealth session data available.",
+      "sections": {
+        "overview": "Session Overview",
+        "recentSessions": "Recent Sessions",
+        "qualityInsights": "Quality Insights",
+        "usageAnalytics": "Usage Analytics"
+      },
+      "stats": {
+        "totalSessions": "Total Sessions",
+        "today": "Today",
+        "thisWeek": "This Week",
+        "thisMonth": "This Month",
+        "completionRate": "Completion Rate",
+        "avgDuration": "Avg Duration"
+      },
+      "sessions": {
+        "noSessions": "No recent sessions found.",
+        "participantsSingle": "participant",
+        "participantsPlural": "participants",
+        "duration": "min"
+      },
+      "quality": {
+        "commonIssues": "Common Issues",
+        "noIssues": "No quality issues reported! 🎉",
+        "qualityByDevice": "Quality by Device",
+        "noDeviceData": "No device quality data available.",
+        "score": "/5"
+      },
+      "analytics": {
+        "deviceTypes": "Device Types",
+        "languages": "Languages",
+        "noData": "No data available."
+      }
+    },
+    "translation": {
+      "transcribing": "Transcribing audio...",
+      "translating": "Translating to {{language}}...",
+      "detectingLanguage": "Detecting language...",
+      "originalLanguage": "Original Language:",
+      "translatedTo": "Translated to {{language}}:",
+      "confidence": "Confidence: {{score}}%",
+      "error": {
+        "transcriptionFailed": "Audio transcription failed",
+        "translationFailed": "Translation failed",
+        "languageDetectionFailed": "Language detection failed",
+        "unsupportedLanguage": "Language not supported for translation"
+      },
+      "languages": {
+        "en": "English",
+        "es": "Spanish",
+        "fr": "French",
+        "de": "German",
+        "pt": "Portuguese",
+        "zh": "Chinese",
+        "ar": "Arabic",
+        "hi": "Hindi",
+        "ja": "Japanese"
+      }
+    }
+  },
   "aria": {
     "dashboard": "WebQX Patient Portal Dashboard",
     "personalizedWelcome": "Personalized welcome",
