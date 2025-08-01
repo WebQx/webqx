@@ -731,6 +731,8 @@ export interface FHIRAppointmentSearchParams {
   _count?: number;
   /** Starting point for results */
   _offset?: number;
+  /** Search by last updated date */
+  _lastUpdated?: string;
   /** Sort order */
   _sort?: string;
 }

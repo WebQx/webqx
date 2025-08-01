@@ -372,7 +372,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as FHIRApiResponse<FHIRPatient>;
     }
   }
 
@@ -395,7 +395,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as FHIRApiResponse<FHIRBundle>;
     }
   }
 
@@ -443,7 +443,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -465,7 +465,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -495,7 +495,7 @@ export class FHIRR4Client {
         headers: response.headers
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -525,7 +525,7 @@ export class FHIRR4Client {
         headers: response.headers
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -578,7 +578,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -601,7 +601,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -652,7 +652,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -822,7 +822,7 @@ export class FHIRR4Client {
         statusCode: response.status
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -846,7 +846,7 @@ export class FHIRR4Client {
         headers: response.headers
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -869,7 +869,7 @@ export class FHIRR4Client {
         headers: response.headers
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -897,7 +897,7 @@ export class FHIRR4Client {
         headers: response.headers
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -919,7 +919,7 @@ export class FHIRR4Client {
         headers: response.headers
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -943,7 +943,7 @@ export class FHIRR4Client {
         headers: response.headers
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 
@@ -967,7 +967,7 @@ export class FHIRR4Client {
         headers: response.headers
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error) as any;
     }
   }
 

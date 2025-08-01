@@ -94,6 +94,7 @@ export const createOpenEMRConfig = (options: {
 
 // Quick start helper
 export const createOpenEMRIntegration = async (config: import('./types').OpenEMRConfig) => {
+  const { OpenEMRIntegration } = await import('./services/integration');
   const integration = new OpenEMRIntegration(config);
   await integration.initialize();
   return integration;

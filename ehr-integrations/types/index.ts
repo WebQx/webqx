@@ -556,12 +556,18 @@ export interface SyncOperation {
   startedAt: Date;
   /** Completion timestamp */
   completedAt?: Date;
+  /** Updated timestamp */
+  updatedAt?: Date;
   /** Progress percentage (0-100) */
   progressPercent: number;
   /** Records processed */
   recordsProcessed: number;
   /** Records total */
   recordsTotal: number;
+  /** Records succeeded */
+  recordsSucceeded?: number;
+  /** Records failed */
+  recordsFailed?: number;
   /** Errors encountered */
   errors: SyncError[];
   /** Success message */
@@ -658,7 +664,19 @@ export type AuditAction =
   | 'system_backup'
   | 'system_restore'
   | 'user_management'
-  | 'permission_change';
+  | 'permission_change'
+  | 'initialize_engine'
+  | 'create_resource'
+  | 'update_resource'
+  | 'view_resource'
+  | 'delete_resource'
+  | 'sync_started'
+  | 'sync_completed'
+  | 'error_occurred'
+  | 'connection_established'
+  | 'connection_lost'
+  | 'appointment_booked'
+  | 'appointment_cancelled';
 
 // ============================================================================
 // Utility Types

@@ -141,7 +141,7 @@ export class OAuth2Connector {
         userId: 'system',
         timestamp: new Date(),
         outcome: 'failure',
-        details: { error: error.message }
+        details: { error: error instanceof Error ? error.message : String(error) }
       });
       throw error;
     }
@@ -263,14 +263,14 @@ export class OAuth2Connector {
         userId: 'unknown',
         timestamp: new Date(),
         outcome: 'failure',
-        details: { error: error.message }
+        details: { error: error instanceof Error ? error.message : String(error) }
       });
       
       return {
         success: false,
         error: {
-          code: 'CENTRAL_IDP_TOKEN_EXCHANGE_FAILED',
-          message: error.message
+          code: 'CENTRAL_IDP_TOKEN_EXCHANGE_FAILED' as const,
+          message: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
         }
       };
     }
@@ -320,14 +320,14 @@ export class OAuth2Connector {
         userId: request.userContext.id,
         timestamp: new Date(),
         outcome: 'failure',
-        details: { error: error.message }
+        details: { error: error instanceof Error ? error.message : String(error) }
       });
       
       return {
         success: false,
         error: {
-          code: 'OPENEMR_TOKEN_EXCHANGE_FAILED',
-          message: error.message
+          code: 'OPENEMR_TOKEN_EXCHANGE_FAILED' as const,
+          message: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
         }
       };
     }
@@ -375,7 +375,7 @@ export class OAuth2Connector {
     } catch (error) {
       return { 
         valid: false, 
-        error: error.message 
+        error: error instanceof Error ? error.message : String(error) 
       };
     }
   }
@@ -421,7 +421,7 @@ export class OAuth2Connector {
         success: false,
         error: {
           code: 'TOKEN_REFRESH_FAILED',
-          message: error.message
+          message: error instanceof Error ? error.message : String(error)
         }
       };
     }
@@ -472,7 +472,7 @@ export class OAuth2Connector {
         success: false,
         error: {
           code: 'TOKEN_REVOCATION_FAILED',
-          message: error.message
+          message: error instanceof Error ? error.message : String(error)
         }
       };
     }

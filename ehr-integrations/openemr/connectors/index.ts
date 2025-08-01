@@ -249,7 +249,7 @@ export class OpenEMRConnectorManager {
       // Check API Gateway (simplified check)
       try {
         const app = this.apiGateway.getApp();
-        this.status.apiGateway = app ? 'healthy' : 'unhealthy';
+        this.status.apiGateway = app !== null && app !== undefined ? 'healthy' : 'unhealthy';
       } catch (error) {
         this.status.apiGateway = 'unhealthy';
       }
@@ -285,7 +285,7 @@ export class OpenEMRConnectorManager {
         success: false,
         error: {
           code: 'TOKEN_EXCHANGE_ERROR',
-          message: error.message
+          message: error instanceof Error ? error.message : String(error)
         }
       };
     }

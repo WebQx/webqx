@@ -108,6 +108,8 @@ export interface AuditLoggerConfig {
   logToExternalService: boolean;
   /** External service endpoint */
   externalServiceEndpoint?: string;
+  /** Log level */
+  logLevel?: string;
 }
 
 /**
@@ -135,7 +137,8 @@ export class AuditLogger {
       logToFile: config.logToFile ?? false,
       logFilePath: config.logFilePath ?? './audit.log',
       logToExternalService: config.logToExternalService ?? false,
-      externalServiceEndpoint: config.externalServiceEndpoint ?? ''
+      externalServiceEndpoint: config.externalServiceEndpoint ?? '',
+      logLevel: config.logLevel ?? 'info'
     };
 
     this.logInfo('Audit Logger initialized', { 

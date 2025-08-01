@@ -155,7 +155,7 @@ describe('AuthProxyMiddleware', () => {
 
       mockOAuth2Connector.exchangeForOpenEMRTokens.mockResolvedValue({
         success: false,
-        error: { code: 'EXCHANGE_FAILED', message: 'Exchange failed' }
+        error: { code: 'EXCHANGE_FAILED' as const, message: 'Exchange failed' }
       });
 
       const middleware = authProxy.authenticate();

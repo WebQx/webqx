@@ -9,6 +9,16 @@ import express from 'express';
 import { createConnectorManager } from '../connectors';
 import type { ConnectorManagerConfig } from '../connectors';
 
+// Extend Express Request interface to include auth properties
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+      patientContext?: string;
+    }
+  }
+}
+
 // Example configuration
 const connectorConfig: Partial<ConnectorManagerConfig> = {
   oauth2: {

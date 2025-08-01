@@ -481,8 +481,7 @@ export class APIGateway {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          body: requestBody ? JSON.stringify(requestBody) : undefined,
-          timeout: this.config.routing.timeoutMs
+          body: requestBody ? JSON.stringify(requestBody) : undefined
         });
         
         if (!response.ok) {
@@ -528,7 +527,7 @@ export class APIGateway {
           outcome: 'failure',
           details: { 
             requestId: req.requestId,
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
           }
         });
         

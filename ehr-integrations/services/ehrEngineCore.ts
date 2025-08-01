@@ -310,7 +310,7 @@ export class EHREngineCore extends EventEmitter {
         await this.auditLogger.log({
           action: 'create_resource',
           resourceType: resource.resourceType.toLowerCase(),
-          resourceId: response.data.id,
+          resourceId: response.data.id || 'unknown',
           success: true,
           context: { operationId }
         });

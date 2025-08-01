@@ -834,8 +834,8 @@ export class AppointmentBookingService {
     const participants: FHIRAppointmentParticipant[] = [
       {
         actor: typeof request.patient === 'object' && 'id' in request.patient 
-          ? { reference: `Patient/${request.patient.id}` }
-          : request.patient,
+          ? { reference: `Patient/${request.patient.id}` } as FHIRReference
+          : request.patient as FHIRReference,
         status: 'accepted',
         required: 'required'
       }

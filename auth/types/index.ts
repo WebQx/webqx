@@ -39,6 +39,7 @@ export interface AuthSession {
   userAgent: string;
   isActive: boolean;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface AuthResult {
@@ -342,7 +343,10 @@ export type AuthErrorCode =
   | 'SPECIALTY_ACCESS_DENIED'
   | 'NETWORK_ERROR'
   | 'CONFIGURATION_ERROR'
-  | 'UNKNOWN_ERROR';
+  | 'UNKNOWN_ERROR'
+  | 'EXCHANGE_FAILED'
+  | 'CENTRAL_IDP_TOKEN_EXCHANGE_FAILED'
+  | 'OPENEMR_TOKEN_EXCHANGE_FAILED';
 
 // ============================================================================
 // Middleware and Hooks

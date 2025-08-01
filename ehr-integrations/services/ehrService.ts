@@ -640,9 +640,9 @@ export class EHRService {
         currentPhase: operation.status === 'syncing' ? 'Processing records' : operation.status,
         recordsProcessed: operation.recordsProcessed,
         recordsTotal: operation.recordsTotal,
-        recordsSucceeded: operation.recordsSucceeded,
-        recordsFailed: operation.recordsFailed,
-        lastUpdated: operation.updatedAt
+        recordsSucceeded: operation.recordsSucceeded || 0,
+        recordsFailed: operation.recordsFailed || 0,
+        lastUpdated: operation.updatedAt || new Date()
       };
 
       return {

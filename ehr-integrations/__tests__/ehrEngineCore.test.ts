@@ -9,7 +9,7 @@
  */
 
 import { EHREngineCore, EHREngineConfig, createEHREngine } from '../services/ehrEngineCore';
-import { RealTimeUpdateService } from '../services/realTimeUpdateService';
+import { RealTimeUpdateService, RealTimeEventType } from '../services/realTimeUpdateService';
 import { OpenEMRConnector } from '../connectors/openEmrConnector';
 import { FHIRPatient, FHIRObservation } from '../types/fhir-r4';
 
@@ -149,7 +149,7 @@ describe('EHR Engine Integration', () => {
     });
 
     test('should subscribe to real-time updates', (done) => {
-      const eventTypes = ['resource_created', 'resource_updated'];
+      const eventTypes: RealTimeEventType[] = ['resource_created', 'resource_updated'];
       
       const subscriptionId = ehrEngine.subscribeToRealTimeUpdates(
         eventTypes,
