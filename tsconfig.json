@@ -25,7 +25,9 @@
     "patient-portal/**/*",
     "services/**/*",
     "ehr-integrations/**/*",
-    "types/**/*"
+    "types/**/*",
+    "jest.setup.ts"
   ],
-  "typeRoots": ["./node_modules/@types", "./patient-portal/types", "./types"]
+  "typeRoots": ["./node_modules/@types", "./patient-portal/types", "./types"],
+  "files": ["types/global.d.ts", "types/jest-dom.d.ts"]
 }

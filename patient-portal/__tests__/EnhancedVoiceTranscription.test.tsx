@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, test, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import EnhancedVoiceTranscription from '../components/EnhancedVoiceTranscription';
 
 // Mock services

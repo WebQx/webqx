@@ -290,12 +290,15 @@ describe('WhisperStreamingService', () => {
 describe('Streaming Service Integration', () => {
   test('should handle complete transcription workflow', async () => {
     const mockWhisperService = {
-      transcribeAudio: jest.fn().mockResolvedValue({
+      transcribeAudio: (jest.fn() as jest.MockedFunction<any>).mockResolvedValue({
         text: 'Hello world',
         confidence: 0.95,
         language: 'en'
-      }) as any
+      })
     };
+    
+    // Add type assertion to fix TypeScript compilation
+    const typedMockWhisperService = mockWhisperService as any;
     
     const events = {
       onFinalResult: jest.fn()
@@ -304,7 +307,7 @@ describe('Streaming Service Integration', () => {
     const service = new WhisperStreamingService({}, events);
     
     // Mock the internal whisper service
-    (service as any).whisperService = mockWhisperService;
+    (service as any).whisperService = typedMockWhisperService;
     
     // Simulate processing chunks
     const audioData = new Float32Array(1024);
@@ -324,15 +327,18 @@ describe('Streaming Service Integration', () => {
 
   test('should handle API errors during processing', async () => {
     const mockWhisperService = {
-      transcribeAudio: jest.fn().mockRejectedValue(new Error('API Error')) as any
+      transcribeAudio: (jest.fn() as jest.MockedFunction<any>).mockRejectedValue(new Error('API Error'))
     };
+    
+    // Add type assertion to fix TypeScript compilation
+    const typedMockWhisperService = mockWhisperService as any;
     
     const events = {
       onError: jest.fn()
     };
     
     const service = new WhisperStreamingService({}, events);
-    (service as any).whisperService = mockWhisperService;
+    (service as any).whisperService = typedMockWhisperService;
     
     (service as any).audioState = {
       isRecording: true,
