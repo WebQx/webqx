@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AppointmentCard from '../components/AppointmentCard';
+import TelehealthAppointmentCard from '../components/TelehealthAppointmentCard';
 import LiteracyAssistant from '../components/LiteracyAssistant';
 import DrugInteractionChecker from '../components/DrugInteractionChecker';
 import Header from '../components/Header';
@@ -97,6 +97,18 @@ const Home: React.FC<HomeProps> = ({
     alert(`You selected: ${dosage.amount} ${dosage.frequency}\nInstructions: ${dosage.instructions || 'None'}`);
   };
 
+  // Handle telehealth session actions
+  const handleJoinSession = (sessionId: string) => {
+    console.log('Joining telehealth session:', sessionId);
+    // In a real app, this would redirect to the session page
+    window.open(`/patient-portal/telehealth-session.html?sessionId=${sessionId}`, '_blank');
+  };
+
+  const handleTestConnection = () => {
+    console.log('Testing connection...');
+    alert('Testing your camera and microphone...\n\nIn a real app, this would open a connection test tool.');
+  };
+
   return (
     <main 
       className={`portal ${className}`}
@@ -124,19 +136,28 @@ const Home: React.FC<HomeProps> = ({
             {texts.appointments}
           </h2>
           <div className="appointments-grid" role="list">
-            <AppointmentCard
+            <TelehealthAppointmentCard
               title="Annual Checkup"
               datetime="March 15, 2024 at 10:00 AM"
               provider="Dr. Smith, Internal Medicine"
               details="Annual physical examination and health screening"
               className="appointment-upcoming"
             />
-            <AppointmentCard
-              title="Follow-up Visit"
+            <TelehealthAppointmentCard
+              title="Telehealth Follow-up"
               datetime="March 22, 2024 at 2:30 PM"
               provider="Dr. Johnson, Cardiology"
-              details="Follow-up for previous consultation"
+              details="Follow-up consultation via video call"
               className="appointment-upcoming"
+              telehealthSession={{
+                sessionId: 'session-123',
+                status: 'scheduled',
+                canJoin: true,
+                joinAvailableAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+                platform: 'webrtc_native'
+              }}
+              onJoinSession={handleJoinSession}
+              onTestConnection={handleTestConnection}
             />
           </div>
         </section>

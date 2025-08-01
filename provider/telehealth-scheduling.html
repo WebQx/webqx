@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX™ Telehealth Scheduling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .patient-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .session-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-scheduled { background: #e3f2fd; color: #1976d2; }
+        .status-ready { background: #e8f5e8; color: #2e7d2e; }
+        .status-active { background: #fff3e0; color: #f57c00; }
+        .status-completed { background: #f3e5f5; color: #7b1fa2; }
+        .status-cancelled { background: #ffebee; color: #c62828; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-800">
+    <!-- Header -->
+    <header class="glass border-b border-white border-opacity-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <button onclick="goBack()" class="mr-4 p-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition-colors">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V21C3 22.1 3.9 23 5 23H19C20.1 23 21 22.1 21 21V9M19 9H14V4L19 9Z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-bold text-white">🎥 Telehealth Scheduling</h1>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="text-white text-sm">
+                        <span id="providerName">Loading...</span>
+                        <div class="text-xs text-blue-200" id="providerRole">Provider</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Quick Actions -->
+        <div class="glass rounded-xl p-6 mb-8 text-white">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Telehealth Management</h2>
+                <button onclick="openScheduleModal()" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-semibold">
+                    📅 Schedule New Telehealth Visit
+                </button>
+            </div>
+            
+            <!-- Today's Sessions Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-blue-500 bg-opacity-20 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-2">Today's Sessions</h3>
+                    <p class="text-3xl font-bold text-blue-200" id="todaySessionsCount">-</p>
+                    <p class="text-sm text-blue-100 mt-1">Scheduled</p>
+                </div>
+                
+                <div class="bg-green-500 bg-opacity-20 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-2">Active Now</h3>
+                    <p class="text-3xl font-bold text-green-200" id="activeSessionsCount">-</p>
+                    <p class="text-sm text-green-100 mt-1">In Progress</p>
+                </div>
+                
+                <div class="bg-yellow-500 bg-opacity-20 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-2">Pending Invites</h3>
+                    <p class="text-3xl font-bold text-yellow-200" id="pendingInvitesCount">-</p>
+                    <p class="text-sm text-yellow-100 mt-1">Awaiting Response</p>
+                </div>
+                
+                <div class="bg-purple-500 bg-opacity-20 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-2">This Week</h3>
+                    <p class="text-3xl font-bold text-purple-200" id="weekSessionsCount">-</p>
+                    <p class="text-sm text-purple-100 mt-1">Total Sessions</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Management Tabs -->
+        <div class="glass rounded-xl p-6 text-white">
+            <div class="flex space-x-4 mb-6">
+                <button onclick="switchTab('today')" id="tab-today" class="px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold">
+                    Today's Sessions
+                </button>
+                <button onclick="switchTab('upcoming')" id="tab-upcoming" class="px-4 py-2 rounded-lg bg-gray-500 bg-opacity-50 text-white font-semibold hover:bg-opacity-70">
+                    Upcoming
+                </button>
+                <button onclick="switchTab('completed')" id="tab-completed" class="px-4 py-2 rounded-lg bg-gray-500 bg-opacity-50 text-white font-semibold hover:bg-opacity-70">
+                    Completed
+                </button>
+            </div>
+
+            <!-- Sessions List -->
+            <div id="sessionsList" class="space-y-4">
+                <!-- Sessions will be populated here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Schedule Telehealth Modal -->
+    <div id="scheduleModal" class="modal">
+        <div class="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Schedule Telehealth Visit</h2>
+                <button onclick="closeScheduleModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Patient Search -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search Patient</label>
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="patientSearch"
+                        placeholder="Search by name, MRN, or email..."
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        oninput="searchPatients(this.value)"
+                    >
+                    <div id="patientSearchResults" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-60 overflow-y-auto hidden">
+                        <!-- Search results will appear here -->
+                    </div>
+                </div>
+                <div id="selectedPatient" class="hidden mt-4 p-4 bg-blue-50 rounded-lg">
+                    <!-- Selected patient info will appear here -->
+                </div>
+            </div>
+
+            <!-- Appointment Details -->
+            <div id="appointmentForm" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                        <input type="date" id="appointmentDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
+                        <input type="time" id="appointmentTime" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+                        <select id="appointmentDuration" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">1 hour</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                        <select id="appointmentPriority" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="routine" selected>Routine</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="emergent">Emergent</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Visit Reason</label>
+                    <input type="text" id="visitReason" placeholder="e.g., Follow-up consultation, medication review..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Visit Type</label>
+                    <select id="visitType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="telehealth_consultation" selected>Telehealth Consultation</option>
+                        <option value="follow_up">Follow-up Visit</option>
+                        <option value="medication_review">Medication Review</option>
+                        <option value="chronic_care">Chronic Care Management</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Video Platform</label>
+                    <select id="videoPlatform" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="webrtc_native" selected>WebQX Built-in Video</option>
+                        <option value="zoom">Zoom</option>
+                        <option value="teams">Microsoft Teams</option>
+                        <option value="webex">Cisco Webex</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
+                    <textarea id="appointmentNotes" rows="3" placeholder="Any additional information or instructions..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div class="mb-6">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="autoSendInvitation" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">Automatically send email invitation to patient</span>
+                    </label>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button onclick="closeScheduleModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button onclick="scheduleAppointment()" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
+                        Schedule Telehealth Visit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'today';
+        let selectedPatientData = null;
+        let sessions = [];
+        let searchTimeout = null;
+
+        // Mock data for demonstration
+        const mockPatients = [
+            { id: 'p1', mrn: 'MRN001', name: 'John Doe', email: 'john.doe@email.com', phone: '555-0123', dob: '1980-05-15' },
+            { id: 'p2', mrn: 'MRN002', name: 'Jane Smith', email: 'jane.smith@email.com', phone: '555-0124', dob: '1975-08-22' },
+            { id: 'p3', mrn: 'MRN003', name: 'Robert Johnson', email: 'robert.j@email.com', phone: '555-0125', dob: '1990-12-10' },
+            { id: 'p4', mrn: 'MRN004', name: 'Mary Wilson', email: 'mary.wilson@email.com', phone: '555-0126', dob: '1985-03-07' }
+        ];
+
+        const mockSessions = [
+            {
+                id: 'session1',
+                patient: { name: 'John Doe', email: 'john.doe@email.com' },
+                scheduledDateTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+                durationMinutes: 30,
+                status: 'scheduled',
+                reason: 'Follow-up consultation',
+                platform: 'webrtc_native'
+            },
+            {
+                id: 'session2', 
+                patient: { name: 'Jane Smith', email: 'jane.smith@email.com' },
+                scheduledDateTime: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours from now
+                durationMinutes: 45,
+                status: 'invitation_sent',
+                reason: 'Medication review',
+                platform: 'zoom'
+            }
+        ];
+
+        function loadProviderProfile() {
+            document.getElementById('providerName').textContent = 'Dr. Smith';
+            document.getElementById('providerRole').textContent = 'Physician';
+        }
+
+        function loadSessionStats() {
+            document.getElementById('todaySessionsCount').textContent = mockSessions.length;
+            document.getElementById('activeSessionsCount').textContent = '0';
+            document.getElementById('pendingInvitesCount').textContent = '1';
+            document.getElementById('weekSessionsCount').textContent = '5';
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.className = 'px-4 py-2 rounded-lg bg-gray-500 bg-opacity-50 text-white font-semibold hover:bg-opacity-70';
+            });
+            document.getElementById(`tab-${tab}`).className = 'px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold';
+            
+            loadSessions(tab);
+        }
+
+        function loadSessions(filter = 'today') {
+            const sessionsList = document.getElementById('sessionsList');
+            let filteredSessions = [];
+
+            switch (filter) {
+                case 'today':
+                    const today = new Date();
+                    filteredSessions = mockSessions.filter(session => {
+                        const sessionDate = new Date(session.scheduledDateTime);
+                        return sessionDate.toDateString() === today.toDateString();
+                    });
+                    break;
+                case 'upcoming':
+                    filteredSessions = mockSessions.filter(session => 
+                        new Date(session.scheduledDateTime) > new Date()
+                    );
+                    break;
+                case 'completed':
+                    filteredSessions = mockSessions.filter(session => 
+                        session.status === 'completed'
+                    );
+                    break;
+            }
+
+            if (filteredSessions.length === 0) {
+                sessionsList.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="text-6xl mb-4">📅</div>
+                        <h3 class="text-xl font-semibold text-gray-300 mb-2">No sessions found</h3>
+                        <p class="text-gray-400">No telehealth sessions for this time period.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            sessionsList.innerHTML = filteredSessions.map(session => `
+                <div class="bg-white bg-opacity-10 rounded-lg p-6 hover:bg-opacity-20 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center mb-2">
+                                <h3 class="text-lg font-semibold text-white mr-3">${session.patient.name}</h3>
+                                <span class="session-status status-${session.status.replace('_', '-')}">${getStatusText(session.status)}</span>
+                            </div>
+                            <p class="text-blue-100 mb-1">📅 ${formatDateTime(session.scheduledDateTime)}</p>
+                            <p class="text-blue-100 mb-1">⏱️ ${session.durationMinutes} minutes</p>
+                            <p class="text-blue-100 mb-1">📋 ${session.reason}</p>
+                            <p class="text-blue-100">🎥 ${getPlatformText(session.platform)}</p>
+                        </div>
+                        <div class="flex flex-col space-y-2 ml-4">
+                            ${session.status === 'scheduled' || session.status === 'ready_to_start' ? `
+                                <button onclick="launchSession('${session.id}')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded text-sm font-semibold">
+                                    🎥 Start Session
+                                </button>
+                            ` : ''}
+                            <button onclick="viewSessionDetails('${session.id}')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-semibold">
+                                📄 Details
+                            </button>
+                            ${session.status === 'scheduled' ? `
+                                <button onclick="resendInvitation('${session.id}')" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm font-semibold">
+                                    📧 Send Invite
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openScheduleModal() {
+            document.getElementById('scheduleModal').classList.add('active');
+            
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('appointmentDate').min = today;
+            document.getElementById('appointmentDate').value = today;
+            
+            // Set default time to next hour
+            const nextHour = new Date();
+            nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+            document.getElementById('appointmentTime').value = nextHour.toTimeString().slice(0, 5);
+        }
+
+        function closeScheduleModal() {
+            document.getElementById('scheduleModal').classList.remove('active');
+            resetScheduleForm();
+        }
+
+        function resetScheduleForm() {
+            document.getElementById('patientSearch').value = '';
+            document.getElementById('selectedPatient').classList.add('hidden');
+            document.getElementById('appointmentForm').classList.add('hidden');
+            document.getElementById('patientSearchResults').classList.add('hidden');
+            selectedPatientData = null;
+        }
+
+        function searchPatients(query) {
+            clearTimeout(searchTimeout);
+            const resultsDiv = document.getElementById('patientSearchResults');
+            
+            if (query.length < 2) {
+                resultsDiv.classList.add('hidden');
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                const results = mockPatients.filter(patient => 
+                    patient.name.toLowerCase().includes(query.toLowerCase()) ||
+                    patient.mrn.toLowerCase().includes(query.toLowerCase()) ||
+                    patient.email.toLowerCase().includes(query.toLowerCase())
+                );
+                
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="p-4 text-gray-500">No patients found</div>';
+                } else {
+                    resultsDiv.innerHTML = results.map(patient => `
+                        <div onclick="selectPatient('${patient.id}')" class="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                            <div class="font-semibold">${patient.name}</div>
+                            <div class="text-sm text-gray-500">MRN: ${patient.mrn} | ${patient.email}</div>
+                            <div class="text-sm text-gray-500">DOB: ${patient.dob}</div>
+                        </div>
+                    `).join('');
+                }
+                
+                resultsDiv.classList.remove('hidden');
+            }, 300);
+        }
+
+        function selectPatient(patientId) {
+            selectedPatientData = mockPatients.find(p => p.id === patientId);
+            
+            document.getElementById('selectedPatient').innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h4 class="font-semibold text-blue-800">${selectedPatientData.name}</h4>
+                        <p class="text-sm text-blue-600">MRN: ${selectedPatientData.mrn} | ${selectedPatientData.email}</p>
+                    </div>
+                    <button onclick="clearPatientSelection()" class="text-blue-500 hover:text-blue-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('selectedPatient').classList.remove('hidden');
+            document.getElementById('appointmentForm').classList.remove('hidden');
+            document.getElementById('patientSearchResults').classList.add('hidden');
+            document.getElementById('patientSearch').value = selectedPatientData.name;
+        }
+
+        function clearPatientSelection() {
+            selectedPatientData = null;
+            document.getElementById('selectedPatient').classList.add('hidden');
+            document.getElementById('appointmentForm').classList.add('hidden');
+            document.getElementById('patientSearch').value = '';
+        }
+
+        function scheduleAppointment() {
+            if (!selectedPatientData) {
+                alert('Please select a patient first.');
+                return;
+            }
+            
+            const appointmentData = {
+                patientId: selectedPatientData.id,
+                date: document.getElementById('appointmentDate').value,
+                time: document.getElementById('appointmentTime').value,
+                duration: parseInt(document.getElementById('appointmentDuration').value),
+                priority: document.getElementById('appointmentPriority').value,
+                reason: document.getElementById('visitReason').value,
+                visitType: document.getElementById('visitType').value,
+                platform: document.getElementById('videoPlatform').value,
+                notes: document.getElementById('appointmentNotes').value,
+                autoSendInvitation: document.getElementById('autoSendInvitation').checked
+            };
+            
+            if (!appointmentData.reason.trim()) {
+                alert('Please enter a visit reason.');
+                return;
+            }
+            
+            // Here you would call the actual API
+            console.log('Scheduling telehealth appointment:', appointmentData);
+            
+            // Simulate API call
+            setTimeout(() => {
+                alert(`Telehealth appointment scheduled successfully for ${selectedPatientData.name}!${appointmentData.autoSendInvitation ? ' Email invitation will be sent shortly.' : ''}`);
+                closeScheduleModal();
+                loadSessions(currentTab); // Refresh the sessions list
+            }, 1000);
+        }
+
+        function launchSession(sessionId) {
+            // Here you would call the session launch API
+            console.log('Launching session:', sessionId);
+            alert('Launching telehealth session...');
+        }
+
+        function viewSessionDetails(sessionId) {
+            // Here you would show session details modal
+            console.log('Viewing session details:', sessionId);
+            alert('Session details would be displayed here.');
+        }
+
+        function resendInvitation(sessionId) {
+            // Here you would call the resend invitation API
+            console.log('Resending invitation for session:', sessionId);
+            alert('Email invitation sent successfully!');
+        }
+
+        function getStatusText(status) {
+            const statusTexts = {
+                'scheduled': 'Scheduled',
+                'invitation_sent': 'Invitation Sent',
+                'ready_to_start': 'Ready to Start',
+                'in_progress': 'In Progress',
+                'completed': 'Completed',
+                'cancelled': 'Cancelled',
+                'no_show': 'No Show'
+            };
+            return statusTexts[status] || 'Unknown';
+        }
+
+        function getPlatformText(platform) {
+            const platformTexts = {
+                'webrtc_native': 'WebQX Built-in',
+                'zoom': 'Zoom',
+                'teams': 'Microsoft Teams',
+                'webex': 'Cisco Webex'
+            };
+            return platformTexts[platform] || 'Unknown';
+        }
+
+        function formatDateTime(date) {
+            return new Date(date).toLocaleString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProviderProfile();
+            loadSessionStats();
+            loadSessions('today');
+        });
+
+        // Close modal on outside click
+        document.getElementById('scheduleModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeScheduleModal();
+            }
+        });
+    </script>
+</body>
+</html>
