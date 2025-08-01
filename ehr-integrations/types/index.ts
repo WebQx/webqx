@@ -727,5 +727,8 @@ export interface FilterCriteria {
   customFilters?: Record<string, unknown>;
 }
 
+// Re-export data sync types
+export type { SyncProgress, SyncConfiguration, SyncConflict, SyncResult } from '../services/dataSync';
+
 // Re-export PACS Clinical Sync types
 export * from './pacs-clinical-sync';

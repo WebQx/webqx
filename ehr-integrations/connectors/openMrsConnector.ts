@@ -655,7 +655,7 @@ export class OpenMRSConnector implements ExternalEHRConnector {
         {
           use: 'official',
           family: preferredName.familyName,
-          given: [preferredName.givenName, preferredName.middleName].filter(Boolean),
+          given: [preferredName.givenName, preferredName.middleName].filter((n): n is string => Boolean(n)),
           prefix: preferredName.prefix ? [preferredName.prefix] : undefined,
           suffix: preferredName.suffix ? [preferredName.suffix] : undefined
         }
@@ -667,7 +667,7 @@ export class OpenMRSConnector implements ExternalEHRConnector {
       address: preferredAddress ? [
         {
           use: 'home',
-          line: [preferredAddress.address1, preferredAddress.address2].filter(Boolean),
+          line: [preferredAddress.address1, preferredAddress.address2].filter((a): a is string => Boolean(a)),
           city: preferredAddress.cityVillage,
           state: preferredAddress.stateProvince,
           postalCode: preferredAddress.postalCode,
@@ -726,7 +726,7 @@ export class OpenMRSConnector implements ExternalEHRConnector {
     };
   }
 
-  private convertOpenMRSEncounterToFHIR(openMrsEncounter: OpenMRSEncounter): FHIRResource {
+  private convertOpenMRSEncounterToFHIR(openMrsEncounter: OpenMRSEncounter): any {
     return {
       resourceType: 'Encounter',
       id: openMrsEncounter.uuid,
@@ -854,7 +854,7 @@ export class OpenMRSConnector implements ExternalEHRConnector {
     };
   }
 
-  private convertOpenMRSProgramToFHIR(program: any, patientId: string): FHIRResource {
+  private convertOpenMRSProgramToFHIR(program: any, patientId: string): any {
     return {
       resourceType: 'CarePlan',
       id: program.uuid,
@@ -881,7 +881,7 @@ export class OpenMRSConnector implements ExternalEHRConnector {
     };
   }
 
-  private convertOpenMRSVisitToFHIR(visit: any): FHIRResource {
+  private convertOpenMRSVisitToFHIR(visit: any): any {
     return {
       resourceType: 'Encounter',
       id: visit.uuid,

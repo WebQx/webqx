@@ -20,8 +20,6 @@ export interface OpenEMRConfig extends EHRConfiguration {
   apiBaseUrl: string;
   /** OpenEMR FHIR endpoint URL */
   fhirBaseUrl?: string;
-  /** API version */
-  apiVersion?: string;
   /** Site identifier for multi-site OpenEMR installations */
   siteId?: string;
 }
@@ -254,6 +252,11 @@ export class OpenEMRConnector implements ExternalEHRConnector {
 
     try {
       const authUrl = `${this.config.apiBaseUrl}/oauth2/default/token`;
+      
+      if (!this.config.authentication.clientId || !this.config.authentication.clientSecret) {
+        throw new Error('Client ID and secret are required for OpenEMR authentication');
+      }
+      
       const authData = {
         grant_type: 'client_credentials',
         client_id: this.config.authentication.clientId,
@@ -554,7 +557,7 @@ export class OpenEMRConnector implements ExternalEHRConnector {
     };
   }
 
-  private convertOpenEMREncounterToFHIR(openEmrEncounter: any): FHIRResource {
+  private convertOpenEMREncounterToFHIR(openEmrEncounter: any): any {
     // Simplified encounter conversion
     return {
       resourceType: 'Encounter',
@@ -622,7 +625,7 @@ export class OpenEMRConnector implements ExternalEHRConnector {
     };
   }
 
-  private convertOpenEMRAllergyToFHIR(openEmrAllergy: any, patientId: string): FHIRResource {
+  private convertOpenEMRAllergyToFHIR(openEmrAllergy: any, patientId: string): any {
     return {
       resourceType: 'AllergyIntolerance',
       id: openEmrAllergy.id || openEmrAllergy.uuid,

@@ -31,6 +31,22 @@ export { DataSyncService } from './services/dataSync';
 export { FHIRR4Client } from './services/fhirR4Client';
 export { AppointmentBookingService } from './services/appointmentBookingService';
 
+// Import services for internal use
+import { EHRService } from './services/ehrService';
+import { FHIRR4Client } from './services/fhirR4Client';
+import { AppointmentBookingService } from './services/appointmentBookingService';
+
+// Import types for internal use
+import type {
+  SMARTOnFHIRConfig,
+  OAuth2TokenResponse,
+  FHIRR4ClientOptions
+} from './services/fhirR4Client';
+
+import type {
+  AppointmentBookingConfig
+} from './services/appointmentBookingService';
+
 // Enhanced EHR Engine Services
 export { EHREngineCore, createEHREngine } from './services/ehrEngineCore';
 export { RealTimeUpdateService, createRealTimeService } from './services/realTimeUpdateService';
@@ -95,6 +111,9 @@ export * from './hospitalrun';
 
 // Legacy Components
 export { EHRIntegrationPanel } from './components/EHRIntegrationPanel';
+
+// Import components for internal use
+import { EHRIntegrationPanel } from './components/EHRIntegrationPanel';
 
 // Component Types
 export type { EHRIntegrationPanelProps } from './components/EHRIntegrationPanel';

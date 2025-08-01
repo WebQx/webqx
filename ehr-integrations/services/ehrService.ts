@@ -23,7 +23,7 @@ import {
   AuditAction
 } from '../types';
 import { AuditLogger } from './auditLogger';
-import { DataSyncService } from './dataSync';
+import { DataSyncService, SyncProgress } from './dataSync';
 import { validateEHRConfiguration, validatePatientMrn } from '../utils/validation';
 import { encryptSensitiveData, decryptSensitiveData } from '../utils/encryption';
 
@@ -620,7 +620,7 @@ export class EHRService {
    * @param operationId Sync operation ID
    * @returns Promise resolving to operation status
    */
-  async getSyncStatus(operationId: string): Promise<EHRApiResponse<SyncOperation>> {
+  async getSyncStatus(operationId: string): Promise<EHRApiResponse<SyncProgress>> {
     try {
       const operation = this.activeOperations.get(operationId);
       if (!operation) {
@@ -632,9 +632,22 @@ export class EHRService {
         return { success: false, error };
       }
 
+      // Transform SyncOperation to SyncProgress
+      const progress: SyncProgress = {
+        operationId: operation.id,
+        status: operation.status,
+        progressPercent: Math.round((operation.recordsProcessed / (operation.recordsTotal || 1)) * 100),
+        currentPhase: operation.status === 'syncing' ? 'Processing records' : operation.status,
+        recordsProcessed: operation.recordsProcessed,
+        recordsTotal: operation.recordsTotal,
+        recordsSucceeded: operation.recordsSucceeded,
+        recordsFailed: operation.recordsFailed,
+        lastUpdated: operation.updatedAt
+      };
+
       return {
         success: true,
-        data: operation,
+        data: progress,
         metadata: {
           requestId: this.generateRequestId(),
           timestamp: new Date(),

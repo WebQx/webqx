@@ -27,6 +27,27 @@ export interface FHIRResource {
   implicitRules?: string;
   /** Language of the resource content */
   language?: string;
+  /** Extensions for additional data */
+  extension?: FHIRExtension[];
+}
+
+/**
+ * FHIR R4 Extension element
+ */
+export interface FHIRExtension {
+  /** URI that defines the meaning of the extension */
+  url: string;
+  /** Value of extension */
+  valueString?: string;
+  valueBoolean?: boolean;
+  valueInteger?: number;
+  valueDecimal?: number;
+  valueDateTime?: string;
+  valueCode?: string;
+  valueCoding?: FHIRCoding;
+  valueCodeableConcept?: FHIRCodeableConcept;
+  valueReference?: FHIRReference;
+  valueQuantity?: FHIRQuantity;
 }
 
 /**

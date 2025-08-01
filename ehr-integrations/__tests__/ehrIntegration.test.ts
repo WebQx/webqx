@@ -19,7 +19,9 @@ import {
   SyncOperation,
   SyncStatus,
   PatientDemographics,
-  MedicalRecord
+  MedicalRecord,
+  LoadingState,
+  ErrorState
 } from '../types';
 import { 
   validateEHRConfiguration, 
@@ -534,7 +536,7 @@ describe('EHR Integration System', () => {
       const invalidConfig = {
         id: '', // Invalid
         name: '', // Invalid
-        systemType: 'invalid-type', // Invalid
+        systemType: 'invalid-type' as any, // Invalid
         baseUrl: 'not-a-url', // Invalid
         apiVersion: '', // Invalid
         authentication: {
@@ -715,13 +717,12 @@ describe('EHR Integration System', () => {
         hasError: true,
         message: 'Connection failed',
         code: 'CONNECTION_ERROR',
-        retryable: true,
-        details: 'Network timeout after 30 seconds'
+        retryable: true
       };
 
       expect(errorState.hasError).toBe(true);
       expect(errorState.retryable).toBe(true);
-      expect(errorState.details).toBeDefined();
+      expect(errorState.message).toBeDefined();
     });
   });
 
