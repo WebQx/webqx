@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX Telehealth Session Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .session-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+        }
+        .video-area {
+            background: #000;
+            border-radius: 8px;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            position: relative;
+        }
+        .video-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+        .control-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+        .control-btn.active {
+            background: #dc3545;
+            color: white;
+        }
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .panel h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 16px;
+        }
+        .participant {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: white;
+        }
+        .participant-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .participant-info {
+            flex: 1;
+        }
+        .participant-name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .participant-role {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .participant-controls {
+            display: flex;
+            gap: 5px;
+        }
+        .participant-btn {
+            background: none;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .session-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .invite-form {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .minimized {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 200px;
+            z-index: 1000;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        .minimized .main-content {
+            display: block;
+            padding: 10px;
+        }
+        .minimized .sidebar {
+            display: none;
+        }
+        .log {
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .log-time {
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="sessionContainer">
+        <div class="header">
+            <h1>🩺 WebQX Telehealth Session</h1>
+            <p>Secure Healthcare Video Consultation</p>
+        </div>
+
+        <div class="session-info">
+            <div class="status">
+                <div class="status-indicator"></div>
+                <span>Session Active</span>
+                <span id="sessionDuration">00:00</span>
+            </div>
+            <div>
+                <span id="participantCount">2 participants</span>
+                <span style="margin-left: 15px;">🔴 Recording</span>
+                <span style="margin-left: 15px;">📺 Screen sharing</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="video-area">
+                <div>📹 Video Stream Active</div>
+                <div class="video-controls">
+                    <button class="control-btn" id="muteBtn" onclick="toggleMute()">🎤</button>
+                    <button class="control-btn" id="videoBtn" onclick="toggleVideo()">📹</button>
+                    <button class="control-btn" id="screenBtn" onclick="toggleScreenShare()">📺</button>
+                    <button class="control-btn" id="recordBtn" onclick="toggleRecording()">🔴</button>
+                    <button class="control-btn" id="minimizeBtn" onclick="toggleMinimize()">🗕</button>
+                    <button class="control-btn btn-danger" onclick="endSession()">📞</button>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="panel">
+                    <h3>Participants</h3>
+                    <div class="participant">
+                        <div class="participant-avatar">DS</div>
+                        <div class="participant-info">
+                            <div class="participant-name">Dr. Smith</div>
+                            <div class="participant-role">Provider</div>
+                        </div>
+                        <div class="participant-controls">
+                            <button class="participant-btn" title="Mute">🔇</button>
+                            <button class="participant-btn" title="Video">📹</button>
+                        </div>
+                    </div>
+                    <div class="participant">
+                        <div class="participant-avatar">JD</div>
+                        <div class="participant-info">
+                            <div class="participant-name">John Doe</div>
+                            <div class="participant-role">Patient</div>
+                        </div>
+                        <div class="participant-controls">
+                            <button class="participant-btn" title="Mute">🔇</button>
+                            <button class="participant-btn" title="Video">📹</button>
+                        </div>
+                    </div>
+                    <div class="session-actions">
+                        <button class="btn btn-secondary" onclick="showInviteForm()">Invite</button>
+                        <button class="btn btn-secondary" onclick="pauseSession()">Pause</button>
+                    </div>
+                    <div class="invite-form" id="inviteForm">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" placeholder="interpreter@service.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" placeholder="Maria Interpreter">
+                        </div>
+                        <div class="form-group">
+                            <label>Role</label>
+                            <select>
+                                <option value="interpreter">Interpreter</option>
+                                <option value="caregiver">Caregiver</option>
+                                <option value="specialist">Specialist</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn" onclick="sendInvite()">Send Invite</button>
+                            <button class="btn btn-secondary" onclick="hideInviteForm()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Session Controls</h3>
+                    <div class="session-actions">
+                        <button class="btn" onclick="startRecording()">🔴 Record</button>
+                        <button class="btn btn-secondary" onclick="shareScreen()">📺 Share</button>
+                    </div>
+                    <div class="session-actions">
+                        <button class="btn btn-secondary" onclick="toggleMinimize()">🗕 Minimize</button>
+                        <button class="btn btn-danger" onclick="endSession()">📞 End</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="log">
+            <h4>Session Activity Log</h4>
+            <div id="activityLog">
+                <div class="log-entry">
+                    <span class="log-time">[14:32:15]</span> Session started by Dr. Smith
+                </div>
+                <div class="log-entry">
+                    <span class="log-time">[14:32:20]</span> John Doe joined the session
+                </div>
+                <div class="log-entry">
+                    <span class="log-time">[14:32:25]</span> Recording started (consent granted)
+                </div>
+                <div class="log-entry">
+                    <span class="log-time">[14:33:10]</span> Screen sharing started by Dr. Smith
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo JavaScript functions
+        let isMinimized = false;
+        let isMuted = false;
+        let isVideoOn = true;
+        let isRecording = true;
+        let isScreenSharing = true;
+        let sessionStartTime = Date.now();
+
+        // Update session duration
+        function updateDuration() {
+            const elapsed = Date.now() - sessionStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('sessionDuration').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        setInterval(updateDuration, 1000);
+
+        function logActivity(message) {
+            const log = document.getElementById('activityLog');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('muteBtn');
+            btn.textContent = isMuted ? '🔇' : '🎤';
+            btn.classList.toggle('active', isMuted);
+            logActivity(isMuted ? 'Microphone muted' : 'Microphone unmuted');
+        }
+
+        function toggleVideo() {
+            isVideoOn = !isVideoOn;
+            const btn = document.getElementById('videoBtn');
+            btn.textContent = isVideoOn ? '📹' : '📷';
+            btn.classList.toggle('active', !isVideoOn);
+            logActivity(isVideoOn ? 'Camera enabled' : 'Camera disabled');
+        }
+
+        function toggleScreenShare() {
+            isScreenSharing = !isScreenSharing;
+            const btn = document.getElementById('screenBtn');
+            btn.classList.toggle('active', isScreenSharing);
+            logActivity(isScreenSharing ? 'Screen sharing started' : 'Screen sharing stopped');
+        }
+
+        function toggleRecording() {
+            isRecording = !isRecording;
+            const btn = document.getElementById('recordBtn');
+            btn.classList.toggle('active', isRecording);
+            logActivity(isRecording ? 'Recording started' : 'Recording stopped');
+        }
+
+        function toggleMinimize() {
+            isMinimized = !isMinimized;
+            const container = document.getElementById('sessionContainer');
+            container.classList.toggle('minimized', isMinimized);
+            logActivity(isMinimized ? 'Session minimized' : 'Session maximized');
+        }
+
+        function showInviteForm() {
+            document.getElementById('inviteForm').style.display = 'block';
+        }
+
+        function hideInviteForm() {
+            document.getElementById('inviteForm').style.display = 'none';
+        }
+
+        function sendInvite() {
+            logActivity('Invitation sent to interpreter');
+            hideInviteForm();
+        }
+
+        function pauseSession() {
+            logActivity('Session paused');
+        }
+
+        function endSession() {
+            if (confirm('Are you sure you want to end the session?')) {
+                logActivity('Session ended by provider');
+                alert('Session ended. Thank you for using WebQX Telehealth!');
+            }
+        }
+
+        // Simulate real session activity
+        setTimeout(() => logActivity('Connection quality: Excellent (98%)'), 3000);
+        setTimeout(() => logActivity('Compliance check: All participants consented'), 5000);
+        setTimeout(() => logActivity('Auto-save: Session notes saved'), 10000);
+
+        console.log('WebQX Telehealth Session Demo loaded successfully!');
+        console.log('This demonstrates the telehealth module features:');
+        console.log('- Video/audio controls');
+        console.log('- Participant management');
+        console.log('- Screen sharing');
+        console.log('- Session recording');
+        console.log('- Minimize/maximize functionality');
+        console.log('- Compliance logging');
+        console.log('- Third-party invitations');
+    </script>
+</body>
+</html>
