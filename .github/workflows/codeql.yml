@@ -1,0 +1,59 @@
+name: "CodeQL Security Analysis"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 0 * * 1'  # Run weekly on Mondays at midnight UTC
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      # Required for all workflows
+      security-events: write
+      # Required to fetch internal or private CodeQL packs
+      packages: read
+      # Required to get workflow run status
+      actions: read
+      # Required for sarif upload
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Current languages in the repository
+        language: [ 'javascript-typescript' ]
+        # To add support for additional languages, uncomment and modify as needed:
+        # For Python: Add 'python'
+        # For Ruby: Add 'ruby' 
+        # For Go: Add 'go'
+        # For Java: Add 'java-kotlin'
+        # For C#: Add 'csharp'
+        # For C/C++: Add 'c-cpp'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Initializes the CodeQL tools for scanning
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # Enable additional security queries beyond the default set
+        queries: +security-and-quality
+        # For compiled languages, you may need to set build-mode to 'autobuild' or 'manual'
+        # build-mode: autobuild
+
+    # For JavaScript/TypeScript, no build step is required as it's interpreted
+    # For compiled languages, you would add build steps here if using manual build mode
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{ matrix.language }}"
