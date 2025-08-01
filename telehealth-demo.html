@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX Telehealth Demo - Secure Healthcare Communication</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+            text-align: center;
+        }
+
+        .feature-card h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .feature-card p {
+            color: #718096;
+            margin-bottom: 20px;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .feature-list li {
+            color: #2d3748;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+        }
+
+        .demo-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .demo-section h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            text-align: center;
+        }
+
+        .video-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .video-placeholder {
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 10px;
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a0aec0;
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+            transform: translateY(-2px);
+        }
+
+        .chat-container {
+            background: #f7fafc;
+            border-radius: 10px;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 5px;
+        }
+
+        .status-secure {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-encrypted {
+            background: #bee3f8;
+            color: #2a4365;
+        }
+
+        .status-compliant {
+            background: #fbb6ce;
+            color: #702459;
+        }
+
+        .transcription-area {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 150px;
+        }
+
+        .transcription-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .language-selector {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            background: white;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.9;
+        }
+
+        .disclaimer {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .video-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🏥 WebQX Telehealth</h1>
+            <p>Secure, HIPAA-Compliant Healthcare Communication Platform</p>
+            
+            <div class="status-indicators" style="margin-top: 20px;">
+                <span class="status-indicator status-secure">🔒 TLS 1.3 Encrypted</span>
+                <span class="status-indicator status-encrypted">🛡️ End-to-End Encrypted</span>
+                <span class="status-indicator status-compliant">⚖️ HIPAA Compliant</span>
+            </div>
+        </header>
+
+        <div class="disclaimer">
+            <strong>⚠️ Demo Environment:</strong> This is a demonstration of the WebQX Telehealth module. 
+            All communications shown are simulated and no real patient data is transmitted.
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🎥</span>
+                <h3>Secure Video Conferencing</h3>
+                <p>High-quality video calls with military-grade encryption</p>
+                <ul class="feature-list">
+                    <li>WebRTC with TLS/DTLS encryption</li>
+                    <li>Adaptive quality based on bandwidth</li>
+                    <li>Screen sharing capabilities</li>
+                    <li>Multi-participant support</li>
+                    <li>Session recording (with consent)</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">💬</span>
+                <h3>Encrypted Messaging</h3>
+                <p>Real-time secure chat with PHI protection</p>
+                <ul class="feature-list">
+                    <li>AES-256 message encryption</li>
+                    <li>PHI detection and anonymization</li>
+                    <li>File sharing with security scanning</li>
+                    <li>Message translation</li>
+                    <li>Delivery confirmations</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">🎤</span>
+                <h3>AI-Powered Transcription</h3>
+                <p>Real-time speech-to-text with medical terminology</p>
+                <ul class="feature-list">
+                    <li>Whisper AI integration</li>
+                    <li>12+ language support</li>
+                    <li>Medical vocabulary optimization</li>
+                    <li>Live translation</li>
+                    <li>Accessibility features</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">⚖️</span>
+                <h3>HIPAA Compliance</h3>
+                <p>Enterprise-grade security and compliance</p>
+                <ul class="feature-list">
+                    <li>Comprehensive audit logging</li>
+                    <li>Data encryption at rest & transit</li>
+                    <li>Access controls & permissions</li>
+                    <li>Breach detection & notification</li>
+                    <li>7-year data retention</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎥 Video Consultation Demo</h2>
+            
+            <div class="video-container">
+                <div class="video-placeholder">
+                    <div style="text-align: center;">
+                        📹 Provider Video<br>
+                        <small>(Dr. Sarah Johnson)</small>
+                    </div>
+                </div>
+                <div class="video-placeholder">
+                    <div style="text-align: center;">
+                        🤒 Patient Video<br>
+                        <small>(Anonymous Patient)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="startVideoCall()">📹 Start Video Call</button>
+                <button class="btn btn-secondary" onclick="toggleMute()">🎤 Mute/Unmute</button>
+                <button class="btn btn-secondary" onclick="toggleVideo()">📸 Camera On/Off</button>
+                <button class="btn btn-secondary" onclick="shareScreen()">🖥️ Share Screen</button>
+                <button class="btn btn-danger" onclick="endCall()">📞 End Call</button>
+            </div>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <span id="call-status" class="status-indicator status-secure">📞 Ready to Connect</span>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>💬 Secure Chat</h2>
+            
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div style="color: #718096; text-align: center; margin-top: 50px;">
+                        Encrypted chat session initialized<br>
+                        <small>All messages are encrypted with AES-256</small>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="Type your message... (PHI will be detected and anonymized)" onkeypress="handleChatKeypress(event)">
+                    <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <span class="status-indicator status-encrypted">🔐 Messages Encrypted</span>
+                <span class="status-indicator status-compliant">🛡️ PHI Protected</span>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎤 Real-time Transcription</h2>
+            
+            <div class="transcription-header">
+                <h3 style="margin: 0; color: #4a5568;">Live Transcription & Translation</h3>
+                <select class="language-selector" onchange="changeLanguage(this.value)">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ar">Arabic</option>
+                </select>
+            </div>
+
+            <div class="transcription-area" id="transcription-area">
+                <div style="color: #718096; text-style: italic;">
+                    🎤 Waiting for audio input...<br>
+                    <small>Transcription will appear here with medical terminology enhancement</small>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="startTranscription()">🎤 Start Transcription</button>
+                <button class="btn btn-secondary" onclick="pauseTranscription()">⏸️ Pause</button>
+                <button class="btn btn-danger" onclick="stopTranscription()">⏹️ Stop</button>
+            </div>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <span id="transcription-status" class="status-indicator status-secure">🎤 Ready to Transcribe</span>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2024 WebQX Health - Enabling secure telehealth for everyone</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                Built with TLS 1.3, AES-256 encryption, and HIPAA compliance in mind
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Demo state management
+        let callActive = false;
+        let micMuted = false;
+        let videoOn = true;
+        let transcriptionActive = false;
+        let currentLanguage = 'en';
+        let messageCount = 0;
+
+        // Simulated demo functions
+        function startVideoCall() {
+            if (!callActive) {
+                callActive = true;
+                document.getElementById('call-status').textContent = '📞 Connected - Encrypted';
+                document.getElementById('call-status').className = 'status-indicator status-encrypted';
+                
+                // Simulate connection process
+                setTimeout(() => {
+                    addSystemMessage('Video call connected successfully');
+                    addSystemMessage('End-to-end encryption active');
+                    simulateTranscription('Doctor: Hello, how are you feeling today?');
+                }, 1000);
+            }
+        }
+
+        function toggleMute() {
+            micMuted = !micMuted;
+            const status = micMuted ? '🔇 Muted' : '🎤 Unmuted';
+            addSystemMessage(`Microphone ${status}`);
+        }
+
+        function toggleVideo() {
+            videoOn = !videoOn;
+            const status = videoOn ? '📹 On' : '📸 Off';
+            addSystemMessage(`Camera ${status}`);
+        }
+
+        function shareScreen() {
+            addSystemMessage('Screen sharing initiated');
+            addSystemMessage('🖥️ Sharing medical records (encrypted)');
+        }
+
+        function endCall() {
+            if (callActive) {
+                callActive = false;
+                document.getElementById('call-status').textContent = '📞 Call Ended';
+                document.getElementById('call-status').className = 'status-indicator status-secure';
+                addSystemMessage('Call ended - session data encrypted and logged');
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                // Detect and anonymize PHI (demo)
+                let processedMessage = message;
+                const phiPatterns = [
+                    { pattern: /\b\d{3}-\d{2}-\d{4}\b/g, replacement: '[SSN]' },
+                    { pattern: /\b\d{3}-\d{3}-\d{4}\b/g, replacement: '[PHONE]' },
+                    { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, replacement: '[EMAIL]' }
+                ];
+                
+                phiPatterns.forEach(({ pattern, replacement }) => {
+                    if (pattern.test(processedMessage)) {
+                        processedMessage = processedMessage.replace(pattern, replacement);
+                        addSystemMessage('⚠️ PHI detected and anonymized');
+                    }
+                });
+                
+                addChatMessage('Patient', processedMessage, true);
+                input.value = '';
+                
+                // Simulate provider response
+                setTimeout(() => {
+                    const responses = [
+                        'Thank you for that information. I understand your concerns.',
+                        'Let me review your medical history and get back to you.',
+                        'Based on what you\'ve told me, I recommend the following...',
+                        'I\'ll send a prescription to your pharmacy shortly.'
+                    ];
+                    const response = responses[Math.floor(Math.random() * responses.length)];
+                    addChatMessage('Dr. Johnson', response, false);
+                }, 1500);
+            }
+        }
+
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function addChatMessage(sender, message, isPatient) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                margin-bottom: 15px;
+                padding: 10px;
+                border-radius: 8px;
+                ${isPatient ? 'background: #bee3f8; margin-left: 20px;' : 'background: #c6f6d5; margin-right: 20px;'}
+            `;
+            
+            messageDiv.innerHTML = `
+                <strong>${sender}:</strong><br>
+                ${message}
+                <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                    🔐 Encrypted • ${new Date().toLocaleTimeString()}
+                </div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Clear placeholder
+            if (messagesDiv.children.length === 2) {
+                messagesDiv.removeChild(messagesDiv.children[0]);
+            }
+        }
+
+        function addSystemMessage(message) {
+            addChatMessage('System', message, false);
+        }
+
+        function startTranscription() {
+            if (!transcriptionActive) {
+                transcriptionActive = true;
+                document.getElementById('transcription-status').textContent = '🎤 Transcribing...';
+                document.getElementById('transcription-status').className = 'status-indicator status-encrypted';
+                
+                // Simulate real-time transcription
+                const transcriptions = [
+                    'Patient: I\'ve been experiencing headaches for the past week.',
+                    'Doctor: Can you describe the severity on a scale of 1 to 10?',
+                    'Patient: I\'d say around 7 or 8, especially in the mornings.',
+                    'Doctor: Have you taken any medication for the pain?',
+                    'Patient: Just some over-the-counter ibuprofen.',
+                    'Doctor: I see. Let me examine your blood pressure readings.'
+                ];
+                
+                let index = 0;
+                const interval = setInterval(() => {
+                    if (index < transcriptions.length && transcriptionActive) {
+                        simulateTranscription(transcriptions[index]);
+                        index++;
+                    } else {
+                        clearInterval(interval);
+                    }
+                }, 3000);
+            }
+        }
+
+        function pauseTranscription() {
+            document.getElementById('transcription-status').textContent = '⏸️ Paused';
+        }
+
+        function stopTranscription() {
+            transcriptionActive = false;
+            document.getElementById('transcription-status').textContent = '⏹️ Stopped';
+            document.getElementById('transcription-status').className = 'status-indicator status-secure';
+        }
+
+        function simulateTranscription(text) {
+            const area = document.getElementById('transcription-area');
+            
+            // Clear placeholder
+            if (area.children.length === 1) {
+                area.innerHTML = '';
+            }
+            
+            const transcriptDiv = document.createElement('div');
+            transcriptDiv.style.cssText = `
+                margin-bottom: 10px;
+                padding: 10px;
+                background: white;
+                border-radius: 5px;
+                border-left: 4px solid #667eea;
+            `;
+            
+            // Enhance medical terminology
+            let enhancedText = text
+                .replace(/headaches?/gi, '<strong>headaches</strong>')
+                .replace(/blood pressure/gi, '<strong>blood pressure</strong>')
+                .replace(/ibuprofen/gi, '<strong>ibuprofen</strong>')
+                .replace(/medication/gi, '<strong>medication</strong>');
+            
+            transcriptDiv.innerHTML = `
+                ${enhancedText}
+                <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                    🌍 ${getLanguageName(currentLanguage)} • ${new Date().toLocaleTimeString()} • ✅ Medical terms enhanced
+                </div>
+            `;
+            
+            area.appendChild(transcriptDiv);
+        }
+
+        function changeLanguage(language) {
+            currentLanguage = language;
+            addSystemMessage(`Transcription language changed to ${getLanguageName(language)}`);
+        }
+
+        function getLanguageName(code) {
+            const languages = {
+                'en': 'English',
+                'es': 'Spanish',
+                'fr': 'French',
+                'de': 'German',
+                'zh': 'Chinese',
+                'ar': 'Arabic'
+            };
+            return languages[code] || 'Unknown';
+        }
+
+        // Initialize demo
+        document.addEventListener('DOMContentLoaded', function() {
+            addSystemMessage('🔐 Secure telehealth session initialized');
+            addSystemMessage('All communications are encrypted and HIPAA compliant');
+            
+            // Simulate some background activity
+            setTimeout(() => {
+                addSystemMessage('✅ Connection security verified');
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

@@ -180,6 +180,15 @@ app.use('/api/auth/sso', providerSSORoutes);
 // Ottehr API routes
 app.use('/api/ottehr', ottehrRoutes);
 
+// Telehealth API routes
+try {
+    const telehealthVideoRoutes = require('./telehealth/routes/video');
+    app.use('/telehealth/video', telehealthVideoRoutes);
+    console.log('✅ Telehealth video routes loaded');
+} catch (error) {
+    console.warn('⚠️ Telehealth routes not available:', error.message);
+}
+
 // Serve login page
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
