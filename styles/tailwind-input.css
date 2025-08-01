@@ -1,0 +1,384 @@
+/* WebQx Healthcare Platform - TailwindCSS Styles */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base layer customizations for healthcare */
+@layer base {
+  /* Enhanced focus styles for accessibility */
+  *:focus {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+
+  /* Smooth scrolling for better UX */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Body defaults optimized for healthcare content */
+  body {
+    @apply text-medical-text leading-relaxed antialiased;
+  }
+
+  /* Heading styles with medical hierarchy */
+  h1 {
+    @apply text-3xl md:text-4xl font-bold text-medical-text leading-tight;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl font-semibold text-medical-text leading-tight;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl font-semibold text-medical-text leading-snug;
+  }
+
+  h4 {
+    @apply text-lg md:text-xl font-medium text-medical-text;
+  }
+
+  /* Form element defaults */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="date"],
+  select,
+  textarea {
+    @apply w-full px-3 py-2 border border-medical-subtle rounded-medical 
+           focus:border-primary-500 focus:ring-primary-500 
+           transition-medical;
+  }
+
+  /* Button defaults */
+  button {
+    @apply font-medium transition-medical focus-medical;
+  }
+
+  /* Link defaults */
+  a {
+    @apply text-primary-500 hover:text-primary-600 transition-colors;
+  }
+}
+
+/* Component layer for reusable healthcare UI patterns */
+@layer components {
+  /* Medical Cards */
+  .medical-card {
+    @apply bg-white border border-medical-neutral rounded-card p-6 
+           shadow-medical hover:shadow-card transition-medical hover-lift;
+  }
+
+  .medical-card-header {
+    @apply border-b-2 border-primary-500 pb-3 mb-4;
+  }
+
+  .medical-card-title {
+    @apply text-xl font-semibold text-medical-text mb-2;
+  }
+
+  /* Medical Buttons */
+  .btn-medical {
+    @apply px-4 py-2 rounded-medical font-medium transition-medical 
+           focus-medical disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn-medical bg-gradient-primary text-white 
+           hover:bg-primary-600 hover:shadow-hover active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply btn-medical bg-secondary-500 text-white 
+           hover:bg-secondary-600 hover:shadow-hover active:scale-95;
+  }
+
+  .btn-outline {
+    @apply btn-medical border-2 border-primary-500 text-primary-500 
+           hover:bg-primary-500 hover:text-white;
+  }
+
+  .btn-ghost {
+    @apply btn-medical text-primary-500 hover:bg-primary-50;
+  }
+
+  /* Medical Forms */
+  .form-group {
+    @apply mb-4;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-medical-text mb-2;
+  }
+
+  .form-input {
+    @apply w-full px-3 py-2 border border-medical-subtle rounded-medical
+           focus:border-primary-500 focus:ring-1 focus:ring-primary-500
+           transition-medical;
+  }
+
+  .form-error {
+    @apply text-red-500 text-sm mt-1;
+  }
+
+  .form-help {
+    @apply text-medical-muted text-sm mt-1;
+  }
+
+  /* Medical Status Indicators */
+  .status-indicator {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .status-success {
+    @apply status-indicator bg-green-100 text-green-800;
+  }
+
+  .status-warning {
+    @apply status-indicator bg-yellow-100 text-yellow-800;
+  }
+
+  .status-error {
+    @apply status-indicator bg-red-100 text-red-800;
+  }
+
+  .status-info {
+    @apply status-indicator bg-blue-100 text-blue-800;
+  }
+
+  /* Medical Sections */
+  .medical-section {
+    @apply medical-card mb-6;
+  }
+
+  .section-header {
+    @apply medical-card-header;
+  }
+
+  .section-title {
+    @apply medical-card-title flex items-center gap-2;
+  }
+
+  .section-content {
+    @apply space-y-4;
+  }
+
+  /* Medical Lists */
+  .medical-list {
+    @apply space-y-3;
+  }
+
+  .medical-list-item {
+    @apply flex items-start gap-3 p-3 rounded-medical 
+           hover:bg-medical-clean transition-medical;
+  }
+
+  /* Appointment Cards */
+  .appointment-card {
+    @apply medical-card border-l-4 border-primary-500;
+  }
+
+  .appointment-card.pending {
+    @apply border-l-yellow-400;
+  }
+
+  .appointment-card.confirmed {
+    @apply border-l-green-500;
+  }
+
+  .appointment-card.cancelled {
+    @apply border-l-red-500;
+  }
+
+  /* Navigation */
+  .nav-medical {
+    @apply bg-white shadow-medical border-b border-medical-neutral;
+  }
+
+  .nav-item {
+    @apply px-4 py-2 text-medical-text hover:text-primary-500 
+           transition-colors rounded-medical hover:bg-primary-50;
+  }
+
+  .nav-item.active {
+    @apply text-primary-500 bg-primary-50;
+  }
+
+  /* Healthcare-specific layouts */
+  .portal-layout {
+    @apply min-h-screen bg-medical-clean;
+  }
+
+  .portal-container {
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+  }
+
+  .portal-header {
+    @apply bg-white shadow-medical rounded-section p-6 mb-8 
+           text-center relative overflow-hidden;
+  }
+
+  .portal-header::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-primary-50 to-secondary-50 opacity-50;
+  }
+
+  .portal-title {
+    @apply relative z-10 text-gradient-medical;
+  }
+
+  .portal-tagline {
+    @apply relative z-10 text-lg text-medical-muted mt-2;
+  }
+
+  /* Loading states */
+  .loading-spinner {
+    @apply animate-spin inline-block w-5 h-5 border-2 border-current 
+           border-t-transparent rounded-full;
+  }
+
+  .loading-shimmer {
+    @apply animate-pulse bg-medical-neutral rounded;
+  }
+
+  /* Empty states */
+  .empty-state {
+    @apply text-center py-12 px-6;
+  }
+
+  .empty-state-icon {
+    @apply w-16 h-16 mx-auto text-medical-muted mb-4;
+  }
+
+  .empty-state-title {
+    @apply text-lg font-medium text-medical-text mb-2;
+  }
+
+  .empty-state-description {
+    @apply text-medical-muted max-w-sm mx-auto;
+  }
+}
+
+/* Utility layer for specific healthcare needs */
+@layer utilities {
+  /* Screen reader only content */
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .medical-card {
+      @apply border-2 border-black;
+    }
+    
+    .btn-primary {
+      @apply bg-black text-white border-2 border-black;
+    }
+    
+    .btn-outline {
+      @apply border-2 border-black text-black;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Print styles */
+  @media print {
+    .no-print {
+      @apply hidden;
+    }
+    
+    .medical-card {
+      @apply shadow-none border border-gray-300;
+    }
+  }
+}
+
+/* Legacy CSS compatibility layer */
+.container {
+  @apply portal-container;
+}
+
+.section {
+  @apply medical-section;
+}
+
+.btn {
+  @apply btn-medical btn-primary;
+}
+
+.btn-secondary {
+  @apply btn-medical bg-medical-muted text-white hover:bg-gray-600;
+}
+
+.loading {
+  @apply text-primary-500 italic;
+}
+
+.error {
+  @apply text-red-500 font-medium;
+}
+
+.success {
+  @apply text-green-500 font-medium;
+}
+
+.patient-info {
+  @apply medical-card bg-healthcare-lightBlue;
+}
+
+.appointment-card {
+  @apply medical-card border-l-4 border-primary-500 hover:border-primary-600;
+}
+
+.action-button {
+  @apply btn-medical bg-gradient-success text-white hover-lift;
+}
+
+/* Custom animations for medical interface */
+@keyframes medicalPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .7;
+  }
+}
+
+.medical-pulse {
+  animation: medicalPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Specialty-specific color schemes */
+.specialty-cardiology {
+  @apply border-l-red-500;
+}
+
+.specialty-radiology {
+  @apply border-l-purple-500;
+}
+
+.specialty-primary-care {
+  @apply border-l-blue-500;
+}
+
+.specialty-pediatrics {
+  @apply border-l-pink-500;
+}
+
+.specialty-oncology {
+  @apply border-l-orange-500;
+}
+
+.specialty-psychiatry {
+  @apply border-l-indigo-500;
+}

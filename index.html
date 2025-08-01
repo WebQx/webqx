@@ -4,280 +4,452 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebQX™ Patient Portal – Essentials Canvas</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        .container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            text-align: center;
-        }
-        h2 {
-            margin-top: 30px;
-            color: #2c3e50;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        ul li {
-            margin: 10px 0;
-        }
-        .section {
-            padding: 15px 10px;
-            border-top: 1px solid #ccc;
-        }
-        .section:first-child {
-            border-top: none;
-        }
-        .loading {
-            color: #007bff;
-            font-style: italic;
-        }
-        .error {
-            color: #dc3545;
-            font-weight: bold;
-        }
-        .success {
-            color: #28a745;
-            font-weight: bold;
-        }
-        .patient-info {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-        .appointment-card {
-            background: #f8f9fa;
-            border-left: 4px solid #007bff;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 4px;
-        }
-        .appointment-card.pending {
-            border-left-color: #ffc107;
-        }
-        .appointment-card.booked {
-            border-left-color: #28a745;
-        }
-        .btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        .btn:hover {
-            background: #0056b3;
-        }
-        .btn-secondary {
-            background: #6c757d;
-        }
-        .btn-secondary:hover {
-            background: #545b62;
-        }
-        .form-group {
-            margin: 10px 0;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .lang-selector {
-            text-align: right;
-            margin-bottom: 20px;
-        }
-        .dynamic-content {
-            min-height: 50px;
-        }
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-        .status-healthy {
-            background-color: #28a745;
-        }
-        .status-warning {
-            background-color: #ffc107;
-        }
-        .status-error {
-            background-color: #dc3545;
-        }
-    </style>
+    <link href="styles/output.css" rel="stylesheet">
 </head>
-<body>
-    <div class="container">
-        <div class="lang-selector">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <label for="language-select">🌍 Language:</label>
-                    <select id="language-select" onchange="changeLanguage()">
-                        <option value="en">English</option>
-                        <option value="es">Español</option>
-                        <option value="fr">Français</option>
-                        <option value="de">Deutsch</option>
-                    </select>
+<body class="portal-layout font-sans">
+    <div class="portal-container">
+        <!-- Portal Header with Language Selection -->
+        <header class="portal-header">
+            <div class="absolute top-6 right-6 z-10">
+                <div class="flex flex-col items-end gap-2">
+                    <label for="language-select" class="text-xs font-medium text-medical-muted uppercase tracking-wide">
+                        🌍 Language
+                    </label>
+                    <div class="relative">
+                        <select id="language-select" 
+                                onchange="changeLanguage()"
+                                class="appearance-none px-4 py-2 pr-8 border-2 border-primary-200 rounded-medical
+                                       bg-white text-medical-text font-medium cursor-pointer
+                                       hover:border-primary-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-200
+                                       transition-medical min-w-[120px]">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-medical-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <span id="user-welcome" class="loading">Loading user...</span>
-                    <button class="btn btn-secondary" onclick="logout()" style="margin-left: 10px;">Logout</button>
+                <div class="mt-4 text-right">
+                    <span id="user-welcome" class="loading text-primary-500 italic">Loading user...</span>
+                    <button onclick="logout()" 
+                            class="btn-secondary ml-3 px-4 py-2 text-sm">Logout</button>
                 </div>
             </div>
-        </div>
-
-        <h1>🌐 WebQX™ Patient Portal</h1>
-        <p><strong>Tagline:</strong> <span id="tagline">Empowering Patients and Supporting Health Care Providers</span></p>
+            
+            <div class="relative z-10 max-w-4xl mx-auto text-center">
+                <h1 class="portal-title text-4xl md:text-5xl font-bold mb-4">
+                    🌐 WebQX™ Patient Portal
+                </h1>
+                <p class="portal-tagline text-lg md:text-xl text-medical-muted mb-6">
+                    <strong>Tagline:</strong> <span id="tagline">Empowering Patients and Supporting Health Care Providers</span>
+                </p>
+            </div>
+        </header>
         
-        <div class="section">
-            <h2>🧭 Welcome Panel & System Status</h2>
-            <div id="system-status" class="dynamic-content">
-                <div class="loading">🔄 Checking system status...</div>
-            </div>
-            <div id="patient-info" class="dynamic-content">
-                <div class="loading">🔄 Loading patient information...</div>
-            </div>
-            <ul>
-                <li>🌍 <button class="btn btn-secondary" onclick="toggleLanguageDemo()">Test Multilingual Translation</button></li>
-                <li>🧑‍⚕️ <span id="personalized-care">Personalized Care Overview</span></li>
-                <li>🧠 Mental Wellness Hub</li>
-                <li>👓🦷 Vision & Dental Records</li>
-                <li>🧭 Concierge Services</li>
-                <ul>
-                    <li>- Hospital Advocate</li>
-                    <li>- Long-Distance Family Support</li>
-                </ul>
-            </ul>
-        </div>
-
-        <div class="section">
-            <h2>📅 Appointments & Scheduling</h2>
-            <div id="appointments-list" class="dynamic-content">
-                <div class="loading">🔄 Loading appointments...</div>
-            </div>
-            <button class="btn" onclick="showAppointmentForm()">📅 Schedule New Appointment</button>
-            <div id="appointment-form" style="display: none;">
-                <h3>Schedule New Appointment</h3>
-                <div class="form-group">
-                    <label for="appointment-type">Appointment Type:</label>
-                    <select id="appointment-type">
-                        <option value="consultation">General Consultation</option>
-                        <option value="followup">Follow-up Visit</option>
-                        <option value="physical">Physical Examination</option>
-                    </select>
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- Welcome Panel & System Status -->
+            <section class="medical-section lg:col-span-2">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        🧭 Welcome Panel & System Status
+                    </h2>
                 </div>
-                <div class="form-group">
-                    <label for="appointment-date">Preferred Date:</label>
-                    <input type="date" id="appointment-date" min="">
+                
+                <div class="section-content">
+                    <div id="system-status" class="medical-card bg-green-50 border-green-200 mb-4">
+                        <div class="loading flex items-center gap-2">
+                            <div class="loading-spinner text-primary-500"></div>
+                            🔄 Checking system status...
+                        </div>
+                    </div>
+                    
+                    <div id="patient-info" class="medical-card bg-blue-50 border-blue-200 mb-6">
+                        <div class="loading flex items-center gap-2">
+                            <div class="loading-spinner text-primary-500"></div>
+                            🔄 Loading patient information...
+                        </div>
+                    </div>
+                    
+                    <div class="medical-list">
+                        <div class="medical-list-item group cursor-pointer">
+                            <span class="text-2xl">🌍</span>
+                            <div class="flex-1">
+                                <button onclick="toggleLanguageDemo()" 
+                                        class="btn-ghost text-left w-full group-hover:bg-primary-100 transition-colors">
+                                    Test Multilingual Translation
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="medical-list-item">
+                            <span class="text-2xl">🧑‍⚕️</span>
+                            <div class="flex-1">
+                                <span id="personalized-care" class="text-medical-text font-medium">
+                                    Personalized Care Overview
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="medical-list-item hover:bg-blue-50">
+                            <span class="text-2xl">🧠</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Mental Wellness Hub</span>
+                            </div>
+                        </div>
+                        
+                        <div class="medical-list-item hover:bg-blue-50">
+                            <span class="text-2xl">👓</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Vision & Dental Records</span>
+                            </div>
+                        </div>
+                        
+                        <div class="medical-list-item hover:bg-blue-50">
+                            <span class="text-2xl">🧭</span>
+                            <div class="flex-1">
+                                <div>
+                                    <span class="text-medical-text font-medium">Concierge Services</span>
+                                    <div class="mt-2 ml-4 space-y-1 text-sm text-medical-muted">
+                                        <div>• Hospital Advocate</div>
+                                        <div>• Long-Distance Family Support</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="appointment-notes">Notes:</label>
-                    <textarea id="appointment-notes" rows="3" placeholder="Any specific concerns or notes..."></textarea>
+            </section>
+
+            <!-- Appointments & Scheduling -->
+            <section class="medical-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        📅 Appointments & Scheduling
+                    </h2>
                 </div>
-                <button class="btn" onclick="submitAppointment()">Submit Request</button>
-                <button class="btn btn-secondary" onclick="hideAppointmentForm()">Cancel</button>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>📬 Smart Data Import System</h2>
-            <ul>
-                <li>📧 Unique Patient Email: <span id="patient-email" class="loading">Loading...</span></li>
-                <li>🔐 Encrypted Access Code</li>
-                <li>📥 Auto-routing of Labs, Imaging, Notes</li>
-                <li>🔔 Patient Notifications & Privacy Controls</li>
-            </ul>
-        </div>
-
-        <div class="section">
-            <h2>💬 Secure Messaging & Communication</h2>
-            <ul>
-                <li>🛡️ HIPAA-Compliant Messaging</li>
-                <li>🧑‍⚕️ Direct Provider Communication</li>
-                <li>🤖 Personal Health Bot</li>
-                <li>📚 Health Literacy Assistant (Glossary + Visuals)</li>
-            </ul>
-            <div id="translation-demo" style="display: none; margin-top: 10px;">
-                <h4>Translation Demo:</h4>
-                <div class="form-group">
-                    <input type="text" id="translation-text" placeholder="Enter text to translate..." value="Take 2 tablets daily">
+                
+                <div class="section-content">
+                    <div id="appointments-list" class="mb-6">
+                        <div class="loading flex items-center gap-2 text-primary-500">
+                            <div class="loading-spinner"></div>
+                            🔄 Loading appointments...
+                        </div>
+                    </div>
+                    
+                    <button onclick="showAppointmentForm()" 
+                            class="btn-primary w-full flex items-center justify-center gap-2 hover-lift">
+                        📅 Schedule New Appointment
+                    </button>
+                    
+                    <div id="appointment-form" class="hidden mt-6 p-4 bg-medical-clean rounded-medical border">
+                        <h3 class="text-lg font-semibold text-medical-text mb-4">Schedule New Appointment</h3>
+                        
+                        <div class="form-group">
+                            <label for="appointment-type" class="form-label">Appointment Type:</label>
+                            <select id="appointment-type" class="form-input">
+                                <option value="consultation">General Consultation</option>
+                                <option value="followup">Follow-up Visit</option>
+                                <option value="physical">Physical Examination</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="appointment-date" class="form-label">Preferred Date:</label>
+                            <input type="date" id="appointment-date" class="form-input" min="">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="appointment-notes" class="form-label">Notes:</label>
+                            <textarea id="appointment-notes" rows="3" 
+                                     class="form-input" 
+                                     placeholder="Any specific concerns or notes..."></textarea>
+                        </div>
+                        
+                        <div class="flex gap-3 mt-6">
+                            <button onclick="submitAppointment()" 
+                                    class="btn-primary flex-1">Submit Request</button>
+                            <button onclick="hideAppointmentForm()" 
+                                    class="btn-outline flex-1">Cancel</button>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn" onclick="translateText()">Translate</button>
-                <div id="translation-result" style="margin-top: 10px;"></div>
-            </div>
+            </section>
         </div>
 
-        <div class="section">
-            <h2>🧾 Health Records & Prescription Management</h2>
-            <ul>
-                <li>🧪 Lab Results Viewer</li>
-                <li>💊 Medication List & Refill Requests</li>
-                <li>🧬 Immunizations & Problem Lists</li>
-                <li>📝 Visit Summaries & SOAP Notes</li>
-            </ul>
+        <!-- Second Row of Content -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- Smart Data Import System -->
+            <section class="medical-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        📬 Smart Data Import System
+                    </h2>
+                </div>
+                <div class="section-content">
+                    <div class="medical-list">
+                        <div class="medical-list-item">
+                            <span class="text-2xl">📧</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text">Unique Patient Email: </span>
+                                <span id="patient-email" class="loading text-primary-500 italic">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item">
+                            <span class="text-2xl">🔐</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Encrypted Access Code</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item">
+                            <span class="text-2xl">📥</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Auto-routing of Labs, Imaging, Notes</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item">
+                            <span class="text-2xl">🔔</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Patient Notifications & Privacy Controls</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Secure Messaging & Communication -->
+            <section class="medical-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        💬 Secure Messaging & Communication
+                    </h2>
+                </div>
+                <div class="section-content">
+                    <div class="medical-list">
+                        <div class="medical-list-item">
+                            <span class="text-2xl">🛡️</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">HIPAA-Compliant Messaging</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item">
+                            <span class="text-2xl">🧑‍⚕️</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Direct Provider Communication</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item">
+                            <span class="text-2xl">🤖</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Personal Health Bot</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item">
+                            <span class="text-2xl">📚</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Health Literacy Assistant (Glossary + Visuals)</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="translation-demo" class="hidden mt-6 p-4 bg-blue-50 rounded-medical border border-blue-200">
+                        <h4 class="text-lg font-semibold text-medical-text mb-4">Translation Demo:</h4>
+                        <div class="form-group">
+                            <input type="text" id="translation-text" 
+                                   class="form-input" 
+                                   placeholder="Enter text to translate..." 
+                                   value="Take 2 tablets daily">
+                        </div>
+                        <button onclick="translateText()" 
+                                class="btn-primary mb-4">Translate</button>
+                        <div id="translation-result" class="p-3 bg-white rounded border"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Health Records & Prescription Management -->
+            <section class="medical-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        🧾 Health Records & Prescription Management
+                    </h2>
+                </div>
+                <div class="section-content">
+                    <div class="medical-list">
+                        <div class="medical-list-item hover:bg-green-50 cursor-pointer">
+                            <span class="text-2xl">🧪</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Lab Results Viewer</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-green-50 cursor-pointer">
+                            <span class="text-2xl">💊</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Medication List & Refill Requests</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-green-50 cursor-pointer">
+                            <span class="text-2xl">🧬</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Immunizations & Problem Lists</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-green-50 cursor-pointer">
+                            <span class="text-2xl">📝</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Visit Summaries & SOAP Notes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
 
-        <div class="section">
-            <h2>💳 Billing & Insurance</h2>
-            <ul>
-                <li>📄 View Statements & Claims</li>
-                <li>💰 Secure Online Payments</li>
-                <li>🧾 Coverage Eligibility & Grant Navigator</li>
-            </ul>
-        </div>
+        <!-- Third Row of Content -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            <!-- Billing & Insurance -->
+            <section class="medical-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        💳 Billing & Insurance
+                    </h2>
+                </div>
+                <div class="section-content">
+                    <div class="medical-list">
+                        <div class="medical-list-item hover:bg-blue-50 cursor-pointer">
+                            <span class="text-2xl">📄</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">View Statements & Claims</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-blue-50 cursor-pointer">
+                            <span class="text-2xl">💰</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Secure Online Payments</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-blue-50 cursor-pointer">
+                            <span class="text-2xl">🧾</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Coverage Eligibility & Grant Navigator</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-        <div class="section">
-            <h2>🎯 Patient Empowerment Tools</h2>
-            <ul>
-                <li>✅ Care Goals Tracker</li>
-                <li>📈 Behavioral Nudging Engine</li>
-                <li>📚 Decision Aid Tools</li>
-                <li>📊 Longitudinal Health Charts</li>
-            </ul>
-        </div>
+            <!-- Patient Empowerment Tools -->
+            <section class="medical-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        🎯 Patient Empowerment Tools
+                    </h2>
+                </div>
+                <div class="section-content">
+                    <div class="medical-list">
+                        <div class="medical-list-item hover:bg-green-50 cursor-pointer">
+                            <span class="text-2xl">✅</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Care Goals Tracker</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-green-50 cursor-pointer">
+                            <span class="text-2xl">📈</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Behavioral Nudging Engine</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-green-50 cursor-pointer">
+                            <span class="text-2xl">📚</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Decision Aid Tools</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-green-50 cursor-pointer">
+                            <span class="text-2xl">📊</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Longitudinal Health Charts</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-        <div class="section">
-            <h2>🗺️ Social Determinants & Community Support</h2>
-            <ul>
-                <li>🧮 Needs Screening Module</li>
-                <li>🗺️ Local Resource Map</li>
-                <li>🤝 Cultural Liaison Access</li>
-                <li>🧑‍⚖️ Legal & Housing Aid Interfaces</li>
-            </ul>
-        </div>
+            <!-- Social Determinants & Community Support -->
+            <section class="medical-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        🗺️ Social Determinants & Community Support
+                    </h2>
+                </div>
+                <div class="section-content">
+                    <div class="medical-list">
+                        <div class="medical-list-item hover:bg-purple-50 cursor-pointer">
+                            <span class="text-2xl">🧮</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Needs Screening Module</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-purple-50 cursor-pointer">
+                            <span class="text-2xl">🗺️</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Local Resource Map</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-purple-50 cursor-pointer">
+                            <span class="text-2xl">🤝</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Cultural Liaison Access</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-purple-50 cursor-pointer">
+                            <span class="text-2xl">🧑‍⚖️</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Legal & Housing Aid Interfaces</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-        <div class="section">
-            <h2>🔐 Security & Ethics</h2>
-            <ul>
-                <li>🔑 Biometric Access Controls</li>
-                <li>📋 Audit Logs & Data Sharing Permissions</li>
-                <li>🛡️ HIPAA+ & Global Privacy Compliance</li>
-            </ul>
+            <!-- Security & Ethics -->
+            <section class="medical-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        🔐 Security & Ethics
+                    </h2>
+                </div>
+                <div class="section-content">
+                    <div class="medical-list">
+                        <div class="medical-list-item hover:bg-red-50 cursor-pointer">
+                            <span class="text-2xl">🔑</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Biometric Access Controls</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-red-50 cursor-pointer">
+                            <span class="text-2xl">📋</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">Audit Logs & Data Sharing Permissions</span>
+                            </div>
+                        </div>
+                        <div class="medical-list-item hover:bg-red-50 cursor-pointer">
+                            <span class="text-2xl">🛡️</span>
+                            <div class="flex-1">
+                                <span class="text-medical-text font-medium">HIPAA+ & Global Privacy Compliance</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 
