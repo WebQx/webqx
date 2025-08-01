@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX™ Provider Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-800">
+    <!-- Header -->
+    <header class="glass border-b border-white border-opacity-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-bold text-white">WebQX™ Provider Portal</h1>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="text-white text-sm">
+                        <span id="providerName">Loading...</span>
+                        <div class="text-xs text-blue-200" id="providerRole">Role</div>
+                    </div>
+                    <button onclick="logout()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Card -->
+        <div class="glass rounded-xl p-8 mb-8 text-white">
+            <h2 class="text-2xl font-bold mb-4">Welcome to Your Provider Dashboard</h2>
+            <p class="text-blue-100 mb-6">Access your healthcare modules and patient information securely.</p>
+            
+            <!-- Role-based Module Access -->
+            <div id="moduleAccess" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Modules will be populated based on user role -->
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="glass rounded-lg p-6 text-white">
+                <h3 class="text-lg font-semibold mb-2">Today's Appointments</h3>
+                <p class="text-3xl font-bold text-blue-200">12</p>
+                <p class="text-sm text-blue-100 mt-1">3 upcoming</p>
+            </div>
+            
+            <div class="glass rounded-lg p-6 text-white">
+                <h3 class="text-lg font-semibold mb-2">Pending Results</h3>
+                <p class="text-3xl font-bold text-green-200">8</p>
+                <p class="text-sm text-green-100 mt-1">Lab & Imaging</p>
+            </div>
+            
+            <div class="glass rounded-lg p-6 text-white">
+                <h3 class="text-lg font-semibold mb-2">Messages</h3>
+                <p class="text-3xl font-bold text-yellow-200">5</p>
+                <p class="text-sm text-yellow-100 mt-1">Unread</p>
+            </div>
+        </div>
+
+        <!-- EHR Integration Status -->
+        <div class="glass rounded-xl p-6 text-white">
+            <h3 class="text-lg font-bold mb-4">EHR System Integration Status</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center justify-between p-3 bg-green-500 bg-opacity-20 rounded-lg">
+                    <span>Epic MyChart</span>
+                    <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-green-500 bg-opacity-20 rounded-lg">
+                    <span>Cerner PowerChart</span>
+                    <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-blue-500 bg-opacity-20 rounded-lg">
+                    <span>SMART on FHIR</span>
+                    <span class="w-3 h-3 bg-blue-400 rounded-full"></span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-yellow-500 bg-opacity-20 rounded-lg">
+                    <span>Lab Interface</span>
+                    <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Role-based module definitions
+        const roleModules = {
+            physician: [
+                { name: 'Patient Records', icon: '👥', href: '/provider/patients', description: 'Access and manage patient information' },
+                { name: 'Prescriptions', icon: '💊', href: '/provider/prescriptions', description: 'Manage medication orders and refills' },
+                { name: 'Lab Results', icon: '🧪', href: '/provider/lab-results', description: 'Review laboratory test results' },
+                { name: 'Imaging', icon: '🔬', href: '/provider/imaging', description: 'View diagnostic images and reports' },
+                { name: 'Scheduling', icon: '📅', href: '/provider/scheduling', description: 'Manage appointments and schedules' },
+                { name: 'Billing', icon: '💰', href: '/provider/billing', description: 'Access billing and coding information' }
+            ],
+            nurse: [
+                { name: 'Patient Care', icon: '👩‍⚕️', href: '/provider/patient-care', description: 'Manage patient care plans and notes' },
+                { name: 'Vital Signs', icon: '📊', href: '/provider/vitals', description: 'Record and monitor vital signs' },
+                { name: 'Medication Admin', icon: '💉', href: '/provider/medication-admin', description: 'Administer and document medications' },
+                { name: 'Scheduling', icon: '📅', href: '/provider/scheduling', description: 'View and manage schedules' },
+                { name: 'Care Plans', icon: '📋', href: '/provider/care-plans', description: 'Create and update care plans' }
+            ],
+            pharmacist: [
+                { name: 'Prescriptions', icon: '💊', href: '/provider/prescriptions', description: 'Review and process prescriptions' },
+                { name: 'Drug Interactions', icon: '⚠️', href: '/provider/drug-interactions', description: 'Check for drug interactions' },
+                { name: 'Inventory', icon: '📦', href: '/provider/inventory', description: 'Manage medication inventory' },
+                { name: 'Reconciliation', icon: '🔄', href: '/provider/reconciliation', description: 'Medication reconciliation' }
+            ],
+            administrator: [
+                { name: 'User Management', icon: '👤', href: '/provider/users', description: 'Manage system users and roles' },
+                { name: 'Reports', icon: '📈', href: '/provider/reports', description: 'Generate system reports' },
+                { name: 'System Config', icon: '⚙️', href: '/provider/config', description: 'Configure system settings' },
+                { name: 'Audit Logs', icon: '📝', href: '/provider/audit', description: 'Review system audit logs' },
+                { name: 'Billing', icon: '💰', href: '/provider/billing', description: 'Manage billing operations' }
+            ],
+            technician: [
+                { name: 'Lab Results', icon: '🧪', href: '/provider/lab-results', description: 'Process and review lab results' },
+                { name: 'Imaging', icon: '🔬', href: '/provider/imaging', description: 'Manage imaging procedures' },
+                { name: 'Procedures', icon: '🩺', href: '/provider/procedures', description: 'Document technical procedures' },
+                { name: 'Equipment', icon: '🔧', href: '/provider/equipment', description: 'Manage medical equipment' }
+            ],
+            specialist: [
+                { name: 'Consultations', icon: '🤝', href: '/provider/consultations', description: 'Manage specialty consultations' },
+                { name: 'Specialty Procedures', icon: '🏥', href: '/provider/specialty-procedures', description: 'Specialized medical procedures' },
+                { name: 'Research', icon: '🔬', href: '/provider/research', description: 'Clinical research and trials' },
+                { name: 'Patient Records', icon: '👥', href: '/provider/patients', description: 'Access patient information' }
+            ]
+        };
+
+        async function loadUserProfile() {
+            try {
+                const token = localStorage.getItem('providerAuthToken') || sessionStorage.getItem('providerAuthToken');
+                
+                if (!token) {
+                    window.location.href = '/auth/providers/login.html';
+                    return;
+                }
+
+                const response = await fetch('/api/auth/provider/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const user = result.user;
+                    document.getElementById('providerName').textContent = user.name;
+                    
+                    // Get selected role from storage
+                    const userData = JSON.parse(localStorage.getItem('providerUser') || sessionStorage.getItem('providerUser'));
+                    const selectedRole = userData?.selectedRole || user.roles[0];
+                    
+                    document.getElementById('providerRole').textContent = selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1);
+                    
+                    // Load modules based on role
+                    loadModules(selectedRole);
+                } else {
+                    // Token is invalid, redirect to login
+                    clearAuthData();
+                    window.location.href = '/auth/providers/login.html';
+                }
+            } catch (error) {
+                console.error('Failed to load profile:', error);
+                clearAuthData();
+                window.location.href = '/auth/providers/login.html';
+            }
+        }
+
+        function loadModules(role) {
+            const moduleContainer = document.getElementById('moduleAccess');
+            const modules = roleModules[role] || [];
+            
+            moduleContainer.innerHTML = modules.map(module => `
+                <a href="${module.href}" class="block p-4 bg-white bg-opacity-10 rounded-lg hover:bg-opacity-20 transition-all">
+                    <div class="text-2xl mb-2">${module.icon}</div>
+                    <h4 class="font-semibold text-white">${module.name}</h4>
+                    <p class="text-sm text-blue-100 mt-1">${module.description}</p>
+                </a>
+            `).join('');
+        }
+
+        function clearAuthData() {
+            localStorage.removeItem('providerAuthToken');
+            localStorage.removeItem('providerUser');
+            localStorage.removeItem('providerLoginTime');
+            sessionStorage.removeItem('providerAuthToken');
+            sessionStorage.removeItem('providerUser');
+            sessionStorage.removeItem('providerLoginTime');
+        }
+
+        async function logout() {
+            try {
+                const token = localStorage.getItem('providerAuthToken') || sessionStorage.getItem('providerAuthToken');
+                
+                if (token) {
+                    await fetch('/api/auth/provider/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                clearAuthData();
+                window.location.href = '/auth/providers/login.html';
+            }
+        }
+
+        // Load user profile when page loads
+        document.addEventListener('DOMContentLoaded', loadUserProfile);
+    </script>
+</body>
+</html>

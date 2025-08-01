@@ -29,6 +29,10 @@ const openEHRQueryRoutes = require('./openehr/routes/query');
 // Patient Portal Authentication imports
 const authRoutes = require('./patient-portal/auth/authRoutes');
 
+// Provider Portal Authentication imports
+const providerAuthRoutes = require('./auth/providers/routes');
+const providerSSORoutes = require('./auth/providers/sso-routes');
+
 // Ottehr Integration imports
 const ottehrRoutes = require('./auth/ottehr/routes');
 
@@ -41,8 +45,8 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts and eval for demo
-            styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com"], // Allow TailwindCSS
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"], // Allow inline styles and TailwindCSS
             connectSrc: ["'self'"],
             imgSrc: ["'self'", "data:", "https:"],
         },
@@ -117,6 +121,10 @@ app.use('/openehr/v1/query', openEHRQueryRoutes);
 
 // Patient Portal Authentication routes
 app.use('/api/auth', authRoutes);
+
+// Provider Portal Authentication routes
+app.use('/api/auth/provider', providerAuthRoutes);
+app.use('/api/auth/sso', providerSSORoutes);
 
 // Ottehr API routes
 app.use('/api/ottehr', ottehrRoutes);
