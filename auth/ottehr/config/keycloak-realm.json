@@ -1,0 +1,161 @@
+{
+  "realm": "webqx-healthcare",
+  "displayName": "WebQX Healthcare Platform",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>WebQX Healthcare Platform</span></div>",
+  "enabled": true,
+  "userManagedAccessAllowed": false,
+  "attributes": {
+    "frontendUrl": "",
+    "acr.loa.map": "{}"
+  },
+  "passwordPolicy": "length(8) and digits(1) and lowerCase(1) and upperCase(1) and specialChars(1) and notUsername and forceExpiredPasswordChange(365) and hashIterations(600000)",
+  "bruteForceProtected": true,
+  "maxFailureWaitTime": 900,
+  "minimumQuickLoginWaitTime": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 30,
+  "permanentLockout": false,
+  "maxTemporaryLockouts": 0,
+  "defaultRoles": ["default-roles-webqx-healthcare"],
+  "requiredCredentials": ["password"],
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyInitialCounter": 0,
+  "otpPolicyDigits": 6,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyPeriod": 30,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": false,
+  "rememberMe": true,
+  "verifyEmail": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "clients": [
+    {
+      "clientId": "ottehr-integration",
+      "name": "Ottehr Integration Client",
+      "description": "OAuth2 client for WebQX-Ottehr integration with SSO support",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "your-client-secret-here",
+      "redirectUris": [
+        "https://your-app.com/auth/keycloak/callback",
+        "http://localhost:3000/auth/keycloak/callback"
+      ],
+      "webOrigins": [
+        "https://your-app.com",
+        "http://localhost:3000"
+      ],
+      "protocol": "openid-connect",
+      "attributes": {
+        "saml.assertion.signature": "false",
+        "saml.force.post.binding": "false",
+        "saml.multivalued.roles": "false",
+        "saml.encrypt": "false",
+        "saml.server.signature": "false",
+        "saml.server.signature.keyinfo.ext": "false",
+        "exclude.session.state.from.auth.response": "false",
+        "saml_force_name_id_format": "false",
+        "saml.client.signature": "false",
+        "tls.client.certificate.bound.access.tokens": "false",
+        "saml.authnstatement": "false",
+        "display.on.consent.screen": "false",
+        "saml.onetimeuse.condition": "false",
+        "pkce.code.challenge.method": "S256"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "name": "ottehr-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "foo",
+            "access.token.claim": "true",
+            "claim.name": "ottehr_roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "ottehr-access-scope",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "ottehr-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "role_list",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "ottehr-admin",
+        "description": "Full access to Ottehr integration features",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "webqx-healthcare"
+      },
+      {
+        "name": "ottehr-user",
+        "description": "Standard user access to Ottehr features",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "webqx-healthcare"
+      },
+      {
+        "name": "ottehr-pharmacy",
+        "description": "Pharmacy-specific access to Ottehr features",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "webqx-healthcare"
+      },
+      {
+        "name": "ottehr-delivery",
+        "description": "Delivery tracking access to Ottehr features", 
+        "composite": false,
+        "clientRole": false,
+        "containerId": "webqx-healthcare"
+      }
+    ]
+  },
+  "scopeMappings": [
+    {
+      "client": "ottehr-integration",
+      "roles": ["ottehr-admin", "ottehr-user", "ottehr-pharmacy", "ottehr-delivery"]
+    }
+  ],
+  "clientScopeMappings": {
+    "account": [
+      {
+        "client": "ottehr-integration",
+        "roles": ["view-profile"]
+      }
+    ]
+  }
+}
