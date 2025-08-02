@@ -29,7 +29,9 @@
   "author": "WebQX Health",
   "license": "Apache-2.0",
   "dependencies": {
+    "@azure/identity": "^4.10.2",
     "@babel/preset-env": "^7.28.0",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/fhir": "^0.0.40",
