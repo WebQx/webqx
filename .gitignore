@@ -4,6 +4,20 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Python
+python-app/venv/
+python-app/__pycache__/
+python-app/*.pyc
+python-app/.pytest_cache/
+python-app/coverage.xml
+python-app/htmlcov/
+
+# Ruby
+ruby-app/vendor/
+ruby-app/.bundle/
+ruby-app/coverage/
+ruby-app/tmp/
+
 # Environment variables
 .env
 .env.local
@@ -49,3 +63,6 @@ build/
 
 # Demo and temporary files
 demo-*.js
+
+# CI/CD artifacts
+*.tar.gz
