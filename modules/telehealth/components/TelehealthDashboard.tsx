@@ -368,7 +368,7 @@ export const TelehealthDashboard: React.FC<TelehealthDashboardProps> = ({
       )}
 
       {/* Styles */}
-      <style jsx>{`
+      <style>{`
         .telehealth-dashboard {
           max-width: 1200px;
           margin: 0 auto;

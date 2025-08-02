@@ -323,7 +323,7 @@ export const TelehealthInterface: React.FC<TelehealthInterfaceProps> = ({
       </details>
 
       {/* Styles */}
-      <style jsx>{`
+      <style>{`
         .telehealth-interface {
           max-width: 800px;
           margin: 0 auto;

@@ -195,7 +195,7 @@ describe('Utility Functions', () => {
       
       const roomName = generateRoomName(patientId, sessionId);
       
-      expect(roomName).toMatch(/^webqx-[a-f0-9]{8}-[a-f0-9]{8}-[a-z0-9\-]+$/);
+      expect(roomName).toMatch(/^webqx-[a-f0-9]{8}-[a-z0-9\-]{8}-[a-z0-9]+$/);
       expect(roomName).toContain('123e4567');
       expect(roomName).toContain('session-');
     });
