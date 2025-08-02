@@ -1,0 +1,152 @@
+name: Ruby CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'ruby-app/**'
+      - '.github/workflows/ruby.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'ruby-app/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        ruby-version: ['3.0', '3.1', '3.2']
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Ruby ${{ matrix.ruby-version }}
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: true
+        working-directory: ruby-app
+    
+    - name: Cache bundle dependencies
+      uses: actions/cache@v3
+      with:
+        path: ruby-app/vendor/bundle
+        key: ${{ runner.os }}-gems-${{ hashFiles('ruby-app/Gemfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-gems-
+    
+    - name: Install dependencies
+      run: |
+        cd ruby-app
+        bundle config path vendor/bundle
+        bundle install --jobs 4 --retry 3
+    
+    - name: Run syntax check
+      run: |
+        cd ruby-app
+        ruby -c app.rb
+        find spec -name "*.rb" -exec ruby -c {} \;
+    
+    - name: Run RSpec tests
+      run: |
+        cd ruby-app
+        bundle exec rspec spec/ --format documentation --color
+      env:
+        RACK_ENV: test
+    
+    - name: Run RSpec with coverage
+      run: |
+        cd ruby-app
+        echo "gem 'simplecov', require: false" >> Gemfile
+        bundle install
+        COVERAGE=true bundle exec rspec spec/ --format documentation
+      env:
+        RACK_ENV: test
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.ruby-version == '3.2'
+      with:
+        file: ./ruby-app/coverage/.resultset.json
+        flags: ruby
+        name: codecov-ruby
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+        bundler-cache: true
+        working-directory: ruby-app
+    
+    - name: Install dependencies
+      run: |
+        cd ruby-app
+        bundle config path vendor/bundle
+        bundle install --deployment --without development test
+    
+    - name: Test application startup
+      run: |
+        cd ruby-app
+        timeout 10s bundle exec ruby app.rb &
+        sleep 5
+        curl -f http://localhost:4567/ || exit 1
+        pkill -f "ruby app.rb" || true
+    
+    - name: Create deployment package
+      run: |
+        cd ruby-app
+        tar -czf ../webqx-ruby.tar.gz \
+          --exclude=spec \
+          --exclude=coverage \
+          --exclude=tmp \
+          .
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: webqx-ruby-build
+        path: webqx-ruby.tar.gz
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: webqx-ruby-build
+    
+    - name: Extract artifacts
+      run: |
+        mkdir -p deploy-ruby
+        tar -xzf webqx-ruby.tar.gz -C deploy-ruby
+    
+    - name: Deploy to Heroku
+      uses: akhileshns/heroku-deploy@v3.12.14
+      with:
+        heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+        heroku_app_name: ${{ secrets.HEROKU_APP_NAME_RUBY }}
+        heroku_email: ${{ secrets.HEROKU_EMAIL }}
+        appdir: "ruby-app"
+        healthcheck: "https://${{ secrets.HEROKU_APP_NAME_RUBY }}.herokuapp.com/"
+        checkstring: "healthy"
+        delay: 10
+        rollbackonhealthcheckfailed: true
