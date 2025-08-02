@@ -14,7 +14,7 @@ export class XMLUtils {
     try {
       // This is a simplified implementation for demonstration
       // In production, use xml2js or similar with security features
-      const DOMParser = require('xmldom').DOMParser;
+      const DOMParser = require('@xmldom/xmldom').DOMParser;
       const parser = new DOMParser({
         errorHandler: {
           warning: () => {},
@@ -34,7 +34,7 @@ export class XMLUtils {
    */
   static xmlToString(xmlDoc: any): string {
     try {
-      const XMLSerializer = require('xmldom').XMLSerializer;
+      const XMLSerializer = require('@xmldom/xmldom').XMLSerializer;
       const serializer = new XMLSerializer();
       return serializer.serializeToString(xmlDoc);
     } catch (error) {
