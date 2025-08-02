@@ -68,7 +68,7 @@ jobs:
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
-      if: matrix.ruby-version == '3.1'
+      if: matrix.ruby-version == '3.2'
       with:
         file: ./ruby-app/coverage/.resultset.json
         flags: ruby
@@ -86,7 +86,7 @@ jobs:
     - name: Setup Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.1'
+        ruby-version: '3.2'
         bundler-cache: true
         working-directory: ruby-app
     
