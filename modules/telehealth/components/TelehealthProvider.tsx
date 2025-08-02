@@ -45,8 +45,6 @@ export const TelehealthProvider: React.FC<TelehealthProviderProps> = ({
     connectionStatus: 'connecting'
   });
 
-  const [showClinicalNotes, setShowClinicalNotes] = useState(false);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(language);
 

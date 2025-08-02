@@ -24,7 +24,6 @@ const ClinicalNote = require('../models/ClinicalNote');
 describe('AmbientDocumentationService', () => {
   let service: AmbientDocumentationService;
   let mockWhisperService: any;
-  let mockStreamingService: any;
 
   beforeEach(() => {
     service = new AmbientDocumentationService();

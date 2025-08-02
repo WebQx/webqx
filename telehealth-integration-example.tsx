@@ -17,17 +17,12 @@ import {
 
 // Initialize services
 const ambientService = new AmbientDocumentationService();
-const messagingService = new TelehealthMessagingService({
-  messagingEndpoint: '/fhir/messaging',
-  fhirServerUrl: '/fhir'
-});
 
 /**
  * Provider Dashboard with Telehealth Integration
  */
 const ProviderDashboard: React.FC = () => {
   const [currentSession, setCurrentSession] = React.useState<string | null>(null);
-  const [userRole] = React.useState<'provider' | 'patient'>('provider');
   const [language, setLanguage] = React.useState('en');
 
   const handleStartTelehealthSession = async () => {

@@ -408,8 +408,6 @@ export class TelehealthMessagingService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const result = await response.json();
-
       return {
         success: true,
         messageId: message.id,
