@@ -84,6 +84,46 @@ export interface FHIRAddress {
   period?: FHIRPeriod;
 }
 
+// Additional FHIR data types
+export interface FHIRQuantity {
+  value?: number;
+  comparator?: '<' | '<=' | '>=' | '>';
+  unit?: string;
+  system?: string;
+  code?: string;
+}
+
+export interface FHIRRange {
+  low?: FHIRQuantity;
+  high?: FHIRQuantity;
+}
+
+export interface FHIRRatio {
+  numerator?: FHIRQuantity;
+  denominator?: FHIRQuantity;
+}
+
+export interface FHIRSampledData {
+  origin: FHIRQuantity;
+  period: number;
+  factor?: number;
+  lowerLimit?: number;
+  upperLimit?: number;
+  dimensions: number;
+  data?: string;
+}
+
+export interface FHIRAttachment {
+  contentType?: string;
+  language?: string;
+  data?: string;
+  url?: string;
+  size?: number;
+  hash?: string;
+  title?: string;
+  creation?: string;
+}
+
 // Bundle types for FHIR operations
 export interface FHIRBundle extends FHIRResource {
   resourceType: 'Bundle';

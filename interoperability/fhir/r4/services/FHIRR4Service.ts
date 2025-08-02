@@ -50,6 +50,33 @@ export class FHIRR4Service {
   }
 
   /**
+   * Create a new resource
+   */
+  async create<T extends FHIRResource>(resource: T): Promise<FHIRResponse<T>> {
+    const url = `${this.config.baseUrl}/${resource.resourceType}`;
+    return this.makeRequest<T>('POST', url, resource);
+  }
+
+  /**
+   * Update an existing resource
+   */
+  async update<T extends FHIRResource>(resource: T): Promise<FHIRResponse<T>> {
+    if (!resource.id) {
+      throw new Error('Resource must have an ID for update operations');
+    }
+    const url = `${this.config.baseUrl}/${resource.resourceType}/${resource.id}`;
+    return this.makeRequest<T>('PUT', url, resource);
+  }
+
+  /**
+   * Delete a resource
+   */
+  async delete(resourceType: string, id: string): Promise<void> {
+    const url = `${this.config.baseUrl}/${resourceType}/${id}`;
+    await this.makeRequest('DELETE', url);
+  }
+
+  /**
    * Get a resource by type and ID
    */
   async getResource<T extends FHIRResource>(
@@ -58,6 +85,33 @@ export class FHIRR4Service {
   ): Promise<FHIRResponse<T>> {
     const url = `${this.config.baseUrl}/${resourceType}/${id}`;
     return this.makeRequest<T>('GET', url);
+  }
+
+  /**
+   * Create a new resource
+   */
+  async create<T extends FHIRResource>(resource: T): Promise<FHIRResponse<T>> {
+    const url = `${this.config.baseUrl}/${resource.resourceType}`;
+    return this.makeRequest<T>('POST', url, resource);
+  }
+
+  /**
+   * Update an existing resource
+   */
+  async update<T extends FHIRResource>(resource: T): Promise<FHIRResponse<T>> {
+    if (!resource.id) {
+      throw new Error('Resource must have an ID for update operations');
+    }
+    const url = `${this.config.baseUrl}/${resource.resourceType}/${resource.id}`;
+    return this.makeRequest<T>('PUT', url, resource);
+  }
+
+  /**
+   * Delete a resource
+   */
+  async delete(resourceType: string, id: string): Promise<void> {
+    const url = `${this.config.baseUrl}/${resourceType}/${id}`;
+    await this.makeRequest('DELETE', url);
   }
 
   /**
@@ -75,11 +129,10 @@ export class FHIRR4Service {
   }
 
   /**
-   * Create a new resource
+   * Create a new resource (alias for create)
    */
   async createResource<T extends FHIRResource>(resource: T): Promise<FHIRResponse<T>> {
-    const url = `${this.config.baseUrl}/${resource.resourceType}`;
-    return this.makeRequest<T>('POST', url, resource);
+    return this.create(resource);
   }
 
   /**
