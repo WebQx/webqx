@@ -29,7 +29,13 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-env']
+            presets: [
+              ['@babel/preset-env', {
+                targets: {
+                  node: '18'
+                }
+              }]
+            ]
           }
         }
       }
@@ -44,6 +50,10 @@ module.exports = {
     libraryTarget: 'commonjs'
   },
   optimization: {
-    minimize: true
+    minimize: true,
+    splitChunks: false
+  },
+  stats: {
+    warningsFilter: /^(?!CriticalDependenciesWarning$)/
   }
 };
