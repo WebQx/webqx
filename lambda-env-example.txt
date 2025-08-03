@@ -1,0 +1,75 @@
+# Example AWS Lambda Environment Configuration
+
+# Copy this file to your Lambda function's environment variables
+# Either through AWS Console, AWS CLI, or infrastructure as code
+
+# Required Environment Variables for Lambda
+NODE_ENV=production
+LAMBDA_DEPLOYMENT=true
+AWS_NODEJS_CONNECTION_REUSE_ENABLED=1
+
+# Database Configuration (Use RDS Proxy endpoint for Lambda)
+DATABASE_URL=postgresql://username:password@webqx-db-proxy-dev.proxy-xyz.us-east-1.rds.amazonaws.com:5432/webqx_healthcare
+
+# Security & Authentication (Store sensitive values in AWS Secrets Manager)
+JWT_SECRET=your_jwt_secret_key_32_characters_minimum_length_required
+ENCRYPTION_KEY=your_encryption_key_for_hipaa_compliance_32_chars_minimum_length
+SESSION_SECRET=your_session_secret_key_32_characters_minimum_length_required
+
+# OAuth2 Configuration
+OAUTH2_ISSUER=https://auth.webqx.health
+OAUTH2_CLIENT_ID=webqx-healthcare-platform
+OAUTH2_CLIENT_SECRET=your_oauth2_client_secret_from_secrets_manager
+OAUTH2_REDIRECT_URI=https://your-api-gateway-id.execute-api.us-east-1.amazonaws.com/prod/auth/oauth2/callback
+
+# Healthcare Platform Settings
+HIPAA_COMPLIANT_MODE=true
+ENABLE_AUDIT_LOGGING=true
+ENABLE_DATA_ENCRYPTION=true
+PII_DETECTION_ENABLED=true
+
+# External API Keys (Store in Secrets Manager)
+WHISPER_API_KEY=your_openai_whisper_api_key
+OPENAI_API_KEY=your_openai_api_key
+FHIR_SERVER_URL=https://your-fhir-server.com/fhir
+
+# AWS Services
+S3_STATIC_FILES_BUCKET=webqx-static-files-prod-123456789012
+CLOUDFRONT_DISTRIBUTION_ID=E1234567890123
+
+# Performance Settings
+ENABLE_RATE_LIMITING=true
+MAX_REQUESTS_PER_MINUTE=1000
+ENABLE_PERFORMANCE_MONITORING=true
+
+# Email Configuration (SES)
+SMTP_HOST=email-smtp.us-east-1.amazonaws.com
+SMTP_PORT=587
+FROM_EMAIL=noreply@webqx.health
+
+# Compliance & Audit
+AUDIT_LOG_RETENTION_DAYS=2555
+BREACH_NOTIFICATION_EMAIL=security@webqx.health
+
+# Telehealth Configuration
+TELEHEALTH_ENABLED=true
+HIPAA_ENCRYPTION_KEY=your_256_bit_hipaa_encryption_key_for_telehealth_services
+WEBRTC_STUN_SERVERS=stun:stun.l.google.com:19302
+REALTIME_WHISPER_ENABLED=true
+
+# Optional: Keycloak Integration
+KEYCLOAK_URL=https://your-keycloak-instance.com/auth
+KEYCLOAK_REALM=webqx-healthcare
+KEYCLOAK_CLIENT_ID=webqx-lambda
+KEYCLOAK_CLIENT_SECRET=your_keycloak_client_secret
+
+# Optional: Ottehr Integration
+OTTEHR_API_BASE_URL=https://api.ottehr.com
+OTTEHR_API_KEY=your_ottehr_api_key
+OTTEHR_CLIENT_ID=your_ottehr_client_id
+OTTEHR_CLIENT_SECRET=your_ottehr_client_secret
+OTTEHR_ENVIRONMENT=production
+
+# Localization
+DEFAULT_LANGUAGE=en
+SUPPORTED_LANGUAGES=en,es,fr,de,pt,zh,ar,hi,ja
