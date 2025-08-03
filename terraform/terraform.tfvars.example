@@ -1,0 +1,93 @@
+# Example terraform.tfvars file for WebQX Healthcare Platform
+# Copy this file to terraform.tfvars and customize the values for your environment
+
+# Basic Configuration
+aws_region  = "us-east-1"
+environment = "dev"
+
+# Network Configuration
+vpc_cidr                 = "10.0.0.0/16"
+availability_zones_count = 3
+
+# Database Configuration
+enable_rds             = false  # Set to true if you want PostgreSQL in addition to DynamoDB
+rds_instance_class     = "db.t3.micro"  # For dev; use larger for production
+rds_allocated_storage  = 20
+rds_max_allocated_storage = 100
+database_name         = "webqx_healthcare"
+database_username     = "webqx_admin"
+database_password     = "ChangeThisSecurePassword123!"  # Use a strong password
+
+# Security Configuration (REQUIRED - Generate secure keys)
+jwt_secret     = "your-jwt-secret-key-minimum-32-characters-long-and-secure"
+encryption_key = "your-encryption-key-for-hipaa-compliance-32-chars"
+whisper_api_key = "your-openai-whisper-api-key-if-using-ai-transcription"
+
+# Domain and SSL (Optional)
+domain_name      = ""  # e.g., "api.webqx.health"
+certificate_arn  = ""  # SSL certificate ARN if using custom domain
+route53_zone_id  = ""  # Route53 hosted zone ID
+
+# Monitoring and Alerting
+sns_topic_arn           = ""  # SNS topic for alerts
+enable_enhanced_monitoring = true
+enable_xray_tracing     = true
+
+# HIPAA Compliance Settings
+hipaa_compliant_mode      = true
+enable_audit_logging      = true
+enable_encryption_at_rest = true
+enable_encryption_in_transit = true
+backup_retention_days     = 2555  # 7 years for HIPAA compliance
+enable_point_in_time_recovery = true
+
+# High Availability
+enable_multi_az = true  # For production
+
+# Lambda Configuration
+lambda_runtime     = "nodejs18.x"
+lambda_memory_size = 512
+lambda_timeout     = 30
+lambda_reserved_concurrency = 0  # 0 for unlimited
+
+# API Gateway Configuration
+api_throttle_rate_limit  = 1000
+api_throttle_burst_limit = 2000
+
+# Healthcare Features
+fhir_version           = "R4"
+enable_telehealth      = true
+enable_ai_transcription = true
+supported_languages    = ["en", "es", "fr", "de", "pt"]
+
+# Cost Optimization
+enable_cost_optimization = true
+
+# Terraform Backend (Set to true to create backend resources)
+create_terraform_backend = false
+
+# Tagging
+additional_tags = {
+  Department  = "Healthcare Technology"
+  Application = "WebQX Platform"
+  Contact     = "devops@webqx.health"
+}
+
+project_name = "WebQX Healthcare Platform"
+owner        = "WebQX Health"
+cost_center  = "Healthcare Technology"
+
+# Development Settings
+enable_debug_logging = false  # Set to true for development environments
+enable_local_testing = false
+
+# Compliance Framework
+compliance_framework = "HIPAA"
+data_residency_region = ""  # Set if data must stay in specific region
+enable_data_classification = true
+
+# Disaster Recovery
+enable_cross_region_backup = false
+backup_region = ""  # e.g., "us-west-2" for backup
+rto_hours = 4  # Recovery Time Objective
+rpo_hours = 1  # Recovery Point Objective

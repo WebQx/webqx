@@ -1,0 +1,701 @@
+# Serverless Framework Configuration for WebQX Healthcare Platform
+# HIPAA-compliant AWS Lambda deployment with API Gateway, DynamoDB, and security configurations
+
+service: webqx-healthcare-platform
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  memorySize: 512
+  timeout: 30
+  
+  # Environment variables for all functions
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    # Database
+    DYNAMODB_TABLE_PATIENTS: ${self:service}-patients-${self:provider.stage}
+    DYNAMODB_TABLE_APPOINTMENTS: ${self:service}-appointments-${self:provider.stage}
+    DYNAMODB_TABLE_OBSERVATIONS: ${self:service}-observations-${self:provider.stage}
+    DYNAMODB_TABLE_AUDIT_LOGS: ${self:service}-audit-logs-${self:provider.stage}
+    # Security
+    JWT_SECRET: ${ssm:/webqx/${self:provider.stage}/jwt-secret}
+    ENCRYPTION_KEY: ${ssm:/webqx/${self:provider.stage}/encryption-key}
+    # FHIR
+    FHIR_BASE_URL: https://${self:custom.apiGatewayDomain}/fhir
+    # Healthcare APIs
+    WHISPER_API_KEY: ${ssm:/webqx/${self:provider.stage}/whisper-api-key}
+    # Telehealth
+    TELEHEALTH_ENCRYPTION_KEY: ${ssm:/webqx/${self:provider.stage}/telehealth-encryption-key}
+  
+  # IAM Role permissions
+  iam:
+    role:
+      statements:
+        # DynamoDB permissions
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+          Resource:
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:service}-*-${self:provider.stage}"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:service}-*-${self:provider.stage}/index/*"
+        
+        # S3 permissions for file storage (HIPAA compliant)
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+            - s3:PutObjectAcl
+          Resource:
+            - "arn:aws:s3:::${self:service}-healthcare-data-${self:provider.stage}/*"
+            - "arn:aws:s3:::${self:service}-audit-logs-${self:provider.stage}/*"
+        
+        # KMS permissions for encryption
+        - Effect: Allow
+          Action:
+            - kms:Encrypt
+            - kms:Decrypt
+            - kms:ReEncrypt*
+            - kms:GenerateDataKey*
+            - kms:DescribeKey
+          Resource:
+            - "arn:aws:kms:${self:provider.region}:*:key/*"
+        
+        # SSM Parameter Store for secrets
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+            - ssm:GetParameters
+            - ssm:GetParametersByPath
+          Resource:
+            - "arn:aws:ssm:${self:provider.region}:*:parameter/webqx/${self:provider.stage}/*"
+        
+        # CloudWatch Logs for audit trail
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource:
+            - "arn:aws:logs:${self:provider.region}:*:*"
+
+  # VPC configuration for HIPAA compliance
+  vpc:
+    securityGroupIds:
+      - ${cf:webqx-vpc-${self:provider.stage}.WebQXSecurityGroup}
+    subnetIds:
+      - ${cf:webqx-vpc-${self:provider.stage}.PrivateSubnet1}
+      - ${cf:webqx-vpc-${self:provider.stage}.PrivateSubnet2}
+
+# Custom configuration
+custom:
+  # API Gateway domain
+  apiGatewayDomain: api-${self:provider.stage}.webqx.health
+  
+  # DynamoDB configuration
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+      convertEmptyValues: true
+    seed:
+      domain:
+        sources:
+          - table: ${self:service}-patients-${self:provider.stage}
+            sources: [./aws/dynamodb-seed/patients.json]
+          - table: ${self:service}-appointments-${self:provider.stage}
+            sources: [./aws/dynamodb-seed/appointments.json]
+  
+  # Webpack for optimized bundling
+  webpack:
+    webpackConfig: ./aws/webpack.config.js
+    includeModules: true
+    packager: 'npm'
+    excludeFiles: src/**/*.test.js
+  
+  # Stage-specific configurations
+  stages:
+    dev:
+      CORS_ORIGIN: 'http://localhost:3000'
+      LOG_LEVEL: 'debug'
+    staging:
+      CORS_ORIGIN: 'https://staging.webqx.health'
+      LOG_LEVEL: 'info'
+    prod:
+      CORS_ORIGIN: 'https://app.webqx.health'
+      LOG_LEVEL: 'error'
+
+# Lambda Functions
+functions:
+  # FHIR API Functions
+  fhirPatients:
+    handler: aws/handlers/fhir/patients.handler
+    events:
+      - http:
+          path: /fhir/Patient
+          method: get
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+            headers:
+              - Content-Type
+              - Authorization
+              - Accept
+          authorizer:
+            name: jwtAuthorizer
+            type: jwt
+            identitySource: $request.header.Authorization
+            issuerUrl: https://auth.webqx.health
+            audience:
+              - webqx-healthcare-platform
+      - http:
+          path: /fhir/Patient
+          method: post
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+      - http:
+          path: /fhir/Patient/{id}
+          method: get
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+      - http:
+          path: /fhir/Patient/{id}
+          method: put
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+    environment:
+      TABLE_NAME: ${self:provider.environment.DYNAMODB_TABLE_PATIENTS}
+
+  fhirObservations:
+    handler: aws/handlers/fhir/observations.handler
+    events:
+      - http:
+          path: /fhir/Observation
+          method: get
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+      - http:
+          path: /fhir/Observation
+          method: post
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+      - http:
+          path: /fhir/Observation/{id}
+          method: get
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+    environment:
+      TABLE_NAME: ${self:provider.environment.DYNAMODB_TABLE_OBSERVATIONS}
+
+  fhirAppointments:
+    handler: aws/handlers/fhir/appointments.handler
+    events:
+      - http:
+          path: /fhir/Appointment
+          method: get
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+      - http:
+          path: /fhir/Appointment
+          method: post
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+      - http:
+          path: /fhir/Appointment/{id}
+          method: get
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+      - http:
+          path: /fhir/Appointment/{id}
+          method: put
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+    environment:
+      TABLE_NAME: ${self:provider.environment.DYNAMODB_TABLE_APPOINTMENTS}
+
+  # Telehealth Functions
+  telehealthSession:
+    handler: aws/handlers/telehealth/session.handler
+    timeout: 300
+    memorySize: 1024
+    events:
+      - http:
+          path: /telehealth/session
+          method: post
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+      - http:
+          path: /telehealth/session/{sessionId}
+          method: get
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+      - http:
+          path: /telehealth/session/{sessionId}/end
+          method: post
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+
+  # Whisper Transcription Function
+  whisperTranscription:
+    handler: aws/handlers/ai/whisper.handler
+    timeout: 300
+    memorySize: 2048
+    events:
+      - http:
+          path: /api/whisper/transcribe
+          method: post
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+      - http:
+          path: /api/whisper/translate
+          method: post
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+          authorizer:
+            name: jwtAuthorizer
+
+  # Audit Logging Function
+  auditLogger:
+    handler: aws/handlers/audit/logger.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt: [AuditLogsTable, StreamArn]
+          batchSize: 10
+          startingPosition: LATEST
+          maximumBatchingWindowInSeconds: 5
+
+  # Health Check Function
+  healthCheck:
+    handler: aws/handlers/health/check.handler
+    events:
+      - http:
+          path: /health
+          method: get
+          cors:
+            origin: ${self:custom.stages.${self:provider.stage}.CORS_ORIGIN}
+      - schedule:
+          rate: rate(5 minutes)
+          enabled: true
+
+# CloudFormation Resources
+resources:
+  Resources:
+    # DynamoDB Tables
+    PatientsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PATIENTS}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: patientId
+            AttributeType: S
+          - AttributeName: mrn
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: patientId-index
+            KeySchema:
+              - AttributeName: patientId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+          - IndexName: mrn-index
+            KeySchema:
+              - AttributeName: mrn
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        SSESpecification:
+          SSEEnabled: true
+          KMSMasterKeyId:
+            Ref: WebQXKMSKey
+        Tags:
+          - Key: Service
+            Value: ${self:service}
+          - Key: Stage
+            Value: ${self:provider.stage}
+          - Key: HIPAA
+            Value: "true"
+
+    AppointmentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_APPOINTMENTS}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: patientId
+            AttributeType: S
+          - AttributeName: providerId
+            AttributeType: S
+          - AttributeName: appointmentDateTime
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: patientId-appointmentDateTime-index
+            KeySchema:
+              - AttributeName: patientId
+                KeyType: HASH
+              - AttributeName: appointmentDateTime
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+          - IndexName: providerId-appointmentDateTime-index
+            KeySchema:
+              - AttributeName: providerId
+                KeyType: HASH
+              - AttributeName: appointmentDateTime
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        SSESpecification:
+          SSEEnabled: true
+          KMSMasterKeyId:
+            Ref: WebQXKMSKey
+        Tags:
+          - Key: Service
+            Value: ${self:service}
+          - Key: Stage
+            Value: ${self:provider.stage}
+          - Key: HIPAA
+            Value: "true"
+
+    ObservationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_OBSERVATIONS}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: patientId
+            AttributeType: S
+          - AttributeName: effectiveDateTime
+            AttributeType: S
+          - AttributeName: category
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: patientId-effectiveDateTime-index
+            KeySchema:
+              - AttributeName: patientId
+                KeyType: HASH
+              - AttributeName: effectiveDateTime
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+          - IndexName: category-effectiveDateTime-index
+            KeySchema:
+              - AttributeName: category
+                KeyType: HASH
+              - AttributeName: effectiveDateTime
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        SSESpecification:
+          SSEEnabled: true
+          KMSMasterKeyId:
+            Ref: WebQXKMSKey
+        Tags:
+          - Key: Service
+            Value: ${self:service}
+          - Key: Stage
+            Value: ${self:provider.stage}
+          - Key: HIPAA
+            Value: "true"
+
+    AuditLogsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_AUDIT_LOGS}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: resourceType
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: timestamp-index
+            KeySchema:
+              - AttributeName: timestamp
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+          - IndexName: userId-timestamp-index
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+          - IndexName: resourceType-timestamp-index
+            KeySchema:
+              - AttributeName: resourceType
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            BillingMode: PAY_PER_REQUEST
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        SSESpecification:
+          SSEEnabled: true
+          KMSMasterKeyId:
+            Ref: WebQXKMSKey
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        Tags:
+          - Key: Service
+            Value: ${self:service}
+          - Key: Stage
+            Value: ${self:provider.stage}
+          - Key: HIPAA
+            Value: "true"
+
+    # S3 Buckets for HIPAA-compliant file storage
+    HealthcareDataBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-healthcare-data-${self:provider.stage}
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: aws:kms
+                KMSMasterKeyID:
+                  Ref: WebQXKMSKey
+              BucketKeyEnabled: true
+        VersioningConfiguration:
+          Status: Enabled
+        LoggingConfiguration:
+          DestinationBucketName:
+            Ref: AuditLogsBucket
+          LogFilePrefix: healthcare-data-access/
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        LifecycleConfiguration:
+          Rules:
+            - Id: HealthcareDataRetention
+              Status: Enabled
+              Transitions:
+                - TransitionInDays: 30
+                  StorageClass: STANDARD_IA
+                - TransitionInDays: 90
+                  StorageClass: GLACIER
+                - TransitionInDays: 2555 # 7 years HIPAA retention
+                  StorageClass: DEEP_ARCHIVE
+        NotificationConfiguration:
+          CloudWatchConfigurations:
+            - Event: s3:ObjectCreated:*
+              CloudWatchConfiguration:
+                LogGroupName:
+                  Ref: S3AccessLogGroup
+        Tags:
+          - Key: Service
+            Value: ${self:service}
+          - Key: Stage
+            Value: ${self:provider.stage}
+          - Key: HIPAA
+            Value: "true"
+
+    AuditLogsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-audit-logs-${self:provider.stage}
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: aws:kms
+                KMSMasterKeyID:
+                  Ref: WebQXKMSKey
+              BucketKeyEnabled: true
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        LifecycleConfiguration:
+          Rules:
+            - Id: AuditLogRetention
+              Status: Enabled
+              ExpirationInDays: 2555 # 7 years HIPAA retention
+        Tags:
+          - Key: Service
+            Value: ${self:service}
+          - Key: Stage
+            Value: ${self:provider.stage}
+          - Key: HIPAA
+            Value: "true"
+
+    # KMS Key for HIPAA-compliant encryption
+    WebQXKMSKey:
+      Type: AWS::KMS::Key
+      Properties:
+        Description: WebQX Healthcare Platform HIPAA-compliant encryption key
+        KeyPolicy:
+          Statement:
+            - Sid: Enable IAM User Permissions
+              Effect: Allow
+              Principal:
+                AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+              Action: 'kms:*'
+              Resource: '*'
+            - Sid: Allow Lambda functions to use the key
+              Effect: Allow
+              Principal:
+                AWS: !GetAtt IamRoleLambdaExecution.Arn
+              Action:
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
+                - kms:DescribeKey
+              Resource: '*'
+        Tags:
+          - Key: Service
+            Value: ${self:service}
+          - Key: Stage
+            Value: ${self:provider.stage}
+          - Key: HIPAA
+            Value: "true"
+
+    WebQXKMSKeyAlias:
+      Type: AWS::KMS::Alias
+      Properties:
+        AliasName: alias/${self:service}-${self:provider.stage}
+        TargetKeyId:
+          Ref: WebQXKMSKey
+
+    # CloudWatch Log Groups for audit trail
+    S3AccessLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/s3/${self:service}-${self:provider.stage}
+        RetentionInDays: 2555 # 7 years HIPAA retention
+
+    LambdaLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}
+        RetentionInDays: 2555 # 7 years HIPAA retention
+
+  Outputs:
+    WebQXKMSKeyId:
+      Description: WebQX KMS Key ID for encryption
+      Value:
+        Ref: WebQXKMSKey
+      Export:
+        Name: ${self:service}-${self:provider.stage}-kms-key-id
+
+    HealthcareDataBucketName:
+      Description: S3 bucket for healthcare data storage
+      Value:
+        Ref: HealthcareDataBucket
+      Export:
+        Name: ${self:service}-${self:provider.stage}-healthcare-data-bucket
+
+    AuditLogsBucketName:
+      Description: S3 bucket for audit logs
+      Value:
+        Ref: AuditLogsBucket
+      Export:
+        Name: ${self:service}-${self:provider.stage}-audit-logs-bucket
+
+# Plugins
+plugins:
+  - serverless-webpack
+  - serverless-dynamodb-local
+  - serverless-offline
+  - serverless-domain-manager
+  - serverless-plugin-warmup
+  - serverless-plugin-log-retention
