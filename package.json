@@ -17,7 +17,14 @@
     "telehealth:start:fhir": "cd modules/telehealth/deployment/standalone/fhir-sync && docker-compose up -d",
     "telehealth:stop": "cd modules/telehealth/deployment && find . -name docker-compose.yml -execdir docker-compose down \\;",
     "telehealth:test": "jest modules/telehealth/tests/",
-    "telehealth:health": "curl -f http://localhost:3000/health/telehealth"
+    "telehealth:health": "curl -f http://localhost:3000/health/telehealth",
+    "lambda:dev": "serverless offline --stage dev",
+    "lambda:deploy": "serverless deploy",
+    "lambda:deploy:dev": "serverless deploy --stage dev",
+    "lambda:deploy:prod": "serverless deploy --stage prod",
+    "lambda:remove": "serverless remove",
+    "lambda:logs": "serverless logs -f api",
+    "lambda:invoke": "serverless invoke -f api"
   },
   "keywords": [
     "healthcare",
@@ -37,6 +44,7 @@
     "@types/fhir": "^0.0.40",
     "@types/keycloak-connect": "^4.5.4",
     "@types/keycloak-js": "^2.5.4",
+    "@vendia/serverless-express": "^4.12.6",
     "@xmldom/xmldom": "^0.9.8",
     "argon2": "^0.43.1",
     "axios": "^1.11.0",
@@ -86,6 +94,9 @@
     "jest-environment-jsdom": "^30.0.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "serverless": "^3.40.0",
+    "serverless-domain-manager": "^7.4.0",
+    "serverless-offline": "^13.9.0",
     "supertest": "^6.3.4",
     "ts-jest": "^29.4.0",
     "typescript": "^5.8.3"

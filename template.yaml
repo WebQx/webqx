@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: WebQX Healthcare Platform - Serverless deployment
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 1024
+    Runtime: nodejs18.x
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment stage
+
+Resources:
+  WebQXApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: lambda.handler
+      Environment:
+        Variables:
+          NODE_ENV: !Ref Stage
+          STAGE: !Ref Stage
+      Events:
+        ProxyApiRoot:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+            RestApiId: !Ref WebQXApiGateway
+        ProxyApiGreedy:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId: !Ref WebQXApiGateway
+
+  WebQXApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+      GatewayResponses:
+        DEFAULT_4xx:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'*'"
+        DEFAULT_5xx:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'*'"
+
+Outputs:
+  WebQXApi:
+    Description: "API Gateway endpoint URL for WebQX Healthcare Platform"
+    Value: !Sub "https://${WebQXApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/"
+  WebQXApiId:
+    Description: "API Gateway ID"
+    Value: !Ref WebQXApiGateway
+  WebQXFunction:
+    Description: "WebQX Lambda Function ARN"
+    Value: !GetAtt WebQXApi.Arn
+  WebQXFunctionIamRole:
+    Description: "Implicit IAM Role created for WebQX function"
+    Value: !GetAtt WebQXApiRole.Arn
