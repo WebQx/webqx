@@ -1,0 +1,184 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'WebQX GitHub Webhooks Lambda Function - Processes GitHub webhook events'
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs18.x
+    MemorySize: 512
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+
+Parameters:
+  WebhookSecret:
+    Type: String
+    Description: 'GitHub webhook secret for signature verification'
+    NoEcho: true
+    MinLength: 1
+  
+  Environment:
+    Type: String
+    Default: 'dev'
+    AllowedValues: ['dev', 'staging', 'prod']
+    Description: 'Deployment environment'
+
+  AllowedOrigins:
+    Type: String
+    Default: '*'
+    Description: 'Allowed CORS origins (comma-separated)'
+
+Resources:
+  # Lambda function for processing GitHub webhooks
+  GitHubWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'webqx-github-webhooks-${Environment}'
+      CodeUri: lambda/
+      Handler: index.handler
+      Description: 'Processes GitHub webhook events for WebQX platform'
+      Environment:
+        Variables:
+          WEBHOOK_SECRET: !Ref WebhookSecret
+          ENVIRONMENT: !Ref Environment
+      Events:
+        WebhookApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WebhookApi
+            Path: /webhook
+            Method: post
+        HealthCheck:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WebhookApi
+            Path: /health
+            Method: get
+
+  # Health check function
+  HealthCheckFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'webqx-webhooks-health-${Environment}'
+      CodeUri: lambda/
+      Handler: index.healthCheck
+      Description: 'Health check endpoint for webhook service'
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+
+  # API Gateway
+  WebhookApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub 'webqx-github-webhooks-api-${Environment}'
+      StageName: !Ref Environment
+      Description: 'API Gateway for GitHub webhooks'
+      Cors:
+        AllowMethods: "'POST, GET, OPTIONS'"
+        AllowHeaders: "'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token, X-GitHub-Event, X-GitHub-Delivery, X-Hub-Signature-256'"
+        AllowOrigin: !Sub "'${AllowedOrigins}'"
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          DataTraceEnabled: true
+          MetricsEnabled: true
+
+  # CloudWatch Log Groups
+  WebhookLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/webqx-github-webhooks-${Environment}'
+      RetentionInDays: 14
+
+  HealthCheckLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/webqx-webhooks-health-${Environment}'
+      RetentionInDays: 7
+
+  # IAM Role for Lambda execution
+  WebhookExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'webqx-webhooks-execution-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: WebhookLogsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+
+  # CloudWatch Alarms
+  WebhookErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'webqx-webhooks-errors-${Environment}'
+      AlarmDescription: 'Alarm for webhook function errors'
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref GitHubWebhookFunction
+
+  WebhookDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'webqx-webhooks-duration-${Environment}'
+      AlarmDescription: 'Alarm for webhook function high duration'
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 25000  # 25 seconds
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref GitHubWebhookFunction
+
+Outputs:
+  WebhookApiUrl:
+    Description: 'API Gateway endpoint URL for GitHub webhooks'
+    Value: !Sub 'https://${WebhookApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/webhook'
+    Export:
+      Name: !Sub '${AWS::StackName}-WebhookUrl'
+
+  HealthCheckUrl:
+    Description: 'Health check endpoint URL'
+    Value: !Sub 'https://${WebhookApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/health'
+    Export:
+      Name: !Sub '${AWS::StackName}-HealthCheckUrl'
+
+  FunctionName:
+    Description: 'Lambda function name'
+    Value: !Ref GitHubWebhookFunction
+    Export:
+      Name: !Sub '${AWS::StackName}-FunctionName'
+
+  ApiId:
+    Description: 'API Gateway ID'
+    Value: !Ref WebhookApi
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiId'

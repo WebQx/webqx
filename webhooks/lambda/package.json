@@ -1,0 +1,39 @@
+{
+  "name": "webqx-github-webhooks",
+  "version": "1.0.0",
+  "description": "AWS Lambda function for processing GitHub webhooks",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint .",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "github",
+    "webhooks",
+    "aws",
+    "lambda",
+    "healthcare",
+    "webqx"
+  ],
+  "author": "WebQX Health",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "crypto": "^1.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "**/*.js",
+      "!fixtures/**",
+      "!node_modules/**"
+    ]
+  }
+}
