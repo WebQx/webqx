@@ -58,5 +58,10 @@ demo-*.js
 .env.prod
 samconfig.toml
 
+# Lambda deployment artifacts
+webqx-lambda.zip
+*.zip
+lambda-package/
+
 # Lambda test files
 test-lambda.js

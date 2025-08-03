@@ -11,6 +11,10 @@ provider:
   environment:
     NODE_ENV: ${self:provider.stage}
     PORT: 3000
+    SERVE_STATIC: false
+    CORS_ORIGINS: ${env:CORS_ORIGINS, '*'}
+    JWT_SECRET: ${env:JWT_SECRET}
+    FHIR_SERVER_URL: ${env:FHIR_SERVER_URL}
     # Add your environment variables here
     # HIPAA_ENCRYPTION_KEY: ${env:HIPAA_ENCRYPTION_KEY}
     # DATABASE_URL: ${env:DATABASE_URL}
@@ -69,13 +73,23 @@ custom:
   #   createRoute53Record: true
 
 package:
-  exclude:
-    - node_modules/aws-sdk/**
-    - .git/**
-    - .github/**
-    - __tests__/**
-    - coverage/**
-    - docs/**
-    - tmp/**
-    - "*.md"
-    - ".env*"
+  patterns:
+    - '!node_modules/aws-sdk/**'
+    - '!.git/**'
+    - '!.github/**'
+    - '!__tests__/**'
+    - '!**/*.test.*'
+    - '!**/*.spec.*'
+    - '!jest.*'
+    - '!tsconfig.*'
+    - '!coverage/**'
+    - '!docs/**'
+    - '!tmp/**'
+    - '!*.md'
+    - '!.env*'
+    - '!.babelrc'
+    - '!demo*'
+    - '!node_modules/@types/**'
+    - '!node_modules/react*/**'
+    - '!node_modules/@testing-library/**'
+    - '!node_modules/.cache/**'

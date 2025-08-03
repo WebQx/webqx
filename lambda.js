@@ -1,7 +1,5 @@
-const serverlessExpress = require('@vendia/serverless-express');
-const app = require('./server');
+const serverlessExpress = require('@codegenie/serverless-express');
+const app = require('./server-lambda');
 
-// Create the serverless express handler
-const handler = serverlessExpress({ app });
-
-module.exports = { handler };
+// Lambda handler
+exports.handler = serverlessExpress({ app });

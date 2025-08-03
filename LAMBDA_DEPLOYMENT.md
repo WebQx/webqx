@@ -1,251 +1,251 @@
-# AWS Lambda Deployment Guide
+# WebQX Healthcare Platform - AWS Lambda Deployment Guide
 
-This guide explains how to deploy the WebQX Healthcare Platform to AWS Lambda using either the Serverless Framework or AWS SAM.
+## Overview
 
-## Prerequisites
+This guide provides instructions for deploying the WebQX Healthcare Platform on AWS Lambda for optimal performance, cost-efficiency, and scalability.
 
-1. **AWS CLI** configured with appropriate credentials
-2. **Node.js 18.x** or higher
-3. **NPM** or **Yarn** package manager
-4. **Serverless Framework** (for serverless deployment) or **AWS SAM CLI** (for SAM deployment)
+## Lambda Optimizations Implemented
 
-## Environment Setup
+### 1. Dependency Optimization
+- **Reduced bundle size** from ~124MB to ~25MB (estimated)
+- **Conditional loading** of heavy dependencies (Azure, Keycloak, Redis)
+- **Peer dependencies** for optional features
+- **Eliminated redundancies** (removed duplicate password hashers)
 
-1. Install dependencies:
-```bash
-npm install
-```
+### 2. Cold Start Optimization
+- **Lazy loading** of modules and auth systems
+- **Lightweight fallbacks** for optional services
+- **Streamlined middleware** stack
+- **Conditional feature flags**
 
-2. Set up environment variables (create `.env` file based on `.env.example`):
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
+### 3. Memory and Performance
+- **Optimized memory usage** (512MB recommended)
+- **Faster initialization** with reduced dependency tree
+- **Stateless design** suitable for Lambda execution model
 
 ## Deployment Options
 
 ### Option 1: Serverless Framework (Recommended)
 
-1. **Install Serverless Framework globally:**
 ```bash
+# Install dependencies
 npm install -g serverless
-```
+npm install serverless-offline --save-dev
 
-2. **Deploy to development stage:**
-```bash
-npm run lambda:deploy:dev
-```
+# Deploy to AWS
+serverless deploy --stage production
 
-3. **Deploy to production stage:**
-```bash
-npm run lambda:deploy:prod
-```
-
-4. **Local development with Lambda simulation:**
-```bash
-npm run lambda:dev
-```
-
-5. **View function logs:**
-```bash
-npm run lambda:logs
-```
-
-6. **Remove deployment:**
-```bash
-npm run lambda:remove
+# Local testing
+serverless offline
 ```
 
 ### Option 2: AWS SAM
 
-1. **Install AWS SAM CLI:**
-   - Follow the [official SAM installation guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
-
-2. **Build the application:**
 ```bash
+# Build and deploy
 sam build
-```
-
-3. **Deploy for the first time:**
-```bash
 sam deploy --guided
 ```
 
-4. **Subsequent deployments:**
+### Option 3: Docker Container (Lambda Container Image)
+
 ```bash
-sam deploy
+# Build Lambda container
+docker build -f Dockerfile.lambda -t webqx-lambda .
+
+# Tag for ECR
+docker tag webqx-lambda:latest [account-id].dkr.ecr.[region].amazonaws.com/webqx-lambda:latest
+
+# Push to ECR
+docker push [account-id].dkr.ecr.[region].amazonaws.com/webqx-lambda:latest
 ```
 
-5. **Local development:**
+### Option 4: ZIP Package
+
 ```bash
-sam local start-api --port 3000
+# Create optimized Lambda package
+npm run package:lambda
+
+# Upload webqx-lambda.zip to AWS Lambda
+aws lambda update-function-code \
+    --function-name webqx-healthcare \
+    --zip-file fileb://webqx-lambda.zip
 ```
 
-6. **Clean up:**
+## Environment Configuration
+
+### Required Environment Variables
+
 ```bash
-sam delete
+NODE_ENV=production
+JWT_SECRET=your_jwt_secret_min_32_chars
+FHIR_SERVER_URL=https://your-fhir-server.com/fhir
+CORS_ORIGINS=https://your-frontend-domain.com
 ```
 
-## Configuration
+### Optional Features (Environment-based)
+
+```bash
+# Azure Integration
+AZURE_TENANT_ID=your_tenant_id
+AZURE_CLIENT_ID=your_client_id
+AZURE_CLIENT_SECRET=your_secret
+
+# Keycloak SSO
+KEYCLOAK_URL=https://your-keycloak.com/auth
+KEYCLOAK_REALM=webqx-healthcare
+KEYCLOAK_CLIENT_ID=webqx-client
+KEYCLOAK_CLIENT_SECRET=your_secret
+
+# Redis Session Store
+REDIS_URL=redis://your-redis-instance:6379
+```
+
+## Lambda Configuration Recommendations
+
+### Memory and Timeout
+- **Memory**: 512MB (minimum), 1024MB (recommended for heavy workloads)
+- **Timeout**: 30 seconds (API Gateway limit)
+- **Reserved Concurrency**: Set based on expected load
 
 ### Environment Variables
-
-The following environment variables should be configured for production:
-
-- `NODE_ENV`: Set to 'production' for production deployments
-- `HIPAA_ENCRYPTION_KEY`: Required for HIPAA compliance
-- `DATABASE_URL`: Database connection string
-- `REDIS_URL`: Redis connection string (if using)
-- `OAUTH2_CLIENT_ID`: OAuth2 client identifier
-- `OAUTH2_CLIENT_SECRET`: OAuth2 client secret
-
-### Serverless Framework Configuration
-
-Edit `serverless.yml` to customize:
-
-- **Memory allocation**: Adjust `memorySize` based on your needs (default: 1024MB)
-- **Timeout**: Adjust `timeout` based on your longest running operations (default: 30s)
-- **Environment variables**: Add your production environment variables
-- **Custom domain**: Uncomment and configure the `customDomain` section
-- **VPC configuration**: Add VPC settings if needed for database access
-
-### SAM Configuration
-
-Edit `template.yaml` to customize:
-
-- **Memory and timeout**: Adjust in the `Globals.Function` section
-- **Environment variables**: Add to the `Environment.Variables` section
-- **API Gateway settings**: Modify CORS and other API Gateway configurations
-
-## Lambda-Specific Considerations
-
-### Cold Starts
-- The platform is optimized for Lambda cold starts
-- Consider using provisioned concurrency for production workloads with strict latency requirements
-
-### Stateless Operations
-- All operations are stateless and Lambda-compatible
-- Session data should be stored in external systems (Redis, DynamoDB)
-
-### Request/Response Handling
-- The Lambda handler uses `@vendia/serverless-express` for seamless Express.js compatibility
-- All existing routes and middleware work without modification
-
-### Monitoring
-- Use CloudWatch Logs for application logging
-- Set up CloudWatch Alarms for error rates and duration
-- Consider using AWS X-Ray for distributed tracing
-
-## Health Checks
-
-The platform includes Lambda-aware health checks:
-
-- **Endpoint**: `GET /health`
-- **Response includes**:
-  - Lambda function information (when running in Lambda)
-  - Service status
-  - Environment information
-  - OAuth2 status
-
-Example response in Lambda:
-```json
-{
-  "status": "healthy",
-  "service": "WebQX Healthcare Platform",
-  "fhir": "enabled",
-  "openehr": "enabled",
-  "oauth2": "enabled",
-  "environment": "production",
-  "runtime": "lambda",
-  "lambda": {
-    "functionName": "webqx-healthcare-platform-prod-api",
-    "functionVersion": "$LATEST",
-    "region": "us-east-1",
-    "stage": "prod"
-  },
-  "timestamp": "2025-01-27T20:00:00.000Z"
-}
+```yaml
+Environment:
+  Variables:
+    NODE_ENV: production
+    SERVE_STATIC: false
+    JWT_SECRET: !Ref JWTSecret
+    FHIR_SERVER_URL: !Ref FHIRServerURL
 ```
+
+### VPC Configuration (if needed)
+```yaml
+VpcConfig:
+  SecurityGroupIds:
+    - !Ref LambdaSecurityGroup
+  SubnetIds:
+    - !Ref PrivateSubnet1
+    - !Ref PrivateSubnet2
+```
+
+## Performance Monitoring
+
+### CloudWatch Metrics
+- Monitor cold start times
+- Track memory utilization
+- Monitor error rates and timeouts
+
+### X-Ray Tracing
+Enable X-Ray for detailed performance insights:
+```yaml
+TracingConfig:
+  Mode: Active
+```
+
+## Cost Optimization
+
+### Lambda Pricing Factors
+- **Invocations**: Optimize API routing
+- **Duration**: Reduce execution time through lazy loading
+- **Memory**: Right-size based on actual usage
+
+### Cost-Saving Features
+- **Conditional loading**: Only load needed services
+- **Lightweight auth**: Faster token validation
+- **Stateless design**: No persistent connections
 
 ## Security Considerations
 
-### IAM Roles
-- Lambda functions run with minimal required permissions
-- Consider using custom IAM roles for production deployments
+### IAM Permissions
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*"
+    }
+  ]
+}
+```
 
-### API Gateway
-- CORS is configured for development flexibility
-- Tighten CORS settings for production
-- Consider using API keys or custom authorizers for additional security
-
-### Environment Variables
-- Never commit sensitive environment variables to version control
-- Use AWS Systems Manager Parameter Store or AWS Secrets Manager for sensitive data
+### API Gateway Security
+- Enable CORS properly
+- Use API keys for rate limiting
+- Implement request validation
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Cold start timeouts**:
-   - Increase Lambda timeout in configuration
-   - Consider provisioned concurrency for critical functions
+1. **Cold Start Timeouts**
+   - Increase memory allocation
+   - Reduce dependency loading
+   - Use provisioned concurrency for critical APIs
 
-2. **Memory issues**:
-   - Monitor CloudWatch metrics for memory usage
-   - Increase `memorySize` if needed
+2. **Memory Issues**
+   - Monitor CloudWatch metrics
+   - Optimize heavy dependencies
+   - Use streaming for large responses
 
-3. **Database connection issues**:
-   - Ensure Lambda has VPC access if database is in VPC
-   - Configure appropriate security groups
-   - Consider connection pooling for database efficiency
+3. **Authentication Failures**
+   - Verify JWT_SECRET is set
+   - Check token expiration times
+   - Validate CORS configuration
 
-4. **Large package size**:
-   - Review the `package.exclude` section in `serverless.yml`
-   - Consider using Lambda layers for shared dependencies
+### Logging and Debugging
 
-### Debugging
-
-1. **Check CloudWatch Logs**:
+Enable debug logging:
 ```bash
-aws logs describe-log-groups --log-group-name-prefix /aws/lambda/webqx
-aws logs tail /aws/lambda/webqx-healthcare-platform-dev-api --follow
+NODE_ENV=development
+DEBUG=webqx:*
 ```
 
-2. **Test Lambda function directly**:
-```bash
-npm run lambda:invoke
+## Migration from Server Deployment
+
+### Key Differences
+- No persistent state (sessions, rate limiting)
+- Cold start considerations
+- Stateless authentication
+- Environment-based feature flags
+
+### Migration Steps
+1. Update environment variables
+2. Test with `serverless offline`
+3. Deploy to staging environment
+4. Monitor performance metrics
+5. Gradually migrate traffic
+
+## Health Checks and Monitoring
+
+### Health Endpoint
+The `/health` endpoint provides Lambda-specific status:
+```json
+{
+  "status": "healthy",
+  "service": "WebQX Healthcare Platform (Lambda)",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "environment": "production"
+}
 ```
 
-3. **Local testing**:
-```bash
-# Using Serverless Framework
-npm run lambda:dev
+### Monitoring Dashboard
+Monitor these key metrics:
+- Invocation count and duration
+- Error rate and types
+- Memory utilization
+- Cold start frequency
+- Feature flag usage
 
-# Using SAM
-sam local start-api
-```
+## Support and Troubleshooting
 
-## Performance Optimization
-
-### Memory Configuration
-- Start with 1024MB and adjust based on CloudWatch metrics
-- Higher memory allocation also increases CPU power
-
-### Package Size Optimization
-- Exclude unnecessary files (see `serverless.yml` package.exclude)
-- Consider using webpack or similar bundlers for smaller packages
-
-### Connection Management
-- Reuse database connections across Lambda invocations
-- Implement proper connection pooling
-
-## Migration from Traditional Server
-
-The Lambda deployment maintains full compatibility with the traditional server deployment:
-
-- All routes work identically
-- Middleware stack is preserved
-- Static file serving is handled by Lambda
-- Environment variable handling is maintained
-
-The only difference is the deployment target and execution environment.
+For deployment issues or optimization questions, refer to:
+- CloudWatch Logs for detailed error messages
+- X-Ray traces for performance analysis
+- Feature flag status in health endpoint
+- AWS Lambda console for configuration verification
