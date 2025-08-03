@@ -1,0 +1,189 @@
+{
+  "ref": "refs/heads/main",
+  "before": "a10867b14bb761a232cd80139fbd4c0d33264240",
+  "after": "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
+  "repository": {
+    "id": 123456789,
+    "node_id": "MDEwOlJlcG9zaXRvcnkxMjM0NTY3ODk=",
+    "name": "webqx",
+    "full_name": "WebQx/webqx",
+    "private": false,
+    "owner": {
+      "name": "WebQx",
+      "email": "support@webqx.health",
+      "login": "WebQx",
+      "id": 987654321,
+      "node_id": "MDQ6VXNlcjk4NzY1NDMyMQ==",
+      "avatar_url": "https://avatars.githubusercontent.com/u/987654321?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/WebQx",
+      "html_url": "https://github.com/WebQx",
+      "type": "Organization",
+      "site_admin": false
+    },
+    "html_url": "https://github.com/WebQx/webqx",
+    "description": "WebQX™: Modular Healthcare Platform - A multilingual, specialty-aware, and privacy-first blueprint for global clinical care",
+    "fork": false,
+    "url": "https://api.github.com/repos/WebQx/webqx",
+    "created_at": 1640995200,
+    "updated_at": "2024-01-15T10:30:00Z",
+    "pushed_at": 1705315800,
+    "git_url": "git://github.com/WebQx/webqx.git",
+    "ssh_url": "git@github.com:WebQx/webqx.git",
+    "clone_url": "https://github.com/WebQx/webqx.git",
+    "svn_url": "https://github.com/WebQx/webqx",
+    "size": 2048,
+    "stargazers_count": 156,
+    "watchers_count": 89,
+    "language": "JavaScript",
+    "has_issues": true,
+    "has_projects": true,
+    "has_wiki": true,
+    "has_pages": false,
+    "forks_count": 23,
+    "archived": false,
+    "disabled": false,
+    "open_issues_count": 8,
+    "license": {
+      "key": "apache-2.0",
+      "name": "Apache License 2.0",
+      "spdx_id": "Apache-2.0",
+      "url": "https://api.github.com/licenses/apache-2.0",
+      "node_id": "MDc6TGljZW5zZTI="
+    },
+    "allow_forking": true,
+    "is_template": false,
+    "topics": [
+      "healthcare",
+      "medical",
+      "webqx",
+      "patient-portal",
+      "healthcare-platform",
+      "fhir",
+      "hl7",
+      "hipaa"
+    ],
+    "visibility": "public",
+    "forks": 23,
+    "open_issues": 8,
+    "watchers": 89,
+    "default_branch": "main"
+  },
+  "pusher": {
+    "name": "developer",
+    "email": "developer@webqx.health"
+  },
+  "sender": {
+    "login": "developer",
+    "id": 111222333,
+    "node_id": "MDQ6VXNlcjExMTIyMjMzMw==",
+    "avatar_url": "https://avatars.githubusercontent.com/u/111222333?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/developer",
+    "html_url": "https://github.com/developer",
+    "type": "User",
+    "site_admin": false
+  },
+  "created": false,
+  "deleted": false,
+  "forced": false,
+  "base_ref": null,
+  "compare": "https://github.com/WebQx/webqx/compare/a10867b14bb7...0d1a26e67d8f",
+  "commits": [
+    {
+      "id": "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
+      "tree_id": "f9d2a07e9488b91af2641b26b9407fe22a451433",
+      "distinct": true,
+      "message": "Update patient portal UI\n\n- Added new telehealth consultation component\n- Improved accessibility features\n- Updated FHIR integration for appointments",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "url": "https://github.com/WebQx/webqx/commit/0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
+      "author": {
+        "name": "Developer",
+        "email": "developer@webqx.health",
+        "username": "developer"
+      },
+      "committer": {
+        "name": "Developer",
+        "email": "developer@webqx.health",
+        "username": "developer"
+      },
+      "added": [
+        "patient-portal/components/TelehealthConsultation.tsx",
+        "patient-portal/hooks/useTelehealthSession.ts",
+        "docs/TELEHEALTH_API.md"
+      ],
+      "removed": [
+        "patient-portal/components/OldConsultation.jsx"
+      ],
+      "modified": [
+        "patient-portal/pages/dashboard.tsx",
+        "patient-portal/components/AppointmentBooking.tsx",
+        "package.json",
+        "docs/README.md",
+        "fhir/routes/appointment.js"
+      ]
+    },
+    {
+      "id": "a10867b14bb761a232cd80139fbd4c0d33264240",
+      "tree_id": "69dc07e9488b91af2641b26b9407fe22a451433",
+      "distinct": true,
+      "message": "Fix HIPAA compliance validation\n\n- Updated audit logging for patient data access\n- Enhanced encryption for sensitive data\n- Added compliance check in CI pipeline",
+      "timestamp": "2024-01-15T09:15:00Z",
+      "url": "https://github.com/WebQx/webqx/commit/a10867b14bb761a232cd80139fbd4c0d33264240",
+      "author": {
+        "name": "Developer",
+        "email": "developer@webqx.health",
+        "username": "developer"
+      },
+      "committer": {
+        "name": "Developer",
+        "email": "developer@webqx.health",
+        "username": "developer"
+      },
+      "added": [
+        "auth/middleware/hipaaCompliance.js",
+        "scripts/compliance-check.sh"
+      ],
+      "removed": [],
+      "modified": [
+        "auth/middleware/auditLogger.js",
+        "patient-portal/services/dataEncryption.js",
+        ".github/workflows/compliance.yml",
+        "docs/HIPAA_COMPLIANCE.md"
+      ]
+    }
+  ],
+  "head_commit": {
+    "id": "0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
+    "tree_id": "f9d2a07e9488b91af2641b26b9407fe22a451433",
+    "distinct": true,
+    "message": "Update patient portal UI\n\n- Added new telehealth consultation component\n- Improved accessibility features\n- Updated FHIR integration for appointments",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "url": "https://github.com/WebQx/webqx/commit/0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c",
+    "author": {
+      "name": "Developer",
+      "email": "developer@webqx.health",
+      "username": "developer"
+    },
+    "committer": {
+      "name": "Developer",
+      "email": "developer@webqx.health",
+      "username": "developer"
+    },
+    "added": [
+      "patient-portal/components/TelehealthConsultation.tsx",
+      "patient-portal/hooks/useTelehealthSession.ts",
+      "docs/TELEHEALTH_API.md"
+    ],
+    "removed": [
+      "patient-portal/components/OldConsultation.jsx"
+    ],
+    "modified": [
+      "patient-portal/pages/dashboard.tsx",
+      "patient-portal/components/AppointmentBooking.tsx",
+      "package.json",
+      "docs/README.md",
+      "fhir/routes/appointment.js"
+    ]
+  }
+}

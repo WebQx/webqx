@@ -1,0 +1,333 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "WebQX GitHub Webhooks Infrastructure - CloudFormation Template",
+  "Parameters": {
+    "WebhookSecret": {
+      "Type": "String",
+      "Description": "GitHub webhook secret for signature verification",
+      "NoEcho": true,
+      "MinLength": 1
+    },
+    "Environment": {
+      "Type": "String",
+      "Default": "dev",
+      "AllowedValues": ["dev", "staging", "prod"],
+      "Description": "Deployment environment"
+    },
+    "LambdaCodeBucket": {
+      "Type": "String",
+      "Description": "S3 bucket containing Lambda deployment package"
+    },
+    "LambdaCodeKey": {
+      "Type": "String",
+      "Description": "S3 key for Lambda deployment package",
+      "Default": "webhooks/lambda-deployment.zip"
+    }
+  },
+  "Resources": {
+    "WebhookExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Sub": "webqx-webhooks-execution-role-${Environment}"
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "WebhookExecutionPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "GitHubWebhookFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": {
+          "Fn::Sub": "webqx-github-webhooks-${Environment}"
+        },
+        "Runtime": "nodejs18.x",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": ["WebhookExecutionRole", "Arn"]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "LambdaCodeBucket"
+          },
+          "S3Key": {
+            "Ref": "LambdaCodeKey"
+          }
+        },
+        "Description": "Processes GitHub webhook events for WebQX platform",
+        "Timeout": 30,
+        "MemorySize": 512,
+        "Environment": {
+          "Variables": {
+            "WEBHOOK_SECRET": {
+              "Ref": "WebhookSecret"
+            },
+            "ENVIRONMENT": {
+              "Ref": "Environment"
+            },
+            "LOG_LEVEL": "INFO"
+          }
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "WebQX"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Component",
+            "Value": "Webhooks"
+          }
+        ]
+      }
+    },
+    "HealthCheckFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": {
+          "Fn::Sub": "webqx-webhooks-health-${Environment}"
+        },
+        "Runtime": "nodejs18.x",
+        "Handler": "index.healthCheck",
+        "Role": {
+          "Fn::GetAtt": ["WebhookExecutionRole", "Arn"]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "LambdaCodeBucket"
+          },
+          "S3Key": {
+            "Ref": "LambdaCodeKey"
+          }
+        },
+        "Description": "Health check endpoint for webhook service",
+        "Timeout": 10,
+        "MemorySize": 256,
+        "Environment": {
+          "Variables": {
+            "ENVIRONMENT": {
+              "Ref": "Environment"
+            }
+          }
+        }
+      }
+    },
+    "WebhookApi": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "webqx-github-webhooks-api-${Environment}"
+        },
+        "Description": "API Gateway for GitHub webhooks",
+        "EndpointConfiguration": {
+          "Types": ["REGIONAL"]
+        }
+      }
+    },
+    "WebhookResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "WebhookApi"
+        },
+        "ParentId": {
+          "Fn::GetAtt": ["WebhookApi", "RootResourceId"]
+        },
+        "PathPart": "webhook"
+      }
+    },
+    "HealthResource": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "WebhookApi"
+        },
+        "ParentId": {
+          "Fn::GetAtt": ["WebhookApi", "RootResourceId"]
+        },
+        "PathPart": "health"
+      }
+    },
+    "WebhookMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "WebhookApi"
+        },
+        "ResourceId": {
+          "Ref": "WebhookResource"
+        },
+        "HttpMethod": "POST",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": {
+            "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GitHubWebhookFunction.Arn}/invocations"
+          }
+        }
+      }
+    },
+    "HealthMethod": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "WebhookApi"
+        },
+        "ResourceId": {
+          "Ref": "HealthResource"
+        },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "AWS_PROXY",
+          "IntegrationHttpMethod": "POST",
+          "Uri": {
+            "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HealthCheckFunction.Arn}/invocations"
+          }
+        }
+      }
+    },
+    "ApiDeployment": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "DependsOn": ["WebhookMethod", "HealthMethod"],
+      "Properties": {
+        "RestApiId": {
+          "Ref": "WebhookApi"
+        },
+        "StageName": {
+          "Ref": "Environment"
+        }
+      }
+    },
+    "WebhookLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GitHubWebhookFunction"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebhookApi}/*/*"
+        }
+      }
+    },
+    "HealthLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "HealthCheckFunction"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebhookApi}/*/*"
+        }
+      }
+    },
+    "WebhookLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Sub": "/aws/lambda/webqx-github-webhooks-${Environment}"
+        },
+        "RetentionInDays": 14
+      }
+    },
+    "HealthCheckLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Sub": "/aws/lambda/webqx-webhooks-health-${Environment}"
+        },
+        "RetentionInDays": 7
+      }
+    }
+  },
+  "Outputs": {
+    "WebhookApiUrl": {
+      "Description": "API Gateway endpoint URL for GitHub webhooks",
+      "Value": {
+        "Fn::Sub": "https://${WebhookApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/webhook"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-WebhookUrl"
+        }
+      }
+    },
+    "HealthCheckUrl": {
+      "Description": "Health check endpoint URL",
+      "Value": {
+        "Fn::Sub": "https://${WebhookApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/health"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-HealthCheckUrl"
+        }
+      }
+    },
+    "FunctionName": {
+      "Description": "Lambda function name",
+      "Value": {
+        "Ref": "GitHubWebhookFunction"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-FunctionName"
+        }
+      }
+    },
+    "ApiId": {
+      "Description": "API Gateway ID",
+      "Value": {
+        "Ref": "WebhookApi"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-ApiId"
+        }
+      }
+    }
+  }
+}
