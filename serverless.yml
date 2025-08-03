@@ -1,0 +1,81 @@
+service: webqx-healthcare-platform
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  memorySize: 1024
+  timeout: 30
+  
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    PORT: 3000
+    # Add your environment variables here
+    # HIPAA_ENCRYPTION_KEY: ${env:HIPAA_ENCRYPTION_KEY}
+    # DATABASE_URL: ${env:DATABASE_URL}
+    # REDIS_URL: ${env:REDIS_URL}
+  
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource: "arn:aws:logs:*:*:*"
+
+functions:
+  api:
+    handler: lambda.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+      - http:
+          path: /
+          method: ANY
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+
+plugins:
+  - serverless-offline
+  - serverless-domain-manager
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+    host: 0.0.0.0
+  
+  # Uncomment and configure for custom domain
+  # customDomain:
+  #   domainName: api.yourdomain.com
+  #   stage: ${self:provider.stage}
+  #   createRoute53Record: true
+
+package:
+  exclude:
+    - node_modules/aws-sdk/**
+    - .git/**
+    - .github/**
+    - __tests__/**
+    - coverage/**
+    - docs/**
+    - tmp/**
+    - "*.md"
+    - ".env*"

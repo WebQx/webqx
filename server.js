@@ -119,8 +119,20 @@ app.get('/health', (req, res) => {
         fhir: 'enabled',
         openehr: 'enabled',
         oauth2: oauth2Instance ? 'enabled' : 'fallback',
+        environment: process.env.NODE_ENV || 'development',
+        runtime: process.env.AWS_LAMBDA_FUNCTION_NAME ? 'lambda' : 'server',
         timestamp: new Date().toISOString()
     };
+
+    // Add Lambda-specific information if running in Lambda
+    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+        healthData.lambda = {
+            functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+            functionVersion: process.env.AWS_LAMBDA_FUNCTION_VERSION,
+            region: process.env.AWS_REGION,
+            stage: process.env.STAGE || 'dev'
+        };
+    }
 
     // Add OAuth2 status if available
     if (oauth2Instance) {
@@ -327,8 +339,14 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🌐 WebQX Healthcare Platform is running on port ${PORT}`);
-    console.log(`🩺 Patient Portal available at http://localhost:${PORT}`);
-    console.log(`💊 Health check endpoint: http://localhost:${PORT}/health`);
-});
+// Export the app for Lambda usage
+module.exports = app;
+
+// Only start the server if we're not in Lambda environment
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🌐 WebQX Healthcare Platform is running on port ${PORT}`);
+        console.log(`🩺 Patient Portal available at http://localhost:${PORT}`);
+        console.log(`💊 Health check endpoint: http://localhost:${PORT}/health`);
+    });
+}

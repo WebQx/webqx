@@ -49,3 +49,14 @@ build/
 
 # Demo and temporary files
 demo-*.js
+
+# AWS Lambda and Serverless files
+.serverless/
+.aws-sam/
+.env.dev
+.env.staging
+.env.prod
+samconfig.toml
+
+# Lambda test files
+test-lambda.js
