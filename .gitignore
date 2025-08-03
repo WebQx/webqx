@@ -49,3 +49,12 @@ build/
 
 # Demo and temporary files
 demo-*.js
+
+# Lambda deployment artifacts
+webqx-lambda.zip
+.serverless/
+.aws-sam/
+
+# Lambda function packages
+*.zip
+lambda-package/

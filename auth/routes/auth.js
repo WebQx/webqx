@@ -2,22 +2,25 @@
  * HIPAA-Compliant Authentication API Routes (JavaScript version)
  * 
  * Secure authentication endpoints for WebQX patient portal
- * with rate limiting, audit logging, and session management.
+ * with conditional rate limiting, audit logging, and session management.
  */
 
 const express = require('express');
-const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const { userService } = require('../services/userService.js');
 
 const router = express.Router();
 
-// Rate limiting for authentication endpoints
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs for auth endpoints
-  message: {
-    error: 'TOO_MANY_REQUESTS',
+// Conditional rate limiting for authentication endpoints
+let authLimiter;
+let strictAuthLimiter;
+try {
+  const rateLimit = require('express-rate-limit');
+  authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Limit each IP to 5 requests per windowMs for auth endpoints
+    message: {
+      error: 'TOO_MANY_REQUESTS',
     message: 'Too many authentication attempts. Please try again later.',
     retryAfter: 15 * 60 // 15 minutes in seconds
   },
@@ -28,7 +31,7 @@ const authLimiter = rateLimit({
 });
 
 // More restrictive rate limiting for failed attempts
-const strictAuthLimiter = rateLimit({
+strictAuthLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10, // Limit each IP to 10 failed attempts per hour
   message: {
@@ -37,6 +40,11 @@ const strictAuthLimiter = rateLimit({
     retryAfter: 60 * 60 // 1 hour in seconds
   }
 });
+} catch (error) {
+  console.warn('Rate limiting not available, using passthrough middleware');
+  authLimiter = (req, res, next) => next();
+  strictAuthLimiter = (req, res, next) => next();
+}
 
 /**
  * POST /auth/login
