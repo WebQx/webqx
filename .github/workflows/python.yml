@@ -1,0 +1,151 @@
+name: Python CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'python-app/**'
+      - '.github/workflows/python.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'python-app/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('python-app/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Create virtual environment
+      run: |
+        cd python-app
+        python -m venv venv
+        source venv/bin/activate
+        echo "VIRTUAL_ENV=${VIRTUAL_ENV}" >> $GITHUB_ENV
+        echo "${VIRTUAL_ENV}/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      run: |
+        cd python-app
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run linting
+      run: |
+        cd python-app
+        python -m py_compile app.py
+        python -m py_compile test_app.py
+    
+    - name: Run tests with pytest
+      run: |
+        cd python-app
+        python -m pytest test_app.py -v --tb=short
+      env:
+        FLASK_ENV: testing
+    
+    - name: Run tests with coverage
+      run: |
+        cd python-app
+        pip install pytest-cov
+        python -m pytest test_app.py --cov=app --cov-report=xml --cov-report=html
+      env:
+        FLASK_ENV: testing
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.10'
+      with:
+        file: ./python-app/coverage.xml
+        flags: python
+        name: codecov-python
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        cd python-app
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Test application startup
+      run: |
+        cd python-app
+        timeout 10s python app.py &
+        sleep 5
+        curl -f http://localhost:5000/ || exit 1
+        pkill -f "python app.py" || true
+    
+    - name: Create deployment package
+      run: |
+        cd python-app
+        tar -czf ../webqx-python.tar.gz .
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: webqx-python-build
+        path: webqx-python.tar.gz
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: webqx-python-build
+    
+    - name: Extract artifacts
+      run: |
+        mkdir -p deploy-python
+        tar -xzf webqx-python.tar.gz -C deploy-python
+    
+    - name: Deploy to Heroku
+      uses: akhileshns/heroku-deploy@v3.12.14
+      with:
+        heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+        heroku_app_name: ${{ secrets.HEROKU_APP_NAME_PYTHON }}
+        heroku_email: ${{ secrets.HEROKU_EMAIL }}
+        appdir: "python-app"
+        healthcheck: "https://${{ secrets.HEROKU_APP_NAME_PYTHON }}.herokuapp.com/"
+        checkstring: "healthy"
+        delay: 10
+        rollbackonhealthcheckfailed: true
