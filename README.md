@@ -17,7 +17,7 @@ Our latest enhancement includes a comprehensive telehealth solution with:
 - **♿ Accessibility Features**: Full WCAG 2.1 AA compliance with screen reader support and voice controls
 - **🔒 HIPAA Compliance**: End-to-end encryption and secure handling of all clinical data
 
-**[View Telehealth Demo](./telehealth-demo.html)** | **[Integration Guide](./telehealth-integration-example.tsx)**
+**[View Module Documentation](./modules/telehealth/README.md)**
 
 ## 🧩 Modular Architecture
 
