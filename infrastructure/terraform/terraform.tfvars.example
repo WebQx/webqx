@@ -1,0 +1,48 @@
+# Example Terraform Variables Configuration
+# Copy this file to terraform.tfvars and customize for your environment
+
+# Basic Configuration
+aws_region  = "us-east-1"
+environment = "dev"
+
+# Networking Configuration
+vpc_cidr = "10.0.0.0/16"
+availability_zones = [
+  "us-east-1a",
+  "us-east-1b", 
+  "us-east-1c"
+]
+
+# Healthcare Platform Configuration
+enable_hipaa_logging = true
+backup_retention_days = 7  # Use 2555 for production (7 years)
+enable_multi_az = true
+fhir_version = "R4"
+enable_phi_encryption = true
+audit_log_retention_days = 2555
+
+# Lambda Configuration
+lambda_runtime = "nodejs18.x"
+lambda_timeout = 30
+lambda_memory_size = 256
+
+# DynamoDB Configuration  
+dynamodb_billing_mode = "PAY_PER_REQUEST"
+
+# API Gateway Configuration
+api_gateway_stage_name = "v1"
+enable_api_gateway_logging = true
+
+# Security Configuration
+enable_waf = false  # Set to true for production
+allowed_cidr_blocks = [
+  "0.0.0.0/0"  # Restrict this in production
+]
+
+# Monitoring Configuration
+enable_detailed_monitoring = true
+sns_alarm_endpoint = ""  # Add your email for alerts
+
+# Domain Configuration (optional)
+domain_name = ""
+certificate_arn = ""

@@ -1,0 +1,355 @@
+service: webqx-healthcare-platform
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  memorySize: 256
+  timeout: 30
+  
+  # Environment variables
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    PATIENTS_TABLE: ${self:custom.tables.patients}
+    APPOINTMENTS_TABLE: ${self:custom.tables.appointments}
+    PROVIDERS_TABLE: ${self:custom.tables.providers}
+    MEDICAL_RECORDS_TABLE: ${self:custom.tables.medicalRecords}
+    LAB_RESULTS_TABLE: ${self:custom.tables.labResults}
+    PRESCRIPTIONS_TABLE: ${self:custom.tables.prescriptions}
+    AUDIT_LOGS_TABLE: ${self:custom.tables.auditLogs}
+    SESSIONS_TABLE: ${self:custom.tables.sessions}
+    
+  # IAM role statements
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.patients}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.appointments}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.providers}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.medicalRecords}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.labResults}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.prescriptions}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.auditLogs}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.sessions}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.patients}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.appointments}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.providers}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.medicalRecords}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.labResults}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.prescriptions}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.auditLogs}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.sessions}/index/*
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+          Resource:
+            - arn:aws:secretsmanager:${self:provider.region}:*:secret:webqx-${self:provider.stage}-config*
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource:
+            - arn:aws:s3:::webqx-${self:provider.stage}-patient-documents/*
+            - arn:aws:s3:::webqx-${self:provider.stage}-medical-images/*
+            - arn:aws:s3:::webqx-${self:provider.stage}-audit-logs/*
+
+  # VPC configuration for HIPAA compliance
+  vpc:
+    securityGroupIds:
+      - ${self:custom.securityGroups.lambda}
+    subnetIds:
+      - ${self:custom.subnets.private1}
+      - ${self:custom.subnets.private2}
+
+  # API Gateway configuration
+  apiGateway:
+    restApiId: ${self:custom.apiGateway.restApiId}
+    restApiRootResourceId: ${self:custom.apiGateway.restApiRootResourceId}
+
+# Custom variables
+custom:
+  # Table names
+  tables:
+    patients: webqx-${self:provider.stage}-patients
+    appointments: webqx-${self:provider.stage}-appointments
+    providers: webqx-${self:provider.stage}-providers
+    medicalRecords: webqx-${self:provider.stage}-medical-records
+    labResults: webqx-${self:provider.stage}-lab-results
+    prescriptions: webqx-${self:provider.stage}-prescriptions
+    auditLogs: webqx-${self:provider.stage}-audit-logs
+    sessions: webqx-${self:provider.stage}-sessions
+  
+  # Networking (these would be imported from VPC stack)
+  securityGroups:
+    lambda: sg-xxxxxxxx  # Replace with actual security group ID
+  subnets:
+    private1: subnet-xxxxxxxx  # Replace with actual subnet ID
+    private2: subnet-yyyyyyyy  # Replace with actual subnet ID
+  
+  # API Gateway (these would be imported from infrastructure stack)
+  apiGateway:
+    restApiId: xxxxxxxxxx  # Replace with actual API Gateway ID
+    restApiRootResourceId: xxxxxxxxxx  # Replace with actual root resource ID
+
+# Lambda functions
+functions:
+  # Patient Portal API
+  patientApi:
+    handler: src/handlers/patient.handler
+    description: Patient portal API functions
+    memorySize: 256
+    timeout: 30
+    events:
+      - http:
+          path: /patient/{proxy+}
+          method: any
+          cors: true
+      - http:
+          path: /patient
+          method: any
+          cors: true
+    environment:
+      FUNCTION_TYPE: patient-api
+    tags:
+      Function: patient-api
+      Module: patient-portal
+
+  # Provider Portal API
+  providerApi:
+    handler: src/handlers/provider.handler
+    description: Provider portal API functions
+    memorySize: 512
+    timeout: 30
+    events:
+      - http:
+          path: /provider/{proxy+}
+          method: any
+          cors: true
+      - http:
+          path: /provider
+          method: any
+          cors: true
+    environment:
+      FUNCTION_TYPE: provider-api
+    tags:
+      Function: provider-api
+      Module: provider-portal
+
+  # Admin Console API
+  adminApi:
+    handler: src/handlers/admin.handler
+    description: Admin console API functions
+    memorySize: 512
+    timeout: 60
+    events:
+      - http:
+          path: /admin/{proxy+}
+          method: any
+          cors: true
+      - http:
+          path: /admin
+          method: any
+          cors: true
+    environment:
+      FUNCTION_TYPE: admin-api
+    tags:
+      Function: admin-api
+      Module: admin-console
+
+  # FHIR API
+  fhirApi:
+    handler: src/handlers/fhir.handler
+    description: FHIR R4 API implementation
+    memorySize: 512
+    timeout: 30
+    events:
+      - http:
+          path: /fhir/{proxy+}
+          method: any
+          cors: true
+      - http:
+          path: /fhir
+          method: any
+          cors: true
+    environment:
+      FUNCTION_TYPE: fhir-api
+      FHIR_VERSION: R4
+    tags:
+      Function: fhir-api
+      Module: fhir-server
+
+  # Telehealth API
+  telehealthApi:
+    handler: src/handlers/telehealth.handler
+    description: Telehealth and video consultation API
+    memorySize: 1024
+    timeout: 60
+    events:
+      - http:
+          path: /telehealth/{proxy+}
+          method: any
+          cors: true
+      - http:
+          path: /telehealth
+          method: any
+          cors: true
+    environment:
+      FUNCTION_TYPE: telehealth-api
+    tags:
+      Function: telehealth-api
+      Module: telehealth
+
+  # Authentication API
+  authApi:
+    handler: src/handlers/auth.handler
+    description: Authentication and authorization API
+    memorySize: 256
+    timeout: 30
+    events:
+      - http:
+          path: /auth/{proxy+}
+          method: any
+          cors: true
+      - http:
+          path: /auth
+          method: any
+          cors: true
+    environment:
+      FUNCTION_TYPE: auth-api
+    tags:
+      Function: auth-api
+      Module: authentication
+
+  # HL7 Processor
+  hl7Processor:
+    handler: src/handlers/hl7.handler
+    description: HL7 message processing for lab results
+    memorySize: 512
+    timeout: 60
+    events:
+      - sqs:
+          arn: arn:aws:sqs:${self:provider.region}:*:webqx-${self:provider.stage}-hl7-queue
+          batchSize: 10
+    environment:
+      FUNCTION_TYPE: hl7-processor
+    tags:
+      Function: hl7-processor
+      Module: lab-integration
+
+  # Audit Processor
+  auditProcessor:
+    handler: src/handlers/audit.handler
+    description: Audit log processing and compliance reporting
+    memorySize: 1024
+    timeout: 300
+    events:
+      - schedule: rate(1 hour)
+      - stream:
+          type: dynamodb
+          arn: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tables.auditLogs}/stream/*
+          batchSize: 100
+          startingPosition: LATEST
+    environment:
+      FUNCTION_TYPE: audit-processor
+    tags:
+      Function: audit-processor
+      Module: compliance
+
+# Plugins
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-domain-manager
+  - serverless-plugin-warmup
+
+# Package configuration
+package:
+  individually: true
+  exclude:
+    - .git/**
+    - .github/**
+    - infrastructure/**
+    - docs/**
+    - tests/**
+    - '*.md'
+
+# Resources (DynamoDB tables, S3 buckets, etc.)
+resources:
+  Resources:
+    # DynamoDB Tables would be defined here if not using external infrastructure
+    # S3 Buckets would be defined here if not using external infrastructure
+    
+    # SQS Queue for HL7 processing
+    HL7Queue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: webqx-${self:provider.stage}-hl7-queue
+        VisibilityTimeoutSeconds: 360
+        MessageRetentionPeriod: 1209600  # 14 days
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt: [HL7DeadLetterQueue, Arn]
+          maxReceiveCount: 3
+
+    HL7DeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: webqx-${self:provider.stage}-hl7-dlq
+        MessageRetentionPeriod: 1209600  # 14 days
+
+    # CloudWatch Log Groups
+    PatientApiLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/webqx-${self:provider.stage}-patientApi
+        RetentionInDays: 14
+
+    AuditLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/webqx/${self:provider.stage}/audit
+        RetentionInDays: 2555  # ~7 years for HIPAA compliance
+
+  Outputs:
+    PatientApiUrl:
+      Description: Patient API URL
+      Value:
+        Fn::Join:
+          - ''
+          - - https://
+            - Ref: ApiGatewayRestApi
+            - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}/patient
+
+    ProviderApiUrl:
+      Description: Provider API URL
+      Value:
+        Fn::Join:
+          - ''
+          - - https://
+            - Ref: ApiGatewayRestApi
+            - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}/provider
+
+    FhirApiUrl:
+      Description: FHIR API URL
+      Value:
+        Fn::Join:
+          - ''
+          - - https://
+            - Ref: ApiGatewayRestApi
+            - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}/fhir

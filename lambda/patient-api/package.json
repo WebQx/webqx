@@ -1,0 +1,13 @@
+{
+  "name": "webqx-patient-api",
+  "version": "1.0.0",
+  "description": "WebQX Healthcare Platform - Patient API Lambda Function",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1500.0",
+    "uuid": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

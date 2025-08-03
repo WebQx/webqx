@@ -1,0 +1,161 @@
+# Outputs for WebQX Healthcare Platform Infrastructure
+
+# VPC Outputs
+output "vpc_id" {
+  description = "ID of the VPC"
+  value       = module.vpc.vpc_id
+}
+
+output "vpc_cidr_block" {
+  description = "CIDR block of the VPC"
+  value       = module.vpc.vpc_cidr_block
+}
+
+output "private_subnet_ids" {
+  description = "IDs of the private subnets"
+  value       = module.vpc.private_subnet_ids
+}
+
+output "public_subnet_ids" {
+  description = "IDs of the public subnets"
+  value       = module.vpc.public_subnet_ids
+}
+
+# API Gateway Outputs
+output "api_gateway_url" {
+  description = "URL of the API Gateway"
+  value       = module.api_gateway.api_url
+  sensitive   = false
+}
+
+output "api_gateway_id" {
+  description = "ID of the API Gateway"
+  value       = module.api_gateway.api_id
+}
+
+output "api_gateway_stage_name" {
+  description = "Stage name of the API Gateway"
+  value       = module.api_gateway.stage_name
+}
+
+# Lambda Outputs
+output "lambda_function_names" {
+  description = "Names of the Lambda functions"
+  value       = module.lambda.function_names
+}
+
+output "lambda_function_arns" {
+  description = "ARNs of the Lambda functions"
+  value       = module.lambda.function_arns
+  sensitive   = true
+}
+
+# DynamoDB Outputs
+output "dynamodb_table_names" {
+  description = "Names of the DynamoDB tables"
+  value       = module.dynamodb.table_names
+}
+
+output "dynamodb_table_arns" {
+  description = "ARNs of the DynamoDB tables"
+  value       = module.dynamodb.table_arns
+  sensitive   = true
+}
+
+# S3 Outputs
+output "s3_bucket_names" {
+  description = "Names of the S3 buckets"
+  value       = module.s3.bucket_names
+}
+
+output "s3_bucket_arns" {
+  description = "ARNs of the S3 buckets"
+  value       = module.s3.bucket_arns
+  sensitive   = true
+}
+
+# IAM Outputs
+output "lambda_execution_role_arn" {
+  description = "ARN of the Lambda execution role"
+  value       = module.iam.lambda_execution_role_arn
+  sensitive   = true
+}
+
+# Security Outputs
+output "lambda_security_group_id" {
+  description = "ID of the Lambda security group"
+  value       = module.security_groups.lambda_security_group_id
+}
+
+output "api_gateway_security_group_id" {
+  description = "ID of the API Gateway security group"
+  value       = module.security_groups.api_gateway_security_group_id
+}
+
+# Monitoring Outputs
+output "cloudwatch_log_groups" {
+  description = "CloudWatch log group names"
+  value       = module.monitoring.log_group_names
+}
+
+output "sns_topic_arn" {
+  description = "SNS topic ARN for alerts"
+  value       = module.monitoring.sns_topic_arn
+  sensitive   = true
+}
+
+# Secrets Manager Outputs
+output "secrets_manager_secret_arn" {
+  description = "ARN of the Secrets Manager secret"
+  value       = aws_secretsmanager_secret.webqx_config.arn
+  sensitive   = true
+}
+
+# Healthcare-specific Outputs
+output "fhir_api_endpoint" {
+  description = "FHIR API endpoint URL"
+  value       = "${module.api_gateway.api_url}/fhir"
+}
+
+output "patient_portal_endpoint" {
+  description = "Patient portal API endpoint URL"
+  value       = "${module.api_gateway.api_url}/patient"
+}
+
+output "provider_portal_endpoint" {
+  description = "Provider portal API endpoint URL"
+  value       = "${module.api_gateway.api_url}/provider"
+}
+
+output "admin_console_endpoint" {
+  description = "Admin console API endpoint URL"
+  value       = "${module.api_gateway.api_url}/admin"
+}
+
+output "telehealth_endpoint" {
+  description = "Telehealth API endpoint URL"
+  value       = "${module.api_gateway.api_url}/telehealth"
+}
+
+# Regional Information
+output "aws_region" {
+  description = "AWS region where resources are deployed"
+  value       = data.aws_region.current.name
+}
+
+output "aws_account_id" {
+  description = "AWS account ID"
+  value       = data.aws_caller_identity.current.account_id
+  sensitive   = true
+}
+
+# Environment Information
+output "environment" {
+  description = "Deployment environment"
+  value       = var.environment
+}
+
+output "name_prefix" {
+  description = "Name prefix used for resources"
+  value       = local.name_prefix
+}
