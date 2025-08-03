@@ -49,3 +49,11 @@ build/
 
 # Demo and temporary files
 demo-*.js
+
+# AWS Lambda deployment artifacts
+lambda-build/
+aws-deployment/*.zip
+.aws-sam/
+
+# SAM build artifacts
+.aws-sam/

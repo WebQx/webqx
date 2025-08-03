@@ -1,0 +1,63 @@
+{
+  "version": "0.2",
+  "body": {
+    "resource": "/{proxy+}",
+    "path": "/health",
+    "httpMethod": "GET",
+    "headers": {
+      "Accept": "application/json",
+      "CloudFront-Forwarded-Proto": "https",
+      "CloudFront-Is-Desktop-Viewer": "true",
+      "CloudFront-Is-Mobile-Viewer": "false",
+      "CloudFront-Is-SmartTV-Viewer": "false",
+      "CloudFront-Is-Tablet-Viewer": "false",
+      "CloudFront-Viewer-Country": "US",
+      "Host": "api.webqx.health",
+      "User-Agent": "curl/7.68.0",
+      "Via": "1.1 08f323deadbeefa7af34d5feb414ce27.cloudfront.net (CloudFront)",
+      "X-Amz-Cf-Id": "cDehVQoZnx43VYQb9j2-nvCh-9z396Uhbp027Y2JvkCPNLmGJHqlaA==",
+      "X-Amzn-Trace-Id": "Root=1-5e66d96f-7491f09d5b4f6c12e2ab58c4",
+      "X-Forwarded-For": "192.0.2.1, 198.51.100.1",
+      "X-Forwarded-Port": "443",
+      "X-Forwarded-Proto": "https"
+    },
+    "multiValueHeaders": {},
+    "queryStringParameters": null,
+    "multiValueQueryStringParameters": null,
+    "pathParameters": {
+      "proxy": "health"
+    },
+    "stageVariables": null,
+    "requestContext": {
+      "resourceId": "123456",
+      "resourcePath": "/{proxy+}",
+      "httpMethod": "GET",
+      "extendedRequestId": "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
+      "requestTime": "09/Apr/2015:12:34:56 +0000",
+      "path": "/dev/health",
+      "accountId": "123456789012",
+      "protocol": "HTTP/1.1",
+      "stage": "dev",
+      "domainPrefix": "api",
+      "requestTimeEpoch": 1428582896000,
+      "requestId": "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
+      "identity": {
+        "cognitoIdentityPoolId": null,
+        "accountId": null,
+        "cognitoIdentityId": null,
+        "caller": null,
+        "accessKey": null,
+        "sourceIp": "192.0.2.1",
+        "cognitoAuthenticationType": null,
+        "cognitoAuthenticationProvider": null,
+        "userArn": null,
+        "userAgent": "curl/7.68.0",
+        "user": null
+      },
+      "domainName": "api.webqx.health",
+      "apiId": "1234567890"
+    },
+    "body": null,
+    "isBase64Encoded": false
+  }
+}

@@ -1,0 +1,247 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: WebQx Healthcare Platform - AWS Lambda Deployment
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs18.x
+    Environment:
+      Variables:
+        NODE_ENV: production
+        LAMBDA_DEPLOYMENT: true
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Deployment environment
+
+  DomainName:
+    Type: String
+    Default: ""
+    Description: Custom domain name for API Gateway (optional)
+
+  CertificateArn:
+    Type: String
+    Default: ""
+    Description: ACM certificate ARN for custom domain (required if DomainName is provided)
+
+Resources:
+  # Lambda Function
+  WebQxFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub webqx-healthcare-platform-${Environment}
+      CodeUri: lambda-build/
+      Handler: lambda-handler.handler
+      Description: WebQx Healthcare Platform - FHIR-compliant healthcare API and patient portal
+      Timeout: 30
+      MemorySize: 1024
+      Environment:
+        Variables:
+          NODE_ENV: !Ref Environment
+          LAMBDA_DEPLOYMENT: true
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+      Events:
+        ApiGateway:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId: !Ref WebQxApi
+        ApiGatewayRoot:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+            RestApiId: !Ref WebQxApi
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: arn:aws:logs:*:*:*
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource: !Sub "${StaticFilesBucket}/*"
+
+  # API Gateway
+  WebQxApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub webqx-healthcare-api-${Environment}
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      BinaryMediaTypes:
+        - '*/*'
+      DefinitionBody:
+        swagger: '2.0'
+        info:
+          title: WebQx Healthcare Platform API
+          version: '1.0'
+        paths:
+          /{proxy+}:
+            x-amazon-apigateway-any-method:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebQxFunction.Arn}/invocations
+                httpMethod: POST
+
+  # S3 Bucket for Static Files
+  StaticFilesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub webqx-static-files-${Environment}-${AWS::AccountId}
+      PublicReadPolicy: false
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [GET]
+            AllowedOrigins: ['*']
+            AllowedHeaders: ['*']
+            MaxAge: 3600
+
+  # S3 Bucket Policy for CloudFront
+  StaticFilesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StaticFilesBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${StaticFilesBucket}/*"
+            Condition:
+              StringEquals:
+                "AWS:SourceArn": !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
+
+  # CloudFront Distribution for Static Files
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub WebQx Healthcare Platform Static Files - ${Environment}
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          Compress: true
+          DefaultTTL: 86400
+          MaxTTL: 31536000
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt StaticFilesBucket.DomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !Ref CloudFrontOriginAccessControl
+        Enabled: true
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_100
+
+  # CloudFront Origin Access Control
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub webqx-oac-${Environment}
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # Lambda Permission for API Gateway
+  WebQxFunctionApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref WebQxFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebQxApi}/*/*
+
+  # CloudWatch Log Group
+  WebQxLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/webqx-healthcare-platform-${Environment}
+      RetentionInDays: 14
+
+  # Custom Domain (Optional)
+  CustomDomain:
+    Type: AWS::ApiGateway::DomainName
+    Condition: HasCustomDomain
+    Properties:
+      DomainName: !Ref DomainName
+      CertificateArn: !Ref CertificateArn
+      SecurityPolicy: TLS_1_2
+
+  # Domain Mapping
+  DomainMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Condition: HasCustomDomain
+    Properties:
+      DomainName: !Ref CustomDomain
+      RestApiId: !Ref WebQxApi
+      Stage: !Ref Environment
+
+Conditions:
+  HasCustomDomain: !And
+    - !Not [!Equals [!Ref DomainName, ""]]
+    - !Not [!Equals [!Ref CertificateArn, ""]]
+
+Outputs:
+  WebQxApiUrl:
+    Description: API Gateway endpoint URL for WebQx Healthcare Platform
+    Value: !Sub https://${WebQxApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/
+    Export:
+      Name: !Sub ${AWS::StackName}-ApiUrl
+
+  CustomDomainUrl:
+    Description: Custom domain URL (if configured)
+    Value: !Sub https://${DomainName}/
+    Condition: HasCustomDomain
+    Export:
+      Name: !Sub ${AWS::StackName}-CustomDomainUrl
+
+  StaticFilesBucketName:
+    Description: S3 bucket name for static files
+    Value: !Ref StaticFilesBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-StaticFilesBucket
+
+  CloudFrontDistributionDomain:
+    Description: CloudFront distribution domain for static files
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub ${AWS::StackName}-CloudFrontDomain
+
+  LambdaFunctionName:
+    Description: Lambda function name
+    Value: !Ref WebQxFunction
+    Export:
+      Name: !Sub ${AWS::StackName}-LambdaFunction
+
+  LambdaFunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt WebQxFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-LambdaFunctionArn
