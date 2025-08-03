@@ -1,0 +1,33 @@
+# Lambda-optimized Dockerfile
+FROM public.ecr.aws/lambda/nodejs:18
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only and clean up
+RUN npm ci --omit=dev --ignore-scripts && \
+    npm cache clean --force && \
+    rm -rf /tmp/* /var/tmp/*
+
+# Copy application code
+COPY . ./
+
+# Remove unnecessary files to reduce image size
+RUN rm -rf \
+    __tests__ \
+    **/*.test.js \
+    **/*.test.ts \
+    **/*.spec.js \
+    **/*.spec.ts \
+    jest.* \
+    tsconfig.* \
+    .babelrc \
+    *.md \
+    docs/ \
+    demo* \
+    node_modules/@types \
+    node_modules/react* \
+    node_modules/@testing-library
+
+# Set the CMD to your handler
+CMD [ "lambda.handler" ]

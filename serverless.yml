@@ -1,0 +1,53 @@
+# AWS Lambda deployment configuration
+service: webqx-healthcare-lambda
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  timeout: 30
+  memorySize: 512
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    SERVE_STATIC: false
+    CORS_ORIGINS: ${env:CORS_ORIGINS, '*'}
+    JWT_SECRET: ${env:JWT_SECRET}
+    FHIR_SERVER_URL: ${env:FHIR_SERVER_URL}
+
+functions:
+  api:
+    handler: lambda.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+      - http:
+          path: /
+          method: ANY
+          cors: true
+
+package:
+  patterns:
+    - '!__tests__/**'
+    - '!**/*.test.*'
+    - '!**/*.spec.*'
+    - '!jest.*'
+    - '!tsconfig.*'
+    - '!.babelrc'
+    - '!*.md'
+    - '!docs/**'
+    - '!demo*'
+    - '!node_modules/@types/**'
+    - '!node_modules/react*/**'
+    - '!node_modules/@testing-library/**'
+    - '!node_modules/.cache/**'
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000
