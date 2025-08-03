@@ -388,6 +388,45 @@ A modular, specialty-aware clinical documentation panel for WebQX™. Designed f
 
 ## 🚀 Deployment
 
+### AWS Lambda Deployment
+
+WebQX includes an automated deployment script for creating AWS Lambda packages:
+
+```bash
+# Create lambda.zip for AWS Lambda deployment
+npm run deploy:lambda
+```
+
+#### Features
+- ✅ **Automated Dependency Installation**: Installs Lambda-optimized dependencies from `package-lambda.json`
+- ✅ **Smart File Packaging**: Includes only necessary files and excludes development assets
+- ✅ **Error Handling**: Comprehensive error messages and validation
+- ✅ **Size Optimization**: Creates optimized packages (typically 5-10MB)
+- ✅ **Clean Deployment**: Automatic cleanup of temporary build files
+
+#### What's Included
+- `lambda.js` - Main Lambda handler
+- `server-lambda.js` - Lambda-optimized Express server
+- `lambda-utils.js` - Lambda utility functions
+- `.env.lambda` - Lambda environment configuration
+- All necessary application modules (`auth/`, `fhir/`, `routes/`, etc.)
+- Lambda-specific node_modules dependencies
+
+#### What's Excluded
+- Development files (`__tests__/`, `*.test.js`, etc.)
+- Documentation files (`README.md`, `docs/`)
+- Build artifacts and temporary files
+- IDE configuration files
+- Demo and example files
+
+#### Next Steps After Creating lambda.zip
+1. **AWS Console**: Upload `lambda.zip` directly to your Lambda function
+2. **AWS CLI**: `aws lambda update-function-code --function-name your-function --zip-file fileb://lambda.zip`
+3. **Serverless Framework**: Use existing `serverless.yml` configuration
+4. **Infrastructure as Code**: Use with CloudFormation or Terraform
+
+📚 **Complete Lambda Documentation**: See [LAMBDA_DEPLOYMENT.md](./LAMBDA_DEPLOYMENT.md) for detailed deployment guides, configuration options, and troubleshooting.
+
 ### Mock FHIR and openEHR Servers
 
 WebQX includes built-in mock servers for local development and testing:

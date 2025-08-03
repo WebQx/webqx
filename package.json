@@ -10,6 +10,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "type-check": "tsc --noEmit",
+    "deploy:lambda": "node scripts/deploy-lambda.js",
     "telehealth:start:full": "cd modules/telehealth/deployment/full-suite && docker-compose up -d",
     "telehealth:start:video": "cd modules/telehealth/deployment/standalone/video-consultation && docker-compose up -d",
     "telehealth:start:messaging": "cd modules/telehealth/deployment/standalone/messaging && docker-compose up -d",
