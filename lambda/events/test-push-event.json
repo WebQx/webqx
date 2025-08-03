@@ -1,0 +1,17 @@
+{
+  "body": "{\"ref\":\"refs/heads/main\",\"repository\":{\"full_name\":\"WebQx/webqx\",\"name\":\"webqx\"},\"commits\":[{\"id\":\"abc123\",\"message\":\"Add Lambda webhook handler\",\"author\":{\"name\":\"Test User\"}}],\"pusher\":{\"name\":\"testuser\"}}",
+  "headers": {
+    "X-GitHub-Event": "push",
+    "X-GitHub-Delivery": "12345678-1234-1234-1234-123456789012",
+    "Content-Type": "application/json"
+  },
+  "httpMethod": "POST",
+  "path": "/webhook",
+  "queryStringParameters": null,
+  "requestContext": {
+    "requestId": "test-request-id",
+    "stage": "prod",
+    "httpMethod": "POST",
+    "path": "/webhook"
+  }
+}

@@ -49,3 +49,10 @@ build/
 
 # Demo and temporary files
 demo-*.js
+
+# AWS Lambda deployment artifacts
+lambda/.aws-sam/
+lambda/samconfig.toml
+lambda/packaged-template.yaml
+lambda/node_modules/
+lambda/coverage/

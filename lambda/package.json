@@ -1,0 +1,48 @@
+{
+  "name": "webqx-github-webhook-lambda",
+  "version": "1.0.0",
+  "description": "AWS Lambda function to handle GitHub webhook events for WebQx repository",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "local": "sam local start-api",
+    "deploy": "./deploy.sh",
+    "deploy:dev": "./deploy.sh --stage dev",
+    "deploy:staging": "./deploy.sh --stage staging",
+    "invoke:local": "sam local invoke GitHubWebhookFunction -e events/test-event.json",
+    "logs": "sam logs -n GitHubWebhookFunction --stack-name webqx-github-webhook-prod --tail"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "github",
+    "webhook",
+    "webqx",
+    "serverless"
+  ],
+  "author": "WebQX Health",
+  "license": "Apache-2.0",
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@aws-sdk/client-lambda": "^3.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/**/*.test.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

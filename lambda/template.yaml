@@ -1,0 +1,137 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  WebQx GitHub Webhook Lambda Function
+  
+  AWS Lambda function to handle GitHub webhook events for the WebQx/webqx repository
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: nodejs18.x
+    Environment:
+      Variables:
+        NODE_ENV: production
+
+Parameters:
+  GitHubWebhookSecret:
+    Type: String
+    Description: Secret for verifying GitHub webhook signatures
+    NoEcho: true
+    
+  SlackWebhookUrl:
+    Type: String
+    Description: Optional Slack webhook URL for notifications
+    Default: ""
+    NoEcho: true
+    
+  Stage:
+    Type: String
+    Description: Deployment stage
+    Default: prod
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+
+Resources:
+  # Lambda function
+  GitHubWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: index.handler
+      Description: GitHub webhook handler for WebQx repository
+      Environment:
+        Variables:
+          GITHUB_WEBHOOK_SECRET: !Ref GitHubWebhookSecret
+          SLACK_WEBHOOK_URL: !Ref SlackWebhookUrl
+          STAGE: !Ref Stage
+      Events:
+        GitHubWebhook:
+          Type: Api
+          Properties:
+            Path: /webhook
+            Method: post
+            RestApiId: !Ref GitHubWebhookApi
+      Tags:
+        Project: WebQx
+        Component: GitHubWebhook
+        
+  # API Gateway
+  GitHubWebhookApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub "webqx-github-webhook-${Stage}"
+      StageName: !Ref Stage
+      Description: API Gateway for GitHub webhook
+      EndpointConfiguration:
+        Type: REGIONAL
+      Cors:
+        AllowMethods: "'POST'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-GitHub-Event,X-Hub-Signature-256,X-GitHub-Delivery'"
+        AllowOrigin: "'*'"
+      Tags:
+        Project: WebQx
+        Component: GitHubWebhook
+
+  # CloudWatch Log Group
+  GitHubWebhookLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${GitHubWebhookFunction}"
+      RetentionInDays: 14
+
+  # IAM Role for Lambda function (created automatically by SAM, but we can customize)
+  GitHubWebhookFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: GitHubWebhookPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${GitHubWebhookFunction}*"
+      Tags:
+        - Key: Project
+          Value: WebQx
+        - Key: Component
+          Value: GitHubWebhook
+
+Outputs:
+  # API Gateway endpoint URL
+  GitHubWebhookApi:
+    Description: "API Gateway endpoint URL for GitHub webhook"
+    Value: !Sub "https://${GitHubWebhookApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/webhook"
+    Export:
+      Name: !Sub "${AWS::StackName}-webhook-url"
+      
+  # Lambda function ARN
+  GitHubWebhookFunction:
+    Description: "GitHub webhook Lambda Function ARN"
+    Value: !GetAtt GitHubWebhookFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-function-arn"
+      
+  # Lambda function name
+  GitHubWebhookFunctionName:
+    Description: "GitHub webhook Lambda Function Name"
+    Value: !Ref GitHubWebhookFunction
+    Export:
+      Name: !Sub "${AWS::StackName}-function-name"
