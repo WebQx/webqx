@@ -1,0 +1,1019 @@
+# AWS SAM Template for WebQX Healthcare Platform
+# HIPAA-compliant serverless application for healthcare data processing
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  WebQX Healthcare Platform - HIPAA-compliant serverless healthcare application
+  with FHIR API, telehealth services, and comprehensive audit logging
+
+# Template metadata
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: webqx-healthcare-platform
+    Description: Modular healthcare platform with FHIR, telehealth, and patient portal capabilities
+    Author: WebQX Health
+    SpdxLicenseId: Apache-2.0
+    LicenseUrl: LICENSE.md
+    ReadmeUrl: README.md
+    Labels: ['healthcare', 'fhir', 'hipaa', 'telehealth', 'patient-portal']
+    HomePageUrl: https://github.com/WebQx/webqx
+    SemanticVersion: 1.0.0
+    SourceCodeUrl: https://github.com/WebQx/webqx
+
+# Parameters for different environments
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Deployment stage
+  
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID for HIPAA compliance (required for healthcare data)
+  
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnet IDs for Lambda functions (HIPAA requirement)
+  
+  CertificateArn:
+    Type: String
+    Description: SSL certificate ARN for API Gateway custom domain
+    Default: ""
+  
+  DomainName:
+    Type: String
+    Description: Custom domain name for API Gateway
+    Default: ""
+  
+  EnableXRay:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+    Description: Enable AWS X-Ray tracing for performance monitoring
+
+# Global configuration
+Globals:
+  Function:
+    Runtime: nodejs18.x
+    MemorySize: 512
+    Timeout: 30
+    Environment:
+      Variables:
+        STAGE: !Ref Stage
+        NODE_ENV: !Ref Stage
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
+        POWERTOOLS_SERVICE_NAME: webqx-healthcare
+        POWERTOOLS_METRICS_NAMESPACE: WebQX/Healthcare
+        LOG_LEVEL: !If [IsProduction, ERROR, DEBUG]
+    Tracing: !If [EnableTracing, Active, PassThrough]
+    VpcConfig:
+      SecurityGroupIds:
+        - !Ref LambdaSecurityGroup
+      SubnetIds: !Ref PrivateSubnetIds
+    DeadLetterQueue:
+      Type: SQS
+      TargetArn: !GetAtt DeadLetterQueue.Arn
+    Tags:
+      Service: webqx-healthcare-platform
+      Stage: !Ref Stage
+      HIPAA: "true"
+      
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: !If [IsProduction, "'https://app.webqx.health'", "'*'"]
+      AllowCredentials: true
+    Auth:
+      DefaultAuthorizer: JWTAuthorizer
+      Authorizers:
+        JWTAuthorizer:
+          JwtConfiguration:
+            issuer: https://auth.webqx.health
+            audience:
+              - webqx-healthcare-platform
+          IdentitySource: $request.header.Authorization
+      AddDefaultAuthorizerToCorsPreflight: false
+    GatewayResponses:
+      DEFAULT_4XX:
+        ResponseTemplates:
+          "application/json": '{"error":{"code":"$context.error.responseType","message":"$context.error.message"}}'
+      DEFAULT_5XX:
+        ResponseTemplates:
+          "application/json": '{"error":{"code":"INTERNAL_ERROR","message":"Internal server error"}}'
+    AccessLogSetting:
+      DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
+      Format: >
+        {
+          "requestId": "$context.requestId",
+          "extendedRequestId": "$context.extendedRequestId",
+          "ip": "$context.identity.sourceIp",
+          "caller": "$context.identity.caller",
+          "user": "$context.identity.user",
+          "requestTime": "$context.requestTime",
+          "httpMethod": "$context.httpMethod",
+          "resourcePath": "$context.resourcePath",
+          "status": "$context.status",
+          "protocol": "$context.protocol",
+          "responseLength": "$context.responseLength",
+          "userAgent": "$context.identity.userAgent",
+          "error": "$context.error.message",
+          "errorType": "$context.error.responseType"
+        }
+
+# Conditions
+Conditions:
+  IsProduction: !Equals [!Ref Stage, prod]
+  HasCustomDomain: !Not [!Equals [!Ref DomainName, ""]]
+  EnableTracing: !Equals [!Ref EnableXRay, "true"]
+
+# Application Resources
+Resources:
+  # ======================
+  # Lambda Functions
+  # ======================
+  
+  # FHIR API Functions
+  FHIRPatientsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-fhir-patients"
+      CodeUri: aws/handlers/fhir/
+      Handler: patients.handler
+      Description: FHIR Patient resource API handler
+      Environment:
+        Variables:
+          PATIENTS_TABLE: !Ref PatientsTable
+          KMS_KEY_ID: !Ref HealthcareKMSKey
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PatientsTable
+        - KMSDecryptPolicy:
+            KeyId: !Ref HealthcareKMSKey
+        - S3ReadPolicy:
+            BucketName: !Ref HealthcareDataBucket
+      Events:
+        GetPatients:
+          Type: Api
+          Properties:
+            Path: /fhir/Patient
+            Method: get
+        CreatePatient:
+          Type: Api
+          Properties:
+            Path: /fhir/Patient
+            Method: post
+        GetPatient:
+          Type: Api
+          Properties:
+            Path: /fhir/Patient/{id}
+            Method: get
+        UpdatePatient:
+          Type: Api
+          Properties:
+            Path: /fhir/Patient/{id}
+            Method: put
+        DeletePatient:
+          Type: Api
+          Properties:
+            Path: /fhir/Patient/{id}
+            Method: delete
+
+  FHIRObservationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-fhir-observations"
+      CodeUri: aws/handlers/fhir/
+      Handler: observations.handler
+      Description: FHIR Observation resource API handler
+      Environment:
+        Variables:
+          OBSERVATIONS_TABLE: !Ref ObservationsTable
+          KMS_KEY_ID: !Ref HealthcareKMSKey
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ObservationsTable
+        - KMSDecryptPolicy:
+            KeyId: !Ref HealthcareKMSKey
+      Events:
+        GetObservations:
+          Type: Api
+          Properties:
+            Path: /fhir/Observation
+            Method: get
+        CreateObservation:
+          Type: Api
+          Properties:
+            Path: /fhir/Observation
+            Method: post
+        GetObservation:
+          Type: Api
+          Properties:
+            Path: /fhir/Observation/{id}
+            Method: get
+        UpdateObservation:
+          Type: Api
+          Properties:
+            Path: /fhir/Observation/{id}
+            Method: put
+
+  FHIRAppointmentsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-fhir-appointments"
+      CodeUri: aws/handlers/fhir/
+      Handler: appointments.handler
+      Description: FHIR Appointment resource API handler
+      Environment:
+        Variables:
+          APPOINTMENTS_TABLE: !Ref AppointmentsTable
+          KMS_KEY_ID: !Ref HealthcareKMSKey
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppointmentsTable
+        - KMSDecryptPolicy:
+            KeyId: !Ref HealthcareKMSKey
+      Events:
+        GetAppointments:
+          Type: Api
+          Properties:
+            Path: /fhir/Appointment
+            Method: get
+        CreateAppointment:
+          Type: Api
+          Properties:
+            Path: /fhir/Appointment
+            Method: post
+        GetAppointment:
+          Type: Api
+          Properties:
+            Path: /fhir/Appointment/{id}
+            Method: get
+        UpdateAppointment:
+          Type: Api
+          Properties:
+            Path: /fhir/Appointment/{id}
+            Method: put
+
+  # Telehealth Functions
+  TelehealthSessionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-telehealth-session"
+      CodeUri: aws/handlers/telehealth/
+      Handler: session.handler
+      Description: Telehealth session management
+      MemorySize: 1024
+      Timeout: 300
+      Environment:
+        Variables:
+          SESSIONS_TABLE: !Ref TelehealthSessionsTable
+          KMS_KEY_ID: !Ref HealthcareKMSKey
+          TELEHEALTH_BUCKET: !Ref TelehealthDataBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TelehealthSessionsTable
+        - KMSDecryptPolicy:
+            KeyId: !Ref HealthcareKMSKey
+        - S3CrudPolicy:
+            BucketName: !Ref TelehealthDataBucket
+      Events:
+        CreateSession:
+          Type: Api
+          Properties:
+            Path: /telehealth/session
+            Method: post
+        GetSession:
+          Type: Api
+          Properties:
+            Path: /telehealth/session/{sessionId}
+            Method: get
+        EndSession:
+          Type: Api
+          Properties:
+            Path: /telehealth/session/{sessionId}/end
+            Method: post
+
+  # Whisper AI Transcription Function
+  WhisperTranscriptionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-whisper-transcription"
+      CodeUri: aws/handlers/ai/
+      Handler: whisper.handler
+      Description: AI-powered transcription using Whisper
+      MemorySize: 2048
+      Timeout: 300
+      Environment:
+        Variables:
+          TRANSCRIPTIONS_TABLE: !Ref TranscriptionsTable
+          KMS_KEY_ID: !Ref HealthcareKMSKey
+          WHISPER_API_KEY: !Sub "{{resolve:ssm:/webqx/${Stage}/whisper-api-key:1}}"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TranscriptionsTable
+        - KMSDecryptPolicy:
+            KeyId: !Ref HealthcareKMSKey
+        - S3ReadPolicy:
+            BucketName: !Ref HealthcareDataBucket
+        - S3WritePolicy:
+            BucketName: !Ref HealthcareDataBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/webqx/${Stage}/whisper-api-key"
+      Events:
+        TranscribeAudio:
+          Type: Api
+          Properties:
+            Path: /api/whisper/transcribe
+            Method: post
+        TranslateText:
+          Type: Api
+          Properties:
+            Path: /api/whisper/translate
+            Method: post
+
+  # Audit Logging Function
+  AuditLoggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-audit-logger"
+      CodeUri: aws/handlers/audit/
+      Handler: logger.handler
+      Description: HIPAA-compliant audit logging processor
+      Environment:
+        Variables:
+          AUDIT_LOGS_TABLE: !Ref AuditLogsTable
+          AUDIT_LOGS_BUCKET: !Ref AuditLogsBucket
+          KMS_KEY_ID: !Ref HealthcareKMSKey
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AuditLogsTable
+        - S3WritePolicy:
+            BucketName: !Ref AuditLogsBucket
+        - KMSDecryptPolicy:
+            KeyId: !Ref HealthcareKMSKey
+      Events:
+        PatientDataChanges:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt PatientsTable.StreamArn
+            StartingPosition: LATEST
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 5
+        ObservationDataChanges:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt ObservationsTable.StreamArn
+            StartingPosition: LATEST
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 5
+        AppointmentDataChanges:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt AppointmentsTable.StreamArn
+            StartingPosition: LATEST
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 5
+
+  # Health Check Function
+  HealthCheckFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-health-check"
+      CodeUri: aws/handlers/health/
+      Handler: check.handler
+      Description: System health monitoring
+      Policies:
+        - CloudWatchPutMetricPolicy: {}
+        - DynamoDBReadPolicy:
+            TableName: !Ref PatientsTable
+      Events:
+        HealthEndpoint:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: get
+            Auth:
+              Authorizer: NONE
+        PeriodicHealthCheck:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Description: Periodic health monitoring
+            Enabled: true
+
+  # ======================
+  # DynamoDB Tables
+  # ======================
+  
+  PatientsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-patients"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: patientId
+          AttributeType: S
+        - AttributeName: mrn
+          AttributeType: S
+        - AttributeName: lastModified
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: patientId-index
+          KeySchema:
+            - AttributeName: patientId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: mrn-index
+          KeySchema:
+            - AttributeName: mrn
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: lastModified-index
+          KeySchema:
+            - AttributeName: lastModified
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref HealthcareKMSKey
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  ObservationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-observations"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: patientId
+          AttributeType: S
+        - AttributeName: effectiveDateTime
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: patientId-effectiveDateTime-index
+          KeySchema:
+            - AttributeName: patientId
+              KeyType: HASH
+            - AttributeName: effectiveDateTime
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: category-effectiveDateTime-index
+          KeySchema:
+            - AttributeName: category
+              KeyType: HASH
+            - AttributeName: effectiveDateTime
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref HealthcareKMSKey
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  AppointmentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-appointments"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: patientId
+          AttributeType: S
+        - AttributeName: providerId
+          AttributeType: S
+        - AttributeName: appointmentDateTime
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: patientId-appointmentDateTime-index
+          KeySchema:
+            - AttributeName: patientId
+              KeyType: HASH
+            - AttributeName: appointmentDateTime
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: providerId-appointmentDateTime-index
+          KeySchema:
+            - AttributeName: providerId
+              KeyType: HASH
+            - AttributeName: appointmentDateTime
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref HealthcareKMSKey
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  TelehealthSessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-telehealth-sessions"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+        - AttributeName: patientId
+          AttributeType: S
+        - AttributeName: providerId
+          AttributeType: S
+        - AttributeName: sessionDateTime
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: patientId-sessionDateTime-index
+          KeySchema:
+            - AttributeName: patientId
+              KeyType: HASH
+            - AttributeName: sessionDateTime
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: providerId-sessionDateTime-index
+          KeySchema:
+            - AttributeName: providerId
+              KeyType: HASH
+            - AttributeName: sessionDateTime
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref HealthcareKMSKey
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  TranscriptionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-transcriptions"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: sessionId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: sessionId-timestamp-index
+          KeySchema:
+            - AttributeName: sessionId
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref HealthcareKMSKey
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  AuditLogsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-audit-logs"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: resourceType
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: timestamp-index
+          KeySchema:
+            - AttributeName: timestamp
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: userId-timestamp-index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: resourceType-timestamp-index
+          KeySchema:
+            - AttributeName: resourceType
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref HealthcareKMSKey
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  # ======================
+  # S3 Buckets
+  # ======================
+  
+  HealthcareDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-healthcare-data"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref HealthcareKMSKey
+            BucketKeyEnabled: true
+      VersioningConfiguration:
+        Status: Enabled
+      LoggingConfiguration:
+        DestinationBucketName: !Ref AuditLogsBucket
+        LogFilePrefix: healthcare-data-access/
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: HealthcareDataRetention
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+              - TransitionInDays: 90
+                StorageClass: GLACIER
+              - TransitionInDays: 2555 # 7 years HIPAA retention
+                StorageClass: DEEP_ARCHIVE
+      NotificationConfiguration:
+        CloudWatchConfigurations:
+          - Event: s3:ObjectCreated:*
+            CloudWatchConfiguration:
+              LogGroupName: !Ref S3AccessLogGroup
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  TelehealthDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-telehealth-data"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref HealthcareKMSKey
+            BucketKeyEnabled: true
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: TelehealthDataRetention
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+              - TransitionInDays: 90
+                StorageClass: GLACIER
+            ExpirationInDays: 2555 # 7 years HIPAA retention
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  AuditLogsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-audit-logs"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref HealthcareKMSKey
+            BucketKeyEnabled: true
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: AuditLogRetention
+            Status: Enabled
+            ExpirationInDays: 2555 # 7 years HIPAA retention
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  # ======================
+  # Security & Encryption
+  # ======================
+  
+  HealthcareKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "WebQX Healthcare Platform HIPAA-compliant encryption key for ${Stage}"
+      KeyPolicy:
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Lambda functions to use the key
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+          - Sid: Allow DynamoDB to use the key
+            Effect: Allow
+            Principal:
+              Service: dynamodb.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+          - Sid: Allow S3 to use the key
+            Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  HealthcareKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/webqx-healthcare-${Stage}"
+      TargetKeyId: !Ref HealthcareKMSKey
+
+  # Lambda Security Group
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for WebQX Lambda functions
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS outbound for AWS APIs
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP outbound for package downloads
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-lambda-sg"
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+
+  # ======================
+  # Monitoring & Logging
+  # ======================
+  
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/apigateway/${AWS::StackName}"
+      RetentionInDays: 2555 # 7 years HIPAA retention
+
+  S3AccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/s3/${AWS::StackName}"
+      RetentionInDays: 2555 # 7 years HIPAA retention
+
+  # Dead Letter Queue for failed Lambda invocations
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-dlq"
+      KmsMasterKeyId: !Ref HealthcareKMSKey
+      MessageRetentionPeriod: 1209600 # 14 days
+      Tags:
+        - Key: Service
+          Value: webqx-healthcare-platform
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: HIPAA
+          Value: "true"
+
+  # CloudWatch Alarms for monitoring
+  LambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-lambda-errors"
+      AlarmDescription: Alarm for Lambda function errors
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+  DynamoDBThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-dynamodb-throttles"
+      AlarmDescription: Alarm for DynamoDB throttling
+      MetricName: SystemErrors
+      Namespace: AWS/DynamoDB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+# Stack Outputs
+Outputs:
+  ApiGatewayUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+    Export:
+      Name: !Sub "${AWS::StackName}-api-url"
+
+  HealthcareKMSKeyId:
+    Description: KMS Key ID for healthcare data encryption
+    Value: !Ref HealthcareKMSKey
+    Export:
+      Name: !Sub "${AWS::StackName}-kms-key-id"
+
+  HealthcareDataBucket:
+    Description: S3 bucket for healthcare data storage
+    Value: !Ref HealthcareDataBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-healthcare-data-bucket"
+
+  AuditLogsBucket:
+    Description: S3 bucket for audit logs
+    Value: !Ref AuditLogsBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-audit-logs-bucket"
+
+  PatientsTableName:
+    Description: DynamoDB table name for patients
+    Value: !Ref PatientsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-patients-table"
+
+  ObservationsTableName:
+    Description: DynamoDB table name for observations
+    Value: !Ref ObservationsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-observations-table"
+
+  AppointmentsTableName:
+    Description: DynamoDB table name for appointments
+    Value: !Ref AppointmentsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-appointments-table"
+
+  LambdaSecurityGroupId:
+    Description: Security group ID for Lambda functions
+    Value: !Ref LambdaSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-lambda-security-group"
