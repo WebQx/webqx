@@ -1,0 +1,282 @@
+{
+  "enabled": true,
+  "region": "EU",
+  "dataProcessingLegalBasis": "consent",
+  "consentExpiryDays": 365,
+  "erasureTimeframeDays": 30,
+  "dataProcessing": {
+    "transparencyRequired": true,
+    "legalBasisRequired": true,
+    "purposeLimitationEnabled": true,
+    "dataMinimizationEnabled": true,
+    "accuracyRequired": true,
+    "storageLimitationEnabled": true,
+    "integrityAndConfidentialityRequired": true,
+    "accountabilityRequired": true
+  },
+  "consentManagement": {
+    "explicitConsentRequired": true,
+    "granularConsent": true,
+    "withdrawalMechanism": true,
+    "consentRecords": {
+      "maintained": true,
+      "retentionPeriod": "indefinite",
+      "auditTrail": true
+    },
+    "consentTypes": [
+      {
+        "type": "data_processing",
+        "description": "Processing of personal data for healthcare services",
+        "required": true,
+        "legalBasis": "consent"
+      },
+      {
+        "type": "data_sharing",
+        "description": "Sharing data with healthcare partners",
+        "required": false,
+        "legalBasis": "consent"
+      },
+      {
+        "type": "marketing_communications",
+        "description": "Marketing and promotional communications",
+        "required": false,
+        "legalBasis": "consent"
+      },
+      {
+        "type": "research_participation",
+        "description": "Participation in medical research",
+        "required": false,
+        "legalBasis": "consent"
+      },
+      {
+        "type": "third_party_services",
+        "description": "Integration with third-party healthcare services",
+        "required": false,
+        "legalBasis": "legitimate_interests"
+      },
+      {
+        "type": "analytics_tracking",
+        "description": "Website and application analytics",
+        "required": false,
+        "legalBasis": "legitimate_interests"
+      }
+    ]
+  },
+  "dataSubjectRights": {
+    "rightToInformation": {
+      "enabled": true,
+      "transparentInformation": true,
+      "privacyNoticeRequired": true
+    },
+    "rightOfAccess": {
+      "enabled": true,
+      "responseTime": "30_days",
+      "freeOfCharge": true,
+      "format": ["electronic", "paper"],
+      "informationProvided": [
+        "purposes_of_processing",
+        "categories_of_data",
+        "recipients",
+        "retention_period",
+        "rights_available"
+      ]
+    },
+    "rightToRectification": {
+      "enabled": true,
+      "responseTime": "30_days",
+      "notificationToRecipients": true
+    },
+    "rightToErasure": {
+      "enabled": true,
+      "responseTime": "30_days",
+      "conditions": [
+        "no_longer_necessary",
+        "consent_withdrawn",
+        "unlawfully_processed",
+        "legal_obligation"
+      ],
+      "exceptions": [
+        "freedom_of_expression",
+        "legal_obligations",
+        "public_health",
+        "archiving_purposes"
+      ]
+    },
+    "rightToRestriction": {
+      "enabled": true,
+      "responseTime": "30_days",
+      "conditions": [
+        "accuracy_contested",
+        "unlawful_processing",
+        "data_not_needed",
+        "objection_pending"
+      ]
+    },
+    "rightToPortability": {
+      "enabled": true,
+      "responseTime": "30_days",
+      "formats": ["json", "csv", "xml"],
+      "directTransfer": false
+    },
+    "rightToObject": {
+      "enabled": true,
+      "grounds": [
+        "legitimate_interests",
+        "public_task",
+        "direct_marketing"
+      ]
+    }
+  },
+  "breachNotification": {
+    "supervisoryAuthority": {
+      "notificationRequired": true,
+      "timeframe": "72_hours",
+      "contactDetails": {
+        "authority": "Data Protection Authority",
+        "email": "dpa@example.eu",
+        "phone": "+00-000-000-0000"
+      },
+      "thresholds": {
+        "highRisk": true,
+        "individualCount": 1,
+        "dataCategories": ["special_categories", "personal_identifiers"]
+      }
+    },
+    "dataSubjects": {
+      "notificationRequired": "if_high_risk",
+      "timeframe": "without_undue_delay",
+      "methods": ["email", "direct_contact", "public_communication"],
+      "informationIncluded": [
+        "nature_of_breach",
+        "likely_consequences",
+        "measures_taken",
+        "contact_point"
+      ]
+    },
+    "documentation": {
+      "recordRequired": true,
+      "informationToRecord": [
+        "facts_of_breach",
+        "effects_and_consequences",
+        "remedial_action_taken"
+      ]
+    }
+  },
+  "dataProtectionImpactAssessment": {
+    "required": true,
+    "triggers": [
+      "systematic_monitoring",
+      "large_scale_special_categories",
+      "systematic_evaluation",
+      "biometric_data",
+      "genetic_data",
+      "location_tracking",
+      "children_data"
+    ],
+    "consultation": {
+      "supervisoryAuthority": "if_high_risk",
+      "dataSubjects": "appropriate_circumstances"
+    }
+  },
+  "internationalTransfers": {
+    "adequacyDecision": {
+      "countries": ["UK", "Switzerland", "Canada", "Japan"],
+      "assessmentRequired": false
+    },
+    "appropriateSafeguards": {
+      "standardContractualClauses": true,
+      "bindingCorporateRules": false,
+      "certificationMechanisms": false,
+      "codesOfConduct": false
+    },
+    "derogations": [
+      "explicit_consent",
+      "contract_performance",
+      "public_interest",
+      "legal_claims",
+      "vital_interests"
+    ]
+  },
+  "recordsOfProcessing": {
+    "maintained": true,
+    "controllerRecords": {
+      "nameAndContact": true,
+      "purposesOfProcessing": true,
+      "categoriesOfDataSubjects": true,
+      "categoriesOfPersonalData": true,
+      "categoriesOfRecipients": true,
+      "internationalTransfers": true,
+      "retentionPeriods": true,
+      "securityMeasures": true
+    },
+    "processorRecords": {
+      "nameAndContact": true,
+      "categoriesOfProcessing": true,
+      "internationalTransfers": true,
+      "securityMeasures": true
+    }
+  },
+  "dataProtectionOfficer": {
+    "required": false,
+    "designation": {
+      "publicAuthority": false,
+      "coreActivities": "monitoring_data_subjects",
+      "largeScale": true
+    },
+    "qualifications": {
+      "professionalQualities": true,
+      "expertKnowledge": true,
+      "conflictsOfInterest": false
+    },
+    "contact": {
+      "name": "Data Protection Officer",
+      "email": "dpo@webqx.health",
+      "phone": "+1-555-0123"
+    }
+  },
+  "technicalAndOrganizationalMeasures": {
+    "pseudonymization": true,
+    "encryption": true,
+    "confidentiality": true,
+    "integrity": true,
+    "availability": true,
+    "resilience": true,
+    "regularTesting": true,
+    "dataMinimization": true,
+    "accessControls": true,
+    "auditLogs": true,
+    "staffTraining": true,
+    "incidentResponse": true
+  },
+  "childrenData": {
+    "specialProtection": true,
+    "ageOfConsent": 16,
+    "parentalConsent": {
+      "required": "under_age_of_consent",
+      "verificationMethods": ["parental_verification", "age_verification"]
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "consentDashboard": "/admin/gdpr-consent",
+    "requestTracking": "/admin/gdpr-requests",
+    "breachManagement": "/admin/gdpr-breaches",
+    "reportingSchedule": {
+      "weekly": "consent_status",
+      "monthly": "request_summary",
+      "quarterly": "compliance_review"
+    },
+    "alerts": {
+      "consentExpiring": "7_days_before",
+      "requestOverdue": "25_days",
+      "breachDetected": "immediate"
+    }
+  },
+  "auditAndCompliance": {
+    "regularAudits": true,
+    "auditFrequency": "annual",
+    "complianceAssessment": true,
+    "thirdPartyAudits": false,
+    "certificationSchemes": []
+  }
+}

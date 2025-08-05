@@ -1,0 +1,338 @@
+{
+  "enabled": true,
+  "auditLevel": "detailed",
+  "riskAssessmentInterval": 365,
+  "incidentResponseEnabled": true,
+  "ismsScope": "WebQX Healthcare Platform - Patient Data Processing and Healthcare Services",
+  "informationSecurityPolicy": {
+    "version": "2024-v1",
+    "approvedBy": "Chief Information Security Officer",
+    "approvalDate": "2024-01-01",
+    "nextReviewDate": "2024-12-31",
+    "objectives": [
+      "Protect patient health information confidentiality",
+      "Ensure healthcare service availability",
+      "Maintain data integrity for clinical decisions",
+      "Comply with healthcare regulations",
+      "Support business continuity"
+    ]
+  },
+  "riskManagement": {
+    "methodology": "ISO 27005",
+    "riskAcceptanceLevel": "medium",
+    "riskMatrix": {
+      "probability": { "low": 1, "medium": 3, "high": 5 },
+      "impact": { "low": 1, "medium": 3, "high": 5 }
+    },
+    "riskTreatmentOptions": ["accept", "avoid", "mitigate", "transfer"],
+    "riskAssessmentFrequency": "annual",
+    "emergencyReassessment": {
+      "triggers": ["major_incident", "system_changes", "regulatory_changes"],
+      "timeframe": "30_days"
+    }
+  },
+  "securityControls": {
+    "categories": {
+      "information_security_policies": {
+        "controls": ["A.5.1.1", "A.5.1.2"],
+        "testingFrequency": "annual"
+      },
+      "organization_information_security": {
+        "controls": ["A.6.1.1", "A.6.1.2", "A.6.1.3", "A.6.1.4", "A.6.1.5", "A.6.2.1", "A.6.2.2"],
+        "testingFrequency": "annual"
+      },
+      "human_resource_security": {
+        "controls": ["A.7.1.1", "A.7.1.2", "A.7.2.1", "A.7.2.2", "A.7.2.3", "A.7.3.1"],
+        "testingFrequency": "annual"
+      },
+      "asset_management": {
+        "controls": ["A.8.1.1", "A.8.1.2", "A.8.1.3", "A.8.1.4", "A.8.2.1", "A.8.2.2", "A.8.2.3", "A.8.3.1", "A.8.3.2", "A.8.3.3"],
+        "testingFrequency": "semi_annual"
+      },
+      "access_control": {
+        "controls": ["A.9.1.1", "A.9.1.2", "A.9.2.1", "A.9.2.2", "A.9.2.3", "A.9.2.4", "A.9.2.5", "A.9.2.6", "A.9.3.1", "A.9.4.1", "A.9.4.2", "A.9.4.3", "A.9.4.4", "A.9.4.5"],
+        "testingFrequency": "quarterly"
+      },
+      "cryptography": {
+        "controls": ["A.10.1.1", "A.10.1.2"],
+        "testingFrequency": "quarterly"
+      },
+      "physical_environmental_security": {
+        "controls": ["A.11.1.1", "A.11.1.2", "A.11.1.3", "A.11.1.4", "A.11.1.5", "A.11.1.6", "A.11.2.1", "A.11.2.2", "A.11.2.3", "A.11.2.4", "A.11.2.5", "A.11.2.6", "A.11.2.7", "A.11.2.8", "A.11.2.9"],
+        "testingFrequency": "annual"
+      },
+      "operations_security": {
+        "controls": ["A.12.1.1", "A.12.1.2", "A.12.1.3", "A.12.1.4", "A.12.2.1", "A.12.3.1", "A.12.4.1", "A.12.4.2", "A.12.4.3", "A.12.4.4", "A.12.5.1", "A.12.6.1", "A.12.6.2", "A.12.7.1"],
+        "testingFrequency": "monthly"
+      },
+      "communications_security": {
+        "controls": ["A.13.1.1", "A.13.1.2", "A.13.1.3", "A.13.2.1", "A.13.2.2", "A.13.2.3"],
+        "testingFrequency": "quarterly"
+      },
+      "system_acquisition": {
+        "controls": ["A.14.1.1", "A.14.1.2", "A.14.1.3", "A.14.2.1", "A.14.2.2", "A.14.2.3", "A.14.2.4", "A.14.2.5", "A.14.2.6", "A.14.2.7", "A.14.2.8", "A.14.2.9", "A.14.3.1"],
+        "testingFrequency": "annual"
+      },
+      "supplier_relationships": {
+        "controls": ["A.15.1.1", "A.15.1.2", "A.15.1.3", "A.15.2.1", "A.15.2.2"],
+        "testingFrequency": "annual"
+      },
+      "information_security_incident": {
+        "controls": ["A.16.1.1", "A.16.1.2", "A.16.1.3", "A.16.1.4", "A.16.1.5", "A.16.1.6", "A.16.1.7"],
+        "testingFrequency": "quarterly"
+      },
+      "business_continuity": {
+        "controls": ["A.17.1.1", "A.17.1.2", "A.17.1.3", "A.17.2.1"],
+        "testingFrequency": "annual"
+      },
+      "compliance": {
+        "controls": ["A.18.1.1", "A.18.1.2", "A.18.1.3", "A.18.1.4", "A.18.1.5", "A.18.2.1", "A.18.2.2", "A.18.2.3"],
+        "testingFrequency": "semi_annual"
+      }
+    }
+  },
+  "incidentManagement": {
+    "responseTimeframes": {
+      "critical": "15_minutes",
+      "high": "4_hours",
+      "medium": "1_day",
+      "low": "best_effort"
+    },
+    "escalationMatrix": {
+      "critical": ["ciso", "ceo", "board"],
+      "high": ["security_manager", "ciso"],
+      "medium": ["security_team", "security_manager"],
+      "low": ["security_team"]
+    },
+    "communicationPlan": {
+      "internal": {
+        "stakeholders": ["security_team", "management", "legal", "communications"],
+        "channels": ["secure_messaging", "phone", "email"]
+      },
+      "external": {
+        "authorities": ["healthcare_regulators", "data_protection_authorities", "law_enforcement"],
+        "customers": ["patients", "healthcare_providers"],
+        "partners": ["business_associates", "vendors"],
+        "media": ["press_releases", "public_statements"]
+      }
+    },
+    "forensics": {
+      "evidenceCollection": true,
+      "chainOfCustody": true,
+      "forensicTools": ["digital_forensics", "log_analysis", "network_monitoring"],
+      "expertConsultation": true
+    }
+  },
+  "assetManagement": {
+    "assetInventory": {
+      "maintained": true,
+      "categories": ["hardware", "software", "data", "personnel", "facilities", "reputation"],
+      "classification": {
+        "confidentiality": ["public", "internal", "confidential", "restricted"],
+        "integrity": ["low", "medium", "high", "critical"],
+        "availability": ["low", "medium", "high", "critical"]
+      },
+      "ownership": {
+        "assigned": true,
+        "responsibilities": "defined"
+      }
+    },
+    "dataClassification": {
+      "scheme": "healthcare_specific",
+      "levels": {
+        "public": {
+          "description": "Information that can be freely shared",
+          "examples": ["public_health_information", "marketing_materials"]
+        },
+        "internal": {
+          "description": "Information for internal use only",
+          "examples": ["operational_procedures", "system_documentation"]
+        },
+        "confidential": {
+          "description": "Sensitive business information",
+          "examples": ["financial_data", "strategic_plans", "employee_records"]
+        },
+        "restricted": {
+          "description": "Highly sensitive information requiring special protection",
+          "examples": ["patient_health_records", "medical_images", "genetic_data"]
+        }
+      }
+    }
+  },
+  "accessControl": {
+    "accessControlPolicy": {
+      "established": true,
+      "principles": ["need_to_know", "least_privilege", "separation_of_duties"],
+      "reviewFrequency": "quarterly"
+    },
+    "userAccessManagement": {
+      "provisioningProcess": "defined",
+      "deprovisioningProcess": "automated",
+      "regularReviews": "monthly",
+      "privilegedAccess": {
+        "monitoring": "real_time",
+        "approval": "two_person_control",
+        "logging": "detailed"
+      }
+    },
+    "authentication": {
+      "multiFactor": "required_for_sensitive_systems",
+      "passwordPolicy": {
+        "complexity": "high",
+        "length": 12,
+        "expiry": "90_days",
+        "history": 12
+      },
+      "biometrics": "supported",
+      "sso": "implemented"
+    }
+  },
+  "cloudSecurity": {
+    "riskAssessment": {
+      "cloudProviders": "assessed",
+      "services": "classified",
+      "dataLocation": "documented",
+      "compliance": "verified"
+    },
+    "monitoring": {
+      "activityLogging": true,
+      "anomalyDetection": true,
+      "realTimeAlerts": true,
+      "dashboards": [
+        "/admin/cloud-security",
+        "/admin/cloud-risks",
+        "/admin/cloud-compliance"
+      ]
+    },
+    "controls": {
+      "dataEncryption": "required",
+      "keyManagement": "centralized",
+      "accessControls": "enforced",
+      "networkSecurity": "implemented",
+      "backupStrategy": "defined"
+    }
+  },
+  "businessContinuity": {
+    "bcpMaintained": true,
+    "impactAnalysis": {
+      "conducted": true,
+      "frequency": "annual",
+      "criticalProcesses": "identified"
+    },
+    "recoveryObjectives": {
+      "rto": {
+        "critical_systems": "1_hour",
+        "important_systems": "4_hours",
+        "standard_systems": "24_hours"
+      },
+      "rpo": {
+        "critical_data": "15_minutes",
+        "important_data": "1_hour",
+        "standard_data": "24_hours"
+      }
+    },
+    "testing": {
+      "frequency": "quarterly",
+      "types": ["tabletop", "simulation", "full_test"],
+      "documentation": "maintained",
+      "improvements": "implemented"
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "securityMonitoring": {
+      "siem": "implemented",
+      "logAggregation": true,
+      "correlationRules": "configured",
+      "alerting": "real_time"
+    },
+    "performanceMonitoring": {
+      "securityControls": "monitored",
+      "compliance": "tracked",
+      "metrics": "collected",
+      "reporting": "automated"
+    },
+    "dashboards": {
+      "riskDashboard": "/admin/iso27001-risks",
+      "controlDashboard": "/admin/iso27001-controls",
+      "incidentDashboard": "/admin/iso27001-incidents",
+      "complianceDashboard": "/admin/iso27001-compliance"
+    },
+    "reportingSchedule": {
+      "daily": "security_incidents",
+      "weekly": "control_testing_results",
+      "monthly": "risk_status",
+      "quarterly": "compliance_assessment",
+      "annually": "management_review"
+    }
+  },
+  "training": {
+    "securityAwareness": {
+      "mandatory": true,
+      "frequency": "annual",
+      "topics": [
+        "information_security_policy",
+        "access_control_procedures",
+        "incident_reporting",
+        "social_engineering_awareness",
+        "mobile_device_security",
+        "email_security",
+        "password_security"
+      ]
+    },
+    "roleSpecific": {
+      "administrators": "advanced_security_training",
+      "developers": "secure_coding_practices",
+      "managers": "security_management",
+      "endUsers": "basic_security_awareness"
+    },
+    "testing": {
+      "knowledgeAssessment": true,
+      "phishingSimulation": "quarterly",
+      "certificationRequired": false
+    }
+  },
+  "auditAndReview": {
+    "internalAudits": {
+      "frequency": "semi_annual",
+      "scope": "full_isms",
+      "auditors": "independent",
+      "followUp": "mandatory"
+    },
+    "managementReview": {
+      "frequency": "quarterly",
+      "participants": ["senior_management", "ciso", "compliance_officer"],
+      "agenda": [
+        "audit_results",
+        "security_incidents",
+        "risk_assessment_results",
+        "control_effectiveness",
+        "improvement_opportunities"
+      ]
+    },
+    "externalAssessments": {
+      "penetrationTesting": "annual",
+      "vulnerabilityAssessment": "quarterly",
+      "certificationAudits": "annual",
+      "complianceReviews": "as_required"
+    }
+  },
+  "continuousImprovement": {
+    "enabled": true,
+    "improvementProcess": "pdca_cycle",
+    "kpis": [
+      "number_of_security_incidents",
+      "time_to_detect_incidents",
+      "time_to_respond_incidents",
+      "control_effectiveness_rating",
+      "audit_findings_closure_rate",
+      "security_awareness_training_completion"
+    ],
+    "reviewCycle": "monthly",
+    "improvementPlan": {
+      "maintained": true,
+      "approved": "management",
+      "tracked": "project_management_office"
+    }
+  }
+}
