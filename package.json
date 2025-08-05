@@ -18,7 +18,10 @@
     "telehealth:start:fhir": "cd modules/telehealth/deployment/standalone/fhir-sync && docker-compose up -d",
     "telehealth:stop": "cd modules/telehealth/deployment && find . -name docker-compose.yml -execdir docker-compose down \\;",
     "telehealth:test": "jest modules/telehealth/tests/",
-    "telehealth:health": "curl -f http://localhost:3000/health/telehealth"
+    "telehealth:health": "curl -f http://localhost:3000/health/telehealth",
+    "chatehr:mock": "node scripts/start-mock-chatehr.js",
+    "chatehr:test": "jest __tests__/chatEHR.test.js",
+    "chatehr:health": "curl -f http://localhost:3000/api/chatehr/health"
   },
   "keywords": [
     "healthcare",
