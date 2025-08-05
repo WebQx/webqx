@@ -227,6 +227,15 @@ app.use('/ui', authenticateToken, uiRoutes);
 
 console.log('✅ Telepsychiatry API routes loaded');
 
+// ChatEHR Integration routes
+try {
+    const chatEHRRoutes = require('./routes/chatehr');
+    app.use('/api/chatehr', authenticateToken, chatEHRRoutes);
+    console.log('✅ ChatEHR API routes loaded');
+} catch (error) {
+    console.warn('⚠️ ChatEHR routes not available:', error.message);
+}
+
 // Test routes (development only)
 if (process.env.NODE_ENV === 'development') {
     const testRoutes = require('./routes/test');
