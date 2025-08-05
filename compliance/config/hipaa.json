@@ -1,0 +1,169 @@
+{
+  "enabled": true,
+  "strictMode": true,
+  "phiRetentionDays": 2555,
+  "auditRetentionDays": 2555,
+  "breachNotificationEmail": "compliance@webqx.health",
+  "breachDetection": {
+    "enabled": true,
+    "failedAccessAttempts": 5,
+    "timeWindowMinutes": 15,
+    "suspiciousPatternEnabled": true,
+    "alertThreshold": {
+      "individualAffected": 1,
+      "recordsAffected": 10,
+      "severityLevel": "medium"
+    }
+  },
+  "baaManagement": {
+    "enabled": true,
+    "expirationWarningDays": 30,
+    "autoRenewEnabled": false,
+    "requiredForThirdParties": true,
+    "templateVersion": "2024-v1"
+  },
+  "phiProtection": {
+    "encryptionRequired": true,
+    "accessLoggingRequired": true,
+    "minimumNecessaryPrinciple": true,
+    "roleBasedAccess": true,
+    "patientAccessRights": true
+  },
+  "rolePermissions": {
+    "physician": {
+      "allowedActions": ["view", "create", "update", "export", "print"],
+      "allowedPurposes": ["treatment", "healthcare_operations", "quality_assurance"],
+      "accessScope": "all_patients"
+    },
+    "nurse": {
+      "allowedActions": ["view", "create", "update"],
+      "allowedPurposes": ["treatment", "healthcare_operations"],
+      "accessScope": "assigned_patients"
+    },
+    "admin": {
+      "allowedActions": ["view", "export", "print"],
+      "allowedPurposes": ["healthcare_operations", "quality_assurance"],
+      "accessScope": "administrative"
+    },
+    "billing": {
+      "allowedActions": ["view", "export"],
+      "allowedPurposes": ["payment", "healthcare_operations"],
+      "accessScope": "billing_data"
+    },
+    "patient": {
+      "allowedActions": ["view"],
+      "allowedPurposes": ["patient_request"],
+      "accessScope": "own_records"
+    },
+    "researcher": {
+      "allowedActions": ["view", "export"],
+      "allowedPurposes": ["research"],
+      "accessScope": "deidentified"
+    }
+  },
+  "auditRequirements": {
+    "logAllAccess": true,
+    "logFailedAttempts": true,
+    "logDataExports": true,
+    "logSystemAccess": true,
+    "retainLogs": true,
+    "regularReviews": {
+      "enabled": true,
+      "frequency": "monthly",
+      "reviewer": "compliance_officer"
+    }
+  },
+  "incidentResponse": {
+    "breachNotificationTime": "72_hours",
+    "patientNotificationRequired": true,
+    "ochsReportingRequired": true,
+    "mediaNotificationThreshold": 500,
+    "investigationProcedure": "standard_hipaa_investigation",
+    "escalationMatrix": {
+      "low": "security_team",
+      "medium": "compliance_officer",
+      "high": "chief_privacy_officer",
+      "critical": "executive_team"
+    }
+  },
+  "businessAssociates": {
+    "trackingRequired": true,
+    "complianceMonitoring": true,
+    "auditRights": true,
+    "breachNotificationRequirements": true,
+    "contractualSafeguards": [
+      "encryption_at_rest",
+      "encryption_in_transit",
+      "access_controls",
+      "audit_logging",
+      "employee_training",
+      "incident_response"
+    ]
+  },
+  "patientRights": {
+    "accessRequest": {
+      "responseTime": "30_days",
+      "feeStructure": "reasonable_cost_based",
+      "formatOptions": ["paper", "electronic"]
+    },
+    "amendmentRequest": {
+      "responseTime": "60_days",
+      "reviewProcess": "clinical_review_required"
+    },
+    "restrictionRequest": {
+      "responseTime": "30_days",
+      "approvalRequired": false
+    }
+  },
+  "technicalSafeguards": {
+    "accessControl": {
+      "uniqueUserIdentification": true,
+      "automaticLogoff": true,
+      "encryptionDecryption": true
+    },
+    "auditControls": {
+      "implementation": "required",
+      "regularReview": "monthly"
+    },
+    "integrity": {
+      "alterationProtection": true,
+      "electronicSignatures": false
+    },
+    "transmissionSecurity": {
+      "endToEndEncryption": true,
+      "networkControls": true
+    }
+  },
+  "administrativeSafeguards": {
+    "securityOfficer": {
+      "designated": true,
+      "responsibilities": "policy_implementation_oversight"
+    },
+    "workforceTraining": {
+      "required": true,
+      "frequency": "annual",
+      "topics": ["privacy_policies", "security_procedures", "incident_response"]
+    },
+    "accessManagement": {
+      "accessAuthorizationProcedures": true,
+      "workforceSecurityProcedures": true,
+      "informationAccessManagement": true
+    }
+  },
+  "physicalSafeguards": {
+    "facilityAccessControls": true,
+    "workstationUse": true,
+    "deviceMediaControls": true
+  },
+  "monitoring": {
+    "enabled": true,
+    "realTimeAlerts": true,
+    "dashboardUrl": "/admin/hipaa-dashboard",
+    "reportingSchedule": {
+      "daily": "security_incidents",
+      "weekly": "access_patterns",
+      "monthly": "compliance_summary",
+      "quarterly": "risk_assessment"
+    }
+  }
+}
