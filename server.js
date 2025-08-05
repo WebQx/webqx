@@ -234,28 +234,7 @@ try {
     console.warn('⚠️ Telehealth routes not available:', error.message);
 }
 
-// Telepsychiatry API routes
-const consentRoutes = require('./routes/consent');
-const sessionRoutes = require('./routes/session');
-const emrRoutes = require('./routes/emr');
-const uiRoutes = require('./routes/ui');
-const workflowRoutes = require('./routes/workflow');
-const analyticsRoutes = require('./routes/analytics');
 
-app.use('/consent', consentRoutes);
-app.use('/session', sessionRoutes);
-app.use('/emr', emrRoutes);
-app.use('/ui', uiRoutes);
-app.use('/workflow', workflowRoutes);
-app.use('/analytics', analyticsRoutes);
-
-console.log('✅ Telepsychiatry API modules loaded:');
-console.log('   - /consent - Consent management with HIPAA-compliant storage');
-console.log('   - /session - Video consultation management with Jitsi integration');
-console.log('   - /emr - Electronic medical records with FHIR compliance');
-console.log('   - /ui - User interface customization with RTL/LTR support');
-console.log('   - /workflow - Clinical workflow automation with cultural adaptation');
-console.log('   - /analytics - Data reporting with anonymization and public health insights');
 
 // Serve login page
 app.get('/login', (req, res) => {
