@@ -1,0 +1,256 @@
+/**
+ * Frontend Styles for WebQX Healthcare Platform
+ */
+
+/* General WebQX Container Styles */
+.webqx-patient-portal-container,
+.webqx-provider-dashboard-container,
+.webqx-telehealth-container,
+.webqx-lab-results-container {
+    position: relative;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f9f9f9;
+    overflow: hidden;
+    min-height: 400px;
+}
+
+.webqx-iframe-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+}
+
+/* Loading States */
+.webqx-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: #fff;
+    color: #666;
+}
+
+.webqx-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #0073aa;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: webqx-spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes webqx-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error States */
+.webqx-error {
+    text-align: center;
+    color: #d63638;
+    background: #fff2f2;
+    padding: 20px;
+    border-radius: 4px;
+    border: 1px solid #f5c6cb;
+}
+
+.webqx-error p {
+    margin: 0;
+}
+
+/* Authentication Required */
+.webqx-login-required,
+.webqx-access-denied {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 20px;
+}
+
+.webqx-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-width: 400px;
+    width: 100%;
+}
+
+.webqx-card h3 {
+    margin-top: 0;
+    color: #0073aa;
+    font-size: 24px;
+}
+
+.webqx-card p {
+    margin: 15px 0 20px 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+.webqx-card .button {
+    margin: 5px;
+    text-decoration: none;
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    border: 1px solid;
+}
+
+.webqx-card .button-primary {
+    background: #0073aa;
+    border-color: #0073aa;
+    color: #fff;
+}
+
+.webqx-card .button-primary:hover {
+    background: #005a87;
+    border-color: #005a87;
+}
+
+.webqx-card .button-secondary {
+    background: #fff;
+    border-color: #ccc;
+    color: #0073aa;
+}
+
+.webqx-card .button-secondary:hover {
+    background: #f6f7f7;
+    border-color: #999;
+}
+
+/* Telehealth Specific Styles */
+.webqx-telehealth-controls {
+    background: #f9f9f9;
+    border-top: 1px solid #ddd;
+    padding: 10px;
+}
+
+.webqx-privacy-notice {
+    text-align: center;
+}
+
+.webqx-privacy-notice .dashicons {
+    color: #00a32a;
+    font-size: 16px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+/* Lab Results Specific Styles */
+.webqx-lab-footer {
+    background: #f0f8ff;
+    border-top: 1px solid #cce7ff;
+    padding: 10px;
+}
+
+.webqx-lab-notice {
+    text-align: center;
+}
+
+.webqx-lab-notice .dashicons {
+    color: #0073aa;
+    font-size: 16px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .webqx-patient-portal-container,
+    .webqx-provider-dashboard-container,
+    .webqx-telehealth-container,
+    .webqx-lab-results-container {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+    
+    .webqx-card {
+        margin: 0;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        padding: 20px 15px;
+    }
+    
+    .webqx-card .button {
+        display: block;
+        width: 100%;
+        margin: 5px 0;
+    }
+}
+
+/* Accessibility Improvements */
+.webqx-iframe-container iframe:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.webqx-loading {
+    /* Ensure loading state is announced to screen readers */
+    role: status;
+    aria-live: polite;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .webqx-card {
+        border-width: 2px;
+    }
+    
+    .webqx-spinner {
+        border-width: 6px;
+    }
+    
+    .webqx-error {
+        border-width: 2px;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .webqx-patient-portal-container,
+    .webqx-provider-dashboard-container,
+    .webqx-telehealth-container,
+    .webqx-lab-results-container {
+        background: #1e1e1e;
+        border-color: #444;
+        color: #fff;
+    }
+    
+    .webqx-card {
+        background: #2d2d2d;
+        border-color: #444;
+        color: #fff;
+    }
+    
+    .webqx-card h3 {
+        color: #4fc3f7;
+    }
+    
+    .webqx-card p {
+        color: #ccc;
+    }
+    
+    .webqx-loading {
+        background: #2d2d2d;
+        color: #ccc;
+    }
+    
+    .webqx-telehealth-controls,
+    .webqx-lab-footer {
+        background: #1e1e1e;
+        border-color: #444;
+    }
+}

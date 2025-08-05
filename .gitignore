@@ -10,10 +10,12 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.lambda
 
 # Logs
 logs
 *.log
+debug.log
 
 # Runtime data
 pids
@@ -58,3 +60,28 @@ webqx-lambda.zip
 # Lambda function packages
 *.zip
 lambda-package/
+
+# WordPress plugin specific files
+wp-config.php
+wp-content/uploads/
+wp-content/cache/
+wp-content/backup-db/
+
+# Healthcare data (never commit patient data)
+patients/
+protected/
+phi/
+pii/
+
+# SSL Certificates and keys
+*.pem
+*.key
+*.crt
+*.csr
+
+# Database files
+*.sqlite
+*.db
+
+# WordPress plugin distribution (keep plugin source, exclude zip)
+!webqx-healthcare-platform.zip
