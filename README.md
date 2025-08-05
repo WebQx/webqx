@@ -67,6 +67,73 @@ A multilingual, low-bandwidth-ready, and privacy-first telepsychiatry API built 
 - 📊 Deidentified analytics for community health insights
 - 🔎 Consent logging and immutable audit trails
 
+# 🌍 Telepsychiatry API Platform
+
+A multilingual, low-bandwidth-ready, and globally compliant API system for culturally adaptive psychiatric care. Built with dignity-centered design principles, modular architecture, and open standards like HL7/FHIR, Whisper, and Keycloak.
+
+---
+
+## 🚀 Key Features
+
+- 🔐 **Secure Consent & Identity**
+  - GDPR, HIPAA, ISO 27701 compliant
+  - Multilingual consent flows
+  - Keycloak-based OAuth2 login
+
+- 🎥 **Clinical Session Engine**
+  - Encrypted Jitsi sessions
+  - Whisper STT transcription
+  - Support for offline fallback
+
+- 🧾 **FHIR-Compliant EMR Access**
+  - ICD-10 / DSM-5 tagging
+  - Integration with OpenEMR
+  - De-identified research mode
+
+- 🧠 **MHIRA Psychometrics**
+  - Culture-sensitive assessments
+  - Multilingual scoring logic
+  - Triage integration for care planning
+
+- 📊 **Global Compliance & Localization**
+  - Region-specific consent protocols
+  - Dynamic UI phrasing by culture/language
+  - Disparity analytics per country
+
+---
+
+## 🛡 Regulatory Coverage
+
+| Country          | Protocols                 |
+|------------------|---------------------------|
+| 🇺🇸 United States | HIPAA, HITECH             |
+| 🇪🇺 European Union| GDPR, ePrivacy            |
+| 🇨🇦 Canada        | PIPEDA, PHIPA             |
+| 🇮🇳 India         | DISHA, NDHM               |
+| 🇧🇷 Brazil        | LGPD                      |
+| 🇿🇦 South Africa  | POPIA                     |
+| 🇵🇰 Pakistan       | PHIM, HIPC                |
+| 🇦🇪 UAE            | DHA, DoH Data Law         |
+| 🇸🇦 Saudi Arabia  | NHIC, PDPL                |
+
+---
+
+## 🧱 Architecture Modules
+
+```plaintext
+/api
+├── /auth           → OAuth2 login (Keycloak)
+├── /consent        → Record/revoke multilingual consent
+├── /session        → Jitsi start + Whisper transcribe
+├── /emr            → HL7/FHIR records, ICD/DSM tagging
+├── /questionnaire  → MHIRA assessments & reports
+├── /workflow       → Culture-sensitive triage & care plans
+├── /analytics      → Deidentified export + disparity mapping
+├── /localization   → Language detection, UX customization
+├── /audit          → ISO-compliant logging
+├── /security
+
+
 ## 🧱 Architecture Overview
 
 ```plaintext
