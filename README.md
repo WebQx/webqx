@@ -544,6 +544,59 @@ curl http://localhost:3000/health
 - [FHIR API Examples](./docs/FHIR_API_EXAMPLES.md)
 - [openEHR API Examples](./docs/OPENEHR_API_EXAMPLES.md)
 
+## 🩺 ChatEHR Integration
+
+WebQX™ now includes comprehensive **ChatEHR integration** for seamless physician-patient communication and consultation management.
+
+### Features
+
+**Physician Portal:**
+- 📋 Real-time consultation request management
+- 📅 Appointment synchronization from ChatEHR
+- 💬 Secure physician-patient messaging
+- 🎯 Role-based dashboard with status tracking
+
+**Patient Portal:**
+- 🏥 Consultation request submission with specialty selection
+- 📅 Appointment confirmations and updates display
+- 💬 Secure patient-physician messaging interface
+- ⏱️ Real-time message polling
+
+**Security & Compliance:**
+- 🔐 AES-256-GCM message encryption
+- 📊 HIPAA-compliant audit logging
+- 🛡️ Role-based access control
+- ⚡ Rate limiting and authentication
+
+### Quick Start
+
+```bash
+# Start mock ChatEHR server for development
+npm run chatehr:mock
+
+# Configure WebQx to use mock server
+export CHATEHR_API_URL=http://localhost:4000/v1
+export MOCK_CHATEHR_ENABLED=true
+
+# Start WebQx server
+npm start
+
+# Test ChatEHR health
+npm run chatehr:health
+```
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/chatehr/consultations` | Create consultation request |
+| GET | `/api/chatehr/consultations` | List consultation requests |
+| GET | `/api/chatehr/appointments` | Sync appointments |
+| POST | `/api/chatehr/messages` | Send secure message |
+| GET | `/api/chatehr/messages/:id` | Get consultation messages |
+
+📚 **Complete Documentation**: [ChatEHR Integration Guide](./docs/CHATEHR_INTEGRATION.md)
+
 ### Railway Deployment
 
 This project is ready for deployment on [Railway](https://railway.app) with zero-configuration:
@@ -568,7 +621,7 @@ This project is ready for deployment on [Railway](https://railway.app) with zero
 # Install dependencies
 npm install
 
-# Start development server
+# Start development server (with ChatEHR integration)
 npm start
 
 # Access the application
