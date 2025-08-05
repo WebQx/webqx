@@ -53,6 +53,24 @@ Role-based access and modular configuration for deployment:
 - **Electronic Prescriptions**: Send prescriptions directly to pharmacies.
 - **Appointment Scheduling**: Seamless telehealth appointment bookings.
 
+
+# 🌍 Telepsychiatry API Platform
+
+A multilingual, low-bandwidth-ready, and privacy-first telepsychiatry API built to reduce global mental health disparities. Designed with HL7/FHIR compliance, ambient documentation, and secure workflows for culturally sensitive care.
+
+## 🚀 Features
+
+- 🔐 Secure authentication via Keycloak
+- 🧠 AI-assisted clinical session engine using Jitsi + Whisper STT
+- 📋 HL7/FHIR-compliant EMR access and tagging
+- 🌐 Multilingual UI & culturally adaptive workflows
+- 📊 Deidentified analytics for community health insights
+- 🔎 Consent logging and immutable audit trails
+
+## 🧱 Architecture Overview
+
+```plaintext
+[PWA Client] → [API Gateway] → [Microservices] → [PostgreSQL / FHIR DB]
 ## 📁 WebQx-EHR Directory Structure  
 The WebQx-EHR project follows a modular directory structure designed for scalability and maintainability across healthcare specialties and integrations:
 
