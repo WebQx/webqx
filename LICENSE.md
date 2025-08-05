@@ -1,4 +1,21 @@
-# Apache License 2.0
+# WebQX Healthcare Platform - License Information
+
+## Dual Licensing Structure
+
+The WebQX Healthcare Platform uses a dual licensing structure to accommodate both open source development and WordPress.org compatibility requirements:
+
+### WordPress Plugin Components - GPL v2 or later
+The WordPress plugin components (located in `/wordpress-plugin/`) are licensed under the GNU General Public License v2 or later (GPLv2+) to ensure WordPress.org compatibility:
+
+- WordPress plugin files (PHP, CSS, JS specific to WordPress integration)
+- WordPress admin interface components
+- WordPress shortcodes and hooks
+- WordPress-specific templates and documentation
+
+See `wordpress-plugin/LICENSE-GPL.md` for complete GPL licensing terms.
+
+### Core Backend System - Apache License 2.0
+The core WebQX backend system remains under Apache License 2.0:
 
 ## Apache License
 Version 2.0, January 2004  

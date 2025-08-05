@@ -1,0 +1,415 @@
+/* WebQX Healthcare Admin Styles */
+
+/* Dashboard */
+.webqx-dashboard-wrapper {
+    display: grid;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.webqx-status-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 20px;
+    border-radius: 4px;
+}
+
+.webqx-status-success {
+    color: #46b450;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.webqx-status-error {
+    color: #d63638;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.webqx-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.webqx-stat-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 20px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.webqx-stat-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.webqx-stat-number {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #0073aa;
+    display: block;
+}
+
+.webqx-recent-activity,
+.webqx-system-info {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 20px;
+    border-radius: 4px;
+}
+
+/* Log Levels */
+.webqx-log-level {
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.webqx-log-debug {
+    background: #f0f0f1;
+    color: #666;
+}
+
+.webqx-log-info {
+    background: #e7f3ff;
+    color: #0073aa;
+}
+
+.webqx-log-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.webqx-log-error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Extension Status */
+.webqx-extension-status {
+    display: inline-block;
+    margin-right: 15px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.webqx-extension-loaded {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.webqx-extension-missing {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Quick Actions */
+.webqx-quick-actions {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 20px;
+    border-radius: 4px;
+}
+
+.webqx-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Settings */
+.webqx-settings-wrapper {
+    margin-top: 20px;
+}
+
+.webqx-tab-content {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 20px;
+    margin-top: -1px;
+}
+
+/* Form Styles */
+.webqx-form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.webqx-form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.webqx-form-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #23282d;
+}
+
+.webqx-connection-test {
+    margin-top: 10px;
+}
+
+.webqx-connection-result {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.webqx-connection-result.success {
+    background: #d1e7dd;
+    color: #0f5132;
+    border: 1px solid #a3d9a4;
+}
+
+.webqx-connection-result.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f1aeb5;
+}
+
+/* Security Indicators */
+.webqx-security-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.webqx-security-enabled {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.webqx-security-disabled {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* HIPAA Mode Styles */
+.webqx-hipaa-mode {
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+.webqx-hipaa-mode .dashicons {
+    color: #0073aa;
+    margin-right: 5px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 782px) {
+    .webqx-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .webqx-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .webqx-extension-status {
+        display: block;
+        margin-bottom: 5px;
+        margin-right: 0;
+    }
+}
+
+/* Frontend Portal Styles */
+.webqx-patient-portal,
+.webqx-provider-portal {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.webqx-portal-header {
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+}
+
+.webqx-portal-nav {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.webqx-portal-nav a {
+    padding: 8px 16px;
+    background: #f7f7f7;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #333;
+    transition: background-color 0.3s;
+}
+
+.webqx-portal-nav a:hover,
+.webqx-portal-nav a.active {
+    background: #0073aa;
+    color: #fff;
+}
+
+.webqx-portal-content {
+    min-height: 300px;
+}
+
+/* Appointment Booking */
+.webqx-appointment-booking {
+    max-width: 600px;
+}
+
+.webqx-appointment-form {
+    display: grid;
+    gap: 15px;
+}
+
+.webqx-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.webqx-form-group label {
+    font-weight: 600;
+    color: #333;
+}
+
+.webqx-form-group input,
+.webqx-form-group select,
+.webqx-form-group textarea {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.webqx-form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Provider Directory */
+.webqx-provider-directory {
+    margin: 20px 0;
+}
+
+.webqx-provider-filters {
+    background: #f9f9f9;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.webqx-provider-list {
+    display: grid;
+    gap: 15px;
+}
+
+.webqx-provider-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    transition: box-shadow 0.3s;
+}
+
+.webqx-provider-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.webqx-provider-name {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.webqx-provider-specialty {
+    color: #0073aa;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.webqx-provider-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.webqx-provider-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Loading States */
+.webqx-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #666;
+}
+
+.webqx-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: webqx-spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes webqx-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error States */
+.webqx-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border: 1px solid #f1aeb5;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+.webqx-success {
+    background: #d1e7dd;
+    color: #0f5132;
+    padding: 15px;
+    border: 1px solid #a3d9a4;
+    border-radius: 4px;
+    margin: 15px 0;
+}
