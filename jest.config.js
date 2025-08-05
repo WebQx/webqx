@@ -62,8 +62,9 @@ module.exports = {
     {
       displayName: 'auth',
       testEnvironment: 'node',
-      testMatch: ['<rootDir>/auth/**/*.(test|spec).+(js)'],
+      testMatch: ['<rootDir>/auth/**/*.(test|spec).+(ts|js)'],
       transform: {
+        '^.+\\.(ts)$': 'ts-jest',
         '^.+\\.js$': 'babel-jest'
       }
     },

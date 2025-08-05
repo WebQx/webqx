@@ -195,6 +195,15 @@ app.use('/api/auth', patientPortalAuthRoutes);
 app.use('/api/auth/provider', providerAuthRoutes);
 app.use('/api/auth/sso', providerSSORoutes);
 
+// OpenEvidence Authentication routes
+try {
+    const openEvidenceAuthRoutes = require('./auth/openevidence/routes');
+    app.use('/auth/openevidence', openEvidenceAuthRoutes);
+    console.log('✅ OpenEvidence authentication routes loaded');
+} catch (error) {
+    console.warn('⚠️ OpenEvidence authentication routes not available:', error.message);
+}
+
 // Ottehr API routes
 app.use('/api/ottehr', ottehrRoutes);
 
