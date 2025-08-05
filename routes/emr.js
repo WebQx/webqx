@@ -743,4 +743,168 @@ router.get('/annotations/:patientId',
   }
 );
 
+/**
+ * GET /emr/export/:id
+ * Export patient data in FHIR format (OpenAPI spec)
+ */
+router.get('/export/:id',
+  requireAuth,
+  [
+    param('id')
+      .notEmpty()
+      .matches(/^[a-zA-Z0-9-_]+$/)
+      .withMessage('Valid patient ID is required'),
+    query('format')
+      .optional()
+      .isIn(['fhir', 'csv'])
+      .withMessage('Format must be either "fhir" or "csv"')
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: 'VALIDATION_ERROR',
+          message: 'Invalid request parameters',
+          details: errors.array()
+        });
+      }
+
+      const { id: patientId } = req.params;
+      const { format = 'fhir' } = req.query;
+
+      // Fetch FHIR resources for the patient
+      const records = {
+        patient: await fetchFHIRResource('Patient', patientId),
+        observations: await fetchFHIRResource('Observation', patientId),
+        conditions: await fetchFHIRResource('Condition', patientId),
+        medications: await fetchFHIRResource('MedicationRequest', patientId)
+      };
+
+      if (!records.patient) {
+        return res.status(404).json({
+          error: 'PATIENT_NOT_FOUND',
+          message: 'Patient not found'
+        });
+      }
+
+      if (format === 'fhir') {
+        // Build FHIR Bundle response
+        const bundle = {
+          resourceType: 'Bundle',
+          id: `export-${patientId}-${Date.now()}`,
+          type: 'collection',
+          timestamp: new Date().toISOString(),
+          total: 0,
+          entry: []
+        };
+
+        // Add resources to bundle
+        if (records.patient) {
+          bundle.entry.push({
+            fullUrl: `Patient/${patientId}`,
+            resource: records.patient
+          });
+          bundle.total++;
+        }
+
+        [...records.observations, ...records.conditions, ...records.medications].forEach(resource => {
+          if (resource) {
+            bundle.entry.push({
+              fullUrl: `${resource.resourceType}/${resource.id}`,
+              resource: resource
+            });
+            bundle.total++;
+          }
+        });
+
+        // Set appropriate FHIR content type
+        res.setHeader('Content-Type', 'application/fhir+json');
+        res.status(200).json(bundle);
+
+      } else if (format === 'csv') {
+        // Convert to CSV format
+        const csvRows = [];
+        
+        // CSV Headers
+        csvRows.push([
+          'ResourceType', 'ResourceId', 'PatientId', 'Date', 'Code', 'Display', 'Value', 'Unit'
+        ]);
+
+        // Add patient data
+        if (records.patient) {
+          csvRows.push([
+            'Patient',
+            records.patient.id,
+            patientId,
+            records.patient.birthDate || '',
+            '',
+            `${records.patient.name?.[0]?.given?.join(' ')} ${records.patient.name?.[0]?.family}`,
+            records.patient.gender || '',
+            ''
+          ]);
+        }
+
+        // Add observations
+        records.observations.forEach(obs => {
+          csvRows.push([
+            'Observation',
+            obs.id,
+            patientId,
+            obs.effectiveDateTime || '',
+            obs.code?.coding?.[0]?.code || '',
+            obs.code?.coding?.[0]?.display || '',
+            obs.valueQuantity?.value || obs.valueInteger || obs.valueString || '',
+            obs.valueQuantity?.unit || ''
+          ]);
+        });
+
+        // Add conditions
+        records.conditions.forEach(cond => {
+          csvRows.push([
+            'Condition',
+            cond.id,
+            patientId,
+            cond.onsetDateTime || cond.recordedDate || '',
+            cond.code?.coding?.[0]?.code || '',
+            cond.code?.coding?.[0]?.display || '',
+            cond.clinicalStatus?.coding?.[0]?.code || '',
+            ''
+          ]);
+        });
+
+        // Add medications
+        records.medications.forEach(med => {
+          csvRows.push([
+            'MedicationRequest',
+            med.id,
+            patientId,
+            med.authoredOn || '',
+            med.medicationCodeableConcept?.coding?.[0]?.code || '',
+            med.medicationCodeableConcept?.coding?.[0]?.display || '',
+            med.dosageInstruction?.[0]?.text || '',
+            ''
+          ]);
+        });
+
+        // Convert to CSV string
+        const csvContent = csvRows.map(row => 
+          row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+        ).join('\n');
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="patient-${patientId}-export.csv"`);
+        res.status(200).send(csvContent);
+      }
+
+    } catch (error) {
+      console.error('[EMR API] Export error:', error);
+      res.status(500).json({
+        error: 'INTERNAL_ERROR',
+        message: 'Failed to export patient data'
+      });
+    }
+  }
+);
+
 module.exports = router;
