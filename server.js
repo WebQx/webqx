@@ -119,6 +119,24 @@ app.get('/health', (req, res) => {
         fhir: 'enabled',
         openehr: 'enabled',
         oauth2: oauth2Instance ? 'enabled' : 'fallback',
+        telepsychiatry: {
+            session_management: 'enabled',
+            consent_tracking: 'enabled',
+            workflow_triage: 'enabled',
+            emr_integration: 'enabled',
+            analytics: 'enabled',
+            chat_fallback: 'enabled',
+            ui_customization: 'enabled'
+        },
+        endpoints: {
+            session: ['/session/active', '/session/start', '/session/transcribe', '/session/transcript/:id'],
+            consent: ['/consent/audit', '/consent/record', '/consent/:id'],
+            workflow: ['/workflow/triage', '/workflow/plan'],
+            emr: ['/emr/tag', '/emr/records/:id'],
+            analytics: ['/analytics/report', '/analytics/community', '/analytics/deidentified'],
+            chat: ['/chat/session/start', '/chat/session/:id/message'],
+            ui: ['/ui/customize', '/ui/templates', '/ui/preferences']
+        },
         timestamp: new Date().toISOString()
     };
 
@@ -180,6 +198,33 @@ app.use('/api/auth/sso', providerSSORoutes);
 // Ottehr API routes
 app.use('/api/ottehr', ottehrRoutes);
 
+// Telepsychiatry API routes
+const sessionRoutes = require('./routes/session');
+const consentRoutes = require('./routes/consent');
+const workflowRoutes = require('./routes/workflow');
+const emrRoutes = require('./routes/emr');
+const analyticsRoutes = require('./routes/analytics');
+const chatRoutes = require('./routes/chat');
+const uiRoutes = require('./routes/ui');
+
+// Mount telepsychiatry routes with authentication
+app.use('/session', authenticateToken, sessionRoutes);
+app.use('/consent', authenticateToken, consentRoutes);
+app.use('/workflow', authenticateToken, workflowRoutes);
+app.use('/emr', authenticateToken, emrRoutes);
+app.use('/analytics', authenticateToken, analyticsRoutes);
+app.use('/chat', authenticateToken, chatRoutes);
+app.use('/ui', authenticateToken, uiRoutes);
+
+console.log('✅ Telepsychiatry API routes loaded');
+
+// Test routes (development only)
+if (process.env.NODE_ENV === 'development') {
+    const testRoutes = require('./routes/test');
+    app.use('/test', testRoutes);
+    console.log('✅ Test routes loaded for development');
+}
+
 // Telehealth API routes
 try {
     const telehealthVideoRoutes = require('./telehealth/routes/video');
@@ -189,28 +234,7 @@ try {
     console.warn('⚠️ Telehealth routes not available:', error.message);
 }
 
-// Telepsychiatry API routes
-const consentRoutes = require('./routes/consent');
-const sessionRoutes = require('./routes/session');
-const emrRoutes = require('./routes/emr');
-const uiRoutes = require('./routes/ui');
-const workflowRoutes = require('./routes/workflow');
-const analyticsRoutes = require('./routes/analytics');
 
-app.use('/consent', consentRoutes);
-app.use('/session', sessionRoutes);
-app.use('/emr', emrRoutes);
-app.use('/ui', uiRoutes);
-app.use('/workflow', workflowRoutes);
-app.use('/analytics', analyticsRoutes);
-
-console.log('✅ Telepsychiatry API modules loaded:');
-console.log('   - /consent - Consent management with HIPAA-compliant storage');
-console.log('   - /session - Video consultation management with Jitsi integration');
-console.log('   - /emr - Electronic medical records with FHIR compliance');
-console.log('   - /ui - User interface customization with RTL/LTR support');
-console.log('   - /workflow - Clinical workflow automation with cultural adaptation');
-console.log('   - /analytics - Data reporting with anonymization and public health insights');
 
 // Serve login page
 app.get('/login', (req, res) => {
@@ -340,14 +364,35 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// Serve the main patient portal
+// Serve the main patient portal (only for root path)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Catch all other routes and serve the patient portal
+// Catch all other routes and serve the patient portal (moved to end)
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    // Only serve index.html for paths that don't start with /api, /fhir, etc.
+    if (!req.path.startsWith('/api') && 
+        !req.path.startsWith('/fhir') && 
+        !req.path.startsWith('/openehr') &&
+        !req.path.startsWith('/session') &&
+        !req.path.startsWith('/consent') &&
+        !req.path.startsWith('/workflow') &&
+        !req.path.startsWith('/emr') &&
+        !req.path.startsWith('/analytics') &&
+        !req.path.startsWith('/chat') &&
+        !req.path.startsWith('/ui') &&
+        !req.path.startsWith('/test') &&
+        !req.path.startsWith('/health') &&
+        !req.path.startsWith('/oauth') &&
+        !req.path.startsWith('/auth') &&
+        !req.path.startsWith('/dev') &&
+        !req.path.startsWith('/postdicom') &&
+        !req.path.startsWith('/telehealth')) {
+        res.sendFile(path.join(__dirname, 'index.html'));
+    } else {
+        res.status(404).json({ error: 'Not Found', message: 'API endpoint not found' });
+    }
 });
 
 app.listen(PORT, '0.0.0.0', () => {

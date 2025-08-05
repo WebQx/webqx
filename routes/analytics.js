@@ -1,821 +1,595 @@
 /**
- * Data and Reporting API Routes for Telepsychiatry Platform
- * 
- * Handles anonymized data export, public health summaries, and analytical reporting
+ * Telepsychiatry Analytics Routes
+ * Handles analytics reporting, community health data, and research pool
  */
 
 const express = require('express');
-const { body, param, query, validationResult } = require('express-validator');
-const crypto = require('crypto');
-
+const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
-// In-memory storage for analytics data (use database in production)
-const analyticsData = new Map();
-const publicHealthSummaries = new Map();
-const reportSubmissions = new Map();
-
-// Mock data initialization
-const initializeMockData = () => {
-  // Sample deidentified patient data
-  const mockPatientData = [
-    {
-      id: 'patient_001',
-      demographics: {
-        ageGroup: '25-34',
-        gender: 'F',
-        region: 'Northeast',
-        language: 'en',
-        culturalBackground: 'Hispanic/Latino'
-      },
-      conditions: ['Depression', 'Anxiety'],
-      treatments: ['CBT', 'SSRI'],
-      outcomes: {
-        phq9_baseline: 15,
-        phq9_followup: 8,
-        gad7_baseline: 12,
-        gad7_followup: 6,
-        treatmentDuration: 16 // weeks
-      },
-      sessionData: {
-        totalSessions: 12,
-        completionRate: 0.85,
-        satisfactionScore: 4.2
-      }
-    },
-    {
-      id: 'patient_002',
-      demographics: {
-        ageGroup: '35-44',
-        gender: 'M',
-        region: 'West',
-        language: 'es',
-        culturalBackground: 'Caucasian'
-      },
-      conditions: ['PTSD', 'Depression'],
-      treatments: ['EMDR', 'Group Therapy'],
-      outcomes: {
-        pcl5_baseline: 45,
-        pcl5_followup: 28,
-        phq9_baseline: 18,
-        phq9_followup: 12,
-        treatmentDuration: 24
-      },
-      sessionData: {
-        totalSessions: 18,
-        completionRate: 0.92,
-        satisfactionScore: 4.7
-      }
-    },
-    {
-      id: 'patient_003',
-      demographics: {
-        ageGroup: '18-24',
-        gender: 'NB',
-        region: 'South',
-        language: 'en',
-        culturalBackground: 'African American'
-      },
-      conditions: ['Anxiety', 'ADHD'],
-      treatments: ['CBT', 'Medication Management'],
-      outcomes: {
-        gad7_baseline: 16,
-        gad7_followup: 9,
-        adhd_rating_baseline: 32,
-        adhd_rating_followup: 18,
-        treatmentDuration: 20
-      },
-      sessionData: {
-        totalSessions: 15,
-        completionRate: 0.78,
-        satisfactionScore: 4.0
-      }
-    }
-  ];
-
-  mockPatientData.forEach(patient => {
-    analyticsData.set(patient.id, patient);
-  });
-
-  // Initialize public health summaries
-  const mockPublicHealthData = {
-    'community-mental-health-2024': {
-      id: 'community-mental-health-2024',
-      title: 'Community Mental Health Summary 2024',
-      region: 'National',
-      timeframe: '2024-Q1-Q3',
-      summary: {
-        totalPatients: 1247,
-        demographics: {
-          ageGroups: {
-            '18-24': 23.5,
-            '25-34': 31.2,
-            '35-44': 22.8,
-            '45-54': 15.3,
-            '55-64': 5.9,
-            '65+': 1.3
-          },
-          genderDistribution: {
-            'F': 58.2,
-            'M': 38.7,
-            'NB': 2.8,
-            'Other': 0.3
-          },
-          culturalBackgrounds: {
-            'Caucasian': 45.6,
-            'Hispanic/Latino': 23.1,
-            'African American': 15.8,
-            'Asian': 8.9,
-            'Native American': 3.2,
-            'Other': 3.4
-          }
-        },
-        conditions: {
-          'Depression': 45.2,
-          'Anxiety': 38.7,
-          'PTSD': 12.3,
-          'Bipolar': 8.9,
-          'ADHD': 15.6,
-          'Substance Use': 6.7
-        },
-        treatments: {
-          'CBT': 52.3,
-          'EMDR': 8.9,
-          'Group Therapy': 23.4,
-          'Medication Management': 67.8,
-          'Family Therapy': 12.1
-        },
-        outcomes: {
-          averageImprovement: {
-            'PHQ-9': 42.3, // percentage improvement
-            'GAD-7': 38.9,
-            'PCL-5': 35.7
-          },
-          completionRates: {
-            overall: 78.5,
-            byCondition: {
-              'Depression': 82.1,
-              'Anxiety': 79.3,
-              'PTSD': 71.2
-            }
-          },
-          satisfactionScore: 4.3
-        }
-      },
-      trends: {
-        monthlyUtilization: [
-          { month: '2024-01', sessions: 892 },
-          { month: '2024-02', sessions: 943 },
-          { month: '2024-03', sessions: 1021 },
-          { month: '2024-04', sessions: 1156 },
-          { month: '2024-05', sessions: 1203 },
-          { month: '2024-06', sessions: 1287 },
-          { month: '2024-07', sessions: 1334 },
-          { month: '2024-08', sessions: 1298 },
-          { month: '2024-09', sessions: 1245 }
-        ],
-        emergingConcerns: [
-          'Increased anxiety among young adults',
-          'Rising demand for trauma-informed care',
-          'Need for culturally adapted interventions'
-        ]
-      },
-      generatedAt: new Date().toISOString()
-    }
-  };
-
-  Object.values(mockPublicHealthData).forEach(summary => {
-    publicHealthSummaries.set(summary.id, summary);
-  });
-};
-
-// Initialize mock data
-initializeMockData();
-
-// Middleware to validate session/auth
-const requireAuth = (req, res, next) => {
-  const sessionId = req.cookies?.sessionId || req.headers['x-session-id'] || req.headers.authorization?.replace('Bearer ', '');
-  
-  if (!sessionId) {
-    return res.status(401).json({
-      error: 'UNAUTHORIZED',
-      message: 'Authentication required'
-    });
-  }
-  
-  // Mock user for demo - in real implementation, validate with userService
-  req.user = { 
-    id: 'user-123', 
-    role: 'PROVIDER', 
-    name: 'Dr. Smith',
-    permissions: ['analytics.read', 'analytics.export', 'reports.submit']
-  };
-  next();
-};
-
-// Middleware to check admin permissions for sensitive data
-const requireAdminAuth = (req, res, next) => {
-  if (req.user.role !== 'ADMIN' && !req.user.permissions?.includes('analytics.admin')) {
-    return res.status(403).json({
-      error: 'ACCESS_DENIED',
-      message: 'Administrator privileges required'
-    });
-  }
-  next();
-};
-
-// Data anonymization helper
-const anonymizePatientData = (patientData) => {
-  return {
-    id: crypto.createHash('sha256').update(patientData.id).digest('hex').substring(0, 16),
-    demographics: patientData.demographics,
-    conditions: patientData.conditions,
-    treatments: patientData.treatments,
-    outcomes: patientData.outcomes,
-    sessionData: {
-      totalSessions: patientData.sessionData.totalSessions,
-      completionRate: patientData.sessionData.completionRate,
-      satisfactionScore: patientData.sessionData.satisfactionScore
-    }
-  };
-};
-
-/**
- * GET /analytics/deidentified
- * Exports anonymized data for research purposes
- */
-router.get('/deidentified',
-  requireAuth,
-  [
-    query('dateFrom')
-      .optional()
-      .isISO8601()
-      .withMessage('Date from must be in ISO 8601 format'),
-    query('dateTo')
-      .optional()
-      .isISO8601()
-      .withMessage('Date to must be in ISO 8601 format'),
-    query('conditions')
-      .optional()
-      .isString()
-      .withMessage('Conditions must be a comma-separated string'),
-    query('ageGroup')
-      .optional()
-      .isIn(['18-24', '25-34', '35-44', '45-54', '55-64', '65+'])
-      .withMessage('Invalid age group'),
-    query('region')
-      .optional()
-      .isIn(['Northeast', 'Southeast', 'Midwest', 'Southwest', 'West', 'National'])
-      .withMessage('Invalid region'),
-    query('format')
-      .optional()
-      .isIn(['json', 'csv'])
-      .withMessage('Format must be json or csv'),
-    query('limit')
-      .optional()
-      .isInt({ min: 1, max: 1000 })
-      .withMessage('Limit must be between 1 and 1000')
-  ],
-  async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid query parameters',
-          details: errors.array()
-        });
-      }
-
-      const {
-        dateFrom,
-        dateTo,
-        conditions,
-        ageGroup,
-        region,
-        format = 'json',
-        limit = 100
-      } = req.query;
-
-      // Filter and anonymize patient data
-      let filteredData = Array.from(analyticsData.values());
-
-      if (conditions) {
-        const conditionList = conditions.split(',').map(c => c.trim());
-        filteredData = filteredData.filter(patient => 
-          patient.conditions.some(condition => 
-            conditionList.includes(condition)
-          )
-        );
-      }
-
-      if (ageGroup) {
-        filteredData = filteredData.filter(patient => 
-          patient.demographics.ageGroup === ageGroup
-        );
-      }
-
-      if (region) {
-        filteredData = filteredData.filter(patient => 
-          patient.demographics.region === region
-        );
-      }
-
-      // Apply limit
-      filteredData = filteredData.slice(0, parseInt(limit));
-
-      // Anonymize data
-      const anonymizedData = filteredData.map(anonymizePatientData);
-
-      // Generate aggregated statistics
-      const statistics = {
-        totalRecords: anonymizedData.length,
-        demographics: {
-          ageGroups: {},
-          genders: {},
-          regions: {},
-          languages: {},
-          culturalBackgrounds: {}
-        },
-        conditions: {},
-        treatments: {},
-        outcomes: {
-          averageImprovements: {},
-          completionRates: [],
-          satisfactionScores: []
-        }
-      };
-
-      // Calculate statistics
-      anonymizedData.forEach(patient => {
-        // Demographics
-        const demo = patient.demographics;
-        statistics.demographics.ageGroups[demo.ageGroup] = 
-          (statistics.demographics.ageGroups[demo.ageGroup] || 0) + 1;
-        statistics.demographics.genders[demo.gender] = 
-          (statistics.demographics.genders[demo.gender] || 0) + 1;
-        statistics.demographics.regions[demo.region] = 
-          (statistics.demographics.regions[demo.region] || 0) + 1;
-        statistics.demographics.languages[demo.language] = 
-          (statistics.demographics.languages[demo.language] || 0) + 1;
-        statistics.demographics.culturalBackgrounds[demo.culturalBackground] = 
-          (statistics.demographics.culturalBackgrounds[demo.culturalBackground] || 0) + 1;
-
-        // Conditions
-        patient.conditions.forEach(condition => {
-          statistics.conditions[condition] = (statistics.conditions[condition] || 0) + 1;
-        });
-
-        // Treatments
-        patient.treatments.forEach(treatment => {
-          statistics.treatments[treatment] = (statistics.treatments[treatment] || 0) + 1;
-        });
-
-        // Outcomes
-        statistics.outcomes.completionRates.push(patient.sessionData.completionRate);
-        statistics.outcomes.satisfactionScores.push(patient.sessionData.satisfactionScore);
-      });
-
-      // Calculate averages
-      if (statistics.outcomes.completionRates.length > 0) {
-        statistics.outcomes.averageCompletionRate = 
-          statistics.outcomes.completionRates.reduce((a, b) => a + b, 0) / statistics.outcomes.completionRates.length;
-      }
-
-      if (statistics.outcomes.satisfactionScores.length > 0) {
-        statistics.outcomes.averageSatisfactionScore = 
-          statistics.outcomes.satisfactionScores.reduce((a, b) => a + b, 0) / statistics.outcomes.satisfactionScores.length;
-      }
-
-      const exportData = {
-        metadata: {
-          exportedAt: new Date().toISOString(),
-          exportedBy: req.user.id,
-          datasetId: `export_${Date.now()}`,
-          filters: {
-            dateFrom,
-            dateTo,
-            conditions: conditions?.split(','),
-            ageGroup,
-            region,
-            limit: parseInt(limit)
-          },
-          anonymizationMethod: 'SHA-256 hashing with demographic preservation',
-          complianceNote: 'All personally identifiable information removed'
-        },
-        statistics,
-        data: anonymizedData
-      };
-
-      // Return data in requested format
-      if (format === 'csv') {
-        // Convert to CSV format
-        const csvHeader = 'PatientID,AgeGroup,Gender,Region,Language,CulturalBackground,Conditions,Treatments,TotalSessions,CompletionRate,SatisfactionScore\n';
-        const csvRows = anonymizedData.map(patient => {
-          return [
-            patient.id,
-            patient.demographics.ageGroup,
-            patient.demographics.gender,
-            patient.demographics.region,
-            patient.demographics.language,
-            patient.demographics.culturalBackground,
-            patient.conditions.join(';'),
-            patient.treatments.join(';'),
-            patient.sessionData.totalSessions,
-            patient.sessionData.completionRate,
-            patient.sessionData.satisfactionScore
-          ].join(',');
-        }).join('\n');
-
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename="telepsychiatry_data_${Date.now()}.csv"`);
-        res.send(csvHeader + csvRows);
-      } else {
-        res.json(exportData);
-      }
-
-    } catch (error) {
-      console.error('[Analytics API] Export deidentified data error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to export anonymized data'
-      });
-    }
-  }
-);
-
-/**
- * GET /analytics/community
- * Provides public health summaries
- */
-router.get('/community',
-  requireAuth,
-  [
-    query('region')
-      .optional()
-      .isIn(['Northeast', 'Southeast', 'Midwest', 'Southwest', 'West', 'National'])
-      .withMessage('Invalid region'),
-    query('timeframe')
-      .optional()
-      .isString()
-      .withMessage('Timeframe must be a string'),
-    query('includesTrends')
-      .optional()
-      .isBoolean()
-      .withMessage('Include trends must be a boolean'),
-    query('summaryType')
-      .optional()
-      .isIn(['overview', 'detailed', 'trends'])
-      .withMessage('Invalid summary type')
-  ],
-  async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid query parameters',
-          details: errors.array()
-        });
-      }
-
-      const {
-        region,
-        timeframe,
-        includesTrends = true,
-        summaryType = 'overview'
-      } = req.query;
-
-      // Filter public health summaries
-      let summaries = Array.from(publicHealthSummaries.values());
-
-      if (region && region !== 'National') {
-        summaries = summaries.filter(summary => 
-          summary.region === region || summary.region === 'National'
-        );
-      }
-
-      if (timeframe) {
-        summaries = summaries.filter(summary => 
-          summary.timeframe.includes(timeframe)
-        );
-      }
-
-      // Sort by most recent
-      summaries.sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt));
-
-      // Format summaries based on type
-      const formattedSummaries = summaries.map(summary => {
-        const formatted = {
-          id: summary.id,
-          title: summary.title,
-          region: summary.region,
-          timeframe: summary.timeframe,
-          generatedAt: summary.generatedAt
-        };
-
-        if (summaryType === 'overview' || summaryType === 'detailed') {
-          formatted.summary = {
-            totalPatients: summary.summary.totalPatients,
-            topConditions: Object.entries(summary.summary.conditions)
-              .sort(([,a], [,b]) => b - a)
-              .slice(0, 5)
-              .map(([condition, percentage]) => ({ condition, percentage })),
-            demographics: summary.summary.demographics,
-            outcomes: summary.summary.outcomes
-          };
-        }
-
-        if (summaryType === 'detailed') {
-          formatted.fullSummary = summary.summary;
-        }
-
-        if ((summaryType === 'trends' || includesTrends) && summary.trends) {
-          formatted.trends = summary.trends;
-        }
-
-        return formatted;
-      });
-
-      // Generate insights
-      const insights = {
-        totalSummaries: formattedSummaries.length,
-        latestPeriod: formattedSummaries.length > 0 ? formattedSummaries[0].timeframe : null,
-        keyFindings: [
-          'Mental health service utilization continues to grow',
-          'Anxiety and depression remain the most common conditions',
-          'Telepsychiatry shows positive treatment outcomes',
-          'Cultural adaptation improves engagement rates'
-        ],
-        recommendations: [
-          'Expand access to underserved populations',
-          'Invest in culturally competent care models',
-          'Enhance early intervention programs',
-          'Strengthen provider training in telepsychiatry'
-        ]
-      };
-
-      res.json({
-        summaries: formattedSummaries,
-        insights,
-        metadata: {
-          requestedAt: new Date().toISOString(),
-          filters: { region, timeframe, summaryType },
-          dataSourceNote: 'Aggregated from anonymized patient records'
-        }
-      });
-
-    } catch (error) {
-      console.error('[Analytics API] Get community summaries error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to retrieve public health summaries'
-      });
-    }
-  }
-);
+// In-memory storage for demo purposes (use database/analytics platform in production)
+const analyticsReports = new Map();
+const communityData = new Map();
+const researchData = new Map();
+const deidentifiedData = new Map();
 
 /**
  * POST /analytics/report
- * Submits analytical findings to the admin dashboard
+ * Submit Analytics - Sends findings to the admin dashboard with offline fallback
  */
-router.post('/report',
-  requireAuth,
-  [
-    body('title')
-      .notEmpty()
-      .isLength({ min: 5, max: 200 })
-      .withMessage('Title must be between 5 and 200 characters'),
-    body('type')
-      .isIn(['outcome_analysis', 'utilization_report', 'quality_metrics', 'research_findings', 'safety_report'])
-      .withMessage('Valid report type is required'),
-    body('summary')
-      .notEmpty()
-      .isLength({ min: 20, max: 1000 })
-      .withMessage('Summary must be between 20 and 1000 characters'),
-    body('findings')
-      .isArray()
-      .withMessage('Findings must be an array'),
-    body('data')
-      .optional()
-      .isObject()
-      .withMessage('Data must be an object'),
-    body('recommendations')
-      .optional()
-      .isArray()
-      .withMessage('Recommendations must be an array'),
-    body('priority')
-      .optional()
-      .isIn(['low', 'medium', 'high', 'critical'])
-      .withMessage('Invalid priority level'),
-    body('confidential')
-      .optional()
-      .isBoolean()
-      .withMessage('Confidential must be a boolean')
-  ],
-  async (req, res) => {
+router.post('/report', (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid report data',
-          details: errors.array()
-        });
-      }
+        const {
+            sessionId,
+            clinicianId,
+            reportType,
+            data,
+            metrics,
+            outcomes,
+            culturalFactors,
+            offline = false
+        } = req.body;
 
-      const {
-        title,
-        type,
-        summary,
-        findings,
-        data = {},
-        recommendations = [],
-        priority = 'medium',
-        confidential = false,
-        tags = []
-      } = req.body;
-
-      const reportId = `report_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
-      const timestamp = new Date().toISOString();
-
-      const report = {
-        id: reportId,
-        title,
-        type,
-        summary,
-        findings,
-        data,
-        recommendations,
-        priority,
-        confidential,
-        tags,
-        metadata: {
-          submittedBy: req.user.id,
-          submitterName: req.user.name,
-          submittedAt: timestamp,
-          status: 'submitted',
-          reviewStatus: 'pending',
-          version: '1.0'
+        if (!sessionId || !reportType || !data) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Session ID, report type, and data are required'
+            });
         }
-      };
 
-      // Store the report
-      reportSubmissions.set(reportId, report);
+        const reportId = uuidv4();
+        const analyticsReport = {
+            reportId,
+            sessionId,
+            clinicianId,
+            reportType,
+            data,
+            metrics,
+            outcomes,
+            culturalFactors,
+            timestamp: new Date().toISOString(),
+            status: offline ? 'queued_for_sync' : 'submitted',
+            submissionMethod: offline ? 'offline_cache' : 'real_time'
+        };
 
-      // Generate report summary for response
-      const reportSummary = {
-        reportId,
-        status: 'submitted',
-        title: report.title,
-        type: report.type,
-        priority: report.priority,
-        findingsCount: findings.length,
-        recommendationsCount: recommendations.length,
-        submittedAt: timestamp,
-        estimatedReviewTime: priority === 'critical' ? '2-4 hours' : 
-                           priority === 'high' ? '1-2 days' : 
-                           priority === 'medium' ? '3-5 days' : '1-2 weeks'
-      };
+        analyticsReports.set(reportId, analyticsReport);
 
-      // Send notification to admin dashboard (mock)
-      const notificationId = `notification_${Date.now()}`;
-      console.log(`[Admin Dashboard] New ${priority} priority report submitted: ${title}`);
+        // Process for community health aggregation
+        processForCommunityHealth(analyticsReport);
 
-      res.status(201).json({
-        reportId,
-        status: 'submitted',
-        reportSummary,
-        notificationId,
-        nextSteps: [
-          'Report submitted to admin dashboard',
-          'Automated analysis will be performed',
-          'Admin team will review findings',
-          'Follow-up communication as needed'
-        ],
-        message: 'Analytical report submitted successfully'
-      });
+        // Process for research pool (if consented)
+        if (data.researchConsent) {
+            processForResearch(analyticsReport);
+        }
 
+        res.json({
+            success: true,
+            data: {
+                reportId,
+                status: analyticsReport.status,
+                submissionMethod: analyticsReport.submissionMethod,
+                timestamp: analyticsReport.timestamp,
+                willSyncOnReconnect: offline
+            }
+        });
     } catch (error) {
-      console.error('[Analytics API] Submit report error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to submit analytical report'
-      });
+        console.error('Error submitting analytics report:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to submit analytics report'
+        });
     }
-  }
-);
+});
 
 /**
- * GET /analytics/reports
- * Lists submitted reports (admin only)
+ * GET /analytics/community
+ * Public Health Dashboard - Displays region-specific public health summaries
  */
-router.get('/reports',
-  requireAuth,
-  requireAdminAuth,
-  [
-    query('type')
-      .optional()
-      .isIn(['outcome_analysis', 'utilization_report', 'quality_metrics', 'research_findings', 'safety_report'])
-      .withMessage('Invalid report type'),
-    query('priority')
-      .optional()
-      .isIn(['low', 'medium', 'high', 'critical'])
-      .withMessage('Invalid priority level'),
-    query('status')
-      .optional()
-      .isIn(['submitted', 'under_review', 'approved', 'rejected'])
-      .withMessage('Invalid status'),
-    query('limit')
-      .optional()
-      .isInt({ min: 1, max: 100 })
-      .withMessage('Limit must be between 1 and 100')
-  ],
-  async (req, res) => {
+router.get('/community', (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid query parameters',
-          details: errors.array()
-        });
-      }
+        const {
+            region,
+            timeframe = '30d',
+            demographic,
+            condition,
+            includePrivate = false
+        } = req.query;
 
-      const { type, priority, status, limit = 50 } = req.query;
-
-      // Filter reports
-      let reports = Array.from(reportSubmissions.values());
-
-      if (type) {
-        reports = reports.filter(report => report.type === type);
-      }
-
-      if (priority) {
-        reports = reports.filter(report => report.priority === priority);
-      }
-
-      if (status) {
-        reports = reports.filter(report => report.metadata.reviewStatus === status);
-      }
-
-      // Sort by submission date (most recent first)
-      reports.sort((a, b) => new Date(b.metadata.submittedAt) - new Date(a.metadata.submittedAt));
-
-      // Apply limit
-      reports = reports.slice(0, parseInt(limit));
-
-      // Generate summary statistics
-      const allReports = Array.from(reportSubmissions.values());
-      const statistics = {
-        total: allReports.length,
-        byType: {},
-        byPriority: {},
-        byStatus: {},
-        recentActivity: allReports.filter(r => 
-          new Date(r.metadata.submittedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-        ).length
-      };
-
-      allReports.forEach(report => {
-        statistics.byType[report.type] = (statistics.byType[report.type] || 0) + 1;
-        statistics.byPriority[report.priority] = (statistics.byPriority[report.priority] || 0) + 1;
-        statistics.byStatus[report.metadata.reviewStatus] = (statistics.byStatus[report.metadata.reviewStatus] || 0) + 1;
-      });
-
-      // Sanitize reports for response
-      const sanitizedReports = reports.map(report => ({
-        id: report.id,
-        title: report.title,
-        type: report.type,
-        summary: report.summary,
-        priority: report.priority,
-        findingsCount: report.findings.length,
-        recommendationsCount: report.recommendations.length,
-        submittedBy: report.metadata.submitterName,
-        submittedAt: report.metadata.submittedAt,
-        reviewStatus: report.metadata.reviewStatus,
-        confidential: report.confidential
-      }));
-
-      res.json({
-        reports: sanitizedReports,
-        statistics,
-        metadata: {
-          retrievedAt: new Date().toISOString(),
-          filters: { type, priority, status, limit: parseInt(limit) },
-          totalAvailable: Array.from(reportSubmissions.values()).length
+        // Aggregate community health data
+        const communityStats = aggregateCommunityStats(region, timeframe, demographic, condition);
+        
+        // Filter private information unless authorized
+        if (!includePrivate) {
+            delete communityStats.detailedBreakdowns;
+            delete communityStats.identifiablePatterns;
         }
-      });
 
+        res.json({
+            success: true,
+            data: {
+                region: region || 'all_regions',
+                timeframe,
+                demographic,
+                condition,
+                stats: communityStats,
+                lastUpdated: new Date().toISOString(),
+                dataPrivacy: 'aggregated_anonymous'
+            }
+        });
     } catch (error) {
-      console.error('[Analytics API] Get reports error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to retrieve reports'
-      });
+        console.error('Error retrieving community analytics:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to retrieve community health data'
+        });
     }
-  }
-);
+});
+
+/**
+ * GET /analytics/deidentified
+ * Research Pool - Provides anonymized data for research purposes (opt-in)
+ */
+router.get('/deidentified', (req, res) => {
+    try {
+        const {
+            researchId,
+            dataType,
+            condition,
+            demographic,
+            culturalContext,
+            timeframe = '1y',
+            limit = 1000
+        } = req.query;
+
+        if (!researchId) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Research ID is required for accessing deidentified data'
+            });
+        }
+
+        // Validate research authorization (mock validation)
+        const researchAuth = validateResearchAccess(researchId);
+        if (!researchAuth.valid) {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Invalid or unauthorized research ID'
+            });
+        }
+
+        // Filter and anonymize data based on criteria
+        const deidentifiedDataset = filterAndAnonymizeData({
+            dataType,
+            condition,
+            demographic,
+            culturalContext,
+            timeframe,
+            limit
+        });
+
+        res.json({
+            success: true,
+            data: {
+                researchId,
+                dataset: deidentifiedDataset,
+                metadata: {
+                    totalRecords: deidentifiedDataset.length,
+                    timeframe,
+                    dataTypes: getDataTypes(deidentifiedDataset),
+                    anonymizationLevel: 'full',
+                    consentVerified: true
+                },
+                filters: {
+                    dataType,
+                    condition,
+                    demographic,
+                    culturalContext,
+                    limit
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error retrieving deidentified research data:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to retrieve research data'
+        });
+    }
+});
+
+/**
+ * GET /analytics/dashboard
+ * Admin analytics dashboard summary
+ */
+router.get('/dashboard', (req, res) => {
+    try {
+        const {
+            timeframe = '7d',
+            region,
+            clinicianId
+        } = req.query;
+
+        // Generate dashboard metrics
+        const dashboardData = generateDashboardMetrics(timeframe, region, clinicianId);
+
+        res.json({
+            success: true,
+            data: {
+                timeframe,
+                region,
+                clinicianId,
+                metrics: dashboardData,
+                lastUpdated: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('Error generating dashboard analytics:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to generate dashboard analytics'
+        });
+    }
+});
+
+/**
+ * POST /analytics/sync
+ * Sync offline analytics data
+ */
+router.post('/sync', (req, res) => {
+    try {
+        const { offlineReports } = req.body;
+
+        if (!Array.isArray(offlineReports)) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'offlineReports must be an array'
+            });
+        }
+
+        const syncResults = [];
+
+        offlineReports.forEach(report => {
+            try {
+                const reportId = uuidv4();
+                const syncedReport = {
+                    ...report,
+                    reportId,
+                    syncedAt: new Date().toISOString(),
+                    status: 'synced',
+                    submissionMethod: 'offline_sync'
+                };
+
+                analyticsReports.set(reportId, syncedReport);
+
+                // Process for community health and research
+                processForCommunityHealth(syncedReport);
+                if (report.data?.researchConsent) {
+                    processForResearch(syncedReport);
+                }
+
+                syncResults.push({
+                    originalId: report.localId,
+                    reportId,
+                    status: 'synced'
+                });
+            } catch (syncError) {
+                syncResults.push({
+                    originalId: report.localId,
+                    status: 'error',
+                    error: syncError.message
+                });
+            }
+        });
+
+        res.json({
+            success: true,
+            data: {
+                syncResults,
+                totalProcessed: offlineReports.length,
+                successful: syncResults.filter(r => r.status === 'synced').length,
+                failed: syncResults.filter(r => r.status === 'error').length
+            }
+        });
+    } catch (error) {
+        console.error('Error syncing offline analytics:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to sync offline analytics data'
+        });
+    }
+});
+
+// Helper functions
+function processForCommunityHealth(report) {
+    const region = report.data.region || 'unknown';
+    
+    if (!communityData.has(region)) {
+        communityData.set(region, {
+            totalSessions: 0,
+            conditions: {},
+            demographics: {},
+            outcomes: {},
+            culturalFactors: {}
+        });
+    }
+
+    const regionData = communityData.get(region);
+    regionData.totalSessions++;
+
+    // Aggregate condition data
+    if (report.data.conditions) {
+        report.data.conditions.forEach(condition => {
+            regionData.conditions[condition] = (regionData.conditions[condition] || 0) + 1;
+        });
+    }
+
+    // Aggregate demographic data
+    if (report.data.demographics) {
+        Object.keys(report.data.demographics).forEach(key => {
+            if (!regionData.demographics[key]) regionData.demographics[key] = {};
+            const value = report.data.demographics[key];
+            regionData.demographics[key][value] = (regionData.demographics[key][value] || 0) + 1;
+        });
+    }
+
+    // Aggregate outcomes
+    if (report.outcomes) {
+        Object.keys(report.outcomes).forEach(outcome => {
+            regionData.outcomes[outcome] = (regionData.outcomes[outcome] || 0) + 1;
+        });
+    }
+
+    // Aggregate cultural factors
+    if (report.culturalFactors) {
+        Object.keys(report.culturalFactors).forEach(factor => {
+            regionData.culturalFactors[factor] = (regionData.culturalFactors[factor] || 0) + 1;
+        });
+    }
+}
+
+function processForResearch(report) {
+    // Create deidentified version for research
+    const deidentified = {
+        id: uuidv4(),
+        timestamp: report.timestamp,
+        reportType: report.reportType,
+        demographics: anonymizeDemographics(report.data.demographics),
+        conditions: report.data.conditions,
+        outcomes: report.outcomes,
+        culturalContext: report.culturalFactors?.culturalContext,
+        sessionDuration: report.metrics?.sessionDuration,
+        interventions: report.data.interventions,
+        // Remove all identifying information
+        sessionId: undefined,
+        clinicianId: undefined,
+        patientId: undefined
+    };
+
+    deidentifiedData.set(deidentified.id, deidentified);
+}
+
+function aggregateCommunityStats(region, timeframe, demographic, condition) {
+    const stats = {
+        totalSessions: 0,
+        topConditions: [],
+        demographicBreakdown: {},
+        outcomeMetrics: {},
+        culturalInsights: {},
+        timeframeCoverage: timeframe
+    };
+
+    // Aggregate data from all regions or specific region
+    const regionsToProcess = region ? [region] : Array.from(communityData.keys());
+
+    regionsToProcess.forEach(regionKey => {
+        const regionData = communityData.get(regionKey);
+        if (!regionData) return;
+
+        stats.totalSessions += regionData.totalSessions;
+
+        // Merge conditions
+        Object.keys(regionData.conditions).forEach(conditionKey => {
+            stats.topConditions.push({
+                condition: conditionKey,
+                count: regionData.conditions[conditionKey]
+            });
+        });
+
+        // Merge demographics
+        Object.keys(regionData.demographics).forEach(demoKey => {
+            if (!stats.demographicBreakdown[demoKey]) {
+                stats.demographicBreakdown[demoKey] = {};
+            }
+            Object.keys(regionData.demographics[demoKey]).forEach(value => {
+                const currentCount = stats.demographicBreakdown[demoKey][value] || 0;
+                stats.demographicBreakdown[demoKey][value] = currentCount + regionData.demographics[demoKey][value];
+            });
+        });
+    });
+
+    // Sort top conditions
+    stats.topConditions.sort((a, b) => b.count - a.count);
+    stats.topConditions = stats.topConditions.slice(0, 10);
+
+    return stats;
+}
+
+function validateResearchAccess(researchId) {
+    // Mock research validation
+    const validResearchIds = [
+        'research-001',
+        'research-002',
+        'university-study-123'
+    ];
+
+    return {
+        valid: validResearchIds.includes(researchId),
+        permissions: validResearchIds.includes(researchId) ? ['read', 'aggregate'] : []
+    };
+}
+
+function filterAndAnonymizeData(filters) {
+    const results = [];
+
+    for (const [id, data] of deidentifiedData.entries()) {
+        let matches = true;
+
+        if (filters.condition && !data.conditions?.includes(filters.condition)) {
+            matches = false;
+        }
+
+        if (filters.culturalContext && data.culturalContext !== filters.culturalContext) {
+            matches = false;
+        }
+
+        if (filters.dataType) {
+            // Filter by data type (e.g., 'outcomes', 'demographics', 'interventions')
+            if (!data[filters.dataType]) {
+                matches = false;
+            }
+        }
+
+        if (matches) {
+            results.push(data);
+        }
+
+        if (results.length >= parseInt(filters.limit)) {
+            break;
+        }
+    }
+
+    return results;
+}
+
+function anonymizeDemographics(demographics) {
+    if (!demographics) return null;
+
+    // Anonymize demographic data
+    return {
+        ageRange: getAgeRange(demographics.age),
+        gender: demographics.gender,
+        ethnicity: demographics.ethnicity,
+        region: demographics.region ? getRegionCategory(demographics.region) : null
+        // Remove specific identifying information
+    };
+}
+
+function getAgeRange(age) {
+    if (!age) return 'unknown';
+    const ageNum = parseInt(age);
+    if (ageNum < 18) return '0-17';
+    if (ageNum < 25) return '18-24';
+    if (ageNum < 35) return '25-34';
+    if (ageNum < 45) return '35-44';
+    if (ageNum < 55) return '45-54';
+    if (ageNum < 65) return '55-64';
+    return '65+';
+}
+
+function getRegionCategory(region) {
+    // Generalize regions to protect privacy
+    const regionMappings = {
+        'california': 'west_coast',
+        'texas': 'southwest',
+        'florida': 'southeast',
+        'new_york': 'northeast'
+    };
+    
+    return regionMappings[region.toLowerCase()] || 'other';
+}
+
+function generateDashboardMetrics(timeframe, region, clinicianId) {
+    return {
+        sessionsCompleted: Math.floor(Math.random() * 100) + 50,
+        averageSessionDuration: '45 minutes',
+        patientSatisfactionScore: 4.6,
+        topConditionsTreated: [
+            { condition: 'Anxiety Disorders', count: 45, percentage: 35 },
+            { condition: 'Depression', count: 38, percentage: 30 },
+            { condition: 'PTSD', count: 25, percentage: 20 },
+            { condition: 'ADHD', count: 19, percentage: 15 }
+        ],
+        culturalDistribution: {
+            'hispanic': 35,
+            'asian': 25,
+            'african_american': 20,
+            'caucasian': 15,
+            'other': 5
+        },
+        outcomeMetrics: {
+            improvementRate: 78,
+            completionRate: 85,
+            followUpCompliance: 72
+        },
+        trends: {
+            sessionGrowth: '+12%',
+            satisfactionTrend: '+0.3',
+            newPatients: 23
+        }
+    };
+}
+
+function getDataTypes(dataset) {
+    const types = new Set();
+    dataset.forEach(record => {
+        Object.keys(record).forEach(key => {
+            if (record[key] !== undefined && record[key] !== null) {
+                types.add(key);
+            }
+        });
+    });
+    return Array.from(types);
+}
+
+// Initialize some sample data for demo
+function initializeSampleAnalytics() {
+    // Sample community data
+    communityData.set('california', {
+        totalSessions: 150,
+        conditions: {
+            'anxiety': 45,
+            'depression': 38,
+            'ptsd': 25,
+            'adhd': 19
+        },
+        demographics: {
+            'ethnicity': {
+                'hispanic': 35,
+                'asian': 25,
+                'african_american': 20,
+                'caucasian': 15
+            }
+        },
+        outcomes: {
+            'improved': 120,
+            'maintained': 25,
+            'declined': 5
+        }
+    });
+
+    // Sample deidentified research data
+    for (let i = 0; i < 50; i++) {
+        const record = {
+            id: uuidv4(),
+            timestamp: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+            reportType: 'session_outcome',
+            demographics: {
+                ageRange: ['18-24', '25-34', '35-44', '45-54'][Math.floor(Math.random() * 4)],
+                gender: ['male', 'female', 'other'][Math.floor(Math.random() * 3)],
+                ethnicity: ['hispanic', 'asian', 'african_american', 'caucasian'][Math.floor(Math.random() * 4)]
+            },
+            conditions: [['anxiety', 'depression', 'ptsd', 'adhd'][Math.floor(Math.random() * 4)]],
+            outcomes: ['improved', 'maintained', 'declined'][Math.floor(Math.random() * 3)],
+            culturalContext: ['hispanic', 'asian', 'african_american'][Math.floor(Math.random() * 3)],
+            sessionDuration: Math.floor(Math.random() * 60) + 30,
+            interventions: ['CBT', 'mindfulness', 'medication_management'][Math.floor(Math.random() * 3)]
+        };
+        
+        deidentifiedData.set(record.id, record);
+    }
+}
+
+// Initialize sample data
+initializeSampleAnalytics();
 
 module.exports = router;

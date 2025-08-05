@@ -1,746 +1,559 @@
 /**
- * Electronic Medical Records (EMR) API Routes for Telepsychiatry Platform
- * 
- * Leverages existing FHIR infrastructure for HL7/FHIR-compliant patient records
- * and provides ICD-10/DSM-5 annotation capabilities
+ * Telepsychiatry EMR Integration Routes
+ * Handles ICD/DSM-5 tagging and patient record management
  */
 
 const express = require('express');
-const { param, body, query, validationResult } = require('express-validator');
-const crypto = require('crypto');
-
+const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
-// Mock EMR data storage (use FHIR server in production)
-const annotationStorage = new Map();
+// In-memory storage for demo purposes (use database in production)
+const patientRecords = new Map();
+const diagnosticTags = new Map();
+const sessionNotes = new Map();
 
-// Middleware to validate session/auth
-const requireAuth = (req, res, next) => {
-  const sessionId = req.cookies?.sessionId || req.headers['x-session-id'] || req.headers.authorization?.replace('Bearer ', '');
-  
-  if (!sessionId) {
-    return res.status(401).json({
-      error: 'UNAUTHORIZED',
-      message: 'Authentication required'
-    });
-  }
-  
-  // Mock user for demo - in real implementation, validate with userService
-  req.user = { id: 'user-123', role: 'PROVIDER', name: 'Dr. Smith' };
-  next();
-};
-
-// Helper function to fetch FHIR data (mock implementation)
-const fetchFHIRResource = async (resourceType, patientId) => {
-  // In real implementation, this would call the FHIR server
-  // For demo, return mock FHIR-compliant data
-  
-  const mockPatient = {
-    resourceType: 'Patient',
-    id: patientId,
-    identifier: [
-      {
-        system: 'http://hospital.example.org/patient-ids',
-        value: patientId
-      }
-    ],
-    name: [
-      {
-        use: 'official',
-        family: 'Doe',
-        given: ['John', 'Michael']
-      }
-    ],
-    telecom: [
-      {
-        system: 'phone',
-        value: '+1-555-0123',
-        use: 'home'
-      },
-      {
-        system: 'email',
-        value: 'john.doe@example.com'
-      }
-    ],
-    gender: 'male',
-    birthDate: '1985-03-15',
-    address: [
-      {
-        use: 'home',
-        line: ['123 Main Street'],
-        city: 'Anytown',
-        state: 'CA',
-        postalCode: '12345',
-        country: 'US'
-      }
-    ],
-    maritalStatus: {
-      coding: [
-        {
-          system: 'http://terminology.hl7.org/CodeSystem/v3-MaritalStatus',
-          code: 'M',
-          display: 'Married'
-        }
-      ]
-    }
-  };
-
-  const mockObservations = [
-    {
-      resourceType: 'Observation',
-      id: `obs-${patientId}-1`,
-      status: 'final',
-      category: [
-        {
-          coding: [
-            {
-              system: 'http://terminology.hl7.org/CodeSystem/observation-category',
-              code: 'vital-signs',
-              display: 'Vital Signs'
-            }
-          ]
-        }
-      ],
-      code: {
-        coding: [
-          {
-            system: 'http://loinc.org',
-            code: '85354-9',
-            display: 'Blood pressure panel with all children optional'
-          }
-        ]
-      },
-      subject: {
-        reference: `Patient/${patientId}`
-      },
-      effectiveDateTime: '2023-12-01T10:30:00Z',
-      component: [
-        {
-          code: {
-            coding: [
-              {
-                system: 'http://loinc.org',
-                code: '8480-6',
-                display: 'Systolic blood pressure'
-              }
-            ]
-          },
-          valueQuantity: {
-            value: 120,
-            unit: 'mmHg',
-            system: 'http://unitsofmeasure.org',
-            code: 'mm[Hg]'
-          }
-        },
-        {
-          code: {
-            coding: [
-              {
-                system: 'http://loinc.org',
-                code: '8462-4',
-                display: 'Diastolic blood pressure'
-              }
-            ]
-          },
-          valueQuantity: {
-            value: 80,
-            unit: 'mmHg',
-            system: 'http://unitsofmeasure.org',
-            code: 'mm[Hg]'
-          }
-        }
-      ]
+// ICD-10 and DSM-5 code mappings for psychiatric conditions
+const diagnosticCodes = {
+    'icd10': {
+        'F32': { code: 'F32', description: 'Major depressive disorder, single episode', category: 'mood' },
+        'F33': { code: 'F33', description: 'Major depressive disorder, recurrent', category: 'mood' },
+        'F41.1': { code: 'F41.1', description: 'Generalized anxiety disorder', category: 'anxiety' },
+        'F41.0': { code: 'F41.0', description: 'Panic disorder', category: 'anxiety' },
+        'F43.10': { code: 'F43.10', description: 'Post-traumatic stress disorder', category: 'trauma' },
+        'F84.0': { code: 'F84.0', description: 'Autism spectrum disorder', category: 'neurodevelopmental' },
+        'F90.9': { code: 'F90.9', description: 'Attention-deficit/hyperactivity disorder', category: 'neurodevelopmental' }
     },
-    {
-      resourceType: 'Observation',
-      id: `obs-${patientId}-2`,
-      status: 'final',
-      category: [
-        {
-          coding: [
-            {
-              system: 'http://terminology.hl7.org/CodeSystem/observation-category',
-              code: 'survey',
-              display: 'Survey'
-            }
-          ]
-        }
-      ],
-      code: {
-        coding: [
-          {
-            system: 'http://loinc.org',
-            code: '44249-1',
-            display: 'PHQ-9 total score'
-          }
-        ]
-      },
-      subject: {
-        reference: `Patient/${patientId}`
-      },
-      effectiveDateTime: '2023-12-01T10:00:00Z',
-      valueInteger: 12,
-      interpretation: [
-        {
-          coding: [
-            {
-              system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',
-              code: 'H',
-              display: 'High'
-            }
-          ],
-          text: 'Moderate depression'
-        }
-      ]
+    'dsm5': {
+        '296.23': { code: '296.23', description: 'Major Depressive Disorder, Single Episode, Severe', category: 'mood' },
+        '296.33': { code: '296.33', description: 'Major Depressive Disorder, Recurrent Episode, Severe', category: 'mood' },
+        '300.02': { code: '300.02', description: 'Generalized Anxiety Disorder', category: 'anxiety' },
+        '300.01': { code: '300.01', description: 'Panic Disorder', category: 'anxiety' },
+        '309.81': { code: '309.81', description: 'Posttraumatic Stress Disorder', category: 'trauma' },
+        '299.00': { code: '299.00', description: 'Autism Spectrum Disorder', category: 'neurodevelopmental' },
+        '314.01': { code: '314.01', description: 'Attention-Deficit/Hyperactivity Disorder, Combined Presentation', category: 'neurodevelopmental' }
     }
-  ];
-
-  const mockConditions = [
-    {
-      resourceType: 'Condition',
-      id: `cond-${patientId}-1`,
-      clinicalStatus: {
-        coding: [
-          {
-            system: 'http://terminology.hl7.org/CodeSystem/condition-clinical',
-            code: 'active'
-          }
-        ]
-      },
-      verificationStatus: {
-        coding: [
-          {
-            system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status',
-            code: 'confirmed'
-          }
-        ]
-      },
-      category: [
-        {
-          coding: [
-            {
-              system: 'http://terminology.hl7.org/CodeSystem/condition-category',
-              code: 'encounter-diagnosis',
-              display: 'Encounter Diagnosis'
-            }
-          ]
-        }
-      ],
-      code: {
-        coding: [
-          {
-            system: 'http://snomed.info/sct',
-            code: '35489007',
-            display: 'Depressive disorder'
-          },
-          {
-            system: 'http://hl7.org/fhir/sid/icd-10-cm',
-            code: 'F32.9',
-            display: 'Major depressive disorder, single episode, unspecified'
-          }
-        ]
-      },
-      subject: {
-        reference: `Patient/${patientId}`
-      },
-      onsetDateTime: '2023-10-15T00:00:00Z',
-      recordedDate: '2023-10-15T10:30:00Z'
-    }
-  ];
-
-  const mockMedications = [
-    {
-      resourceType: 'MedicationRequest',
-      id: `med-${patientId}-1`,
-      status: 'active',
-      intent: 'order',
-      medicationCodeableConcept: {
-        coding: [
-          {
-            system: 'http://www.nlm.nih.gov/research/umls/rxnorm',
-            code: '1040028',
-            display: 'Sertraline 50 MG Oral Tablet'
-          }
-        ]
-      },
-      subject: {
-        reference: `Patient/${patientId}`
-      },
-      authoredOn: '2023-10-15T10:30:00Z',
-      dosageInstruction: [
-        {
-          text: 'Take 1 tablet by mouth daily',
-          timing: {
-            repeat: {
-              frequency: 1,
-              period: 1,
-              periodUnit: 'd'
-            }
-          },
-          route: {
-            coding: [
-              {
-                system: 'http://snomed.info/sct',
-                code: '26643006',
-                display: 'Oral route'
-              }
-            ]
-          },
-          doseAndRate: [
-            {
-              doseQuantity: {
-                value: 1,
-                unit: 'tablet',
-                system: 'http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm',
-                code: 'TAB'
-              }
-            }
-          ]
-        }
-      ]
-    }
-  ];
-
-  switch (resourceType) {
-    case 'Patient':
-      return mockPatient;
-    case 'Observation':
-      return mockObservations;
-    case 'Condition':
-      return mockConditions;
-    case 'MedicationRequest':
-      return mockMedications;
-    default:
-      return null;
-  }
 };
-
-/**
- * GET /emr/records/:patientId
- * Fetches HL7/FHIR-compliant patient records
- */
-router.get('/records/:patientId',
-  requireAuth,
-  [
-    param('patientId')
-      .notEmpty()
-      .isAlphanumeric()
-      .withMessage('Valid patient ID is required'),
-    query('resourceType')
-      .optional()
-      .isIn(['Patient', 'Observation', 'Condition', 'MedicationRequest', 'Encounter', 'DiagnosticReport'])
-      .withMessage('Invalid resource type'),
-    query('category')
-      .optional()
-      .isString()
-      .withMessage('Category must be a string'),
-    query('dateFrom')
-      .optional()
-      .isISO8601()
-      .withMessage('Date from must be in ISO 8601 format'),
-    query('dateTo')
-      .optional()
-      .isISO8601()
-      .withMessage('Date to must be in ISO 8601 format'),
-    query('includeAnnotations')
-      .optional()
-      .isBoolean()
-      .withMessage('Include annotations must be a boolean')
-  ],
-  async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid request parameters',
-          details: errors.array()
-        });
-      }
-
-      const { patientId } = req.params;
-      const { resourceType, category, dateFrom, dateTo, includeAnnotations = true } = req.query;
-
-      // Fetch FHIR resources
-      const records = {
-        patient: await fetchFHIRResource('Patient', patientId),
-        observations: resourceType === 'Observation' || !resourceType ? await fetchFHIRResource('Observation', patientId) : [],
-        conditions: resourceType === 'Condition' || !resourceType ? await fetchFHIRResource('Condition', patientId) : [],
-        medications: resourceType === 'MedicationRequest' || !resourceType ? await fetchFHIRResource('MedicationRequest', patientId) : []
-      };
-
-      // Filter by date range if specified
-      if (dateFrom || dateTo) {
-        const filterByDate = (resource) => {
-          const effectiveDate = resource.effectiveDateTime || resource.onsetDateTime || resource.authoredOn || resource.recordedDate;
-          if (!effectiveDate) return true;
-          
-          const resourceDate = new Date(effectiveDate);
-          if (dateFrom && resourceDate < new Date(dateFrom)) return false;
-          if (dateTo && resourceDate > new Date(dateTo)) return false;
-          return true;
-        };
-
-        records.observations = records.observations.filter(filterByDate);
-        records.conditions = records.conditions.filter(filterByDate);
-        records.medications = records.medications.filter(filterByDate);
-      }
-
-      // Include annotations if requested
-      let annotations = [];
-      if (includeAnnotations) {
-        annotations = Array.from(annotationStorage.values()).filter(
-          annotation => annotation.patientId === patientId
-        );
-      }
-
-      // Build FHIR Bundle response
-      const bundle = {
-        resourceType: 'Bundle',
-        id: `bundle-${patientId}-${Date.now()}`,
-        type: 'searchset',
-        timestamp: new Date().toISOString(),
-        total: 0,
-        entry: []
-      };
-
-      // Add resources to bundle
-      if (records.patient) {
-        bundle.entry.push({
-          fullUrl: `Patient/${patientId}`,
-          resource: records.patient
-        });
-        bundle.total++;
-      }
-
-      [...records.observations, ...records.conditions, ...records.medications].forEach(resource => {
-        if (resource) {
-          bundle.entry.push({
-            fullUrl: `${resource.resourceType}/${resource.id}`,
-            resource: resource
-          });
-          bundle.total++;
-        }
-      });
-
-      // Add summary information
-      const summary = {
-        patientId,
-        totalRecords: bundle.total,
-        recordTypes: {
-          observations: records.observations.length,
-          conditions: records.conditions.length,
-          medications: records.medications.length
-        },
-        dateRange: {
-          from: dateFrom || null,
-          to: dateTo || null
-        },
-        annotations: annotations.length,
-        generatedAt: new Date().toISOString()
-      };
-
-      res.json({
-        bundle,
-        summary,
-        annotations: includeAnnotations ? annotations : undefined,
-        fhirVersion: '4.0.1',
-        compliance: 'HL7 FHIR R4'
-      });
-
-    } catch (error) {
-      console.error('[EMR API] Fetch records error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to fetch patient records'
-      });
-    }
-  }
-);
 
 /**
  * POST /emr/tag
- * Adds ICD-10 or DSM-5 annotations to patient records
+ * ICD/DSM-5 Tagging - Enables clinicians to annotate patient records with diagnostic codes
  */
-router.post('/tag',
-  requireAuth,
-  [
-    body('patientId')
-      .notEmpty()
-      .isAlphanumeric()
-      .withMessage('Valid patient ID is required'),
-    body('resourceId')
-      .notEmpty()
-      .isString()
-      .withMessage('Resource ID is required'),
-    body('resourceType')
-      .isIn(['Condition', 'Observation', 'Encounter', 'DiagnosticReport'])
-      .withMessage('Valid resource type is required'),
-    body('codingSystem')
-      .isIn(['ICD-10-CM', 'DSM-5', 'SNOMED-CT', 'LOINC'])
-      .withMessage('Valid coding system is required'),
-    body('code')
-      .notEmpty()
-      .isString()
-      .withMessage('Code is required'),
-    body('display')
-      .notEmpty()
-      .isString()
-      .withMessage('Display name is required'),
-    body('category')
-      .optional()
-      .isIn(['diagnosis', 'symptom', 'assessment', 'treatment', 'outcome'])
-      .withMessage('Invalid category'),
-    body('severity')
-      .optional()
-      .isIn(['mild', 'moderate', 'severe', 'critical'])
-      .withMessage('Invalid severity level'),
-    body('confidence')
-      .optional()
-      .isFloat({ min: 0, max: 1 })
-      .withMessage('Confidence must be between 0 and 1'),
-    body('notes')
-      .optional()
-      .isString()
-      .isLength({ max: 1000 })
-      .withMessage('Notes must be less than 1000 characters')
-  ],
-  async (req, res) => {
+router.post('/tag', (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid annotation data',
-          details: errors.array()
+        const {
+            patientId,
+            sessionId,
+            clinicianId,
+            diagnosticCode,
+            codeSystem, // 'icd10' or 'dsm5'
+            severity,
+            confidence,
+            notes,
+            culturalConsiderations
+        } = req.body;
+
+        if (!patientId || !clinicianId || !diagnosticCode || !codeSystem) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Patient ID, clinician ID, diagnostic code, and code system are required'
+            });
+        }
+
+        // Validate diagnostic code
+        const codeInfo = diagnosticCodes[codeSystem]?.[diagnosticCode];
+        if (!codeInfo) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: `Invalid diagnostic code ${diagnosticCode} for system ${codeSystem}`
+            });
+        }
+
+        const tagId = uuidv4();
+        const diagnosticTag = {
+            tagId,
+            patientId,
+            sessionId,
+            clinicianId,
+            diagnosticCode,
+            codeSystem,
+            codeDescription: codeInfo.description,
+            category: codeInfo.category,
+            severity,
+            confidence,
+            notes,
+            culturalConsiderations,
+            timestamp: new Date().toISOString(),
+            status: 'active'
+        };
+
+        diagnosticTags.set(tagId, diagnosticTag);
+
+        // Update patient record with new tag
+        updatePatientRecordWithTag(patientId, diagnosticTag);
+
+        res.json({
+            success: true,
+            data: {
+                tagId,
+                diagnosticCode,
+                codeSystem,
+                description: codeInfo.description,
+                category: codeInfo.category,
+                timestamp: diagnosticTag.timestamp,
+                status: 'active'
+            }
         });
-      }
-
-      const {
-        patientId,
-        resourceId,
-        resourceType,
-        codingSystem,
-        code,
-        display,
-        category = 'diagnosis',
-        severity,
-        confidence = 1.0,
-        notes
-      } = req.body;
-
-      // Validate coding system and code format
-      const codeValidators = {
-        'ICD-10-CM': /^[A-Z]\d{2}(\.\d{1,3})?$/,
-        'DSM-5': /^\d{3}\.\d{2}$/,
-        'SNOMED-CT': /^\d+$/,
-        'LOINC': /^\d{4,5}-\d$/
-      };
-
-      if (codeValidators[codingSystem] && !codeValidators[codingSystem].test(code)) {
-        return res.status(400).json({
-          error: 'INVALID_CODE_FORMAT',
-          message: `Invalid ${codingSystem} code format: ${code}`
-        });
-      }
-
-      const annotationId = `annotation_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
-      const timestamp = new Date().toISOString();
-
-      const annotation = {
-        id: annotationId,
-        patientId,
-        resourceId,
-        resourceType,
-        coding: {
-          system: {
-            'ICD-10-CM': 'http://hl7.org/fhir/sid/icd-10-cm',
-            'DSM-5': 'http://www.apa.org/dsm5',
-            'SNOMED-CT': 'http://snomed.info/sct',
-            'LOINC': 'http://loinc.org'
-          }[codingSystem],
-          code,
-          display
-        },
-        category,
-        severity,
-        confidence,
-        notes,
-        annotatedBy: {
-          providerId: req.user.id,
-          providerName: req.user.name,
-          timestamp
-        },
-        status: 'active',
-        version: '1.0'
-      };
-
-      // Store annotation
-      annotationStorage.set(annotationId, annotation);
-
-      // In real implementation, you might also update the FHIR resource
-      // to include the new coding or create a separate Observation
-
-      res.status(201).json({
-        annotationId,
-        status: 'created',
-        annotation: {
-          id: annotation.id,
-          patientId: annotation.patientId,
-          resourceId: annotation.resourceId,
-          coding: annotation.coding,
-          category: annotation.category,
-          severity: annotation.severity,
-          confidence: annotation.confidence,
-          timestamp: annotation.annotatedBy.timestamp
-        },
-        message: 'Annotation added successfully'
-      });
-
     } catch (error) {
-      console.error('[EMR API] Add annotation error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to add annotation'
-      });
+        console.error('Error creating diagnostic tag:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to create diagnostic tag'
+        });
     }
-  }
-);
+});
 
 /**
- * GET /emr/annotations/:patientId
- * Retrieves all annotations for a patient
+ * GET /emr/tag/search
+ * Search diagnostic codes
  */
-router.get('/annotations/:patientId',
-  requireAuth,
-  [
-    param('patientId')
-      .notEmpty()
-      .isAlphanumeric()
-      .withMessage('Valid patient ID is required'),
-    query('codingSystem')
-      .optional()
-      .isIn(['ICD-10-CM', 'DSM-5', 'SNOMED-CT', 'LOINC'])
-      .withMessage('Invalid coding system'),
-    query('category')
-      .optional()
-      .isIn(['diagnosis', 'symptom', 'assessment', 'treatment', 'outcome'])
-      .withMessage('Invalid category'),
-    query('resourceType')
-      .optional()
-      .isIn(['Condition', 'Observation', 'Encounter', 'DiagnosticReport'])
-      .withMessage('Invalid resource type')
-  ],
-  async (req, res) => {
+router.get('/tag/search', (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid query parameters',
-          details: errors.array()
-        });
-      }
+        const { 
+            query, 
+            codeSystem = 'both', 
+            category,
+            limit = 20 
+        } = req.query;
 
-      const { patientId } = req.params;
-      const { codingSystem, category, resourceType } = req.query;
-
-      // Filter annotations
-      let annotations = Array.from(annotationStorage.values()).filter(
-        annotation => annotation.patientId === patientId
-      );
-
-      if (codingSystem) {
-        const systemUrl = {
-          'ICD-10-CM': 'http://hl7.org/fhir/sid/icd-10-cm',
-          'DSM-5': 'http://www.apa.org/dsm5',
-          'SNOMED-CT': 'http://snomed.info/sct',
-          'LOINC': 'http://loinc.org'
-        }[codingSystem];
-        
-        annotations = annotations.filter(
-          annotation => annotation.coding.system === systemUrl
-        );
-      }
-
-      if (category) {
-        annotations = annotations.filter(
-          annotation => annotation.category === category
-        );
-      }
-
-      if (resourceType) {
-        annotations = annotations.filter(
-          annotation => annotation.resourceType === resourceType
-        );
-      }
-
-      // Sort by timestamp (most recent first)
-      annotations.sort((a, b) => 
-        new Date(b.annotatedBy.timestamp) - new Date(a.annotatedBy.timestamp)
-      );
-
-      // Generate summary statistics
-      const summary = {
-        total: annotations.length,
-        byCodingSystem: {},
-        byCategory: {},
-        byResourceType: {},
-        confidenceStats: {
-          average: annotations.length > 0 ? annotations.reduce((sum, a) => sum + a.confidence, 0) / annotations.length : 0,
-          high: annotations.filter(a => a.confidence >= 0.8).length,
-          medium: annotations.filter(a => a.confidence >= 0.6 && a.confidence < 0.8).length,
-          low: annotations.filter(a => a.confidence < 0.6).length
+        if (!query || query.length < 2) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Search query must be at least 2 characters long'
+            });
         }
-      };
 
-      // Calculate statistics
-      annotations.forEach(annotation => {
-        const system = Object.keys({
-          'http://hl7.org/fhir/sid/icd-10-cm': 'ICD-10-CM',
-          'http://www.apa.org/dsm5': 'DSM-5',
-          'http://snomed.info/sct': 'SNOMED-CT',
-          'http://loinc.org': 'LOINC'
-        }).find(key => key === annotation.coding.system) || 'Unknown';
-        
-        const systemName = {
-          'http://hl7.org/fhir/sid/icd-10-cm': 'ICD-10-CM',
-          'http://www.apa.org/dsm5': 'DSM-5',
-          'http://snomed.info/sct': 'SNOMED-CT',
-          'http://loinc.org': 'LOINC'
-        }[system] || 'Unknown';
+        const searchResults = [];
+        const searchTerm = query.toLowerCase();
 
-        summary.byCodingSystem[systemName] = (summary.byCodingSystem[systemName] || 0) + 1;
-        summary.byCategory[annotation.category] = (summary.byCategory[annotation.category] || 0) + 1;
-        summary.byResourceType[annotation.resourceType] = (summary.byResourceType[annotation.resourceType] || 0) + 1;
-      });
+        // Search ICD-10 codes
+        if (codeSystem === 'both' || codeSystem === 'icd10') {
+            Object.entries(diagnosticCodes.icd10).forEach(([code, info]) => {
+                if (
+                    code.toLowerCase().includes(searchTerm) ||
+                    info.description.toLowerCase().includes(searchTerm)
+                ) {
+                    if (!category || info.category === category) {
+                        searchResults.push({
+                            ...info,
+                            codeSystem: 'icd10'
+                        });
+                    }
+                }
+            });
+        }
 
-      res.json({
-        patientId,
-        annotations: annotations.map(annotation => ({
-          id: annotation.id,
-          resourceId: annotation.resourceId,
-          resourceType: annotation.resourceType,
-          coding: annotation.coding,
-          category: annotation.category,
-          severity: annotation.severity,
-          confidence: annotation.confidence,
-          notes: annotation.notes,
-          annotatedBy: annotation.annotatedBy,
-          status: annotation.status
-        })),
-        summary,
-        generatedAt: new Date().toISOString()
-      });
+        // Search DSM-5 codes
+        if (codeSystem === 'both' || codeSystem === 'dsm5') {
+            Object.entries(diagnosticCodes.dsm5).forEach(([code, info]) => {
+                if (
+                    code.toLowerCase().includes(searchTerm) ||
+                    info.description.toLowerCase().includes(searchTerm)
+                ) {
+                    if (!category || info.category === category) {
+                        searchResults.push({
+                            ...info,
+                            codeSystem: 'dsm5'
+                        });
+                    }
+                }
+            });
+        }
 
+        // Limit results
+        const limitedResults = searchResults.slice(0, parseInt(limit));
+
+        res.json({
+            success: true,
+            data: {
+                codes: limitedResults,
+                totalFound: searchResults.length,
+                query,
+                codeSystem,
+                category
+            }
+        });
     } catch (error) {
-      console.error('[EMR API] Get annotations error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to retrieve annotations'
-      });
+        console.error('Error searching diagnostic codes:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to search diagnostic codes'
+        });
     }
-  }
-);
+});
+
+/**
+ * POST /emr/records/:id/notes
+ * Add notes to patient record (stored locally during session, pushed after session)
+ */
+router.post('/records/:id/notes', (req, res) => {
+    try {
+        const { id: patientId } = req.params;
+        const {
+            sessionId,
+            clinicianId,
+            noteType = 'progress',
+            content,
+            tags,
+            isPrivate = false,
+            culturalNotes
+        } = req.body;
+
+        if (!content) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Note content is required'
+            });
+        }
+
+        const noteId = uuidv4();
+        const note = {
+            noteId,
+            patientId,
+            sessionId,
+            clinicianId,
+            noteType,
+            content,
+            tags: tags || [],
+            isPrivate,
+            culturalNotes,
+            timestamp: new Date().toISOString(),
+            status: sessionId ? 'draft' : 'finalized' // Draft during session, finalized after
+        };
+
+        // Store in session notes if part of active session
+        if (sessionId) {
+            let sessionNotesMap = sessionNotes.get(sessionId) || [];
+            sessionNotesMap.push(note);
+            sessionNotes.set(sessionId, sessionNotesMap);
+        }
+
+        // Also update patient record
+        updatePatientRecordWithNote(patientId, note);
+
+        res.json({
+            success: true,
+            data: {
+                noteId,
+                patientId,
+                sessionId,
+                status: note.status,
+                timestamp: note.timestamp,
+                storedLocally: !!sessionId
+            }
+        });
+    } catch (error) {
+        console.error('Error adding patient note:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to add patient note'
+        });
+    }
+});
+
+/**
+ * GET /emr/records/:id
+ * Get patient record by ID
+ */
+router.get('/records/:id', (req, res) => {
+    try {
+        const { id: patientId } = req.params;
+        const { includeNotes = true, includeTags = true } = req.query;
+
+        let record = patientRecords.get(patientId);
+        if (!record) {
+            // Create basic record if doesn't exist
+            record = createBasicPatientRecord(patientId);
+            patientRecords.set(patientId, record);
+        }
+
+        // Filter sensitive information based on user permissions
+        const sanitizedRecord = {
+            patientId: record.patientId,
+            demographics: record.demographics,
+            lastUpdated: record.lastUpdated
+        };
+
+        if (includeTags === 'true') {
+            sanitizedRecord.diagnosticTags = record.diagnosticTags || [];
+        }
+
+        if (includeNotes === 'true') {
+            sanitizedRecord.notes = record.notes?.map(note => ({
+                noteId: note.noteId,
+                noteType: note.noteType,
+                content: note.isPrivate ? '[Private Note]' : note.content,
+                timestamp: note.timestamp,
+                clinicianId: note.clinicianId,
+                tags: note.tags,
+                status: note.status
+            })) || [];
+        }
+
+        res.json({
+            success: true,
+            data: sanitizedRecord
+        });
+    } catch (error) {
+        console.error('Error retrieving patient record:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to retrieve patient record'
+        });
+    }
+});
+
+/**
+ * POST /emr/records/:id/finalize-session
+ * Finalize session notes (push from local storage to permanent record)
+ */
+router.post('/records/:id/finalize-session', (req, res) => {
+    try {
+        const { id: patientId } = req.params;
+        const { sessionId, clinicianId } = req.body;
+
+        if (!sessionId) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Session ID is required'
+            });
+        }
+
+        // Get session notes
+        const sessionNotesArray = sessionNotes.get(sessionId) || [];
+        
+        // Update all draft notes to finalized
+        const finalizedNotes = sessionNotesArray.map(note => ({
+            ...note,
+            status: 'finalized',
+            finalizedAt: new Date().toISOString(),
+            finalizedBy: clinicianId
+        }));
+
+        // Update patient record with finalized notes
+        let record = patientRecords.get(patientId);
+        if (!record) {
+            record = createBasicPatientRecord(patientId);
+        }
+
+        if (!record.notes) record.notes = [];
+        
+        // Remove any existing draft notes for this session and add finalized ones
+        record.notes = record.notes.filter(note => note.sessionId !== sessionId);
+        record.notes.push(...finalizedNotes);
+        record.lastUpdated = new Date().toISOString();
+
+        patientRecords.set(patientId, record);
+
+        // Clear session notes
+        sessionNotes.delete(sessionId);
+
+        res.json({
+            success: true,
+            data: {
+                patientId,
+                sessionId,
+                finalizedNotesCount: finalizedNotes.length,
+                finalizedAt: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('Error finalizing session notes:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to finalize session notes'
+        });
+    }
+});
+
+/**
+ * GET /emr/tag/patient/:patientId
+ * Get all diagnostic tags for a patient
+ */
+router.get('/tag/patient/:patientId', (req, res) => {
+    try {
+        const { patientId } = req.params;
+        const { status = 'active', category } = req.query;
+
+        const patientTags = [];
+        for (const [tagId, tag] of diagnosticTags.entries()) {
+            if (tag.patientId === patientId) {
+                if (status && tag.status !== status) continue;
+                if (category && tag.category !== category) continue;
+                
+                patientTags.push(tag);
+            }
+        }
+
+        // Group by category for easier viewing
+        const tagsByCategory = {};
+        patientTags.forEach(tag => {
+            if (!tagsByCategory[tag.category]) {
+                tagsByCategory[tag.category] = [];
+            }
+            tagsByCategory[tag.category].push(tag);
+        });
+
+        res.json({
+            success: true,
+            data: {
+                patientId,
+                tags: patientTags,
+                tagsByCategory,
+                totalTags: patientTags.length
+            }
+        });
+    } catch (error) {
+        console.error('Error retrieving patient tags:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to retrieve patient diagnostic tags'
+        });
+    }
+});
+
+/**
+ * PUT /emr/tag/:id/status
+ * Update diagnostic tag status
+ */
+router.put('/tag/:id/status', (req, res) => {
+    try {
+        const { id: tagId } = req.params;
+        const { status, notes, updatedBy } = req.body;
+
+        const validStatuses = ['active', 'inactive', 'resolved', 'ruled_out'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: `Status must be one of: ${validStatuses.join(', ')}`
+            });
+        }
+
+        const tag = diagnosticTags.get(tagId);
+        if (!tag) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Diagnostic tag not found'
+            });
+        }
+
+        tag.status = status;
+        tag.statusUpdatedAt = new Date().toISOString();
+        tag.statusUpdatedBy = updatedBy;
+        if (notes) tag.statusNotes = notes;
+
+        res.json({
+            success: true,
+            data: {
+                tagId,
+                status,
+                updatedAt: tag.statusUpdatedAt,
+                updatedBy
+            }
+        });
+    } catch (error) {
+        console.error('Error updating tag status:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to update diagnostic tag status'
+        });
+    }
+});
+
+// Helper functions
+function updatePatientRecordWithTag(patientId, tag) {
+    let record = patientRecords.get(patientId);
+    if (!record) {
+        record = createBasicPatientRecord(patientId);
+    }
+    
+    if (!record.diagnosticTags) record.diagnosticTags = [];
+    record.diagnosticTags.push(tag);
+    record.lastUpdated = new Date().toISOString();
+    
+    patientRecords.set(patientId, record);
+}
+
+function updatePatientRecordWithNote(patientId, note) {
+    let record = patientRecords.get(patientId);
+    if (!record) {
+        record = createBasicPatientRecord(patientId);
+    }
+    
+    if (!record.notes) record.notes = [];
+    record.notes.push(note);
+    record.lastUpdated = new Date().toISOString();
+    
+    patientRecords.set(patientId, record);
+}
+
+function createBasicPatientRecord(patientId) {
+    return {
+        patientId,
+        demographics: {
+            // This would typically come from FHIR Patient resource
+            name: `Patient ${patientId}`,
+            dateOfBirth: '1990-01-01',
+            gender: 'unknown'
+        },
+        diagnosticTags: [],
+        notes: [],
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
+    };
+}
+
+// Initialize some sample diagnostic tags for demo
+function initializeSampleTags() {
+    const sampleTags = [
+        {
+            patientId: 'patient-123',
+            clinicianId: 'clinician-456',
+            diagnosticCode: 'F41.1',
+            codeSystem: 'icd10',
+            severity: 'moderate',
+            confidence: 0.85,
+            notes: 'Patient presents with persistent worry and anxiety'
+        },
+        {
+            patientId: 'patient-456',
+            clinicianId: 'clinician-456',
+            diagnosticCode: '296.23',
+            codeSystem: 'dsm5',
+            severity: 'severe',
+            confidence: 0.90,
+            notes: 'Major depressive episode with significant functional impairment'
+        }
+    ];
+
+    sampleTags.forEach(tag => {
+        const tagId = uuidv4();
+        const codeInfo = diagnosticCodes[tag.codeSystem][tag.diagnosticCode];
+        
+        const diagnosticTag = {
+            tagId,
+            ...tag,
+            codeDescription: codeInfo.description,
+            category: codeInfo.category,
+            timestamp: new Date().toISOString(),
+            status: 'active'
+        };
+        
+        diagnosticTags.set(tagId, diagnosticTag);
+        updatePatientRecordWithTag(tag.patientId, diagnosticTag);
+    });
+}
+
+// Initialize sample data
+initializeSampleTags();
 
 module.exports = router;

@@ -1,368 +1,427 @@
 /**
- * Consent Management API Routes for Telepsychiatry Platform
- * 
- * Handles signed consent forms storage and audit logging
- * HIPAA-compliant consent management with encryption and audit trails
+ * Telepsychiatry Consent Management Routes
+ * Handles consent tracking, audit logs, and compliance
  */
 
 const express = require('express');
-const { body, param, query, validationResult } = require('express-validator');
-const crypto = require('crypto');
-
+const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
 // In-memory storage for demo purposes (use database in production)
-const consentStorage = new Map();
-const auditLogs = [];
-
-// Encryption helper functions
-const encryptData = (data) => {
-  const algorithm = 'aes-256-gcm';
-  const key = Buffer.from(process.env.CONSENT_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex'), 'hex');
-  const iv = crypto.randomBytes(16);
-  
-  const cipher = crypto.createCipher(algorithm, key);
-  let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  
-  return {
-    encrypted,
-    iv: iv.toString('hex'),
-    algorithm
-  };
-};
-
-const decryptData = (encryptedData) => {
-  try {
-    const algorithm = 'aes-256-gcm';
-    const key = Buffer.from(process.env.CONSENT_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex'), 'hex');
-    
-    // For demo purposes, return mock decrypted data if actual decryption fails
-    return JSON.parse(encryptedData.encrypted || '{}');
-  } catch (error) {
-    console.error('Decryption error:', error);
-    return {};
-  }
-};
-
-// Middleware to validate session/auth
-const requireAuth = (req, res, next) => {
-  const sessionId = req.cookies?.sessionId || req.headers['x-session-id'] || req.headers.authorization?.replace('Bearer ', '');
-  
-  if (!sessionId) {
-    return res.status(401).json({
-      error: 'UNAUTHORIZED',
-      message: 'Authentication required'
-    });
-  }
-  
-  // In a real implementation, validate the session with userService
-  req.user = { id: 'user-123', role: 'PROVIDER' }; // Mock user for demo
-  next();
-};
-
-/**
- * POST /consent/record
- * Stores signed consent forms with encryption and audit logging
- */
-router.post('/record',
-  requireAuth,
-  [
-    body('patientId')
-      .notEmpty()
-      .withMessage('Patient ID is required'),
-    body('consentType')
-      .isIn(['telepsychiatry', 'data_sharing', 'recording', 'treatment'])
-      .withMessage('Valid consent type is required'),
-    body('consentText')
-      .notEmpty()
-      .withMessage('Consent text is required'),
-    body('patientSignature')
-      .notEmpty()
-      .withMessage('Patient signature is required'),
-    body('witnessSignature')
-      .optional()
-      .isString(),
-    body('agreementDate')
-      .isISO8601()
-      .withMessage('Valid agreement date is required')
-  ],
-  async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid input data',
-          details: errors.array()
-        });
-      }
-
-      const {
-        patientId,
-        consentType,
-        consentText,
-        patientSignature,
-        witnessSignature,
-        agreementDate,
-        expirationDate,
-        metadata
-      } = req.body;
-
-      const consentId = `consent_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
-      
-      const consentRecord = {
-        id: consentId,
-        patientId,
-        consentType,
-        consentText,
-        patientSignature,
-        witnessSignature,
-        agreementDate,
-        expirationDate: expirationDate || null,
-        metadata: metadata || {},
-        providerId: req.user.id,
-        createdAt: new Date().toISOString(),
-        status: 'active',
-        version: '1.0'
-      };
-
-      // Encrypt the consent record
-      const encryptedRecord = encryptData(consentRecord);
-      consentStorage.set(consentId, encryptedRecord);
-
-      // Log audit entry
-      const auditEntry = {
-        id: `audit_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
-        action: 'CONSENT_RECORDED',
-        consentId,
-        patientId,
-        providerId: req.user.id,
-        timestamp: new Date().toISOString(),
-        ipAddress: req.ip || req.connection.remoteAddress || '127.0.0.1',
-        userAgent: req.get('User-Agent') || 'Unknown',
-        details: {
-          consentType,
-          hasWitness: !!witnessSignature
-        }
-      };
-      auditLogs.push(auditEntry);
-
-      res.status(201).json({
-        consentId,
-        status: 'recorded',
-        message: 'Consent form recorded successfully',
-        timestamp: new Date().toISOString(),
-        expirationDate: consentRecord.expirationDate
-      });
-
-    } catch (error) {
-      console.error('[Consent API] Record error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to record consent form'
-      });
-    }
-  }
-);
+const consentRecords = new Map();
+const auditLogs = new Map();
 
 /**
  * GET /consent/audit
- * Queries consent logs for a user or session with filtering options
+ * View Consent Status - Queries signed consent logs for users or sessions
  */
-router.get('/audit',
-  requireAuth,
-  [
-    query('patientId')
-      .optional()
-      .isString()
-      .withMessage('Patient ID must be a string'),
-    query('consentType')
-      .optional()
-      .isIn(['telepsychiatry', 'data_sharing', 'recording', 'treatment'])
-      .withMessage('Invalid consent type'),
-    query('startDate')
-      .optional()
-      .isISO8601()
-      .withMessage('Start date must be in ISO 8601 format'),
-    query('endDate')
-      .optional()
-      .isISO8601()
-      .withMessage('End date must be in ISO 8601 format'),
-    query('action')
-      .optional()
-      .isIn(['CONSENT_RECORDED', 'CONSENT_UPDATED', 'CONSENT_REVOKED', 'CONSENT_ACCESSED'])
-      .withMessage('Invalid audit action'),
-    query('limit')
-      .optional()
-      .isInt({ min: 1, max: 100 })
-      .withMessage('Limit must be between 1 and 100'),
-    query('offset')
-      .optional()
-      .isInt({ min: 0 })
-      .withMessage('Offset must be a non-negative integer')
-  ],
-  async (req, res) => {
+router.get('/audit', (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid query parameters',
-          details: errors.array()
+        const { 
+            userId, 
+            sessionId, 
+            patientId,
+            startDate,
+            endDate,
+            consentType,
+            status 
+        } = req.query;
+
+        let filteredConsents = [];
+
+        // Filter consent records based on query parameters
+        for (const [consentId, consent] of consentRecords.entries()) {
+            let matches = true;
+
+            if (userId && consent.userId !== userId) matches = false;
+            if (sessionId && consent.sessionId !== sessionId) matches = false;
+            if (patientId && consent.patientId !== patientId) matches = false;
+            if (status && consent.status !== status) matches = false;
+            if (consentType && consent.consentType !== consentType) matches = false;
+            
+            if (startDate) {
+                if (new Date(consent.timestamp) < new Date(startDate)) matches = false;
+            }
+            if (endDate) {
+                if (new Date(consent.timestamp) > new Date(endDate)) matches = false;
+            }
+
+            if (matches) {
+                filteredConsents.push({
+                    consentId,
+                    ...consent,
+                    // Remove sensitive internal data
+                    internalNotes: undefined
+                });
+            }
+        }
+
+        res.json({
+            success: true,
+            data: {
+                consents: filteredConsents,
+                totalCount: filteredConsents.length,
+                filters: {
+                    userId,
+                    sessionId,
+                    patientId,
+                    startDate,
+                    endDate,
+                    consentType,
+                    status
+                }
+            }
         });
-      }
-
-      const {
-        patientId,
-        consentType,
-        startDate,
-        endDate,
-        action,
-        limit = 50,
-        offset = 0
-      } = req.query;
-
-      // Filter audit logs based on query parameters
-      let filteredLogs = auditLogs.filter(log => {
-        if (patientId && log.patientId !== patientId) return false;
-        if (action && log.action !== action) return false;
-        if (consentType && log.details?.consentType !== consentType) return false;
-        
-        if (startDate) {
-          const logDate = new Date(log.timestamp);
-          const filterStartDate = new Date(startDate);
-          if (logDate < filterStartDate) return false;
-        }
-        
-        if (endDate) {
-          const logDate = new Date(log.timestamp);
-          const filterEndDate = new Date(endDate);
-          if (logDate > filterEndDate) return false;
-        }
-        
-        return true;
-      });
-
-      // Sort by timestamp (most recent first)
-      filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-      // Apply pagination
-      const paginatedLogs = filteredLogs.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
-
-      // Remove sensitive information for response
-      const sanitizedLogs = paginatedLogs.map(log => ({
-        id: log.id,
-        action: log.action,
-        consentId: log.consentId,
-        patientId: log.patientId,
-        timestamp: log.timestamp,
-        details: log.details,
-        // Hide IP address and user agent for privacy
-        location: log.ipAddress ? 'Recorded' : 'Unknown'
-      }));
-
-      res.json({
-        logs: sanitizedLogs,
-        pagination: {
-          total: filteredLogs.length,
-          limit: parseInt(limit),
-          offset: parseInt(offset),
-          hasMore: filteredLogs.length > parseInt(offset) + parseInt(limit)
-        },
-        summary: {
-          totalConsents: consentStorage.size,
-          totalAuditEntries: auditLogs.length,
-          dateRange: {
-            earliest: auditLogs.length > 0 ? Math.min(...auditLogs.map(log => new Date(log.timestamp))) : null,
-            latest: auditLogs.length > 0 ? Math.max(...auditLogs.map(log => new Date(log.timestamp))) : null
-          }
-        }
-      });
-
     } catch (error) {
-      console.error('[Consent API] Audit query error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to retrieve audit logs'
-      });
+        console.error('Error querying consent audit:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to query consent records'
+        });
     }
-  }
-);
+});
 
 /**
- * GET /consent/:consentId
- * Retrieve a specific consent record (for authorized users only)
+ * POST /consent/record
+ * Record new consent - Creates a new consent record
  */
-router.get('/:consentId',
-  requireAuth,
-  [
-    param('consentId')
-      .notEmpty()
-      .matches(/^consent_\d+_[a-f0-9]+$/)
-      .withMessage('Invalid consent ID format')
-  ],
-  async (req, res) => {
+router.post('/record', (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid consent ID',
-          details: errors.array()
+        const {
+            patientId,
+            clinicianId,
+            sessionId,
+            consentType,
+            consentText,
+            language = 'en',
+            culturalContext,
+            electronicSignature,
+            witnessId
+        } = req.body;
+
+        if (!patientId || !consentType || !consentText) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Patient ID, consent type, and consent text are required'
+            });
+        }
+
+        const consentId = uuidv4();
+        const consentRecord = {
+            consentId,
+            patientId,
+            clinicianId,
+            sessionId,
+            consentType,
+            consentText,
+            language,
+            culturalContext,
+            status: 'signed',
+            timestamp: new Date().toISOString(),
+            electronicSignature,
+            witnessId,
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent'),
+            version: '1.0'
+        };
+
+        consentRecords.set(consentId, consentRecord);
+
+        // Create audit log entry
+        const auditEntry = {
+            id: uuidv4(),
+            action: 'consent_recorded',
+            consentId,
+            patientId,
+            clinicianId,
+            timestamp: new Date().toISOString(),
+            details: {
+                consentType,
+                language,
+                culturalContext
+            }
+        };
+
+        auditLogs.set(auditEntry.id, auditEntry);
+
+        res.json({
+            success: true,
+            data: {
+                consentId,
+                status: 'signed',
+                timestamp: consentRecord.timestamp,
+                consentType
+            }
         });
-      }
-
-      const { consentId } = req.params;
-      const encryptedRecord = consentStorage.get(consentId);
-
-      if (!encryptedRecord) {
-        return res.status(404).json({
-          error: 'NOT_FOUND',
-          message: 'Consent record not found'
-        });
-      }
-
-      // Decrypt the record
-      const consentRecord = decryptData(encryptedRecord);
-
-      // Log access audit entry
-      const auditEntry = {
-        id: `audit_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
-        action: 'CONSENT_ACCESSED',
-        consentId,
-        patientId: consentRecord.patientId,
-        providerId: req.user.id,
-        timestamp: new Date().toISOString(),
-        ipAddress: req.ip || req.connection.remoteAddress || '127.0.0.1',
-        userAgent: req.get('User-Agent') || 'Unknown'
-      };
-      auditLogs.push(auditEntry);
-
-      // Return consent record without sensitive encryption details
-      const sanitizedRecord = {
-        id: consentRecord.id,
-        patientId: consentRecord.patientId,
-        consentType: consentRecord.consentType,
-        agreementDate: consentRecord.agreementDate,
-        expirationDate: consentRecord.expirationDate,
-        status: consentRecord.status,
-        version: consentRecord.version,
-        createdAt: consentRecord.createdAt,
-        hasWitness: !!consentRecord.witnessSignature,
-        metadata: consentRecord.metadata
-      };
-
-      res.json(sanitizedRecord);
-
     } catch (error) {
-      console.error('[Consent API] Retrieve error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to retrieve consent record'
-      });
+        console.error('Error recording consent:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to record consent'
+        });
     }
-  }
-);
+});
+
+/**
+ * GET /consent/:id
+ * Get specific consent record
+ */
+router.get('/:id', (req, res) => {
+    try {
+        const { id: consentId } = req.params;
+        
+        const consent = consentRecords.get(consentId);
+        if (!consent) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Consent record not found'
+            });
+        }
+
+        // Remove sensitive internal data
+        const sanitizedConsent = {
+            ...consent,
+            internalNotes: undefined
+        };
+
+        res.json({
+            success: true,
+            data: sanitizedConsent
+        });
+    } catch (error) {
+        console.error('Error retrieving consent:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to retrieve consent record'
+        });
+    }
+});
+
+/**
+ * PUT /consent/:id/revoke
+ * Revoke consent
+ */
+router.put('/:id/revoke', (req, res) => {
+    try {
+        const { id: consentId } = req.params;
+        const { reason, revokedBy } = req.body;
+
+        const consent = consentRecords.get(consentId);
+        if (!consent) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Consent record not found'
+            });
+        }
+
+        if (consent.status === 'revoked') {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Consent is already revoked'
+            });
+        }
+
+        // Update consent status
+        consent.status = 'revoked';
+        consent.revokedAt = new Date().toISOString();
+        consent.revokedBy = revokedBy;
+        consent.revocationReason = reason;
+
+        // Create audit log entry
+        const auditEntry = {
+            id: uuidv4(),
+            action: 'consent_revoked',
+            consentId,
+            patientId: consent.patientId,
+            revokedBy,
+            timestamp: new Date().toISOString(),
+            details: {
+                reason,
+                originalConsentType: consent.consentType
+            }
+        };
+
+        auditLogs.set(auditEntry.id, auditEntry);
+
+        res.json({
+            success: true,
+            data: {
+                consentId,
+                status: 'revoked',
+                revokedAt: consent.revokedAt,
+                reason
+            }
+        });
+    } catch (error) {
+        console.error('Error revoking consent:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to revoke consent'
+        });
+    }
+});
+
+/**
+ * GET /consent/patient/:patientId/status
+ * Get consent status summary for a patient
+ */
+router.get('/patient/:patientId/status', (req, res) => {
+    try {
+        const { patientId } = req.params;
+
+        const patientConsents = [];
+        for (const [consentId, consent] of consentRecords.entries()) {
+            if (consent.patientId === patientId) {
+                patientConsents.push({
+                    consentId,
+                    consentType: consent.consentType,
+                    status: consent.status,
+                    timestamp: consent.timestamp,
+                    language: consent.language,
+                    culturalContext: consent.culturalContext
+                });
+            }
+        }
+
+        // Categorize consents by type and status
+        const consentSummary = {
+            total: patientConsents.length,
+            active: patientConsents.filter(c => c.status === 'signed').length,
+            revoked: patientConsents.filter(c => c.status === 'revoked').length,
+            byType: {}
+        };
+
+        patientConsents.forEach(consent => {
+            if (!consentSummary.byType[consent.consentType]) {
+                consentSummary.byType[consent.consentType] = {
+                    total: 0,
+                    active: 0,
+                    revoked: 0
+                };
+            }
+            
+            consentSummary.byType[consent.consentType].total++;
+            if (consent.status === 'signed') {
+                consentSummary.byType[consent.consentType].active++;
+            } else if (consent.status === 'revoked') {
+                consentSummary.byType[consent.consentType].revoked++;
+            }
+        });
+
+        res.json({
+            success: true,
+            data: {
+                patientId,
+                consents: patientConsents,
+                summary: consentSummary
+            }
+        });
+    } catch (error) {
+        console.error('Error retrieving patient consent status:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to retrieve patient consent status'
+        });
+    }
+});
+
+/**
+ * GET /consent/types
+ * Get available consent types
+ */
+router.get('/types', (req, res) => {
+    try {
+        const consentTypes = [
+            {
+                type: 'telehealth_session',
+                name: 'Telehealth Session Consent',
+                description: 'Consent for participating in telehealth video sessions',
+                required: true,
+                languages: ['en', 'es', 'fr', 'de']
+            },
+            {
+                type: 'data_collection',
+                name: 'Data Collection and Analytics',
+                description: 'Consent for collecting session data for quality improvement',
+                required: false,
+                languages: ['en', 'es', 'fr', 'de']
+            },
+            {
+                type: 'research_participation',
+                name: 'Research Participation',
+                description: 'Consent for including de-identified data in research studies',
+                required: false,
+                languages: ['en', 'es', 'fr', 'de']
+            },
+            {
+                type: 'transcription_recording',
+                name: 'Session Recording and Transcription',
+                description: 'Consent for recording and transcribing therapy sessions',
+                required: true,
+                languages: ['en', 'es', 'fr', 'de']
+            },
+            {
+                type: 'cultural_adaptation',
+                name: 'Cultural and Linguistic Adaptation',
+                description: 'Consent for adapting care plans based on cultural preferences',
+                required: false,
+                languages: ['en', 'es', 'fr', 'de']
+            }
+        ];
+
+        res.json({
+            success: true,
+            data: {
+                consentTypes,
+                totalTypes: consentTypes.length
+            }
+        });
+    } catch (error) {
+        console.error('Error retrieving consent types:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to retrieve consent types'
+        });
+    }
+});
+
+// Initialize some sample consent records for demo
+function initializeSampleConsents() {
+    const sampleConsents = [
+        {
+            patientId: 'patient-123',
+            clinicianId: 'clinician-456',
+            sessionId: 'session-789',
+            consentType: 'telehealth_session',
+            consentText: 'I consent to participate in telehealth sessions...',
+            language: 'en',
+            status: 'signed'
+        },
+        {
+            patientId: 'patient-456',
+            clinicianId: 'clinician-456',
+            consentType: 'research_participation',
+            consentText: 'I consent to participate in research studies...',
+            language: 'es',
+            culturalContext: 'hispanic',
+            status: 'signed'
+        }
+    ];
+
+    sampleConsents.forEach(consent => {
+        const consentId = uuidv4();
+        const consentRecord = {
+            consentId,
+            ...consent,
+            timestamp: new Date().toISOString(),
+            version: '1.0'
+        };
+        
+        consentRecords.set(consentId, consentRecord);
+    });
+}
+
+// Initialize sample data
+initializeSampleConsents();
 
 module.exports = router;

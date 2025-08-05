@@ -1,727 +1,507 @@
 /**
- * Clinical Workflow Automation API Routes for Telepsychiatry Platform
- * 
- * Provides culturally adapted triage prompts and automated care plan generation
+ * Telepsychiatry Workflow Routes
+ * Handles triage queue and care planning workflows
  */
 
 const express = require('express');
-const { body, param, query, validationResult } = require('express-validator');
-const crypto = require('crypto');
-
+const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
-// In-memory storage for workflow data (use database in production)
-const triageProfiles = new Map();
+// In-memory storage for demo purposes (use database in production)
+const triageQueue = new Map();
 const carePlans = new Map();
-const workflowTemplates = new Map();
-
-// Initialize default triage prompts and templates
-const initializeDefaultWorkflows = () => {
-  // Cultural triage prompts for different regions/languages
-  const culturalTriagePrompts = {
-    'en-US': {
-      id: 'triage-en-us',
-      language: 'en',
-      region: 'US',
-      culture: 'Western',
-      prompts: {
-        greeting: "Hello, I'm here to help assess your mental health needs today. How are you feeling?",
-        moodAssessment: "On a scale of 1-10, how would you rate your overall mood this week?",
-        sleepPattern: "Have you experienced any changes in your sleep patterns recently?",
-        appetite: "Have you noticed any changes in your appetite or eating habits?",
-        socialInteraction: "How comfortable do you feel in social situations lately?",
-        stressFactors: "What are the main sources of stress in your life right now?",
-        culturalFactors: "Are there any cultural or family expectations affecting your wellbeing?",
-        emergency: "Are you having thoughts of hurting yourself or others?"
-      },
-      flowLogic: {
-        emergencyThreshold: 8,
-        severeThreshold: 7,
-        moderateThreshold: 5,
-        followUpQuestions: {
-          high: ["Tell me more about these feelings", "When did this start?"],
-          moderate: ["How long have you been feeling this way?", "What helps you cope?"],
-          low: ["What's going well in your life?", "Any recent positive changes?"]
-        }
-      }
-    },
-    'es-ES': {
-      id: 'triage-es-es',
-      language: 'es',
-      region: 'ES',
-      culture: 'Mediterranean',
-      prompts: {
-        greeting: "Hola, estoy aquí para ayudar a evaluar sus necesidades de salud mental hoy. ¿Cómo se siente?",
-        moodAssessment: "En una escala del 1 al 10, ¿cómo calificaría su estado de ánimo general esta semana?",
-        sleepPattern: "¿Ha experimentado algún cambio en sus patrones de sueño recientemente?",
-        appetite: "¿Ha notado algún cambio en su apetito o hábitos alimentarios?",
-        socialInteraction: "¿Qué tan cómodo se siente en situaciones sociales últimamente?",
-        stressFactors: "¿Cuáles son las principales fuentes de estrés en su vida ahora mismo?",
-        culturalFactors: "¿Hay expectativas culturales o familiares que afecten su bienestar?",
-        emergency: "¿Está teniendo pensamientos de hacerse daño a sí mismo o a otros?"
-      },
-      flowLogic: {
-        emergencyThreshold: 8,
-        severeThreshold: 7,
-        moderateThreshold: 5,
-        followUpQuestions: {
-          high: ["Cuénteme más sobre estos sentimientos", "¿Cuándo comenzó esto?"],
-          moderate: ["¿Cuánto tiempo se ha sentido así?", "¿Qué le ayuda a sobrellevar?"],
-          low: ["¿Qué va bien en su vida?", "¿Algún cambio positivo reciente?"]
-        }
-      }
-    },
-    'ar-SA': {
-      id: 'triage-ar-sa',
-      language: 'ar',
-      region: 'SA',
-      culture: 'Middle Eastern',
-      prompts: {
-        greeting: "السلام عليكم، أنا هنا لمساعدتك في تقييم احتياجاتك للصحة النفسية اليوم. كيف تشعر؟",
-        moodAssessment: "على مقياس من 1 إلى 10، كيف تقيم مزاجك العام هذا الأسبوع؟",
-        sleepPattern: "هل واجهت أي تغييرات في أنماط نومك مؤخراً؟",
-        appetite: "هل لاحظت أي تغييرات في شهيتك أو عادات الأكل؟",
-        socialInteraction: "كيف تشعر بالراحة في المواقف الاجتماعية مؤخراً؟",
-        stressFactors: "ما هي مصادر التوتر الرئيسية في حياتك الآن؟",
-        culturalFactors: "هل هناك توقعات ثقافية أو عائلية تؤثر على رفاهيتك؟",
-        emergency: "هل لديك أفكار إيذاء نفسك أو الآخرين؟"
-      },
-      flowLogic: {
-        emergencyThreshold: 8,
-        severeThreshold: 7,
-        moderateThreshold: 5,
-        followUpQuestions: {
-          high: ["أخبرني المزيد عن هذه المشاعر", "متى بدأ هذا؟"],
-          moderate: ["كم من الوقت تشعر بهذا؟", "ما الذي يساعدك على التأقلم؟"],
-          low: ["ما الذي يسير بشكل جيد في حياتك؟", "أي تغييرات إيجابية حديثة؟"]
-        }
-      }
-    }
-  };
-
-  // Care plan templates
-  const carePlanTemplates = {
-    'depression-mild': {
-      id: 'depression-mild',
-      condition: 'Depression',
-      severity: 'mild',
-      template: {
-        goals: [
-          'Improve mood and emotional regulation',
-          'Increase daily activity levels',
-          'Develop coping strategies'
-        ],
-        interventions: [
-          {
-            type: 'therapy',
-            intervention: 'Cognitive Behavioral Therapy (CBT)',
-            frequency: 'Weekly sessions for 12 weeks',
-            priority: 'high'
-          },
-          {
-            type: 'lifestyle',
-            intervention: 'Regular exercise routine',
-            frequency: '30 minutes, 3 times per week',
-            priority: 'medium'
-          },
-          {
-            type: 'monitoring',
-            intervention: 'Daily mood tracking',
-            frequency: 'Daily via mobile app',
-            priority: 'medium'
-          }
-        ],
-        medications: [],
-        followUp: {
-          initial: '2 weeks',
-          ongoing: '4 weeks',
-          emergency: 'Contact provider if symptoms worsen'
-        }
-      }
-    },
-    'anxiety-moderate': {
-      id: 'anxiety-moderate',
-      condition: 'Anxiety',
-      severity: 'moderate',
-      template: {
-        goals: [
-          'Reduce anxiety symptoms',
-          'Improve stress management',
-          'Enhance quality of life'
-        ],
-        interventions: [
-          {
-            type: 'therapy',
-            intervention: 'Exposure Response Prevention (ERP)',
-            frequency: 'Bi-weekly sessions for 16 weeks',
-            priority: 'high'
-          },
-          {
-            type: 'medication',
-            intervention: 'SSRI consideration',
-            frequency: 'As prescribed by psychiatrist',
-            priority: 'medium'
-          },
-          {
-            type: 'lifestyle',
-            intervention: 'Mindfulness meditation',
-            frequency: '10 minutes daily',
-            priority: 'medium'
-          }
-        ],
-        medications: [
-          {
-            class: 'SSRI',
-            examples: ['Sertraline', 'Escitalopram'],
-            considerations: 'Start low, titrate slowly'
-          }
-        ],
-        followUp: {
-          initial: '1 week',
-          ongoing: '2 weeks',
-          emergency: '24/7 crisis hotline available'
-        }
-      }
-    }
-  };
-
-  // Store initial data
-  Object.values(culturalTriagePrompts).forEach(prompt => {
-    triageProfiles.set(prompt.id, prompt);
-  });
-
-  Object.values(carePlanTemplates).forEach(template => {
-    workflowTemplates.set(template.id, template);
-  });
-};
-
-// Initialize on module load
-initializeDefaultWorkflows();
-
-// Middleware to validate session/auth
-const requireAuth = (req, res, next) => {
-  const sessionId = req.cookies?.sessionId || req.headers['x-session-id'] || req.headers.authorization?.replace('Bearer ', '');
-  
-  if (!sessionId) {
-    return res.status(401).json({
-      error: 'UNAUTHORIZED',
-      message: 'Authentication required'
-    });
-  }
-  
-  // Mock user for demo - in real implementation, validate with userService
-  req.user = { id: 'user-123', role: 'PROVIDER', name: 'Dr. Smith', preferredLanguage: 'en' };
-  next();
-};
+const culturalAdaptations = new Map();
 
 /**
  * GET /workflow/triage
- * Provides culturally adapted triage prompts based on language/region
+ * Triage Queue - Displays culturally adapted prompts for patient triage
  */
-router.get('/triage',
-  requireAuth,
-  [
-    query('language')
-      .optional()
-      .isLength({ min: 2, max: 5 })
-      .withMessage('Language must be 2-5 characters'),
-    query('region')
-      .optional()
-      .isAlpha()
-      .isLength({ min: 2, max: 2 })
-      .withMessage('Region must be 2-letter country code'),
-    query('culture')
-      .optional()
-      .isString()
-      .withMessage('Culture must be a string'),
-    query('patientAge')
-      .optional()
-      .isInt({ min: 0, max: 120 })
-      .withMessage('Patient age must be between 0 and 120'),
-    query('severity')
-      .optional()
-      .isIn(['low', 'moderate', 'high', 'emergency'])
-      .withMessage('Invalid severity level')
-  ],
-  async (req, res) => {
+router.get('/triage', (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid query parameters',
-          details: errors.array()
+        const {
+            status,
+            priority,
+            language = 'en',
+            culturalContext,
+            clinicianId,
+            limit = 50
+        } = req.query;
+
+        let filteredTriage = [];
+
+        // Filter triage entries based on query parameters
+        for (const [triageId, triage] of triageQueue.entries()) {
+            let matches = true;
+
+            if (status && triage.status !== status) matches = false;
+            if (priority && triage.priority !== priority) matches = false;
+            if (clinicianId && triage.assignedClinician !== clinicianId) matches = false;
+            if (culturalContext && triage.culturalContext !== culturalContext) matches = false;
+
+            if (matches) {
+                // Adapt prompts based on language and cultural context
+                const adaptedTriage = adaptTriageForCulture(triage, language, culturalContext);
+                filteredTriage.push(adaptedTriage);
+            }
+        }
+
+        // Sort by priority and timestamp
+        filteredTriage.sort((a, b) => {
+            const priorityOrder = { 'urgent': 3, 'high': 2, 'medium': 1, 'low': 0 };
+            const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+            if (priorityDiff !== 0) return priorityDiff;
+            
+            return new Date(a.createdAt) - new Date(b.createdAt);
         });
-      }
 
-      const {
-        language = req.user.preferredLanguage || 'en',
-        region = 'US',
-        culture,
-        patientAge,
-        severity
-      } = req.query;
+        // Apply limit
+        if (limit && filteredTriage.length > parseInt(limit)) {
+            filteredTriage = filteredTriage.slice(0, parseInt(limit));
+        }
 
-      // Find best matching triage profile
-      const profileKey = `${language.toLowerCase()}-${region.toUpperCase()}`;
-      let triageProfile = triageProfiles.get(`triage-${profileKey}`);
-
-      // Fallback to English if specific language/region not found
-      if (!triageProfile) {
-        triageProfile = triageProfiles.get('triage-en-us');
-      }
-
-      if (!triageProfile) {
-        return res.status(404).json({
-          error: 'TRIAGE_PROFILE_NOT_FOUND',
-          message: 'No triage profile available for the specified criteria'
+        res.json({
+            success: true,
+            data: {
+                triageQueue: filteredTriage,
+                totalCount: filteredTriage.length,
+                filters: {
+                    status,
+                    priority,
+                    language,
+                    culturalContext,
+                    clinicianId
+                }
+            }
         });
-      }
+    } catch (error) {
+        console.error('Error retrieving triage queue:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to retrieve triage queue'
+        });
+    }
+});
 
-      // Customize prompts based on patient age
-      let customizedPrompts = { ...triageProfile.prompts };
-      
-      if (patientAge && parseInt(patientAge) < 18) {
-        // Adapt language for minors
-        customizedPrompts.greeting = customizedPrompts.greeting.replace(
-          'How are you feeling?',
-          'How have you been feeling lately? It\'s okay to share with me.'
-        );
-        customizedPrompts.moodAssessment = 'Using our feeling faces chart, how would you describe your mood this week?';
-      } else if (patientAge && parseInt(patientAge) > 65) {
-        // Adapt language for seniors
-        customizedPrompts.greeting = 'Good day. I\'m here to discuss how you\'ve been feeling and help identify the best support for you.';
-      }
+/**
+ * POST /workflow/triage
+ * Create new triage entry
+ */
+router.post('/triage', (req, res) => {
+    try {
+        const {
+            patientId,
+            symptoms,
+            urgencyLevel,
+            culturalContext,
+            language = 'en',
+            preferredClinician,
+            notes
+        } = req.body;
 
-      // Filter prompts based on severity if specified
-      let selectedPrompts = customizedPrompts;
-      if (severity) {
-        const priorityPrompts = {
-          'emergency': ['greeting', 'emergency', 'stressFactors'],
-          'high': ['greeting', 'moodAssessment', 'emergency', 'sleepPattern', 'stressFactors'],
-          'moderate': ['greeting', 'moodAssessment', 'sleepPattern', 'appetite', 'socialInteraction'],
-          'low': ['greeting', 'moodAssessment', 'socialInteraction']
+        if (!patientId || !symptoms) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Patient ID and symptoms are required'
+            });
+        }
+
+        const triageId = uuidv4();
+        const priority = determinePriority(symptoms, urgencyLevel);
+        
+        const triageEntry = {
+            triageId,
+            patientId,
+            symptoms,
+            priority,
+            culturalContext,
+            language,
+            preferredClinician,
+            notes,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            estimatedWaitTime: calculateEstimatedWaitTime(priority),
+            culturallyAdaptedPrompts: generateCulturalPrompts(symptoms, culturalContext, language)
         };
 
-        if (priorityPrompts[severity]) {
-          selectedPrompts = {};
-          priorityPrompts[severity].forEach(key => {
-            if (customizedPrompts[key]) {
-              selectedPrompts[key] = customizedPrompts[key];
+        triageQueue.set(triageId, triageEntry);
+
+        res.json({
+            success: true,
+            data: {
+                triageId,
+                priority,
+                estimatedWaitTime: triageEntry.estimatedWaitTime,
+                culturallyAdaptedPrompts: triageEntry.culturallyAdaptedPrompts,
+                status: 'pending'
             }
-          });
-        }
-      }
-
-      // Generate triage flow
-      const triageFlow = {
-        sessionId: `triage_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`,
-        profile: {
-          language: triageProfile.language,
-          region: triageProfile.region,
-          culture: triageProfile.culture
-        },
-        prompts: selectedPrompts,
-        flowLogic: triageProfile.flowLogic,
-        metadata: {
-          patientAge: patientAge ? parseInt(patientAge) : null,
-          severityFilter: severity || null,
-          adaptedFor: patientAge ? (parseInt(patientAge) < 18 ? 'minor' : parseInt(patientAge) > 65 ? 'senior' : 'adult') : 'adult',
-          generatedAt: new Date().toISOString(),
-          estimatedDuration: Object.keys(selectedPrompts).length * 2 // 2 minutes per prompt
-        }
-      };
-
-      res.json({
-        triageFlow,
-        instructions: {
-          usage: 'Present prompts in order, use follow-up questions based on responses',
-          scoring: 'Rate responses 1-10, apply thresholds from flowLogic',
-          emergency: 'If emergency threshold exceeded, escalate immediately',
-          culturalNotes: culture ? `Adapted for ${culture} cultural context` : 'Standard cultural adaptation applied'
-        },
-        availableProfiles: Array.from(triageProfiles.keys()),
-        supportedLanguages: [...new Set(Array.from(triageProfiles.values()).map(p => p.language))]
-      });
-
+        });
     } catch (error) {
-      console.error('[Workflow API] Get triage error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to retrieve triage prompts'
-      });
+        console.error('Error creating triage entry:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to create triage entry'
+        });
     }
-  }
-);
+});
+
+/**
+ * PUT /workflow/triage/:id/assign
+ * Assign triage entry to clinician
+ */
+router.put('/triage/:id/assign', (req, res) => {
+    try {
+        const { id: triageId } = req.params;
+        const { clinicianId, notes } = req.body;
+
+        const triage = triageQueue.get(triageId);
+        if (!triage) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Triage entry not found'
+            });
+        }
+
+        triage.assignedClinician = clinicianId;
+        triage.status = 'assigned';
+        triage.assignedAt = new Date().toISOString();
+        if (notes) triage.assignmentNotes = notes;
+
+        res.json({
+            success: true,
+            data: {
+                triageId,
+                assignedClinician: clinicianId,
+                status: 'assigned',
+                assignedAt: triage.assignedAt
+            }
+        });
+    } catch (error) {
+        console.error('Error assigning triage entry:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to assign triage entry'
+        });
+    }
+});
 
 /**
  * POST /workflow/plan
- * Automatically generates care plans based on assessment data
+ * Generate Suggestions - Automatically composes care plans for the patient
  */
-router.post('/plan',
-  requireAuth,
-  [
-    body('patientId')
-      .notEmpty()
-      .withMessage('Patient ID is required'),
-    body('assessmentData')
-      .isObject()
-      .withMessage('Assessment data is required'),
-    body('assessmentData.primaryCondition')
-      .notEmpty()
-      .withMessage('Primary condition is required'),
-    body('assessmentData.severity')
-      .isIn(['mild', 'moderate', 'severe', 'critical'])
-      .withMessage('Valid severity level is required'),
-    body('assessmentData.symptoms')
-      .isArray()
-      .withMessage('Symptoms must be an array'),
-    body('preferences')
-      .optional()
-      .isObject()
-      .withMessage('Preferences must be an object'),
-    body('culturalFactors')
-      .optional()
-      .isObject()
-      .withMessage('Cultural factors must be an object'),
-    body('language')
-      .optional()
-      .isLength({ min: 2, max: 5 })
-      .withMessage('Language must be 2-5 characters')
-  ],
-  async (req, res) => {
+router.post('/plan', (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid care plan data',
-          details: errors.array()
-        });
-      }
+        const {
+            patientId,
+            sessionId,
+            symptoms,
+            assessmentData,
+            culturalContext,
+            language = 'en',
+            clinicianId
+        } = req.body;
 
-      const {
-        patientId,
-        assessmentData,
-        preferences = {},
-        culturalFactors = {},
-        language = 'en'
-      } = req.body;
-
-      const { primaryCondition, severity, symptoms, comorbidities = [] } = assessmentData;
-
-      // Find matching care plan template
-      const templateKey = `${primaryCondition.toLowerCase()}-${severity}`;
-      let template = workflowTemplates.get(templateKey);
-
-      // Fallback to condition-specific template if severity-specific not found
-      if (!template) {
-        const fallbackKeys = Array.from(workflowTemplates.keys()).filter(key => 
-          key.startsWith(primaryCondition.toLowerCase())
-        );
-        if (fallbackKeys.length > 0) {
-          template = workflowTemplates.get(fallbackKeys[0]);
+        if (!patientId) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Patient ID is required'
+            });
         }
-      }
 
-      if (!template) {
-        return res.status(404).json({
-          error: 'TEMPLATE_NOT_FOUND',
-          message: `No care plan template found for ${primaryCondition} with ${severity} severity`
+        const planId = uuidv4();
+        const generatedPlan = generateCarePlan(symptoms, assessmentData, culturalContext, language);
+        
+        const carePlan = {
+            planId,
+            patientId,
+            sessionId,
+            clinicianId,
+            culturalContext,
+            language,
+            status: 'draft',
+            createdAt: new Date().toISOString(),
+            ...generatedPlan
+        };
+
+        carePlans.set(planId, carePlan);
+
+        res.json({
+            success: true,
+            data: {
+                planId,
+                carePlan: {
+                    goals: carePlan.goals,
+                    interventions: carePlan.interventions,
+                    culturalAdaptations: carePlan.culturalAdaptations,
+                    timeline: carePlan.timeline,
+                    followUpSchedule: carePlan.followUpSchedule
+                },
+                status: 'draft'
+            }
         });
-      }
-
-      const carePlanId = `careplan_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
-      const timestamp = new Date().toISOString();
-
-      // Customize care plan based on patient preferences and cultural factors
-      let customizedPlan = JSON.parse(JSON.stringify(template.template)); // Deep copy
-
-      // Adjust interventions based on preferences
-      if (preferences.therapyPreference) {
-        customizedPlan.interventions.forEach(intervention => {
-          if (intervention.type === 'therapy' && preferences.therapyPreference !== 'any') {
-            intervention.intervention = preferences.therapyPreference;
-            intervention.notes = 'Adjusted based on patient preference';
-          }
-        });
-      }
-
-      // Add cultural adaptations
-      if (culturalFactors.religiousConsiderations) {
-        customizedPlan.interventions.push({
-          type: 'cultural',
-          intervention: 'Religious/spiritual counseling integration',
-          frequency: 'As appropriate',
-          priority: 'low',
-          notes: 'Incorporate religious/spiritual practices as appropriate'
-        });
-      }
-
-      if (culturalFactors.familyInvolvement === 'high') {
-        customizedPlan.interventions.push({
-          type: 'family',
-          intervention: 'Family therapy sessions',
-          frequency: 'Monthly',
-          priority: 'medium',
-          notes: 'High family involvement requested'
-        });
-      }
-
-      // Adjust for comorbidities
-      comorbidities.forEach(comorbidity => {
-        if (comorbidity.toLowerCase().includes('anxiety') && primaryCondition.toLowerCase() === 'depression') {
-          customizedPlan.interventions.push({
-            type: 'therapy',
-            intervention: 'Anxiety management techniques',
-            frequency: 'Weekly',
-            priority: 'medium',
-            notes: 'Addressing comorbid anxiety'
-          });
-        }
-      });
-
-      // Generate medication recommendations based on severity and condition
-      if (severity === 'moderate' || severity === 'severe') {
-        if (!customizedPlan.medications.length && primaryCondition.toLowerCase() === 'depression') {
-          customizedPlan.medications.push({
-            class: 'SSRI',
-            examples: ['Sertraline 50mg', 'Escitalopram 10mg'],
-            considerations: 'Start with lowest effective dose, monitor for side effects'
-          });
-        }
-      }
-
-      // Set appropriate follow-up intervals
-      if (severity === 'severe' || severity === 'critical') {
-        customizedPlan.followUp.initial = '1 week';
-        customizedPlan.followUp.ongoing = '2 weeks';
-      }
-
-      const carePlan = {
-        id: carePlanId,
-        patientId,
-        condition: primaryCondition,
-        severity,
-        symptoms,
-        comorbidities,
-        goals: customizedPlan.goals,
-        interventions: customizedPlan.interventions,
-        medications: customizedPlan.medications,
-        followUp: customizedPlan.followUp,
-        preferences,
-        culturalFactors,
-        metadata: {
-          templateUsed: template.id,
-          generatedBy: req.user.id,
-          generatedAt: timestamp,
-          language,
-          estimatedDuration: '12-16 weeks',
-          reviewDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-          version: '1.0'
-        },
-        status: 'draft'
-      };
-
-      // Store the care plan
-      carePlans.set(carePlanId, carePlan);
-
-      // Generate summary
-      const summary = {
-        totalGoals: customizedPlan.goals.length,
-        totalInterventions: customizedPlan.interventions.length,
-        interventionTypes: [...new Set(customizedPlan.interventions.map(i => i.type))],
-        medicationRecommended: customizedPlan.medications.length > 0,
-        culturalAdaptations: Object.keys(culturalFactors).length,
-        estimatedCost: calculateEstimatedCost(customizedPlan),
-        riskLevel: severity === 'severe' || severity === 'critical' ? 'high' : severity === 'moderate' ? 'medium' : 'low'
-      };
-
-      res.status(201).json({
-        carePlanId,
-        status: 'generated',
-        carePlan: {
-          condition: carePlan.condition,
-          severity: carePlan.severity,
-          goals: carePlan.goals,
-          interventions: carePlan.interventions,
-          medications: carePlan.medications,
-          followUp: carePlan.followUp
-        },
-        summary,
-        nextSteps: [
-          'Review care plan with patient',
-          'Obtain patient consent for treatment',
-          'Schedule initial intervention appointments',
-          'Set up monitoring and follow-up'
-        ],
-        message: 'Care plan generated successfully'
-      });
-
     } catch (error) {
-      console.error('[Workflow API] Generate care plan error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to generate care plan'
-      });
+        console.error('Error generating care plan:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to generate care plan'
+        });
     }
-  }
-);
+});
 
 /**
- * GET /workflow/plan/:planId
- * Retrieves a specific care plan
+ * GET /workflow/plan/:id
+ * Get care plan by ID
  */
-router.get('/plan/:planId',
-  requireAuth,
-  [
-    param('planId')
-      .notEmpty()
-      .matches(/^careplan_\d+_[a-f0-9]+$/)
-      .withMessage('Valid care plan ID is required')
-  ],
-  async (req, res) => {
+router.get('/plan/:id', (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid care plan ID',
-          details: errors.array()
+        const { id: planId } = req.params;
+        
+        const carePlan = carePlans.get(planId);
+        if (!carePlan) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Care plan not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: carePlan
         });
-      }
-
-      const { planId } = req.params;
-      const carePlan = carePlans.get(planId);
-
-      if (!carePlan) {
-        return res.status(404).json({
-          error: 'CARE_PLAN_NOT_FOUND',
-          message: 'Care plan not found'
-        });
-      }
-
-      // Check if user has access to this care plan
-      // In real implementation, verify provider has access to patient
-      
-      res.json({
-        carePlan,
-        accessedAt: new Date().toISOString(),
-        accessedBy: req.user.id
-      });
-
     } catch (error) {
-      console.error('[Workflow API] Get care plan error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to retrieve care plan'
-      });
+        console.error('Error retrieving care plan:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to retrieve care plan'
+        });
     }
-  }
-);
+});
 
 /**
- * PUT /workflow/plan/:planId
- * Updates an existing care plan
+ * PUT /workflow/plan/:id/approve
+ * Approve care plan
  */
-router.put('/plan/:planId',
-  requireAuth,
-  [
-    param('planId')
-      .notEmpty()
-      .matches(/^careplan_\d+_[a-f0-9]+$/)
-      .withMessage('Valid care plan ID is required'),
-    body('status')
-      .optional()
-      .isIn(['draft', 'active', 'completed', 'cancelled'])
-      .withMessage('Invalid status'),
-    body('goals')
-      .optional()
-      .isArray()
-      .withMessage('Goals must be an array'),
-    body('interventions')
-      .optional()
-      .isArray()
-      .withMessage('Interventions must be an array'),
-    body('notes')
-      .optional()
-      .isString()
-      .isLength({ max: 2000 })
-      .withMessage('Notes must be less than 2000 characters')
-  ],
-  async (req, res) => {
+router.put('/plan/:id/approve', (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: 'Invalid update data',
-          details: errors.array()
-        });
-      }
+        const { id: planId } = req.params;
+        const { approvedBy, modifications } = req.body;
 
-      const { planId } = req.params;
-      const updates = req.body;
-      
-      const carePlan = carePlans.get(planId);
-      if (!carePlan) {
-        return res.status(404).json({
-          error: 'CARE_PLAN_NOT_FOUND',
-          message: 'Care plan not found'
-        });
-      }
-
-      // Update care plan
-      const updatedPlan = {
-        ...carePlan,
-        ...updates,
-        metadata: {
-          ...carePlan.metadata,
-          lastUpdatedBy: req.user.id,
-          lastUpdatedAt: new Date().toISOString(),
-          version: (parseFloat(carePlan.metadata.version) + 0.1).toFixed(1)
+        const carePlan = carePlans.get(planId);
+        if (!carePlan) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Care plan not found'
+            });
         }
-      };
 
-      carePlans.set(planId, updatedPlan);
+        carePlan.status = 'approved';
+        carePlan.approvedBy = approvedBy;
+        carePlan.approvedAt = new Date().toISOString();
+        if (modifications) carePlan.modifications = modifications;
 
-      res.json({
-        carePlanId: planId,
-        status: 'updated',
-        updatedFields: Object.keys(updates),
-        version: updatedPlan.metadata.version,
-        message: 'Care plan updated successfully'
-      });
-
+        res.json({
+            success: true,
+            data: {
+                planId,
+                status: 'approved',
+                approvedBy,
+                approvedAt: carePlan.approvedAt
+            }
+        });
     } catch (error) {
-      console.error('[Workflow API] Update care plan error:', error);
-      res.status(500).json({
-        error: 'INTERNAL_ERROR',
-        message: 'Failed to update care plan'
-      });
+        console.error('Error approving care plan:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to approve care plan'
+        });
     }
-  }
-);
+});
 
-// Helper function to estimate care plan cost
-function calculateEstimatedCost(plan) {
-  let totalCost = 0;
-  
-  plan.interventions.forEach(intervention => {
-    switch (intervention.type) {
-      case 'therapy':
-        totalCost += 150 * 12; // Assume $150 per session, 12 sessions
-        break;
-      case 'medication':
-        totalCost += 50 * 12; // Assume $50 per month, 12 months
-        break;
-      case 'lifestyle':
-        totalCost += 25; // One-time setup cost
-        break;
-    }
-  });
-  
-  return Math.round(totalCost);
+// Helper functions
+function adaptTriageForCulture(triage, language, culturalContext) {
+    const adapted = { ...triage };
+    
+    // Add culturally appropriate prompts
+    adapted.culturallyAdaptedPrompts = generateCulturalPrompts(
+        triage.symptoms, 
+        culturalContext || triage.culturalContext, 
+        language
+    );
+    
+    return adapted;
 }
+
+function determinePriority(symptoms, urgencyLevel) {
+    const urgentKeywords = ['suicide', 'self-harm', 'crisis', 'emergency', 'danger'];
+    const highKeywords = ['severe', 'panic', 'psychosis', 'violent', 'threat'];
+    
+    const symptomsText = symptoms.join(' ').toLowerCase();
+    
+    if (urgencyLevel === 'urgent' || urgentKeywords.some(keyword => symptomsText.includes(keyword))) {
+        return 'urgent';
+    }
+    
+    if (urgencyLevel === 'high' || highKeywords.some(keyword => symptomsText.includes(keyword))) {
+        return 'high';
+    }
+    
+    if (urgencyLevel === 'low') {
+        return 'low';
+    }
+    
+    return 'medium';
+}
+
+function calculateEstimatedWaitTime(priority) {
+    const baseTimes = {
+        'urgent': 5,    // 5 minutes
+        'high': 30,     // 30 minutes
+        'medium': 120,  // 2 hours
+        'low': 240      // 4 hours
+    };
+    
+    return `${baseTimes[priority]} minutes`;
+}
+
+function generateCulturalPrompts(symptoms, culturalContext, language) {
+    const prompts = {
+        'en': {
+            'hispanic': [
+                "How does your family view mental health treatment?",
+                "Are there cultural practices that help you cope with stress?",
+                "Would you prefer to include family members in your treatment?"
+            ],
+            'asian': [
+                "How important is maintaining harmony in your family?",
+                "Do you use traditional healing practices alongside modern medicine?",
+                "How do you typically express emotional distress in your culture?"
+            ],
+            'african_american': [
+                "How has your community's experience with healthcare affected your trust?",
+                "Are there community supports that are important to you?",
+                "How do you typically cope with stress in your community?"
+            ],
+            'default': [
+                "What cultural factors are important in your care?",
+                "Are there family or community considerations we should include?",
+                "What healing practices are meaningful to you?"
+            ]
+        },
+        'es': {
+            'hispanic': [
+                "¿Cómo ve su familia el tratamiento de salud mental?",
+                "¿Hay prácticas culturales que le ayuden a manejar el estrés?",
+                "¿Preferiría incluir a miembros de la familia en su tratamiento?"
+            ]
+        }
+    };
+    
+    const langPrompts = prompts[language] || prompts['en'];
+    const contextPrompts = langPrompts[culturalContext] || langPrompts['default'] || langPrompts[Object.keys(langPrompts)[0]];
+    
+    return contextPrompts;
+}
+
+function generateCarePlan(symptoms, assessmentData, culturalContext, language) {
+    // Mock care plan generation based on symptoms and cultural context
+    const baseGoals = [
+        "Reduce anxiety and stress levels",
+        "Improve coping strategies",
+        "Enhance overall mental well-being"
+    ];
+    
+    const baseInterventions = [
+        "Cognitive Behavioral Therapy (CBT)",
+        "Mindfulness and relaxation techniques",
+        "Regular follow-up sessions"
+    ];
+    
+    const culturalAdaptations = generateCulturalAdaptations(culturalContext, language);
+    
+    return {
+        goals: baseGoals,
+        interventions: baseInterventions,
+        culturalAdaptations,
+        timeline: "8-12 weeks",
+        followUpSchedule: [
+            { type: "initial_follow_up", timeframe: "1 week" },
+            { type: "progress_review", timeframe: "4 weeks" },
+            { type: "outcome_assessment", timeframe: "8 weeks" }
+        ],
+        resources: generateCulturalResources(culturalContext, language)
+    };
+}
+
+function generateCulturalAdaptations(culturalContext, language) {
+    const adaptations = {
+        'hispanic': [
+            "Include family-centered approach to treatment",
+            "Consider religious/spiritual practices in healing",
+            "Provide materials in Spanish when needed"
+        ],
+        'asian': [
+            "Respect for family hierarchy and decision-making",
+            "Integration of traditional and Western approaches",
+            "Consideration of stigma and face-saving concerns"
+        ],
+        'african_american': [
+            "Address historical trauma and systemic issues",
+            "Incorporate community and church support systems",
+            "Consider cultural expressions of distress"
+        ]
+    };
+    
+    return adaptations[culturalContext] || [
+        "Respect cultural values and beliefs",
+        "Include culturally relevant coping strategies",
+        "Consider family and community support systems"
+    ];
+}
+
+function generateCulturalResources(culturalContext, language) {
+    return [
+        "Culturally appropriate support groups",
+        "Community mental health resources",
+        "Educational materials in preferred language",
+        "Traditional healing practice integration options"
+    ];
+}
+
+// Initialize some sample triage entries for demo
+function initializeSampleTriage() {
+    const sampleEntries = [
+        {
+            patientId: 'patient-123',
+            symptoms: ['anxiety', 'sleep difficulties', 'work stress'],
+            priority: 'medium',
+            culturalContext: 'hispanic',
+            language: 'es',
+            status: 'pending'
+        },
+        {
+            patientId: 'patient-456',
+            symptoms: ['depression', 'isolation', 'family conflicts'],
+            priority: 'high',
+            culturalContext: 'asian',
+            language: 'en',
+            status: 'pending'
+        }
+    ];
+
+    sampleEntries.forEach(entry => {
+        const triageId = uuidv4();
+        const triageEntry = {
+            triageId,
+            ...entry,
+            createdAt: new Date().toISOString(),
+            estimatedWaitTime: calculateEstimatedWaitTime(entry.priority),
+            culturallyAdaptedPrompts: generateCulturalPrompts(entry.symptoms, entry.culturalContext, entry.language)
+        };
+        
+        triageQueue.set(triageId, triageEntry);
+    });
+}
+
+// Initialize sample data
+initializeSampleTriage();
 
 module.exports = router;
