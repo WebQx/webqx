@@ -310,4 +310,57 @@ router.get('/verify', async (req, res) => {
   }
 });
 
+/**
+ * GET /auth/me
+ * Returns user role and session metadata for Telepsychiatry API
+ */
+router.get('/me', async (req, res) => {
+  try {
+    const sessionId = req.cookies.sessionId || req.headers['x-session-id'] || req.headers.authorization?.replace('Bearer ', '');
+
+    if (!sessionId) {
+      return res.status(401).json({
+        error: 'UNAUTHORIZED',
+        message: 'No active session found'
+      });
+    }
+
+    const user = await userService.verifySession(sessionId);
+
+    if (!user) {
+      return res.status(401).json({
+        error: 'INVALID_SESSION',
+        message: 'Session is invalid or expired'
+      });
+    }
+
+    // Return user role and session metadata in Telepsychiatry API format
+    res.json({
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      specialty: user.specialty || null,
+      sessionId: sessionId,
+      sessionMetadata: {
+        createdAt: user.createdAt,
+        lastActiveAt: new Date().toISOString(),
+        ipAddress: req.ip || req.connection.remoteAddress || '127.0.0.1',
+        userAgent: req.get('User-Agent') || 'Unknown',
+        permissions: user.permissions || [],
+        isActive: true,
+        sessionType: 'telepsychiatry'
+      }
+    });
+
+  } catch (error) {
+    console.error('[Auth API] /me endpoint error:', error);
+    res.status(500).json({
+      error: 'INTERNAL_ERROR',
+      message: 'An error occurred while retrieving user information'
+    });
+  }
+});
+
 module.exports = router;
