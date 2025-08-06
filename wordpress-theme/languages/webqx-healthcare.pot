@@ -1,0 +1,552 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: WebQx Healthcare Theme 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: functions.php:45
+msgid "Primary Menu"
+msgstr ""
+
+#: functions.php:46
+msgid "Footer Menu"
+msgstr ""
+
+#: functions.php:96
+msgid "Primary Sidebar"
+msgstr ""
+
+#: functions.php:97
+msgid "Add widgets here to appear in your primary sidebar."
+msgstr ""
+
+#: functions.php:104
+msgid "Footer Widget Area 1"
+msgstr ""
+
+#: functions.php:105
+msgid "Add widgets here to appear in the first footer column."
+msgstr ""
+
+#: functions.php:112
+msgid "Footer Widget Area 2"
+msgstr ""
+
+#: functions.php:113
+msgid "Add widgets here to appear in the second footer column."
+msgstr ""
+
+#: functions.php:120
+msgid "Footer Widget Area 3"
+msgstr ""
+
+#: functions.php:121
+msgid "Add widgets here to appear in the third footer column."
+msgstr ""
+
+#: functions.php:153
+msgid "Healthcare Options"
+msgstr ""
+
+#: functions.php:154
+msgid "Customize healthcare-specific settings"
+msgstr ""
+
+#: functions.php:159
+msgid "Theme Colors"
+msgstr ""
+
+#: functions.php:170
+msgid "Primary Color"
+msgstr ""
+
+#: functions.php:177
+msgid "Contact Information"
+msgstr ""
+
+#: functions.php:185
+msgid "Phone Number"
+msgstr ""
+
+#: functions.php:194
+msgid "Email Address"
+msgstr ""
+
+#: functions.php:203
+msgid "Address"
+msgstr ""
+
+#: functions.php:248
+msgid "Healthcare Information"
+msgstr ""
+
+#: functions.php:261
+msgid "Healthcare Category"
+msgstr ""
+
+#: functions.php:265
+msgid "Select Category"
+msgstr ""
+
+#: functions.php:267
+msgid "Primary Care"
+msgstr ""
+
+#: functions.php:268
+msgid "Pediatrics"
+msgstr ""
+
+#: functions.php:269
+msgid "Cardiology"
+msgstr ""
+
+#: functions.php:270
+msgid "Psychiatry"
+msgstr ""
+
+#: functions.php:271
+msgid "Radiology"
+msgstr ""
+
+#: functions.php:272
+msgid "Oncology"
+msgstr ""
+
+#: functions.php:280
+msgid "Medical Disclaimer"
+msgstr ""
+
+#: functions.php:283
+msgid "This content requires a medical disclaimer"
+msgstr ""
+
+#: header.php:35
+msgid "Skip to content"
+msgstr ""
+
+#: header.php:56
+msgid "Primary Menu"
+msgstr ""
+
+#: header.php:114
+msgid "Medical Disclaimer:"
+msgstr ""
+
+#: header.php:115
+msgid "The information provided is for educational purposes only and should not be considered as medical advice. Always consult with a qualified healthcare professional for medical concerns."
+msgstr ""
+
+#: header.php:126
+msgid "Home"
+msgstr ""
+
+#: header.php:129
+msgid "About"
+msgstr ""
+
+#: header.php:130
+msgid "Services"
+msgstr ""
+
+#: header.php:131
+msgid "Our Providers"
+msgstr ""
+
+#: header.php:132
+msgid "Appointments"
+msgstr ""
+
+#: header.php:133
+msgid "Contact"
+msgstr ""
+
+#: footer.php:36
+msgid "About WebQx Healthcare"
+msgstr ""
+
+#: footer.php:37
+msgid "WebQx Healthcare is a comprehensive modular healthcare platform designed to empower both patients and providers with accessible, secure, and compliant healthcare solutions."
+msgstr ""
+
+#: footer.php:41
+msgid "Quick Links"
+msgstr ""
+
+#: footer.php:51
+msgid "Contact Information"
+msgstr ""
+
+#: footer.php:58
+msgid "Address:"
+msgstr ""
+
+#: footer.php:66
+msgid "Phone:"
+msgstr ""
+
+#: footer.php:75
+msgid "Email:"
+msgstr ""
+
+#: footer.php:86
+msgid "All rights reserved."
+msgstr ""
+
+#: footer.php:90
+msgid "This website complies with HIPAA privacy requirements. Patient information is protected and secure."
+msgstr ""
+
+#: footer.php:94
+msgid "Powered by %1$s | WebQx Healthcare Theme by %2$s"
+msgstr ""
+
+#: footer.php:102
+msgid "Emergency Notice:"
+msgstr ""
+
+#: footer.php:103
+msgid "If you are experiencing a medical emergency, please call 911 immediately or go to your nearest emergency room."
+msgstr ""
+
+#: footer.php:108
+msgid "HIPAA Compliant | SSL Secured | Patient Privacy Protected"
+msgstr ""
+
+#: footer.php:178
+msgid "Privacy Policy"
+msgstr ""
+
+#: footer.php:181
+msgid "Terms of Service"
+msgstr ""
+
+#: footer.php:182
+msgid "Patient Rights"
+msgstr ""
+
+#: footer.php:183
+msgid "Accessibility"
+msgstr ""
+
+#: sidebar.php:17
+msgid "Search"
+msgstr ""
+
+#: sidebar.php:22
+msgid "Healthcare Services"
+msgstr ""
+
+#: sidebar.php:33
+msgid "Patient Resources"
+msgstr ""
+
+#: sidebar.php:35
+msgid "Patient Portal"
+msgstr ""
+
+#: sidebar.php:36
+msgid "Appointment Scheduling"
+msgstr ""
+
+#: sidebar.php:37
+msgid "Lab Results"
+msgstr ""
+
+#: sidebar.php:38
+msgid "Prescription Refills"
+msgstr ""
+
+#: sidebar.php:39
+msgid "Insurance Information"
+msgstr ""
+
+#: sidebar.php:44
+msgid "Recent Health Articles"
+msgstr ""
+
+#: sidebar.php:69
+msgid "Emergency Information"
+msgstr ""
+
+#: sidebar.php:71
+msgid "Emergency:"
+msgstr ""
+
+#: sidebar.php:72
+msgid "Poison Control:"
+msgstr ""
+
+#: sidebar.php:73
+msgid "Mental Health Crisis:"
+msgstr ""
+
+#: sidebar.php:77
+msgid "Our Office:"
+msgstr ""
+
+#: sidebar.php:87
+msgid "Patient Portal Access"
+msgstr ""
+
+#: sidebar.php:89
+msgid "Access your medical records, test results, and communicate with your healthcare provider."
+msgstr ""
+
+#: sidebar.php:90
+msgid "Patient Portal Login"
+msgstr ""
+
+#: sidebar.php:91
+msgid "First time user? Contact our office to set up your account."
+msgstr ""
+
+#: sidebar.php:96
+msgid "Office Hours"
+msgstr ""
+
+#: sidebar.php:99
+msgid "Monday - Friday:"
+msgstr ""
+
+#: sidebar.php:100
+msgid "Saturday:"
+msgstr ""
+
+#: sidebar.php:101
+msgid "Sunday:"
+msgstr ""
+
+#: sidebar.php:101
+msgid "Closed"
+msgstr ""
+
+#: sidebar.php:102
+msgid "For after-hours emergencies, please call 911 or visit your nearest emergency room."
+msgstr ""
+
+#: searchform.php:13
+msgctxt "label"
+msgid "Search for:"
+msgstr ""
+
+#: searchform.php:17
+msgctxt "placeholder"
+msgid "Search healthcare topics..."
+msgstr ""
+
+#: searchform.php:19
+msgctxt "aria-label"
+msgid "Search for healthcare information"
+msgstr ""
+
+#: searchform.php:21
+msgctxt "submit button"
+msgid "Search"
+msgstr ""
+
+#: 404.php:18
+msgid "Page Not Found"
+msgstr ""
+
+#: 404.php:23
+msgid "We're sorry, but the page you're looking for doesn't exist."
+msgstr ""
+
+#: 404.php:24
+msgid "This might be because:"
+msgstr ""
+
+#: 404.php:26
+msgid "The page has been moved or deleted"
+msgstr ""
+
+#: 404.php:27
+msgid "You entered an incorrect URL"
+msgstr ""
+
+#: 404.php:28
+msgid "The link you clicked is broken or outdated"
+msgstr ""
+
+#: 404.php:33
+msgid "Search for Healthcare Information"
+msgstr ""
+
+#: 404.php:38
+msgid "Helpful Links"
+msgstr ""
+
+#: 404.php:41
+msgid "Patient Services"
+msgstr ""
+
+#: 404.php:51
+msgid "Information"
+msgstr ""
+
+#: 404.php:58
+msgid "FAQ"
+msgstr ""
+
+#: 404.php:62
+msgid "Recent Health Articles"
+msgstr ""
+
+#: 404.php:82
+msgid "Need Immediate Medical Attention?"
+msgstr ""
+
+#: 404.php:85
+msgid "Emergency:"
+msgstr ""
+
+#: 404.php:89
+msgid "Poison Control:"
+msgstr ""
+
+#: 404.php:93
+msgid "Crisis Hotline:"
+msgstr ""
+
+#: 404.php:99
+msgid "Our Office:"
+msgstr ""
+
+#: search.php:20
+msgid "Search Results for: %s"
+msgstr ""
+
+#: search.php:32
+msgid "%d result found"
+msgid_plural "%d results found"
+msgstr[0] ""
+msgstr[1] ""
+
+#: search.php:36
+msgid "No results found"
+msgstr ""
+
+#: search.php:42
+msgid "Refine Your Search"
+msgstr ""
+
+#: search.php:125
+msgid "← Previous Results"
+msgstr ""
+
+#: search.php:126
+msgid "More Results →"
+msgstr ""
+
+#: search.php:133
+msgid "Search Suggestions"
+msgstr ""
+
+#: search.php:135
+msgid "Check your spelling and try again"
+msgstr ""
+
+#: search.php:136
+msgid "Try using fewer or more general keywords"
+msgstr ""
+
+#: search.php:137
+msgid "Use different keywords that mean the same thing"
+msgstr ""
+
+#: search.php:138
+msgid "Browse our most popular healthcare topics below"
+msgstr ""
+
+#: search.php:143
+msgid "Popular Healthcare Topics"
+msgstr ""
+
+#: search.php:175
+msgid "Recent Health Articles"
+msgstr ""
+
+#: comments.php:26
+msgid "One thought on &ldquo;%1$s&rdquo;"
+msgstr ""
+
+#: comments.php:29
+msgid "%1$s thought on &ldquo;%2$s&rdquo;"
+msgid_plural "%1$s thoughts on &ldquo;%2$s&rdquo;"
+msgstr[0] ""
+msgstr[1] ""
+
+#: comments.php:44
+msgid "Comments are closed."
+msgstr ""
+
+#: comments.php:52
+msgid "Leave a Comment"
+msgstr ""
+
+#: comments.php:53
+msgid "Leave a Reply to %s"
+msgstr ""
+
+#: comments.php:54
+msgid "Cancel Reply"
+msgstr ""
+
+#: comments.php:55
+msgid "Post Comment"
+msgstr ""
+
+#: comments.php:56
+msgid "<strong>Medical Disclaimer:</strong> Comments are not a substitute for professional medical advice. Please consult with your healthcare provider for medical concerns."
+msgstr ""
+
+#: comments.php:60
+msgid "Name"
+msgstr ""
+
+#: comments.php:64
+msgid "Email"
+msgstr ""
+
+#: comments.php:68
+msgid "Website"
+msgstr ""
+
+#: comments.php:72
+msgctxt "noun"
+msgid "Comment"
+msgstr ""
+
+#: comments.php:73
+msgid "Share your thoughts... (Remember: this is not a substitute for professional medical advice)"
+msgstr ""
+
+#: comments.php:90
+msgid "%s <span class=\"says\">says:</span>"
+msgstr ""
+
+#: comments.php:98
+msgid "%1$s at %2$s"
+msgstr ""
+
+#: comments.php:101
+msgid "Edit"
+msgstr ""
+
+#: comments.php:105
+msgid "Your comment is awaiting moderation."
+msgstr ""

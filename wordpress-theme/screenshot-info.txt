@@ -1,0 +1,17 @@
+# WebQx Healthcare Theme Screenshot
+
+This file should contain a screenshot of the theme (1200x900 pixels PNG format).
+
+Since this is a text representation, the actual screenshot.png file should show:
+
+- Clean, professional healthcare website layout
+- Header with WebQx branding and navigation
+- Hero section with healthcare imagery
+- Content area with sidebar
+- Footer with contact information and compliance notices
+- Healthcare-focused color scheme (#2c5aa0 primary blue)
+- Professional typography and spacing
+- Mobile-responsive design elements
+
+The screenshot should demonstrate the theme's healthcare focus, professional appearance, 
+and accessibility features that make it suitable for medical practices and healthcare organizations.

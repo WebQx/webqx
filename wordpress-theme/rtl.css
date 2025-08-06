@@ -1,0 +1,277 @@
+/*
+RTL Styles for WebQx Healthcare Theme
+Styles for right-to-left (RTL) languages like Arabic, Hebrew, etc.
+*/
+
+/* Base RTL adjustments */
+body {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Header */
+.header-container {
+    flex-direction: row-reverse;
+}
+
+.site-branding {
+    text-align: right;
+}
+
+.main-navigation ul {
+    flex-direction: row-reverse;
+}
+
+/* Content Layout */
+.site-main {
+    grid-template-columns: 1fr 2fr;
+}
+
+/* Sidebar adjustments */
+.widget ul {
+    padding-right: 1rem;
+    padding-left: 0;
+}
+
+/* Lists */
+ul, ol {
+    padding-right: 1.5rem;
+    padding-left: 0;
+}
+
+/* Blockquotes */
+blockquote,
+.healthcare-highlight {
+    border-right: 4px solid #2c5aa0;
+    border-left: none;
+    padding-right: 1.5rem;
+    padding-left: 1rem;
+}
+
+/* Forms */
+.search-form input[type="search"] {
+    text-align: right;
+}
+
+/* Navigation */
+.post-navigation .nav-links {
+    flex-direction: row-reverse;
+}
+
+/* Comments */
+.comment-list {
+    margin-right: 0;
+    margin-left: 2rem;
+}
+
+.comment-list .children {
+    margin-right: 2rem;
+    margin-left: 0;
+}
+
+/* Footer */
+.footer-container {
+    text-align: right;
+}
+
+/* Emergency contacts */
+.emergency-contacts {
+    text-align: right;
+}
+
+/* Archive pages */
+.archive-description {
+    text-align: right;
+}
+
+/* Healthcare category labels */
+.healthcare-category {
+    text-align: right;
+}
+
+/* Medical icons - adjust positioning for RTL */
+.medical-icon {
+    margin-left: 0.5rem;
+    margin-right: 0;
+}
+
+/* Button adjustments */
+.read-more::after {
+    content: " ←";
+}
+
+/* Skip link */
+.skip-link {
+    right: -9999px;
+    left: auto;
+}
+
+.skip-link:focus {
+    right: 6px;
+    left: auto;
+}
+
+/* Mobile menu toggle */
+.menu-toggle {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+/* Search form adjustments */
+.search-form {
+    direction: rtl;
+}
+
+.search-submit {
+    right: 0;
+    left: auto;
+}
+
+/* Entry meta adjustments */
+.entry-meta > * {
+    margin-left: 1rem;
+    margin-right: 0;
+}
+
+.entry-meta > *:first-child {
+    margin-left: 0;
+}
+
+/* Widget adjustments */
+.widget-title {
+    text-align: right;
+}
+
+/* 404 page adjustments */
+.link-grid {
+    text-align: right;
+}
+
+.emergency-item {
+    text-align: right;
+}
+
+/* Comment form adjustments */
+.comment-form-author,
+.comment-form-email,
+.comment-form-url,
+.comment-form-comment {
+    text-align: right;
+}
+
+.comment-form input[type="text"],
+.comment-form input[type="email"],
+.comment-form input[type="url"],
+.comment-form textarea {
+    text-align: right;
+}
+
+/* Responsive RTL adjustments */
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+    }
+    
+    .main-navigation ul {
+        flex-direction: row-reverse;
+        justify-content: center;
+    }
+    
+    .site-main {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* WordPress core RTL adjustments */
+.alignleft {
+    float: right;
+    margin-left: 1rem;
+    margin-right: 0;
+}
+
+.alignright {
+    float: left;
+    margin-right: 1rem;
+    margin-left: 0;
+}
+
+/* Table adjustments */
+table {
+    text-align: right;
+}
+
+th, td {
+    text-align: right;
+}
+
+/* Gallery adjustments */
+.wp-block-gallery {
+    direction: rtl;
+}
+
+/* Image caption adjustments */
+.wp-caption-text {
+    text-align: right;
+}
+
+/* Editor RTL support */
+.editor-styles-wrapper {
+    direction: rtl;
+    text-align: right;
+}
+
+.editor-styles-wrapper blockquote {
+    border-right: 4px solid #2c5aa0;
+    border-left: none;
+    padding-right: 1.5rem;
+    padding-left: 1rem;
+}
+
+.editor-styles-wrapper ul,
+.editor-styles-wrapper ol {
+    padding-right: 1.5em;
+    padding-left: 0;
+}
+
+/* Custom healthcare elements RTL */
+.healthcare-highlight {
+    text-align: right;
+}
+
+.medical-disclaimer {
+    text-align: right;
+}
+
+.emergency-info {
+    text-align: right;
+}
+
+/* Healthcare category filtering RTL */
+.healthcare-category-filter {
+    text-align: right;
+}
+
+/* Patient portal RTL */
+.portal-access {
+    text-align: right;
+}
+
+/* Office hours RTL */
+.office-hours {
+    text-align: right;
+}
+
+.office-hours ul {
+    padding-right: 0;
+    padding-left: 0;
+}
+
+/* Footer widget RTL */
+.footer-widget {
+    text-align: right;
+}
+
+.footer-widget ul {
+    padding-right: 0;
+    padding-left: 0;
+}
