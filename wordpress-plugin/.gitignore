@@ -1,0 +1,74 @@
+# WordPress Plugin .gitignore
+
+# WordPress core files (if accidentally copied)
+wp-admin/
+wp-includes/
+wp-content/themes/
+wp-content/plugins/*/
+!wp-content/plugins/webqx-healthcare/
+
+# Configuration files with sensitive data
+wp-config.php
+.env
+.env.*
+
+# Database dumps
+*.sql
+*.sqlite
+
+# Log files
+*.log
+error_log
+debug.log
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node.js dependencies (if any build tools used)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Compiled assets (if using build tools)
+dist/
+build/
+assets/compiled/
+
+# Backup files
+*.backup
+*.bak
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing artifacts
+/coverage/
+phpunit.xml
+.phpunit.result.cache
+
+# Composer
+vendor/
+composer.lock
+
+# Plugin specific
+/uploads/
+/cache/
+/logs/
+/tmp/
