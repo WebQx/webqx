@@ -1,0 +1,27 @@
+{
+  "name": "webqx/healthcare-platform-wordpress",
+  "description": "WordPress plugin for WebQX Healthcare Platform integration",
+  "type": "wordpress-plugin",
+  "license": "Apache-2.0",
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "WebQX Health",
+      "homepage": "https://webqx.health"
+    }
+  ],
+  "require": {
+    "php": ">=7.4",
+    "wordpress": ">=5.0"
+  },
+  "keywords": [
+    "wordpress",
+    "plugin", 
+    "healthcare",
+    "medical",
+    "fhir",
+    "telehealth",
+    "patient-portal"
+  ],
+  "homepage": "https://github.com/WebQx/webqx"
+}

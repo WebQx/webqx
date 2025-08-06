@@ -1,0 +1,27 @@
+{
+  "name": "WebQX Healthcare Platform",
+  "version": "1.0.0",
+  "description": "Comprehensive modular healthcare platform with patient portals, provider dashboards, telehealth, and FHIR-compliant EHR integrations.",
+  "author": "WebQX Health",
+  "author_uri": "https://webqx.health",
+  "plugin_uri": "https://github.com/WebQx/webqx",
+  "requires_wp": "5.0",
+  "tested_wp": "6.4",
+  "requires_php": "7.4",
+  "license": "Apache-2.0",
+  "license_uri": "http://www.apache.org/licenses/LICENSE-2.0",
+  "text_domain": "webqx-healthcare",
+  "domain_path": "/languages",
+  "network": false,
+  "tags": [
+    "healthcare",
+    "medical", 
+    "patient-portal",
+    "telehealth",
+    "fhir",
+    "ehr",
+    "health-records",
+    "appointments",
+    "telemedicine"
+  ]
+}

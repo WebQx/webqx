@@ -1,0 +1,357 @@
+/**
+ * Admin Styles for WebQX Healthcare Platform
+ */
+
+/* Admin Dashboard Layout */
+.webqx-admin-header {
+    background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.webqx-logo h2 {
+    margin: 0 0 10px 0;
+    font-size: 28px;
+    font-weight: 300;
+}
+
+.webqx-logo p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+.webqx-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.webqx-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.webqx-card h3 {
+    margin: 0 0 15px 0;
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    color: #0073aa;
+}
+
+.webqx-card h3 .dashicons {
+    margin-right: 8px;
+    font-size: 20px;
+}
+
+/* Status Indicators */
+.webqx-status-indicator {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.webqx-status-indicator.online {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.webqx-status-indicator.offline {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.webqx-status-indicator .dashicons {
+    margin-right: 8px;
+}
+
+/* Actions */
+.webqx-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.webqx-actions .button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 12px 16px;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.webqx-actions .button .dashicons {
+    margin-right: 8px;
+}
+
+/* Features Grid */
+.webqx-features {
+    grid-column: 1 / -1;
+}
+
+.webqx-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.webqx-feature {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.webqx-feature h4 {
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    color: #0073aa;
+    font-size: 16px;
+}
+
+.webqx-feature h4 .dashicons {
+    margin-right: 6px;
+    font-size: 18px;
+}
+
+.webqx-feature p {
+    margin: 0 0 10px 0;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.webqx-feature code {
+    background: #2d3748;
+    color: #68d391;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* Setup Steps */
+.webqx-setup-steps {
+    counter-reset: step-counter;
+    padding-left: 0;
+}
+
+.webqx-setup-steps li {
+    counter-increment: step-counter;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #0073aa;
+    position: relative;
+}
+
+.webqx-setup-steps li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: -12px;
+    top: 15px;
+    background: #0073aa;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.webqx-setup-steps strong {
+    color: #0073aa;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.webqx-setup-steps p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+/* System Info Table */
+.webqx-system-info {
+    width: 100%;
+    margin: 0;
+}
+
+.webqx-system-info td {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.webqx-system-info td:first-child {
+    width: 150px;
+}
+
+/* Footer */
+.webqx-footer {
+    text-align: center;
+    color: #666;
+    border-top: 1px solid #ddd;
+    padding-top: 20px;
+    margin-top: 30px;
+}
+
+.webqx-footer p {
+    margin: 5px 0;
+}
+
+.webqx-footer a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.webqx-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Settings Page Specific */
+.webqx-settings-actions {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.webqx-connection-test {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 30px 0;
+}
+
+.webqx-connection-test h2 {
+    margin-top: 0;
+    color: #0073aa;
+}
+
+.webqx-shortcode-reference {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 30px 0;
+}
+
+.webqx-shortcode-reference h2 {
+    margin-top: 0;
+    color: #0073aa;
+}
+
+.webqx-shortcode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.webqx-shortcode-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.webqx-shortcode-item h4 {
+    margin: 0 0 10px 0;
+    color: #0073aa;
+}
+
+.webqx-shortcode-item code {
+    background: #2d3748;
+    color: #68d391;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    display: block;
+    margin: 8px 0;
+    word-break: break-all;
+}
+
+.webqx-shortcode-item p {
+    margin: 8px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .webqx-admin-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .webqx-feature-grid,
+    .webqx-shortcode-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .webqx-actions .button {
+        width: 100%;
+    }
+    
+    .webqx-logo h2 {
+        font-size: 24px;
+    }
+    
+    .webqx-logo p {
+        font-size: 14px;
+    }
+}
+
+/* Notice Styles */
+.notice.webqx-notice {
+    border-left: 4px solid #0073aa;
+}
+
+.notice.webqx-notice.notice-error {
+    border-left-color: #d63638;
+}
+
+.notice.webqx-notice.notice-success {
+    border-left-color: #00a32a;
+}
+
+.notice.webqx-notice.notice-warning {
+    border-left-color: #dba617;
+}
+
+/* High Contrast Support */
+@media (prefers-contrast: high) {
+    .webqx-card {
+        border-width: 2px;
+    }
+    
+    .webqx-status-indicator {
+        border-width: 2px;
+    }
+    
+    .webqx-feature,
+    .webqx-shortcode-item {
+        border-width: 2px;
+    }
+}
