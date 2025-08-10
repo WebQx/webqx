@@ -53,6 +53,22 @@ Role-based access and modular configuration for deployment:
 - **Electronic Prescriptions**: Send prescriptions directly to pharmacies.
 - **Appointment Scheduling**: Seamless telehealth appointment bookings.
 
+- ---
+
+## 🧑‍⚕️ MUP Access Program
+
+WebQx.Healthcare offers free or sponsored access to clinics and organizations serving Medically Underserved Populations.
+
+### Eligibility Includes:
+- Rural or tribal health centers
+- Refugee and humanitarian clinics
+- Disability and elder care facilities
+- Low-income urban clinics
+
+📥 [Apply for Equity Access](https://webqx.healthcare/equity-access) *(link placeholder)*
+
+---
+
 
 # 🌍 Telepsychiatry API Platform
 
