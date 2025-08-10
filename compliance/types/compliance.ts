@@ -10,7 +10,7 @@
 
 export interface ComplianceConfig {
   /** HIPAA compliance configuration */
-  hipaa: {
+  hipaa?: {
     enabled: boolean;
     strictMode: boolean;
     breachNotificationEmail?: string;
@@ -19,16 +19,27 @@ export interface ComplianceConfig {
   };
   
   /** GDPR compliance configuration */
-  gdpr: {
+  gdpr?: {
     enabled: boolean;
     region: 'EU' | 'UK' | 'GLOBAL';
     dataProcessingLegalBasis: string;
     consentExpiryDays: number;
     erasureTimeframeDays: number;
   };
+
+  /** LGPD compliance configuration */
+  lgpd?: {
+    enabled: boolean;
+    region: 'BR';
+    dataProcessingLegalBasis: string;
+    consentExpiryDays: number;
+    eliminationTimeframeDays: number;
+    pseudonymizationRequired: boolean;
+    language: 'pt-BR' | 'en';
+  };
   
   /** ISO/IEC 27001 compliance configuration */
-  iso27001: {
+  iso27001?: {
     enabled: boolean;
     auditLevel: 'basic' | 'detailed' | 'comprehensive';
     riskAssessmentInterval: number;

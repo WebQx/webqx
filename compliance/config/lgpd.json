@@ -1,0 +1,323 @@
+{
+  "enabled": false,
+  "region": "BR",
+  "language": "pt-BR",
+  "dataProcessingLegalBasis": "consentimento",
+  "consentExpiryDays": 365,
+  "eliminationTimeframeDays": 15,
+  "pseudonymizationRequired": true,
+  "dataProcessing": {
+    "transparencyRequired": true,
+    "legalBasisRequired": true,
+    "purposeLimitationEnabled": true,
+    "dataMinimizationEnabled": true,
+    "accuracyRequired": true,
+    "storageLimitationEnabled": true,
+    "securityAndConfidentialityRequired": true,
+    "preventionRequired": true,
+    "nondiscriminationRequired": true,
+    "accountabilityRequired": true
+  },
+  "consentManagement": {
+    "explicitConsentRequired": true,
+    "specificConsent": true,
+    "informedConsent": true,
+    "unambiguousConsent": true,
+    "granularConsent": true,
+    "withdrawalMechanism": true,
+    "consentRecords": {
+      "maintained": true,
+      "retentionPeriod": "indefinite",
+      "auditTrail": true,
+      "brazilianTimezone": "America/Sao_Paulo"
+    },
+    "consentTypes": [
+      {
+        "type": "dados_pessoais",
+        "description": "Tratamento de dados pessoais para serviços de saúde",
+        "required": true,
+        "legalBasis": "consentimento",
+        "sensitiveData": false
+      },
+      {
+        "type": "dados_sensiveis",
+        "description": "Tratamento de dados pessoais sensíveis relacionados à saúde",
+        "required": true,
+        "legalBasis": "consentimento",
+        "sensitiveData": true,
+        "explicitConsentRequired": true
+      },
+      {
+        "type": "compartilhamento_dados",
+        "description": "Compartilhamento de dados com parceiros de saúde",
+        "required": false,
+        "legalBasis": "consentimento",
+        "sensitiveData": false
+      },
+      {
+        "type": "comunicacoes_marketing",
+        "description": "Comunicações de marketing e promocionais",
+        "required": false,
+        "legalBasis": "consentimento",
+        "sensitiveData": false
+      },
+      {
+        "type": "participacao_pesquisa",
+        "description": "Participação em pesquisas médicas",
+        "required": false,
+        "legalBasis": "consentimento",
+        "sensitiveData": true,
+        "explicitConsentRequired": true
+      },
+      {
+        "type": "servicos_terceiros",
+        "description": "Integração com serviços de saúde terceiros",
+        "required": false,
+        "legalBasis": "interesse_legitimo",
+        "sensitiveData": false
+      }
+    ]
+  },
+  "dataSubjectRights": {
+    "confirmacaoExistencia": {
+      "enabled": true,
+      "responseTime": "15_days",
+      "freeOfCharge": true,
+      "methods": ["electronic", "physical"]
+    },
+    "acessoDados": {
+      "enabled": true,
+      "responseTime": "15_days",
+      "extensionAllowed": "15_days_additional",
+      "freeOfCharge": true,
+      "format": ["electronic", "paper"],
+      "informationProvided": [
+        "finalidades_tratamento",
+        "categorias_dados",
+        "destinatarios",
+        "periodo_conservacao",
+        "direitos_titular"
+      ]
+    },
+    "correcaoDados": {
+      "enabled": true,
+      "responseTime": "15_days",
+      "notificationToRecipients": true,
+      "methods": ["electronic", "physical"]
+    },
+    "eliminacaoDados": {
+      "enabled": true,
+      "responseTime": "15_days",
+      "conditions": [
+        "desnecessarios",
+        "excessivos",
+        "tratamento_ilicito",
+        "consentimento_revogado"
+      ],
+      "exceptions": [
+        "cumprimento_obrigacao_legal",
+        "politicas_publicas",
+        "estudos_orgao_pesquisa",
+        "exercicio_direitos",
+        "protecao_credito"
+      ]
+    },
+    "portabilidadeDados": {
+      "enabled": true,
+      "responseTime": "15_days",
+      "formats": ["json", "csv", "xml"],
+      "structured": true,
+      "machineReadable": true,
+      "directTransfer": false
+    },
+    "informacaoUsoPublico": {
+      "enabled": true,
+      "responseTime": "15_days",
+      "entitiesSharedWith": true,
+      "purposeOfSharing": true
+    },
+    "revogacaoConsentimento": {
+      "enabled": true,
+      "immediateEffect": true,
+      "facilitatedProcedure": true,
+      "methods": ["electronic", "physical"]
+    }
+  },
+  "breachNotification": {
+    "anpd": {
+      "notificationRequired": true,
+      "timeframe": "reasonable_period",
+      "contactDetails": {
+        "authority": "Autoridade Nacional de Proteção de Dados (ANPD)",
+        "website": "https://www.gov.br/anpd/",
+        "email": "comunicacao@anpd.gov.br"
+      },
+      "thresholds": {
+        "riskToRights": true,
+        "individualCount": 1,
+        "dataCategories": ["dados_sensiveis", "dados_identificacao"]
+      }
+    },
+    "dataSubjects": {
+      "notificationRequired": "if_relevant_risk",
+      "timeframe": "reasonable_period",
+      "methods": ["email", "correio", "publicacao"],
+      "informationIncluded": [
+        "natureza_incidente",
+        "informacoes_afetadas",
+        "medidas_adotadas",
+        "riscos_relacionados",
+        "ponto_contato"
+      ]
+    },
+    "localAuthorities": {
+      "notificationRequired": "if_criminal_activity",
+      "timeframe": "immediate",
+      "entities": ["Polícia Federal", "Ministério Público"]
+    },
+    "documentation": {
+      "recordRequired": true,
+      "retentionPeriod": "5_years",
+      "informationToRecord": [
+        "fatos_incidente",
+        "efeitos_consequencias",
+        "medidas_corretivas",
+        "medidas_preventivas"
+      ]
+    }
+  },
+  "pseudonymization": {
+    "required": true,
+    "methods": ["hashing", "tokenization", "encryption"],
+    "keyManagement": {
+      "separateStorage": true,
+      "accessControls": true,
+      "rotationPolicy": true
+    },
+    "applicableToCategories": [
+      "dados_identificacao",
+      "dados_contato",
+      "dados_saude",
+      "dados_biometricos",
+      "dados_geneticos"
+    ]
+  },
+  "internationalTransfers": {
+    "adequacyDecision": {
+      "countries": ["EU", "UK", "Argentina", "Uruguay"],
+      "assessmentRequired": false
+    },
+    "safeguards": {
+      "standardContractualClauses": true,
+      "certificationMechanisms": false,
+      "codesOfConduct": false,
+      "specificAuthorization": true
+    },
+    "anpdAuthorization": {
+      "required": "if_no_adequacy",
+      "processTime": "60_days",
+      "renewalRequired": true
+    }
+  },
+  "dataProtectionOfficer": {
+    "required": "recommended",
+    "designation": {
+      "publicSector": true,
+      "largeScaleProcessing": true,
+      "sensitiveDataProcessing": true
+    },
+    "qualifications": {
+      "professionalKnowledge": true,
+      "lgpdExpertise": true,
+      "conflictsOfInterest": false
+    },
+    "contact": {
+      "name": "Encarregado de Proteção de Dados",
+      "email": "dpo@webqx.health.br",
+      "phone": "+55-11-9999-9999"
+    }
+  },
+  "technicalAndOrganizationalMeasures": {
+    "pseudonymization": true,
+    "encryption": true,
+    "confidentiality": true,
+    "integrity": true,
+    "availability": true,
+    "resilience": true,
+    "regularTesting": true,
+    "dataMinimization": true,
+    "accessControls": true,
+    "auditLogs": true,
+    "staffTraining": true,
+    "incidentResponse": true,
+    "dataLocalization": {
+      "required": false,
+      "preferBrazilianServers": true,
+      "cloudProvidersAllowed": true
+    }
+  },
+  "childrenData": {
+    "specialProtection": true,
+    "ageOfConsent": 18,
+    "parentalConsent": {
+      "required": "under_18",
+      "verificationMethods": ["parental_verification", "age_verification"],
+      "brazilianSpecific": {
+        "cpfValidation": true,
+        "documentValidation": true
+      }
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "consentDashboard": "/admin/lgpd-consentimento",
+    "requestTracking": "/admin/lgpd-solicitacoes",
+    "breachManagement": "/admin/lgpd-incidentes",
+    "reportingSchedule": {
+      "weekly": "status_consentimento",
+      "monthly": "resumo_solicitacoes",
+      "quarterly": "revisao_conformidade"
+    },
+    "alerts": {
+      "consentExpiring": "7_days_before",
+      "requestOverdue": "12_days",
+      "breachDetected": "immediate"
+    },
+    "brazilianHolidays": {
+      "considerBusinessDays": true,
+      "adjustDeadlines": true
+    }
+  },
+  "auditAndCompliance": {
+    "regularAudits": true,
+    "auditFrequency": "annual",
+    "complianceAssessment": true,
+    "anpdCompliance": true,
+    "localLawCompliance": true,
+    "thirdPartyAudits": false,
+    "certificationSchemes": ["ISO27001", "LGPD_Certification"]
+  },
+  "brazilianSpecific": {
+    "cpfValidation": {
+      "enabled": true,
+      "required": "for_identification",
+      "maskingRequired": true
+    },
+    "localLanguage": {
+      "primary": "pt-BR",
+      "consentInPortuguese": true,
+      "privacyNoticeInPortuguese": true,
+      "supportMultilingual": false
+    },
+    "businessDays": {
+      "excludeWeekends": true,
+      "excludeHolidays": true,
+      "timezone": "America/Sao_Paulo"
+    },
+    "localRegulation": {
+      "healthRegulation": "ANS",
+      "dataRegulation": "ANPD",
+      "complianceRequired": true
+    }
+  }
+}

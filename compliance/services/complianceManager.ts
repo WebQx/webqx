@@ -23,6 +23,7 @@ import {
 
 import { HIPAAService } from '../types/hipaa';
 import { GDPRService } from '../types/gdpr';
+import { LGPDService } from '../types/lgpd';
 import { ISO27001Service } from '../types/iso27001';
 
 // Import existing WebQX services
@@ -36,6 +37,7 @@ export class ComplianceManager {
   private auditLogger: AuditLogger;
   private hipaaService?: HIPAAService;
   private gdprService?: GDPRService;
+  private lgpdService?: LGPDService;
   private iso27001Service?: ISO27001Service;
   
   private complianceAuditLog: ComplianceAuditEntry[] = [];
@@ -72,17 +74,22 @@ export class ComplianceManager {
   async initialize(): Promise<void> {
     try {
       // Dynamic imports to avoid loading unused services
-      if (this.config.hipaa.enabled) {
+      if (this.config.hipaa?.enabled) {
         const { HIPAAServiceImpl } = await import('./hipaaService');
         this.hipaaService = new HIPAAServiceImpl(this.config.hipaa, this.auditLogger);
       }
 
-      if (this.config.gdpr.enabled) {
+      if (this.config.gdpr?.enabled) {
         const { GDPRServiceImpl } = await import('./gdprService');
         this.gdprService = new GDPRServiceImpl(this.config.gdpr, this.auditLogger);
       }
 
-      if (this.config.iso27001.enabled) {
+      if (this.config.lgpd?.enabled) {
+        const { LGPDServiceImpl } = await import('./lgpdService');
+        this.lgpdService = new LGPDServiceImpl(this.config.lgpd, this.auditLogger);
+      }
+
+      if (this.config.iso27001?.enabled) {
         const { ISO27001ServiceImpl } = await import('./iso27001Service');
         this.iso27001Service = new ISO27001ServiceImpl(this.config.iso27001, this.auditLogger);
       }
@@ -106,6 +113,13 @@ export class ComplianceManager {
    */
   getGDPRService(): GDPRService | undefined {
     return this.gdprService;
+  }
+
+  /**
+   * Get the configured LGPD service
+   */
+  getLGPDService(): LGPDService | undefined {
+    return this.lgpdService;
   }
 
   /**
