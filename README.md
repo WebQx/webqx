@@ -1,5 +1,5 @@
 # 
-# 🌐 WebQX™:  Healthcare Platform  
+# 🌐 WebQx:  Healthcare Platform  
 Empowering Patients and Supporting Providers .  Free access for Medically Underserved Populations around the Globe
 
 ## 🚀 Overview  
