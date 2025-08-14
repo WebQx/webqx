@@ -8,7 +8,7 @@ WebQX is a comprehensive modular healthcare stack designed to empower both patie
 Built with compliance at its core, WebQX adheres to global healthcare standards including 
 HIPAA (Health Insurance Portability and Accountability Act), GDPR (General Data Protection Regulation), and LGPD (Lei Geral de Proteção de Dados)providing healthcare organizations with confidence in data security and interoperability. The platform's modular architecture enables seamless scalability and customization, adapting to the unique needs of healthcare settings from rural clinics to major urban hospitals.
 
-At the heart of WebQX™ is our commitment to accessibility, collaborative care, and patient empowerment—leveraging technology to break down barriers and improve global healthcare access for all.
+At the heart of WebQX is our commitment to accessibility, collaborative care, and patient empowerment—leveraging technology to break down barriers and improve global healthcare access for all.
 
 ## 🧩 Modular Architecture
 
