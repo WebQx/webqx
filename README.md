@@ -3,9 +3,9 @@
 Empowering Patients and Supporting Providers .  Free access for Medically Underserved Populations around the Globe
 
 ## 🚀 Overview  
-WebQX™ is a comprehensive modular healthcare stack designed to empower both patients and providers across 12 core medical specialties, including Primary Care, Psychiatry, Radiology, Pediatrics, Oncology, Cardiology, and more. Our platform champions multilingual support, health equity, and enhanced health literacy to ensure accessible care for diverse global communities.
+WebQX is a comprehensive modular healthcare stack designed to empower both patients and providers across 12 core medical specialties, including Primary Care, Psychiatry, Radiology, Pediatrics, Oncology, Cardiology, and more. Our platform champions multilingual support, health equity, and enhanced health literacy to ensure accessible care for diverse global communities.
 
-Built with compliance at its core, WebQX™ adheres to global healthcare standards including 
+Built with compliance at its core, WebQX adheres to global healthcare standards including 
 HIPAA (Health Insurance Portability and Accountability Act), GDPR (General Data Protection Regulation), and LGPD (Lei Geral de Proteção de Dados)providing healthcare organizations with confidence in data security and interoperability. The platform's modular architecture enables seamless scalability and customization, adapting to the unique needs of healthcare settings from rural clinics to major urban hospitals.
 
 At the heart of WebQX™ is our commitment to accessibility, collaborative care, and patient empowerment—leveraging technology to break down barriers and improve global healthcare access for all.
