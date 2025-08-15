@@ -134,6 +134,91 @@ module "monitoring" {
   dynamodb_table_names = module.dynamodb.table_names
   api_gateway_name = module.api_gateway.api_name
   
+  # Auto-scaling monitoring
+  ecs_cluster_name = try(module.ecs[0].cluster_name, "")
+  alb_target_group_full_name = try(module.load_balancer[0].api_target_group_full_name, "")
+  
+  tags = local.common_tags
+}
+
+# KMS for HIPAA-compliant encryption
+module "kms" {
+  source = "./modules/kms"
+  
+  name_prefix = local.name_prefix
+  
+  tags = local.common_tags
+}
+
+# Application Load Balancer (conditional)
+module "load_balancer" {
+  count = var.enable_ecs ? 1 : 0
+  source = "./modules/load_balancer"
+  
+  name_prefix = local.name_prefix
+  vpc_id = module.vpc.vpc_id
+  public_subnet_ids = module.vpc.public_subnet_ids
+  alb_security_group_id = module.security_groups.alb_security_group_id
+  ssl_certificate_arn = var.ssl_certificate_arn
+  access_logs_bucket = module.s3.bucket_names["access_logs"]
+  
+  tags = local.common_tags
+}
+
+# ECS Cluster and Services (conditional)
+module "ecs" {
+  count = var.enable_ecs ? 1 : 0
+  source = "./modules/ecs"
+  
+  name_prefix = local.name_prefix
+  environment = var.environment
+  aws_region = var.aws_region
+  
+  # Networking
+  private_subnet_ids = module.vpc.private_subnet_ids
+  ecs_security_group_id = module.security_groups.ecs_security_group_id
+  
+  # IAM
+  ecs_execution_role_arn = module.iam.ecs_task_execution_role_arn
+  ecs_task_role_arn = module.iam.ecs_task_role_arn
+  
+  # Load Balancer
+  load_balancer_listener_arn = module.load_balancer[0].https_listener_arn
+  target_group_arn = module.load_balancer[0].api_target_group_arn
+  telehealth_target_group_arn = module.load_balancer[0].telehealth_target_group_arn
+  
+  # Secrets
+  jwt_secret_arn = aws_secretsmanager_secret.webqx_config.arn
+  database_secret_arn = aws_secretsmanager_secret.webqx_config.arn
+  
+  tags = local.common_tags
+}
+
+# Auto Scaling for ECS (conditional)
+module "autoscaling" {
+  count = var.enable_ecs ? 1 : 0
+  source = "./modules/autoscaling"
+  
+  name_prefix = local.name_prefix
+  
+  # ECS Configuration
+  cluster_name = module.ecs[0].cluster_name
+  api_service_name = module.ecs[0].api_service_name
+  telehealth_service_name = module.ecs[0].telehealth_service_name
+  
+  # Target Groups for request-based scaling
+  api_target_group_full_name = module.load_balancer[0].api_target_group_full_name
+  telehealth_target_group_full_name = module.load_balancer[0].telehealth_target_group_full_name
+  
+  # Encryption
+  sns_kms_key_id = module.kms.general_kms_key_id
+  
+  # Scaling Configuration
+  api_min_capacity = var.api_min_capacity
+  api_max_capacity = var.api_max_capacity
+  telehealth_min_capacity = var.telehealth_min_capacity
+  telehealth_max_capacity = var.telehealth_max_capacity
+  
   tags = local.common_tags
 }
 
