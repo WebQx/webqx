@@ -63,6 +63,8 @@ const oauth2Config = {
             'super_admin': ['admin', 'provider', 'patient'],
             'admin': ['provider', 'patient'],
             'provider': ['patient'],
+            'premiumPlus': ['premium', 'patient'],
+            'premium': ['patient'],
             'patient': []
         }
     },
