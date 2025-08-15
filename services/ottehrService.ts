@@ -10,6 +10,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { AdaptiveTimeoutManager } from '../utils/adaptive-timeout';
 
 /**
  * Configuration interface for the Ottehr service
@@ -282,6 +283,7 @@ export class OttehrService extends EventEmitter {
   private config: Required<OttehrConfig>;
   private authToken: string | null = null;
   private tokenExpiresAt: number | null = null;
+  private adaptiveTimeoutManager: AdaptiveTimeoutManager;
 
   /**
    * Creates a new OttehrService instance
@@ -290,6 +292,14 @@ export class OttehrService extends EventEmitter {
   constructor(config: OttehrConfig = {}) {
     super();
     this.config = { ...DEFAULT_CONFIG, ...config };
+
+    // Initialize adaptive timeout manager
+    this.adaptiveTimeoutManager = new AdaptiveTimeoutManager({
+      fallbackTimeoutMs: this.config.timeout,
+      minTimeoutMs: Math.min(this.config.timeout, 30000),
+      maxTimeoutMs: Math.max(this.config.timeout * 4, 120000),
+      enableLogging: true
+    });
 
     // Validate required configuration
     if (!this.config.apiBaseUrl) {
@@ -659,7 +669,13 @@ export class OttehrService extends EventEmitter {
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<OttehrApiResponse> {
     const url = `${this.config.apiBaseUrl}${endpoint}`;
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), this.config.timeout);
+    
+    // Get adaptive timeout for this endpoint
+    const endpointKey = `ottehr_${endpoint.split('?')[0]}`;
+    const adaptiveTimeout = this.adaptiveTimeoutManager.getAdaptiveTimeout(endpointKey, this.config.timeout);
+    const timeoutId = setTimeout(() => abortController.abort(), adaptiveTimeout);
+    
+    const startTime = Date.now();
 
     try {
       const headers: Record<string, string> = {
@@ -681,6 +697,7 @@ export class OttehrService extends EventEmitter {
       });
 
       clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
 
       const contentType = response.headers.get('content-type');
       let data: any = null;
@@ -691,6 +708,10 @@ export class OttehrService extends EventEmitter {
         data = await response.text();
       }
 
+      // Record response time for adaptive timeout calculation
+      const success = response.ok;
+      this.adaptiveTimeoutManager.recordResponseTime(endpointKey, duration, success);
+
       if (!response.ok) {
         const error: OttehrError = {
           message: data?.message || `HTTP ${response.status}: ${response.statusText}`,
@@ -698,6 +719,13 @@ export class OttehrService extends EventEmitter {
           statusCode: response.status,
           details: data
         };
+
+        this.logError(`Request failed for ${endpoint}`, {
+          status: response.status,
+          duration,
+          adaptiveTimeout,
+          error: error.message
+        });
 
         return {
           success: false,
@@ -708,6 +736,12 @@ export class OttehrService extends EventEmitter {
           }
         };
       }
+
+      this.logInfo(`Request successful for ${endpoint}`, {
+        duration,
+        adaptiveTimeout,
+        status: response.status
+      });
 
       return {
         success: true,
@@ -720,14 +754,28 @@ export class OttehrService extends EventEmitter {
 
     } catch (error) {
       clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
 
       if (error instanceof Error && error.name === 'AbortError') {
+        // Record timeout as failed response
+        this.adaptiveTimeoutManager.recordResponseTime(endpointKey, duration, false);
+        
         const timeoutError: OttehrError = {
-          message: `Request timed out after ${this.config.timeout / 1000} seconds`,
+          message: `Request timed out after ${adaptiveTimeout / 1000} seconds`,
           code: 'TIMEOUT_ERROR'
         };
+        
+        this.logError(`Request timeout for ${endpoint}`, {
+          duration,
+          adaptiveTimeout,
+          configuredTimeout: this.config.timeout
+        });
+        
         return { success: false, error: timeoutError };
       }
+
+      // Record network error
+      this.adaptiveTimeoutManager.recordResponseTime(endpointKey, duration, false);
 
       const networkError: OttehrError = {
         message: error instanceof Error ? error.message : 'Network error',
@@ -735,8 +783,36 @@ export class OttehrService extends EventEmitter {
         details: error
       };
 
+      this.logError(`Network error for ${endpoint}`, {
+        duration,
+        adaptiveTimeout,
+        error: networkError.message
+      });
+
       return { success: false, error: networkError };
     }
+  }
+
+  /**
+   * Get adaptive timeout statistics
+   */
+  getAdaptiveTimeoutStats(): Record<string, any> {
+    const allStats = this.adaptiveTimeoutManager.getAllStats();
+    const stats: Record<string, any> = {};
+    
+    allStats.forEach((endpointStats, endpointKey) => {
+      stats[endpointKey] = {
+        currentTimeout: endpointStats.currentTimeout,
+        adjustmentCount: endpointStats.adjustmentCount,
+        lastAdjusted: endpointStats.lastAdjusted,
+        sampleCount: endpointStats.responseTimes.length,
+        avgResponseTime: endpointStats.responseTimes.length > 0 
+          ? Math.round(endpointStats.responseTimes.reduce((sum, r) => sum + r.duration, 0) / endpointStats.responseTimes.length)
+          : 0
+      };
+    });
+    
+    return stats;
   }
 
   /**
