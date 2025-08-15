@@ -24,6 +24,8 @@ import {
 } from '../types';
 import { AuditLogger } from './auditLogger';
 import { DataSyncService } from './dataSync';
+import { DynamicCircuitBreaker, DynamicCircuitBreakerConfig } from './dynamicCircuitBreaker';
+import { IntermittentErrorDetector } from './intermittentErrorDetector';
 import { validateEHRConfiguration, validatePatientMrn } from '../utils/validation';
 import { encryptSensitiveData, decryptSensitiveData } from '../utils/encryption';
 
@@ -41,6 +43,13 @@ export interface EHRServiceOptions {
   enableAutoRetry?: boolean;
   /** Maximum number of concurrent operations */
   maxConcurrentOperations?: number;
+  /** Dynamic error handling configuration */
+  dynamicErrorHandling?: {
+    enabled?: boolean;
+    initialFailureThreshold?: number;
+    initialRecoveryTimeMs?: number;
+    enableDynamicAdjustment?: boolean;
+  };
 }
 
 /**
@@ -79,6 +88,8 @@ export class EHRService {
   private auditLogger: AuditLogger;
   private dataSyncService: DataSyncService;
   private options: Required<EHRServiceOptions>;
+  private dynamicCircuitBreakers: Map<string, DynamicCircuitBreaker> = new Map();
+  private errorDetector: IntermittentErrorDetector;
 
   /**
    * Constructor
@@ -90,11 +101,26 @@ export class EHRService {
       defaultTimeoutMs: options.defaultTimeoutMs || 30000,
       enableAuditLogging: options.enableAuditLogging ?? true,
       enableAutoRetry: options.enableAutoRetry ?? true,
-      maxConcurrentOperations: options.maxConcurrentOperations || 5
+      maxConcurrentOperations: options.maxConcurrentOperations || 5,
+      dynamicErrorHandling: {
+        enabled: options.dynamicErrorHandling?.enabled ?? true,
+        initialFailureThreshold: options.dynamicErrorHandling?.initialFailureThreshold || 3,
+        initialRecoveryTimeMs: options.dynamicErrorHandling?.initialRecoveryTimeMs || 30000,
+        enableDynamicAdjustment: options.dynamicErrorHandling?.enableDynamicAdjustment ?? true
+      }
     };
 
     this.auditLogger = new AuditLogger();
     this.dataSyncService = new DataSyncService();
+
+    // Initialize error detection for dynamic handling
+    this.errorDetector = new IntermittentErrorDetector({
+      analysisWindowMs: 300000, // 5 minutes
+      minErrorsForPattern: 3,
+      intermittentThreshold: 0.7,
+      maxThresholdMultiplier: 3.0,
+      minRecoveryReduction: 0.3
+    });
 
     // Initialize event handlers map
     Object.values(['connection_established', 'connection_lost', 'sync_started', 'sync_completed', 'sync_failed', 'error_occurred', 'configuration_updated'] as EHRServiceEvent[])
@@ -135,6 +161,11 @@ export class EHRService {
       // Store configuration
       this.configurations.set(config.id, encryptedConfig);
       this.connections.set(config.id, 'disconnected');
+
+      // Initialize dynamic circuit breaker for this configuration
+      if (this.options.dynamicErrorHandling.enabled) {
+        this.initializeDynamicCircuitBreaker(config.id);
+      }
 
       // Audit log the configuration addition
       if (this.options.enableAuditLogging) {
@@ -252,6 +283,9 @@ export class EHRService {
       this.configurations.delete(configId);
       this.connections.delete(configId);
 
+      // Remove dynamic circuit breaker
+      this.dynamicCircuitBreakers.delete(configId);
+
       // Audit log the removal
       if (this.options.enableAuditLogging) {
         await this.auditLogger.log({
@@ -317,8 +351,12 @@ export class EHRService {
       this.connections.set(configId, 'connecting');
 
       try {
-        // Attempt connection with timeout
-        const connected = await this.performConnection(config);
+        // Attempt connection with dynamic error handling
+        const connected = await this.executeWithDynamicHandling(
+          configId,
+          () => this.performConnection(config),
+          'CONNECTION_ERROR'
+        );
         
         if (connected) {
           this.connections.set(configId, 'connected');
@@ -501,8 +539,12 @@ export class EHRService {
         });
       }
 
-      // Retrieve medical record
-      const medicalRecord = await this.fetchPatientRecord(configId, patientMrn, dataTypes);
+      // Retrieve medical record with dynamic error handling
+      const medicalRecord = await this.executeWithDynamicHandling(
+        configId,
+        () => this.fetchPatientRecord(configId, patientMrn, dataTypes),
+        'PATIENT_RECORD_ERROR'
+      );
 
       this.logInfo('Patient record retrieved successfully', { 
         configId, 
@@ -896,6 +938,73 @@ export class EHRService {
    */
   private logError(message: string, error: EHRApiError, context?: Record<string, unknown>): void {
     console.error(`[EHR Service] ${message}`, { error, context: context || {} });
+  }
+
+  /**
+   * Initialize dynamic circuit breaker for a configuration
+   * @param configId Configuration ID
+   */
+  private initializeDynamicCircuitBreaker(configId: string): void {
+    if (!this.options.dynamicErrorHandling.enabled) return;
+
+    const circuitBreakerConfig: DynamicCircuitBreakerConfig = {
+      initialFailureThreshold: this.options.dynamicErrorHandling.initialFailureThreshold!,
+      initialRecoveryTimeMs: this.options.dynamicErrorHandling.initialRecoveryTimeMs!,
+      monitoringWindowMs: 60000, // 1 minute
+      enableDynamicAdjustment: this.options.dynamicErrorHandling.enableDynamicAdjustment!,
+      minFailureThreshold: 1,
+      maxFailureThreshold: 10,
+      minRecoveryTimeMs: 5000,
+      maxRecoveryTimeMs: 300000,
+      module: `ehr-service-${configId}`
+    };
+
+    const dynamicCircuitBreaker = new DynamicCircuitBreaker(circuitBreakerConfig, this.errorDetector);
+    this.dynamicCircuitBreakers.set(configId, dynamicCircuitBreaker);
+
+    this.logInfo('Dynamic circuit breaker initialized for configuration', { configId });
+  }
+
+  /**
+   * Execute operation with dynamic error handling
+   * @param configId Configuration ID
+   * @param operation Operation to execute
+   * @param errorCode Error code for pattern analysis
+   * @returns Operation result
+   */
+  private async executeWithDynamicHandling<T>(
+    configId: string,
+    operation: () => Promise<T>,
+    errorCode: string
+  ): Promise<T> {
+    const circuitBreaker = this.dynamicCircuitBreakers.get(configId);
+    
+    if (circuitBreaker) {
+      return await circuitBreaker.execute(operation, errorCode);
+    } else {
+      // Fallback to direct execution if dynamic handling is disabled
+      return await operation();
+    }
+  }
+
+  /**
+   * Get dynamic error handling statistics for monitoring
+   * @param configId Configuration ID
+   */
+  getDynamicErrorStats(configId: string): {
+    circuitBreakerMetrics?: any;
+    errorPatternStats?: any;
+  } {
+    const circuitBreaker = this.dynamicCircuitBreakers.get(configId);
+    
+    if (circuitBreaker) {
+      return {
+        circuitBreakerMetrics: circuitBreaker.getMetrics(),
+        errorPatternStats: this.errorDetector.getStatistics()
+      };
+    }
+    
+    return {};
   }
 }
 

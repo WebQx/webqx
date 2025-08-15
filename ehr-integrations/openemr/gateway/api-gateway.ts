@@ -28,6 +28,8 @@ import type {
 } from '../types/index';
 
 import { OAuth2Connector, TokenExchangeRequest } from '../connectors/oauth2-connector';
+import { DynamicCircuitBreaker, DynamicCircuitBreakerConfig } from '../../services/dynamicCircuitBreaker';
+import { IntermittentErrorDetector } from '../../services/intermittentErrorDetector';
 
 export interface APIGatewayConfig {
   // Server Configuration
@@ -68,6 +70,11 @@ export interface APIGatewayConfig {
     failureThreshold: number;
     recoveryTimeMs: number;
     monitoringWindowMs: number;
+    enableDynamicAdjustment?: boolean;
+    minFailureThreshold?: number;
+    maxFailureThreshold?: number;
+    minRecoveryTimeMs?: number;
+    maxRecoveryTimeMs?: number;
   };
   
   // Audit Configuration
@@ -106,6 +113,8 @@ export interface CircuitBreakerState {
   failureCount: number;
   lastFailureTime: number;
   nextAttemptTime: number;
+  currentFailureThreshold: number;
+  currentRecoveryTimeMs: number;
 }
 
 /**
@@ -117,8 +126,10 @@ export class APIGateway {
   private app: express.Application;
   private router: Router;
   private tokenCache: Map<string, { user: User; tokens: OpenEMRTokens; expiresAt: number }>;
+  private dynamicCircuitBreaker: DynamicCircuitBreaker;
+  private errorDetector: IntermittentErrorDetector;
   private circuitBreakerState: CircuitBreakerState;
-  private auditEvents: OpenEMRAuditEvent[] = [];
+  private auditEvents: OpenEMRAuditEvent[] = new Array();
 
   constructor(config: APIGatewayConfig, oauth2Connector: OAuth2Connector) {
     this.config = config;
@@ -126,11 +137,38 @@ export class APIGateway {
     this.app = express();
     this.router = Router();
     this.tokenCache = new Map();
+    
+    // Initialize error detection and dynamic circuit breaker
+    this.errorDetector = new IntermittentErrorDetector({
+      analysisWindowMs: config.circuitBreaker.monitoringWindowMs || 300000,
+      minErrorsForPattern: 3,
+      intermittentThreshold: 0.7,
+      maxThresholdMultiplier: 3.0,
+      minRecoveryReduction: 0.3
+    });
+
+    const circuitBreakerConfig: DynamicCircuitBreakerConfig = {
+      initialFailureThreshold: config.circuitBreaker.failureThreshold,
+      initialRecoveryTimeMs: config.circuitBreaker.recoveryTimeMs,
+      monitoringWindowMs: config.circuitBreaker.monitoringWindowMs,
+      enableDynamicAdjustment: config.circuitBreaker.enableDynamicAdjustment ?? true,
+      minFailureThreshold: config.circuitBreaker.minFailureThreshold || 1,
+      maxFailureThreshold: config.circuitBreaker.maxFailureThreshold || 15,
+      minRecoveryTimeMs: config.circuitBreaker.minRecoveryTimeMs || 1000,
+      maxRecoveryTimeMs: config.circuitBreaker.maxRecoveryTimeMs || 300000,
+      module: 'openemr-gateway'
+    };
+
+    this.dynamicCircuitBreaker = new DynamicCircuitBreaker(circuitBreakerConfig, this.errorDetector);
+    
+    // Initialize legacy circuit breaker state for compatibility
     this.circuitBreakerState = {
       state: 'CLOSED',
       failureCount: 0,
       lastFailureTime: 0,
-      nextAttemptTime: 0
+      nextAttemptTime: 0,
+      currentFailureThreshold: config.circuitBreaker.failureThreshold,
+      currentRecoveryTimeMs: config.circuitBreaker.recoveryTimeMs
     };
     
     this.setupMiddleware();
@@ -291,10 +329,27 @@ export class APIGateway {
   private setupRoutes(): void {
     // Default health check route
     this.router.get('/health', (req: Request, res: Response) => {
+      const dynamicState = this.dynamicCircuitBreaker.getState();
+      const metrics = this.dynamicCircuitBreaker.getMetrics();
+      const errorStats = this.errorDetector.getStatistics();
+      
       res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        circuitBreakerState: this.circuitBreakerState.state
+        circuitBreakerState: dynamicState.state,
+        dynamicMetrics: {
+          currentThreshold: dynamicState.currentFailureThreshold,
+          currentRecoveryTime: dynamicState.currentRecoveryTimeMs,
+          totalRequests: metrics.totalRequests,
+          successRate: metrics.totalRequests > 0 ? (metrics.successfulRequests / metrics.totalRequests * 100).toFixed(2) + '%' : 'N/A',
+          averageResponseTime: Math.round(metrics.averageResponseTime) + 'ms',
+          lastAdjustment: metrics.lastAdjustment?.reason || 'None'
+        },
+        errorPatternAnalysis: {
+          totalPatterns: errorStats.totalPatterns,
+          intermittentPatterns: errorStats.intermittentPatterns,
+          averageConfidence: Math.round(errorStats.averageConfidence * 100) + '%'
+        }
       });
     });
     
@@ -446,57 +501,54 @@ export class APIGateway {
 
   private proxyToOpenEMR(routeConfig: RouteConfig) {
     return async (req: GatewayRequest, res: Response) => {
+      const startTime = Date.now();
+      
       try {
-        // Check circuit breaker
-        if (this.circuitBreakerState.state === 'OPEN') {
-          if (Date.now() < this.circuitBreakerState.nextAttemptTime) {
-            res.status(503).json({ error: 'Service temporarily unavailable' });
-            return;
-          } else {
-            this.circuitBreakerState.state = 'HALF_OPEN';
+        // Use dynamic circuit breaker to execute the request
+        const result = await this.dynamicCircuitBreaker.execute(async () => {
+          // Transform request if needed
+          let requestBody = req.body;
+          if (routeConfig.transformRequest) {
+            requestBody = routeConfig.transformRequest(req);
           }
-        }
-        
-        // Transform request if needed
-        let requestBody = req.body;
-        if (routeConfig.transformRequest) {
-          requestBody = routeConfig.transformRequest(req);
-        }
-        
-        // Build OpenEMR URL
-        let openemrPath = routeConfig.openemrEndpoint;
-        Object.keys(req.params).forEach(param => {
-          openemrPath = openemrPath.replace(`:${param}`, req.params[param]);
-        });
-        
-        const openemrUrl = `${this.config.routing.openemrBaseUrl}${openemrPath}`;
-        const queryString = new URLSearchParams(req.query as any).toString();
-        const fullUrl = queryString ? `${openemrUrl}?${queryString}` : openemrUrl;
-        
-        // Make request to OpenEMR
-        const response = await fetch(fullUrl, {
-          method: req.method,
-          headers: {
-            'Authorization': `${req.openemrTokens?.tokenType || 'Bearer'} ${req.openemrTokens?.accessToken}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: requestBody ? JSON.stringify(requestBody) : undefined,
-          timeout: this.config.routing.timeoutMs
-        });
-        
-        if (!response.ok) {
-          this.handleCircuitBreakerFailure();
-          throw new Error(`OpenEMR request failed: ${response.statusText}`);
-        }
-        
-        this.handleCircuitBreakerSuccess();
-        
-        let responseData = await response.json();
-        
+          
+          // Build OpenEMR URL
+          let openemrPath = routeConfig.openemrEndpoint;
+          Object.keys(req.params).forEach(param => {
+            openemrPath = openemrPath.replace(`:${param}`, req.params[param]);
+          });
+          
+          const openemrUrl = `${this.config.routing.openemrBaseUrl}${openemrPath}`;
+          const queryString = new URLSearchParams(req.query as any).toString();
+          const fullUrl = queryString ? `${openemrUrl}?${queryString}` : openemrUrl;
+          
+          // Make request to OpenEMR
+          const response = await fetch(fullUrl, {
+            method: req.method,
+            headers: {
+              'Authorization': `${req.openemrTokens?.tokenType || 'Bearer'} ${req.openemrTokens?.accessToken}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: requestBody ? JSON.stringify(requestBody) : undefined,
+            timeout: this.config.routing.timeoutMs
+          });
+          
+          if (!response.ok) {
+            const errorMessage = `OpenEMR request failed: ${response.statusText}`;
+            const error = new Error(errorMessage);
+            (error as any).status = response.status;
+            (error as any).code = this.getErrorCodeFromStatus(response.status);
+            throw error;
+          }
+          
+          return await response.json();
+        }, this.getErrorCodeFromEndpoint(routeConfig.openemrEndpoint));
+
         // Transform response if needed
+        let responseData = result;
         if (routeConfig.transformResponse) {
-          responseData = routeConfig.transformResponse(responseData);
+          responseData = routeConfig.transformResponse(result);
         }
         
         // Log response if enabled
@@ -509,16 +561,21 @@ export class APIGateway {
             outcome: 'success',
             details: { 
               requestId: req.requestId,
-              endpoint: openemrPath,
-              statusCode: response.status
+              endpoint: routeConfig.openemrEndpoint,
+              duration: Date.now() - startTime
             }
           });
         }
         
-        res.status(response.status).json(responseData);
+        res.status(200).json(responseData);
+        
       } catch (error) {
-        this.handleCircuitBreakerFailure();
         this.log('OpenEMR proxy error:', error);
+        
+        // Determine error details
+        const status = (error as any)?.status || 500;
+        const errorCode = (error as any)?.code || 'UNKNOWN_ERROR';
+        const isCircuitBreakerError = error.message.includes('Circuit breaker is OPEN');
         
         this.auditLog({
           action: 'openemr_request_failure',
@@ -528,11 +585,24 @@ export class APIGateway {
           outcome: 'failure',
           details: { 
             requestId: req.requestId,
-            error: error.message
+            error: error.message,
+            errorCode,
+            duration: Date.now() - startTime,
+            circuitBreakerTriggered: isCircuitBreakerError
           }
         });
         
-        res.status(500).json({ error: 'Internal server error' });
+        if (isCircuitBreakerError) {
+          res.status(503).json({ 
+            error: 'Service temporarily unavailable due to circuit breaker',
+            details: 'Dynamic circuit breaker has opened due to error patterns'
+          });
+        } else {
+          res.status(status).json({ 
+            error: 'Internal server error',
+            requestId: req.requestId
+          });
+        }
       }
     };
   }
@@ -549,11 +619,26 @@ export class APIGateway {
   }
 
   private circuitBreakerMiddleware(req: GatewayRequest, res: Response, next: NextFunction): void {
-    if (this.circuitBreakerState.state === 'OPEN') {
-      if (Date.now() < this.circuitBreakerState.nextAttemptTime) {
+    // Update legacy state from dynamic circuit breaker for compatibility
+    const dynamicState = this.dynamicCircuitBreaker.getState();
+    this.circuitBreakerState = {
+      state: dynamicState.state,
+      failureCount: dynamicState.failureCount,
+      lastFailureTime: dynamicState.lastFailureTime,
+      nextAttemptTime: dynamicState.nextAttemptTime,
+      currentFailureThreshold: dynamicState.currentFailureThreshold,
+      currentRecoveryTimeMs: dynamicState.currentRecoveryTimeMs
+    };
+
+    if (dynamicState.state === 'OPEN') {
+      if (Date.now() < dynamicState.nextAttemptTime) {
         res.status(503).json({ 
           error: 'Service temporarily unavailable',
-          retryAfter: Math.ceil((this.circuitBreakerState.nextAttemptTime - Date.now()) / 1000)
+          retryAfter: Math.ceil((dynamicState.nextAttemptTime - Date.now()) / 1000),
+          dynamicInfo: {
+            currentThreshold: dynamicState.currentFailureThreshold,
+            currentRecoveryTime: dynamicState.currentRecoveryTimeMs
+          }
         });
         return;
       }
@@ -575,21 +660,44 @@ export class APIGateway {
   }
 
   private handleCircuitBreakerSuccess(): void {
-    if (this.circuitBreakerState.state === 'HALF_OPEN') {
-      this.circuitBreakerState.state = 'CLOSED';
-      this.circuitBreakerState.failureCount = 0;
+    // This method is kept for backward compatibility but the logic
+    // is now handled by the DynamicCircuitBreaker
+    const dynamicState = this.dynamicCircuitBreaker.getState();
+    if (dynamicState.state === 'HALF_OPEN') {
+      // The dynamic circuit breaker will handle the state transition
+      this.log('Circuit breaker success handled by dynamic circuit breaker');
     }
   }
 
   private handleCircuitBreakerFailure(): void {
-    this.circuitBreakerState.failureCount++;
-    this.circuitBreakerState.lastFailureTime = Date.now();
-    
-    if (this.circuitBreakerState.failureCount >= this.config.circuitBreaker.failureThreshold) {
-      this.circuitBreakerState.state = 'OPEN';
-      this.circuitBreakerState.nextAttemptTime = Date.now() + this.config.circuitBreaker.recoveryTimeMs;
-      this.log('Circuit breaker opened due to failures');
+    // This method is kept for backward compatibility but the logic
+    // is now handled by the DynamicCircuitBreaker
+    this.log('Circuit breaker failure will be handled by dynamic circuit breaker during request execution');
+  }
+
+  private getErrorCodeFromStatus(status: number): string {
+    switch (status) {
+      case 400: return 'BAD_REQUEST';
+      case 401: return 'UNAUTHORIZED';
+      case 403: return 'FORBIDDEN';
+      case 404: return 'NOT_FOUND';
+      case 408: return 'TIMEOUT';
+      case 429: return 'RATE_LIMITED';
+      case 500: return 'INTERNAL_SERVER_ERROR';
+      case 502: return 'BAD_GATEWAY';
+      case 503: return 'SERVICE_UNAVAILABLE';
+      case 504: return 'GATEWAY_TIMEOUT';
+      default: return 'HTTP_ERROR';
     }
+  }
+
+  private getErrorCodeFromEndpoint(endpoint: string): string {
+    // Map endpoint patterns to specific error codes for better pattern analysis
+    if (endpoint.includes('/patient')) return 'PATIENT_API_ERROR';
+    if (endpoint.includes('/appointment')) return 'APPOINTMENT_API_ERROR';
+    if (endpoint.includes('/fhir')) return 'FHIR_API_ERROR';
+    if (endpoint.includes('/slot')) return 'SLOT_API_ERROR';
+    return 'GENERAL_API_ERROR';
   }
 
   private mapClaimsToUser(claims: any): User {
