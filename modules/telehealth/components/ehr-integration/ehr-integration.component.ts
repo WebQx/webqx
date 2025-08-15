@@ -12,6 +12,8 @@ import {
   EHRIntegrationConfig, 
   EHRSyncEvent 
 } from '../../core/types/telehealth.types';
+import { DynamicBatchManager } from '../../../../services/dynamicBatchManager';
+import { ServerLoadMonitor } from '../../../../services/serverLoadMonitor';
 
 export class EHRIntegrationComponent extends EventEmitter implements TelehealthComponent {
   private config: EHRIntegrationConfig;
@@ -19,6 +21,7 @@ export class EHRIntegrationComponent extends EventEmitter implements TelehealthC
   private ehrService: any = null;
   private syncQueue: Map<string, EHRSyncEvent> = new Map();
   private syncInProgress: boolean = false;
+  private dynamicBatchManager?: DynamicBatchManager;
 
   constructor(config: EHRIntegrationConfig) {
     super();
@@ -34,6 +37,11 @@ export class EHRIntegrationComponent extends EventEmitter implements TelehealthC
         successRate: 100
       }
     };
+
+    // Initialize dynamic batch management if enabled
+    if (this.config.enableDynamicBatchSize) {
+      this.initializeDynamicBatchManager();
+    }
   }
 
   /**
@@ -227,8 +235,10 @@ export class EHRIntegrationComponent extends EventEmitter implements TelehealthC
 
     this.logInfo(`Processing sync queue: ${this.syncQueue.size} items`);
 
-    const batchSize = this.config.sync.batchSize || 10;
+    const batchSize = this.getDynamicBatchSize();
     const events = Array.from(this.syncQueue.values()).slice(0, batchSize);
+
+    this.logInfo(`Processing ${events.length} sync events with batch size: ${batchSize}`);
 
     for (const syncEvent of events) {
       try {
@@ -594,6 +604,88 @@ export class EHRIntegrationComponent extends EventEmitter implements TelehealthC
       pending: this.syncQueue.size,
       processing: this.syncInProgress
     };
+  }
+
+  /**
+   * Initialize dynamic batch manager
+   */
+  private initializeDynamicBatchManager(): void {
+    const serverLoadMonitor = new ServerLoadMonitor({
+      pollingInterval: 5000,
+      enableLogging: this.config.debug || false
+    });
+
+    this.dynamicBatchManager = new DynamicBatchManager(
+      serverLoadMonitor,
+      {
+        minBatchSize: 1,
+        maxBatchSize: (this.config.sync.batchSize || 10) * 2,
+        defaultBatchSize: this.config.sync.batchSize || 10,
+        lowLoadThreshold: 50,
+        highLoadThreshold: 80
+      },
+      this.config.debug || false
+    );
+
+    // Register the sync operation
+    this.dynamicBatchManager.registerOperation('ehr-sync', this.config.sync.batchSize || 10);
+
+    // Listen for batch size adjustments
+    this.dynamicBatchManager.on('batchSizeAdjusted', (event) => {
+      this.logInfo('Batch size adjusted for EHR sync', event);
+    });
+
+    // Start monitoring
+    this.dynamicBatchManager.start();
+  }
+
+  /**
+   * Get current batch size (dynamic or static)
+   */
+  private getDynamicBatchSize(): number {
+    if (this.dynamicBatchManager) {
+      try {
+        return this.dynamicBatchManager.getBatchSize('ehr-sync');
+      } catch (error) {
+        this.logError('Failed to get dynamic batch size, using fallback', error);
+        return this.dynamicBatchManager.getFallbackBatchSize('ehr-sync');
+      }
+    }
+    return this.config.sync.batchSize || 10;
+  }
+
+  /**
+   * Get EHR integration statistics
+   */
+  public getIntegrationStatistics(): any {
+    const baseStats = {
+      queueSize: this.syncQueue.size,
+      syncInProgress: this.syncInProgress,
+      currentBatchSize: this.getDynamicBatchSize(),
+      dynamicBatchEnabled: !!this.dynamicBatchManager,
+      errorCount: this.status.metrics?.errorCount || 0,
+      successRate: this.status.metrics?.successRate || 0
+    };
+
+    if (this.dynamicBatchManager) {
+      return {
+        ...baseStats,
+        dynamicBatchStats: this.dynamicBatchManager.getStatistics()
+      };
+    }
+
+    return baseStats;
+  }
+
+  /**
+   * Clean up resources
+   */
+  public destroy(): void {
+    if (this.dynamicBatchManager) {
+      this.dynamicBatchManager.stop();
+    }
+    this.removeAllListeners();
+    this.syncQueue.clear();
   }
 
   /**
