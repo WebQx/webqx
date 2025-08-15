@@ -10,6 +10,11 @@
 
 import { EventEmitter } from 'events';
 import { FHIRResource } from '../types/fhir-r4';
+import { 
+  DynamicSyncConfigurationService, 
+  DynamicSyncIntervalConfig,
+  SyncIntervalContext
+} from './dynamicSyncConfigurationService';
 
 /**
  * Real-time update event types
@@ -108,6 +113,10 @@ export interface RealTimeServiceConfig {
     resourceTypes?: string[];
     ehrSystems?: string[];
   };
+  /** Enable dynamic polling intervals */
+  enableDynamicPolling?: boolean;
+  /** Dynamic interval configuration for polling */
+  dynamicPollingConfig?: Partial<DynamicSyncIntervalConfig>;
 }
 
 /**
@@ -125,6 +134,8 @@ export class RealTimeUpdateService extends EventEmitter {
   private reconnectAttempts = 0;
   private lastPollingTime = new Date();
   private isPollingActive = false;
+  private dynamicPollingConfig: DynamicSyncConfigurationService;
+  private currentPollingInterval: number;
 
   constructor(config: RealTimeServiceConfig = {}) {
     super();
@@ -137,12 +148,28 @@ export class RealTimeUpdateService extends EventEmitter {
       maxReconnectAttempts: config.maxReconnectAttempts || 5,
       reconnectDelay: config.reconnectDelay || 5000, // 5 seconds
       authToken: config.authToken || '',
-      defaultFilters: config.defaultFilters || {}
+      defaultFilters: config.defaultFilters || {},
+      enableDynamicPolling: config.enableDynamicPolling ?? true,
+      dynamicPollingConfig: config.dynamicPollingConfig || {}
     };
+
+    // Initialize dynamic polling configuration
+    this.dynamicPollingConfig = new DynamicSyncConfigurationService({
+      ...this.config.dynamicPollingConfig,
+      baseIntervals: {
+        critical: 10000, // 10 seconds for critical real-time data
+        nonEssential: 60000, // 60 seconds for non-essential data
+        default: 30000, // 30 seconds default
+        ...this.config.dynamicPollingConfig?.baseIntervals
+      }
+    });
+
+    this.currentPollingInterval = this.config.pollingInterval;
 
     this.logInfo('Real-Time Update Service initialized', {
       websocketEnabled: this.config.enableWebSocket,
-      pollingInterval: this.config.pollingInterval
+      pollingInterval: this.config.pollingInterval,
+      dynamicPollingEnabled: this.config.enableDynamicPolling
     });
   }
 
@@ -191,6 +218,9 @@ export class RealTimeUpdateService extends EventEmitter {
 
     this.subscriptions.set(subscriptionId, fullSubscription);
 
+    // Adjust polling interval based on new subscription
+    this.adjustPollingInterval();
+
     this.logInfo('Real-time subscription created', {
       subscriptionId,
       eventTypes: subscription.eventTypes,
@@ -225,6 +255,9 @@ export class RealTimeUpdateService extends EventEmitter {
     }
 
     this.subscriptions.delete(subscriptionId);
+
+    // Adjust polling interval based on remaining subscriptions
+    this.adjustPollingInterval();
 
     this.logInfo('Real-time subscription removed', {
       subscriptionId,
@@ -273,6 +306,156 @@ export class RealTimeUpdateService extends EventEmitter {
    */
   publishEvent(event: RealTimeUpdateEvent): void {
     this.processIncomingEvent(event);
+  }
+
+  /**
+   * Calculate dynamic polling interval based on subscription criticality
+   * @returns Calculated polling interval in milliseconds
+   */
+  calculateDynamicPollingInterval(): number {
+    if (!this.config.enableDynamicPolling || this.subscriptions.size === 0) {
+      return this.config.pollingInterval;
+    }
+
+    // Determine the most critical subscription to set polling frequency
+    let highestCriticality: 'critical' | 'non-essential' | 'default' = 'non-essential';
+    let hasPatientSpecificData = false;
+    
+    for (const subscription of this.subscriptions.values()) {
+      // Check if subscription includes critical event types
+      const hasCriticalEvents = subscription.eventTypes.some(eventType => 
+        this.isCriticalEventType(eventType)
+      );
+      
+      if (hasCriticalEvents) {
+        highestCriticality = 'critical';
+      } else if (highestCriticality !== 'critical') {
+        highestCriticality = 'default';
+      }
+
+      if (subscription.patientId) {
+        hasPatientSpecificData = true;
+      }
+    }
+
+    // Create context for interval calculation
+    const context: SyncIntervalContext = {
+      dataType: 'all', // Real-time updates are for all data types
+      patientCriticality: hasPatientSpecificData ? 'high' : undefined,
+      customParams: {
+        subscriptionCount: this.subscriptions.size,
+        websocketAvailable: this.websocketStatus === 'connected'
+      }
+    };
+
+    // Override data type criticality for polling calculation
+    const originalMapping = this.dynamicPollingConfig.getConfiguration().dataTypeMappings.all;
+    this.dynamicPollingConfig.updateDataTypeCriticality('all', highestCriticality);
+    
+    const result = this.dynamicPollingConfig.calculateSyncInterval(context);
+    
+    // Restore original mapping
+    this.dynamicPollingConfig.updateDataTypeCriticality('all', originalMapping);
+
+    this.logInfo('Dynamic polling interval calculated', {
+      intervalMs: result.intervalMs,
+      criticality: highestCriticality,
+      subscriptionCount: this.subscriptions.size,
+      adjustmentReason: result.adjustmentReason
+    });
+
+    return result.intervalMs;
+  }
+
+  /**
+   * Update dynamic polling interval configuration
+   * @param config New dynamic polling configuration
+   */
+  updateDynamicPollingConfig(config: Partial<DynamicSyncIntervalConfig>): void {
+    if (config.baseIntervals) {
+      this.dynamicPollingConfig.updateBaseIntervals(config.baseIntervals);
+    }
+    
+    if (config.dataTypeMappings) {
+      for (const [dataType, criticality] of Object.entries(config.dataTypeMappings)) {
+        this.dynamicPollingConfig.updateDataTypeCriticality(dataType, criticality);
+      }
+    }
+
+    // Recalculate current polling interval
+    this.adjustPollingInterval();
+    
+    this.logInfo('Dynamic polling configuration updated');
+  }
+
+  /**
+   * Enable or disable dynamic polling intervals
+   * @param enabled Whether to enable dynamic polling
+   */
+  setDynamicPollingEnabled(enabled: boolean): void {
+    this.config.enableDynamicPolling = enabled;
+    
+    if (enabled) {
+      this.adjustPollingInterval();
+    } else {
+      this.currentPollingInterval = this.config.pollingInterval;
+      this.restartPolling();
+    }
+    
+    this.logInfo('Dynamic polling setting changed', { enabled });
+  }
+
+  /**
+   * Adjust polling interval based on current subscriptions
+   */
+  private adjustPollingInterval(): void {
+    if (!this.config.enableDynamicPolling) {
+      return;
+    }
+
+    const newInterval = this.calculateDynamicPollingInterval();
+    
+    if (newInterval !== this.currentPollingInterval) {
+      this.currentPollingInterval = newInterval;
+      
+      // Restart polling with new interval if currently polling
+      if (this.pollingInterval) {
+        this.restartPolling();
+      }
+      
+      this.emit('polling_interval_changed', {
+        oldInterval: this.currentPollingInterval,
+        newInterval
+      });
+    }
+  }
+
+  /**
+   * Restart polling with current interval
+   */
+  private restartPolling(): void {
+    if (this.pollingInterval) {
+      this.stopPolling();
+      this.startPolling();
+    }
+  }
+
+  /**
+   * Check if an event type is considered critical
+   * @param eventType Event type to check
+   * @returns Whether the event type is critical
+   */
+  private isCriticalEventType(eventType: RealTimeEventType): boolean {
+    const criticalEventTypes: RealTimeEventType[] = [
+      'observation_added',
+      'medication_prescribed',
+      'appointment_booked',
+      'appointment_cancelled',
+      'patient_updated',
+      'error_occurred'
+    ];
+    
+    return criticalEventTypes.includes(eventType);
   }
 
   // ============================================================================
@@ -443,12 +626,12 @@ export class RealTimeUpdateService extends EventEmitter {
     }
 
     this.logInfo('Starting polling for real-time updates', {
-      interval: this.config.pollingInterval
+      interval: this.currentPollingInterval
     });
 
     this.pollingInterval = setInterval(async () => {
       await this.performPollingUpdate();
-    }, this.config.pollingInterval);
+    }, this.currentPollingInterval);
 
     this.emit('polling_started');
   }

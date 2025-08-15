@@ -674,7 +674,8 @@ export type AuditAction =
   | 'system_backup'
   | 'system_restore'
   | 'user_management'
-  | 'permission_change';
+  | 'permission_change'
+  | 'sync_interval_adjusted';
 
 // ============================================================================
 // Utility Types
