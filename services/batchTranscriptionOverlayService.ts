@@ -7,6 +7,8 @@ import { EventEmitter } from 'events';
 import { PACSService, DICOMImage, TranscriptionOverlay } from './pacsService';
 import { WhisperService } from './whisperService';
 import { AuditLogger } from '../ehr-integrations/services/auditLogger';
+import { DynamicBatchManager } from './dynamicBatchManager';
+import { ServerLoadMonitor } from './serverLoadMonitor';
 
 export interface BatchOverlayConfig {
   maxConcurrentProcessing: number;
@@ -20,6 +22,7 @@ export interface BatchOverlayConfig {
   };
   auditLogging: boolean;
   autoSaveEnabled: boolean;
+  enableDynamicBatchSize?: boolean; // New option for dynamic batch sizing
 }
 
 export interface BatchJob {
@@ -57,6 +60,7 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
   private auditLogger?: AuditLogger;
   private jobs: Map<string, BatchJob> = new Map();
   private overlayStorage: Map<string, TranscriptionOverlay[]> = new Map();
+  private dynamicBatchManager?: DynamicBatchManager;
 
   constructor(
     config: BatchOverlayConfig,
@@ -71,11 +75,43 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
       overlayOpacity: config.overlayOpacity ?? 0.8,
       fontSizes: config.fontSizes ?? { small: 12, medium: 16, large: 20 },
       auditLogging: config.auditLogging ?? true,
-      autoSaveEnabled: config.autoSaveEnabled ?? true
+      autoSaveEnabled: config.autoSaveEnabled ?? true,
+      enableDynamicBatchSize: config.enableDynamicBatchSize ?? false
     };
 
     this.pacsService = pacsService;
     this.whisperService = whisperService;
+
+    // Initialize dynamic batch management if enabled
+    if (this.config.enableDynamicBatchSize) {
+      const serverLoadMonitor = new ServerLoadMonitor({
+        pollingInterval: 5000,
+        enableLogging: this.config.auditLogging
+      });
+
+      this.dynamicBatchManager = new DynamicBatchManager(
+        serverLoadMonitor,
+        {
+          minBatchSize: 1,
+          maxBatchSize: this.config.maxConcurrentProcessing * 2,
+          defaultBatchSize: this.config.maxConcurrentProcessing,
+          lowLoadThreshold: 50,
+          highLoadThreshold: 80
+        },
+        this.config.auditLogging
+      );
+
+      // Register the transcription operation
+      this.dynamicBatchManager.registerOperation('transcription', this.config.maxConcurrentProcessing);
+
+      // Listen for batch size adjustments
+      this.dynamicBatchManager.on('batchSizeAdjusted', (event) => {
+        this.logInfo('Batch size adjusted for transcription', event);
+      });
+
+      // Start monitoring
+      this.dynamicBatchManager.start();
+    }
 
     if (this.config.auditLogging) {
       this.auditLogger = new AuditLogger({
@@ -85,7 +121,10 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
       });
     }
 
-    this.logInfo('Batch Transcription Overlay Service initialized', { config: this.config });
+    this.logInfo('Batch Transcription Overlay Service initialized', { 
+      config: this.config,
+      dynamicBatchEnabled: !!this.dynamicBatchManager
+    });
   }
 
   /**
@@ -162,9 +201,12 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
       const totalItems = job.audioFiles.length;
       let completedItems = 0;
 
-      // Process audio files in batches based on maxConcurrentProcessing
-      for (let i = 0; i < job.audioFiles.length; i += this.config.maxConcurrentProcessing) {
-        const batch = job.audioFiles.slice(i, i + this.config.maxConcurrentProcessing);
+      // Process audio files in batches with dynamic sizing
+      const batchSize = this.getDynamicBatchSize();
+      this.logInfo(`Processing ${totalItems} items with batch size: ${batchSize}`);
+
+      for (let i = 0; i < job.audioFiles.length; i += batchSize) {
+        const batch = job.audioFiles.slice(i, i + batchSize);
         
         const batchPromises = batch.map(async (audioItem) => {
           try {
@@ -479,6 +521,56 @@ export class BatchTranscriptionOverlayService extends EventEmitter {
       code,
       ...languageMap[code] || { name: code.toUpperCase(), rtl: false }
     }));
+  }
+
+  /**
+   * Get current batch size (dynamic or static)
+   */
+  private getDynamicBatchSize(): number {
+    if (this.dynamicBatchManager) {
+      try {
+        return this.dynamicBatchManager.getBatchSize('transcription');
+      } catch (error) {
+        this.logInfo('Failed to get dynamic batch size, using fallback', error);
+        return this.dynamicBatchManager.getFallbackBatchSize('transcription');
+      }
+    }
+    return this.config.maxConcurrentProcessing;
+  }
+
+  /**
+   * Get batch processing statistics
+   */
+  public getBatchStatistics(): any {
+    const baseStats = {
+      totalJobs: this.jobs.size,
+      activeJobs: Array.from(this.jobs.values()).filter(job => job.status === 'processing').length,
+      completedJobs: Array.from(this.jobs.values()).filter(job => job.status === 'completed').length,
+      failedJobs: Array.from(this.jobs.values()).filter(job => job.status === 'failed').length,
+      currentBatchSize: this.getDynamicBatchSize(),
+      dynamicBatchEnabled: !!this.dynamicBatchManager
+    };
+
+    if (this.dynamicBatchManager) {
+      return {
+        ...baseStats,
+        dynamicBatchStats: this.dynamicBatchManager.getStatistics()
+      };
+    }
+
+    return baseStats;
+  }
+
+  /**
+   * Clean up resources
+   */
+  public destroy(): void {
+    if (this.dynamicBatchManager) {
+      this.dynamicBatchManager.stop();
+    }
+    this.removeAllListeners();
+    this.jobs.clear();
+    this.overlayStorage.clear();
   }
 
   /**

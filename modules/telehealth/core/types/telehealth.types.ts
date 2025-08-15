@@ -106,6 +106,8 @@ export interface EHRIntegrationConfig extends BaseComponentConfig {
     appointmentFields: Record<string, string>;
     customMappings: Record<string, any>;
   };
+  enableDynamicBatchSize?: boolean; // Enable dynamic batch size adjustment
+  debug?: boolean; // Enable debug logging
 }
 
 /**
