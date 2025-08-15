@@ -23,6 +23,16 @@ output "monitoring_security_group_id" {
   value       = aws_security_group.monitoring.id
 }
 
+output "alb_security_group_id" {
+  description = "ID of the Application Load Balancer security group"
+  value       = aws_security_group.alb.id
+}
+
+output "ecs_security_group_id" {
+  description = "ID of the ECS tasks security group"
+  value       = aws_security_group.ecs.id
+}
+
 output "waf_web_acl_arn" {
   description = "ARN of the WAF Web ACL"
   value       = aws_wafv2_web_acl.api_protection.arn
