@@ -1,11 +1,12 @@
 /**
  * OAuth2 Middleware Integration
- * Main middleware that integrates OAuth2 client, token validation, and RBAC
+ * Main middleware that integrates OAuth2 client, token validation, RBAC, and rate control
  */
 
 const OAuth2Client = require('./client');
 const TokenValidator = require('./tokenValidator');
 const RBACManager = require('./rbac');
+const { RateControlMiddleware } = require('../rateControl');
 const { getConfig } = require('./config');
 
 /**
@@ -464,7 +465,8 @@ class OAuth2Middleware {
             },
             rbac: this.rbacManager.getRBACStats(),
             tokenValidator: this.tokenValidator.getValidationStats(),
-            client: this.client.getClientConfig()
+            client: this.client.getClientConfig(),
+            rateControl: this.rateControlMiddleware.getStatus()
         };
     }
 
@@ -474,6 +476,18 @@ class OAuth2Middleware {
     clearCaches() {
         this.tokenValidator.clearCache();
         this.rbacManager.clearCache();
+        if (this.rateControlMiddleware.tokenRateControl) {
+            this.rateControlMiddleware.tokenRateControl.clearAllTokens();
+        }
+    }
+
+    /**
+     * Create rate-controlled middleware for specific endpoints
+     * @param {Object} rateConfig - Rate control configuration
+     * @returns {Function} Express middleware function
+     */
+    createRateControlledMiddleware(rateConfig = {}) {
+        return this.rateControlMiddleware.manageRateControl(rateConfig);
     }
 }
 
