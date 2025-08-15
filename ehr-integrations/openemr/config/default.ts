@@ -1,6 +1,8 @@
 /**
- * OpenEMR Configuration Example
+ * OpenEMR Configuration Example with Adaptive Timeout Support
  */
+
+import { AdaptiveTimeoutManager } from '../../utils/adaptive-timeout';
 
 export const openemrConfig = {
   baseUrl: process.env.OPENEMR_BASE_URL || 'https://localhost',
@@ -30,8 +32,17 @@ export const openemrConfig = {
   features: {
     enableAudit: process.env.OPENEMR_ENABLE_AUDIT === 'true',
     enableSync: process.env.OPENEMR_ENABLE_SYNC === 'true',
-    syncInterval: parseInt(process.env.OPENEMR_SYNC_INTERVAL_MINUTES || '15')
+    syncInterval: parseInt(process.env.OPENEMR_SYNC_INTERVAL_MINUTES || '15'),
+    enableAdaptiveTimeout: process.env.OPENEMR_ENABLE_ADAPTIVE_TIMEOUT !== 'false'
   }
 };
+
+// Create shared adaptive timeout manager for OpenEMR
+export const openemrAdaptiveTimeoutManager = new AdaptiveTimeoutManager({
+  fallbackTimeoutMs: openemrConfig.security.timeout,
+  minTimeoutMs: Math.min(openemrConfig.security.timeout, 30000),
+  maxTimeoutMs: Math.max(openemrConfig.security.timeout * 4, 120000),
+  enableLogging: true
+});
 
 export default openemrConfig;

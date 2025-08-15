@@ -13,6 +13,8 @@ import type {
   OpenEMRAuditEvent
 } from '../types';
 
+import { openemrAdaptiveTimeoutManager } from '../config/default';
+
 /**
  * OpenEMR Integration Service
  * 
@@ -548,12 +550,25 @@ export class OpenEMRIntegration {
     }
 
     const url = `${this.config.baseUrl}${endpoint}`;
+    const endpointKey = `openemr_${endpoint.split('?')[0]}`;
+    
+    // Get adaptive timeout if enabled
+    const baseTimeout = this.config.security?.timeout || 30000;
+    const timeout = this.config.features?.enableAdaptiveTimeout 
+      ? openemrAdaptiveTimeoutManager.getAdaptiveTimeout(endpointKey, baseTimeout)
+      : baseTimeout;
+    
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), timeout);
+    const startTime = Date.now();
+
     const options: RequestInit = {
       method,
       headers: {
         'Authorization': `${this.tokens.tokenType} ${this.tokens.accessToken}`,
         'Accept': 'application/json'
-      }
+      },
+      signal: abortController.signal
     };
 
     if (body) {
@@ -564,7 +579,35 @@ export class OpenEMRIntegration {
       options.body = JSON.stringify(body);
     }
 
-    return fetch(url, options);
+    try {
+      const response = await fetch(url, options);
+      clearTimeout(timeoutId);
+      
+      const duration = Date.now() - startTime;
+      const success = response.ok;
+      
+      // Record response time for adaptive timeout calculation
+      if (this.config.features?.enableAdaptiveTimeout) {
+        openemrAdaptiveTimeoutManager.recordResponseTime(endpointKey, duration, success);
+        
+        this.log(`OpenEMR request to ${endpoint}: ${duration}ms (timeout: ${timeout}ms, success: ${success})`);
+      }
+      
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
+      
+      // Record failed response time
+      if (this.config.features?.enableAdaptiveTimeout) {
+        const isTimeout = error instanceof Error && error.name === 'AbortError';
+        openemrAdaptiveTimeoutManager.recordResponseTime(endpointKey, duration, false);
+        
+        this.log(`OpenEMR request failed for ${endpoint}: ${duration}ms (timeout: ${timeout}ms, ${isTimeout ? 'TIMEOUT' : 'ERROR'})`);
+      }
+      
+      throw error;
+    }
   }
 
   // Data mapping methods
@@ -650,6 +693,35 @@ export class OpenEMRIntegration {
   private async getAPISlots(params: OpenEMRSlotSearchParams): Promise<OpenEMROperationResult<OpenEMRSlot[]>> {
     // REST API-based slot retrieval implementation
     return { success: true, data: [] };
+  }
+
+  /**
+   * Get adaptive timeout statistics for OpenEMR endpoints
+   */
+  getAdaptiveTimeoutStats(): Record<string, any> {
+    if (!this.config.features?.enableAdaptiveTimeout) {
+      return { adaptiveTimeoutEnabled: false };
+    }
+    
+    const allStats = openemrAdaptiveTimeoutManager.getAllStats();
+    const stats: Record<string, any> = { adaptiveTimeoutEnabled: true };
+    
+    allStats.forEach((endpointStats, endpointKey) => {
+      if (endpointKey.startsWith('openemr_')) {
+        const cleanKey = endpointKey.replace('openemr_', '');
+        stats[cleanKey] = {
+          currentTimeout: endpointStats.currentTimeout,
+          adjustmentCount: endpointStats.adjustmentCount,
+          lastAdjusted: endpointStats.lastAdjusted,
+          sampleCount: endpointStats.responseTimes.length,
+          avgResponseTime: endpointStats.responseTimes.length > 0 
+            ? Math.round(endpointStats.responseTimes.reduce((sum, r) => sum + r.duration, 0) / endpointStats.responseTimes.length)
+            : 0
+        };
+      }
+    });
+    
+    return stats;
   }
 
   private auditLog(event: OpenEMRAuditEvent): void {

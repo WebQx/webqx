@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/openehr', '<rootDir>/auth', '<rootDir>/interoperability', '<rootDir>/sso', '<rootDir>/telehealth', '<rootDir>/compliance'],
+  roots: ['<rootDir>/__tests__', '<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/openehr', '<rootDir>/auth', '<rootDir>/interoperability', '<rootDir>/sso', '<rootDir>/telehealth', '<rootDir>/compliance'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
     '**/*.(test|spec).+(ts|tsx|js)'
@@ -16,6 +16,8 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   collectCoverageFrom: [
+    '__tests__/**/*.{ts,tsx}',
+    'utils/**/*.{ts,tsx}',
     'patient-portal/**/*.{ts,tsx}',
     'services/**/*.{ts,tsx}',
     'ehr-integrations/**/*.{ts,tsx}',
@@ -27,6 +29,8 @@ module.exports = {
     'auth/**/*.{ts,tsx}',
     'interoperability/**/*.{ts,tsx}',
     'telehealth/**/*.{js}',
+    '!__tests__/**/*.d.ts',
+    '!utils/**/*.d.ts',
     '!patient-portal/**/*.d.ts',
     '!services/**/*.d.ts',
     '!ehr-integrations/**/*.d.ts',
@@ -49,7 +53,7 @@ module.exports = {
     {
       displayName: 'frontend',
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/patient-portal/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/services/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/ehr-integrations/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/modules/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/compliance/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/interoperability/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/sso/**/*.(test|spec).+(ts|tsx|js)'],
+      testMatch: ['<rootDir>/__tests__/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/patient-portal/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/services/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/ehr-integrations/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/modules/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/compliance/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/interoperability/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/sso/**/*.(test|spec).+(ts|tsx|js)'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
