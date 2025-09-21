@@ -1,3 +1,36 @@
+FROM php:8.2-apache
+
+# Install system dependencies and PHP extensions required by OpenEMR
+RUN apt-get update && apt-get install -y \
+    libicu-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+    libonig-dev libxml2-dev libldap2-dev libcurl4-openssl-dev unzip git \
+  && docker-php-ext-configure gd --with-freetype --with-jpeg \
+  && docker-php-ext-install -j$(nproc) \
+       pdo pdo_mysql gd intl zip soap xml mbstring \
+  && a2enmod rewrite headers deflate expires \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy WebQX OpenEMR code into Apache docroot
+WORKDIR /var/www/html
+COPY core/ /var/www/html/
+
+# Ensure permissions for Apache (www-data)
+RUN chown -R www-data:www-data /var/www/html
+
+# Provide entrypoint to configure Apache port and database settings from env
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENV APACHE_DOCUMENT_ROOT=/var/www/html
+
+# Railway will provide PORT; expose a default for local builds
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
+  CMD curl -fsS http://127.0.0.1:"${PORT:-8080}"/interface/login/login.php || exit 1
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["apache2-foreground"]
 # WebQX™ EMR Docker Image
 FROM php:8.3-apache
 

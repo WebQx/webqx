@@ -1,4 +1,4 @@
 {
   "apiBase": "https://webqx-production.up.railway.app",
-  "emrBase": ""
+  "emrBase": "https://REPLACE-ME-EMR.up.railway.app"
 }
