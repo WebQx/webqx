@@ -1,40 +1,53 @@
-# Use official Node.js runtime as base image
-FROM node:20-alpine
+##########
+# Builder stage: install devDeps and build static artifacts
+##########
+FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Install all dependencies (including devDependencies)
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm ci --only=production
+# Copy source
+COPY . .
 
-# Copy application code
+# Build assets for production (CSS + portal + assembled dist)
+RUN npm run build:css:prod && npm run build
+
+##########
+# Runtime stage: production-only deps + built assets
+##########
+FROM node:20-alpine AS runner
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+# Install production dependencies only
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy application code and built artifacts
+COPY --from=builder /app/dist ./dist
 COPY . .
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S webqx -u 1001
-
-# Change ownership of the app directory
-RUN chown -R webqx:nodejs /app
+RUN addgroup -g 1001 -S nodejs \
+    && adduser -S webqx -u 1001 \
+    && chown -R webqx:nodejs /app
 USER webqx
 
 # Expose port
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=5 \
     CMD node -e "const http = require('http'); \
     const options = { hostname: 'localhost', port: 3000, path: '/health', timeout: 2000 }; \
-    const req = http.request(options, (res) => { \
-        if (res.statusCode === 200) process.exit(0); \
-        else process.exit(1); \
-    }); \
+    const req = http.request(options, (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }); \
     req.on('error', () => process.exit(1)); \
     req.on('timeout', () => process.exit(1)); \
     req.end();"
 
-# Start the application
-CMD ["npm", "start"]
+# Start the application (serve built dist and APIs)
+CMD ["node", "server.js"]
