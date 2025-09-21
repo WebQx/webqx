@@ -159,3 +159,68 @@ output "name_prefix" {
   description = "Name prefix used for resources"
   value       = local.name_prefix
 }
+
+# KMS Outputs
+output "general_kms_key_arn" {
+  description = "ARN of the general KMS key"
+  value       = module.kms.general_kms_key_arn
+  sensitive   = true
+}
+
+output "phi_kms_key_arn" {
+  description = "ARN of the PHI KMS key"
+  value       = module.kms.phi_kms_key_arn
+  sensitive   = true
+}
+
+# Load Balancer Outputs (conditional)
+output "load_balancer_dns_name" {
+  description = "DNS name of the Application Load Balancer"
+  value       = var.enable_ecs ? module.load_balancer[0].load_balancer_dns_name : null
+}
+
+output "load_balancer_arn" {
+  description = "ARN of the Application Load Balancer"
+  value       = var.enable_ecs ? module.load_balancer[0].load_balancer_arn : null
+  sensitive   = true
+}
+
+# ECS Outputs (conditional)
+output "ecs_cluster_name" {
+  description = "Name of the ECS cluster"
+  value       = var.enable_ecs ? module.ecs[0].cluster_name : null
+}
+
+output "ecs_cluster_arn" {
+  description = "ARN of the ECS cluster"
+  value       = var.enable_ecs ? module.ecs[0].cluster_arn : null
+  sensitive   = true
+}
+
+output "api_service_name" {
+  description = "Name of the API ECS service"
+  value       = var.enable_ecs ? module.ecs[0].api_service_name : null
+}
+
+output "telehealth_service_name" {
+  description = "Name of the telehealth ECS service"
+  value       = var.enable_ecs ? module.ecs[0].telehealth_service_name : null
+}
+
+# Auto Scaling Outputs (conditional)
+output "autoscaling_notifications_topic_arn" {
+  description = "ARN of the auto scaling notifications SNS topic"
+  value       = var.enable_ecs ? module.autoscaling[0].autoscaling_notifications_topic_arn : null
+  sensitive   = true
+}
+
+# Enhanced Endpoints (with load balancer if enabled)
+output "primary_api_endpoint" {
+  description = "Primary API endpoint (ALB if ECS enabled, API Gateway otherwise)"
+  value       = var.enable_ecs ? "https://${module.load_balancer[0].load_balancer_dns_name}" : module.api_gateway.api_url
+}
+
+output "telehealth_direct_endpoint" {
+  description = "Direct telehealth endpoint (ALB-based if ECS enabled)"
+  value       = var.enable_ecs ? "https://${module.load_balancer[0].load_balancer_dns_name}/telehealth" : "${module.api_gateway.api_url}/telehealth"
+}

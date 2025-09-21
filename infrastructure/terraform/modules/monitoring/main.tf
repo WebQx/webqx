@@ -158,7 +158,106 @@ resource "aws_cloudwatch_metric_alarm" "failed_logins_alarm" {
   })
 }
 
-# Dashboard for WebQX Healthcare Platform
+# CloudWatch Alarms for ECS Auto Scaling
+resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
+  count = var.ecs_cluster_name != "" ? 1 : 0
+
+  alarm_name          = "${var.name_prefix}-ecs-cpu-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "75"
+  alarm_description   = "This metric monitors ECS cluster CPU utilization for auto-scaling"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+
+  dimensions = {
+    ClusterName = var.ecs_cluster_name
+  }
+
+  tags = merge(var.tags, {
+    Type = "AutoScaling"
+    Purpose = "ECS-CPU"
+  })
+}
+
+resource "aws_cloudwatch_metric_alarm" "ecs_memory_high" {
+  count = var.ecs_cluster_name != "" ? 1 : 0
+
+  alarm_name          = "${var.name_prefix}-ecs-memory-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "MemoryUtilization"
+  namespace           = "AWS/ECS"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "This metric monitors ECS cluster memory utilization for auto-scaling"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+
+  dimensions = {
+    ClusterName = var.ecs_cluster_name
+  }
+
+  tags = merge(var.tags, {
+    Type = "AutoScaling"
+    Purpose = "ECS-Memory"
+  })
+}
+
+# CloudWatch Alarms for ALB Request Count
+resource "aws_cloudwatch_metric_alarm" "alb_request_count_high" {
+  count = var.alb_target_group_full_name != "" ? 1 : 0
+
+  alarm_name          = "${var.name_prefix}-alb-request-count-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "RequestCountPerTarget"
+  namespace           = "AWS/ApplicationELB"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1000"
+  alarm_description   = "High request count per target - may trigger auto-scaling"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+
+  dimensions = {
+    TargetGroup = var.alb_target_group_full_name
+  }
+
+  tags = merge(var.tags, {
+    Type = "AutoScaling"
+    Purpose = "RequestCount"
+  })
+}
+
+# CloudWatch Alarms for ALB Response Time
+resource "aws_cloudwatch_metric_alarm" "alb_response_time_high" {
+  count = var.alb_target_group_full_name != "" ? 1 : 0
+
+  alarm_name          = "${var.name_prefix}-alb-response-time-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "3"
+  metric_name         = "TargetResponseTime"
+  namespace           = "AWS/ApplicationELB"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "2.0"
+  alarm_description   = "High response time detected - may indicate need for scaling"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+
+  dimensions = {
+    TargetGroup = var.alb_target_group_full_name
+  }
+
+  tags = merge(var.tags, {
+    Type = "AutoScaling"
+    Purpose = "ResponseTime"
+  })
+}
+
+# Enhanced Dashboard for WebQX Healthcare Platform with Auto-scaling Metrics
 resource "aws_cloudwatch_dashboard" "webqx_dashboard" {
   dashboard_name = "${var.name_prefix}-dashboard"
 
@@ -240,6 +339,63 @@ resource "aws_cloudwatch_dashboard" "webqx_dashboard" {
           stacked = false
           region  = data.aws_region.current.name
           title   = "Security Metrics"
+          period  = 300
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 24
+        width  = 12
+        height = 6
+
+        properties = {
+          metrics = var.ecs_cluster_name != "" ? [
+            ["AWS/ECS", "CPUUtilization", "ClusterName", var.ecs_cluster_name],
+            [".", "MemoryUtilization", ".", "."]
+          ] : []
+          view    = "timeSeries"
+          stacked = false
+          region  = data.aws_region.current.name
+          title   = "ECS Cluster Resource Utilization"
+          period  = 300
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 30
+        width  = 12
+        height = 6
+
+        properties = {
+          metrics = var.alb_target_group_full_name != "" ? [
+            ["AWS/ApplicationELB", "RequestCountPerTarget", "TargetGroup", var.alb_target_group_full_name],
+            [".", "TargetResponseTime", ".", "."]
+          ] : []
+          view    = "timeSeries"
+          stacked = false
+          region  = data.aws_region.current.name
+          title   = "Load Balancer Performance Metrics"
+          period  = 300
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 36
+        width  = 12
+        height = 6
+
+        properties = {
+          metrics = [
+            ["WebQX/Healthcare", "ActivePatientSessions"],
+            ["WebQX/Telehealth", "ActiveVideoSessions"]
+          ]
+          view    = "timeSeries"
+          stacked = false
+          region  = data.aws_region.current.name
+          title   = "Healthcare Application Metrics"
           period  = 300
         }
       }

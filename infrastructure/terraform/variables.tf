@@ -149,3 +149,60 @@ variable "certificate_arn" {
   type        = string
   default     = ""
 }
+
+# ECS Configuration
+variable "enable_ecs" {
+  description = "Enable ECS containerized services for auto-scaling"
+  type        = bool
+  default     = true
+}
+
+variable "ssl_certificate_arn" {
+  description = "ARN of SSL certificate for ALB HTTPS listener"
+  type        = string
+  default     = ""
+}
+
+# Auto Scaling Configuration
+variable "api_min_capacity" {
+  description = "Minimum number of API service tasks"
+  type        = number
+  default     = 2
+}
+
+variable "api_max_capacity" {
+  description = "Maximum number of API service tasks"
+  type        = number
+  default     = 20
+}
+
+variable "telehealth_min_capacity" {
+  description = "Minimum number of telehealth service tasks"
+  type        = number
+  default     = 2
+}
+
+variable "telehealth_max_capacity" {
+  description = "Maximum number of telehealth service tasks"
+  type        = number
+  default     = 15
+}
+
+# Auto Scaling Thresholds
+variable "cpu_target_utilization" {
+  description = "Target CPU utilization percentage for auto-scaling"
+  type        = number
+  default     = 70.0
+}
+
+variable "memory_target_utilization" {
+  description = "Target memory utilization percentage for auto-scaling"
+  type        = number
+  default     = 75.0
+}
+
+variable "request_count_target" {
+  description = "Target request count per minute for auto-scaling"
+  type        = number
+  default     = 1000.0
+}
