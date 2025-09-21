@@ -1,68 +1,132 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Custom WebQX Healthcare Styles */
-@layer base {
-  body {
-    @apply bg-gradient-to-br from-blue-900 via-purple-800 to-indigo-900;
-    @apply min-h-screen text-white;
-  }
+body {
+  /* Tailwind v4: use explicit hex colors to avoid unknown utility errors in CLI */
+  background-image: linear-gradient(to bottom right, #1e3a8a, #5b21b6, #312e81);
+  min-height: 100vh; /* min-h-screen */
+  color: #ffffff;    /* text-white */
 }
 
-@layer components {
-  .glass {
-    @apply bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-20;
-  }
-  
-  .glass-card {
-    @apply glass rounded-xl p-6 shadow-xl hover:bg-opacity-20 transition-all duration-300;
-  }
-  
-  .portal-card {
-    @apply glass-card cursor-pointer transform hover:scale-105;
-  }
-  
-  .nav-glass {
-    @apply bg-white bg-opacity-5 backdrop-blur-sm border-b border-white border-opacity-10;
-  }
-  
-  .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105;
-  }
-  
-  .btn-secondary {
-    @apply bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200;
-  }
-  
-  .stat-card {
-    @apply glass-card text-center animate-fade-in;
-  }
-  
-  .module-card {
-    @apply portal-card group relative overflow-hidden;
-  }
-  
-  .module-card::before {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 transform -skew-x-12 -translate-x-full transition-all duration-700 group-hover:translate-x-full group-hover:opacity-10;
-  }
+/* Glassmorphism helpers (plain CSS equivalents) */
+.glass {
+  background: rgba(255, 255, 255, 0.1); /* bg-white bg-opacity-10 */
+  backdrop-filter: blur(12px);           /* backdrop-blur-md */
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2); /* border border-white border-opacity-20 */
 }
 
-@layer utilities {
-  .text-shadow {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-  
-  .glow {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-  }
-  
-  .glow-green {
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-  }
-  
-  .glow-red {
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-  }
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem; /* rounded-xl */
+  padding: 1.5rem;        /* p-6 */
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); /* shadow-xl */
+  transition: all 300ms ease; /* transition-all duration-300 */
+}
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.2); /* hover:bg-opacity-20 */
+}
+
+.portal-card {
+  cursor: pointer;        /* cursor-pointer */
+  border-radius: 0.75rem; /* consistent with glass-card */
+  overflow: hidden;
+  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+  transition: transform 200ms ease, background 200ms ease, box-shadow 200ms ease; /* duration-200 */
+}
+.portal-card:hover {
+  transform: scale(1.05); /* hover:scale-105 */
+}
+
+.nav-glass {
+  background: rgba(255, 255, 255, 0.05); /* bg-white bg-opacity-5 */
+  backdrop-filter: blur(6px);             /* backdrop-blur-sm */
+  -webkit-backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* border-b border-white border-opacity-10 */
+}
+
+.btn-primary {
+  background: rgb(37, 99, 235); /* bg-blue-600 */
+  color: #fff;                  /* text-white */
+  font-weight: 600;             /* font-semibold */
+  padding: 0.75rem 1.5rem;      /* py-3 px-6 */
+  border-radius: 0.5rem;        /* rounded-lg */
+  transition: all 200ms ease;   /* transition-all duration-200 */
+}
+.btn-primary:hover {
+  background: rgb(29, 78, 216); /* hover:bg-blue-700 */
+  transform: scale(1.05);       /* hover:scale-105 */
+}
+
+.btn-secondary {
+  background: rgb(75, 85, 99);  /* bg-gray-600 */
+  color: #fff;                  /* text-white */
+  font-weight: 600;             /* font-semibold */
+  padding: 0.5rem 1rem;         /* py-2 px-4 */
+  border-radius: 0.5rem;        /* rounded-lg */
+  transition: all 200ms ease;   /* transition-all duration-200 */
+}
+.btn-secondary:hover {
+  background: rgb(55, 65, 81);  /* hover:bg-gray-700 */
+}
+
+.stat-card {
+  text-align: center;           /* text-center */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+  animation: fade-in 400ms ease-in both; /* animate-fade-in approximation */
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.module-card {
+  position: relative;  /* relative */
+  overflow: hidden;    /* overflow-hidden */
+}
+
+.module-card::before {
+  content: "";
+  position: absolute;  /* absolute */
+  inset: 0;            /* inset-0 */
+  background: linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,0.6), rgba(255,255,255,0)); /* bg-gradient-to-r from-transparent via-white to-transparent */
+  opacity: 0;          /* opacity-0 */
+  transform: skewX(-12deg) translateX(-100%); /* -skew-x-12 -translate-x-full */
+  transition: transform 700ms ease, opacity 700ms ease; /* duration-700 */
+}
+.module-card:hover::before {
+  transform: skewX(-12deg) translateX(100%);  /* group-hover:translate-x-full */
+  opacity: 0.1;                               /* group-hover:opacity-10 */
+}
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.glow {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
 }

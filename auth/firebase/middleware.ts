@@ -9,15 +9,10 @@ import { Request, Response, NextFunction } from 'express';
 import { User, AuthError, UserRole, MedicalSpecialty, AuthAuditEvent } from '../types';
 import FirebaseAuthProvider from './index';
 
-// Extend Express Request to include user information
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User;
-      session?: any;
-      authToken?: string;
-    }
-  }
+// Local request augmentation to avoid global collisions with SSO middleware
+export interface FirebaseAuthRequest extends Request {
+  firebaseUser?: User;
+  firebaseAuthToken?: string;
 }
 
 export class FirebaseAuthMiddleware {
@@ -32,7 +27,7 @@ export class FirebaseAuthMiddleware {
   /**
    * Middleware to require authentication
    */
-  requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  requireAuth = async (req: FirebaseAuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const token = this.extractToken(req);
       
@@ -52,7 +47,7 @@ export class FirebaseAuthMiddleware {
         return;
       }
 
-      const user = await this.authProvider.verifySession(token);
+  const user = await this.authProvider.verifySession(token);
       
       if (!user) {
         const error: AuthError = {
@@ -70,8 +65,8 @@ export class FirebaseAuthMiddleware {
         return;
       }
 
-      req.user = user;
-      req.authToken = token;
+  req.firebaseUser = user;
+  req.firebaseAuthToken = token;
       
       await this.logAuthEvent(req, {
         eventType: 'LOGIN_SUCCESS',
@@ -98,8 +93,8 @@ export class FirebaseAuthMiddleware {
    * Middleware to require specific user role
    */
   requireRole = (requiredRole: UserRole) => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      if (!req.user) {
+    return async (req: FirebaseAuthRequest, res: Response, next: NextFunction): Promise<void> => {
+      if (!req.firebaseUser) {
         const error: AuthError = {
           code: 'PERMISSION_DENIED',
           message: 'Authentication required'
@@ -108,7 +103,7 @@ export class FirebaseAuthMiddleware {
         return;
       }
 
-      if (req.user.role !== requiredRole) {
+      if (req.firebaseUser.role !== requiredRole) {
         const error: AuthError = {
           code: 'PERMISSION_DENIED',
           message: `Access denied. Required role: ${requiredRole}`
@@ -116,10 +111,10 @@ export class FirebaseAuthMiddleware {
 
         await this.logAuthEvent(req, {
           eventType: 'PERMISSION_DENIED',
-          userId: req.user.id,
+          userId: req.firebaseUser.id,
           success: false,
           details: { 
-            userRole: req.user.role, 
+            userRole: req.firebaseUser.role, 
             requiredRole, 
             path: req.path 
           }
@@ -137,8 +132,8 @@ export class FirebaseAuthMiddleware {
    * Middleware to require specific medical specialty access
    */
   requireSpecialty = (requiredSpecialty: MedicalSpecialty) => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      if (!req.user) {
+    return async (req: FirebaseAuthRequest, res: Response, next: NextFunction): Promise<void> => {
+      if (!req.firebaseUser) {
         const error: AuthError = {
           code: 'PERMISSION_DENIED',
           message: 'Authentication required'
@@ -147,7 +142,7 @@ export class FirebaseAuthMiddleware {
         return;
       }
 
-      if (req.user.specialty !== requiredSpecialty) {
+      if (req.firebaseUser.specialty !== requiredSpecialty) {
         const error: AuthError = {
           code: 'SPECIALTY_ACCESS_DENIED',
           message: `Access denied. Required specialty: ${requiredSpecialty}`
@@ -155,10 +150,10 @@ export class FirebaseAuthMiddleware {
 
         await this.logAuthEvent(req, {
           eventType: 'PERMISSION_DENIED',
-          userId: req.user.id,
+          userId: req.firebaseUser.id,
           success: false,
           details: { 
-            userSpecialty: req.user.specialty, 
+            userSpecialty: req.firebaseUser.specialty, 
             requiredSpecialty, 
             path: req.path 
           }
@@ -175,8 +170,8 @@ export class FirebaseAuthMiddleware {
   /**
    * Middleware to require verified provider status
    */
-  requireVerifiedProvider = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    if (!req.user) {
+  requireVerifiedProvider = async (req: FirebaseAuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    if (!req.firebaseUser) {
       const error: AuthError = {
         code: 'PERMISSION_DENIED',
         message: 'Authentication required'
@@ -187,7 +182,7 @@ export class FirebaseAuthMiddleware {
 
     // Check if user is a provider
     const providerRoles: UserRole[] = ['PROVIDER', 'RESIDENT', 'FELLOW', 'ATTENDING'];
-    if (!providerRoles.includes(req.user.role)) {
+    if (!providerRoles.includes(req.firebaseUser.role)) {
       const error: AuthError = {
         code: 'PERMISSION_DENIED',
         message: 'Provider role required'
@@ -195,11 +190,11 @@ export class FirebaseAuthMiddleware {
 
       await this.logAuthEvent(req, {
         eventType: 'PERMISSION_DENIED',
-        userId: req.user.id,
+        userId: req.firebaseUser.id,
         success: false,
         details: { 
           reason: 'Not a provider', 
-          userRole: req.user.role, 
+          userRole: req.firebaseUser.role, 
           path: req.path 
         }
       });
@@ -209,7 +204,7 @@ export class FirebaseAuthMiddleware {
     }
 
     // Check if provider is verified
-    if (!req.user.isVerified) {
+    if (!req.firebaseUser.isVerified) {
       const error: AuthError = {
         code: 'PROVIDER_NOT_VERIFIED',
         message: 'Provider verification required'
@@ -217,7 +212,7 @@ export class FirebaseAuthMiddleware {
 
       await this.logAuthEvent(req, {
         eventType: 'PERMISSION_DENIED',
-        userId: req.user.id,
+        userId: req.firebaseUser.id,
         success: false,
         details: { 
           reason: 'Provider not verified', 
@@ -235,7 +230,7 @@ export class FirebaseAuthMiddleware {
   /**
    * Middleware for audit logging of requests
    */
-  auditRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  auditRequest = async (req: FirebaseAuthRequest, res: Response, next: NextFunction): Promise<void> => {
     if (!this.auditEnabled) {
       next();
       return;
@@ -244,7 +239,7 @@ export class FirebaseAuthMiddleware {
     // Log the request
     await this.logAuthEvent(req, {
       eventType: 'LOGIN_SUCCESS', // Using as general access event
-      userId: req.user?.id,
+      userId: req.firebaseUser?.id,
       success: true,
       details: {
         method: req.method,
@@ -280,7 +275,7 @@ export class FirebaseAuthMiddleware {
   /**
    * Log authentication event for audit purposes
    */
-  private async logAuthEvent(req: Request, event: Partial<AuthAuditEvent>): Promise<void> {
+  private async logAuthEvent(req: FirebaseAuthRequest, event: Partial<AuthAuditEvent>): Promise<void> {
     if (!this.auditEnabled) {
       return;
     }
@@ -288,8 +283,9 @@ export class FirebaseAuthMiddleware {
     const auditEvent: AuthAuditEvent = {
       id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       eventType: event.eventType!,
-      userId: event.userId || req.user?.id,
-      sessionId: req.session?.id,
+      userId: event.userId || req.firebaseUser?.id,
+      // Use any to avoid coupling to SSO Request augmentation
+      sessionId: (req as any).session?.id,
       ipAddress: this.getClientIP(req),
       userAgent: req.headers['user-agent'] || 'Unknown',
       success: event.success || false,

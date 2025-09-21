@@ -342,6 +342,10 @@ export type AuthErrorCode =
   | 'SPECIALTY_ACCESS_DENIED'
   | 'NETWORK_ERROR'
   | 'CONFIGURATION_ERROR'
+  | 'CENTRAL_IDP_TOKEN_EXCHANGE_FAILED'
+  | 'OPENEMR_TOKEN_EXCHANGE_FAILED'
+  | 'TOKEN_REFRESH_FAILED'
+  | 'TOKEN_REVOCATION_FAILED'
   | 'UNKNOWN_ERROR';
 
 // ============================================================================

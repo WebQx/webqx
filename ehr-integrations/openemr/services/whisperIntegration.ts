@@ -215,17 +215,17 @@ export class WhisperOpenEMRIntegration {
       this.log('Clinical transcription completed successfully');
       return result;
 
-    } catch (error) {
+    } catch (error: unknown) {
       this.log('Clinical transcription failed:', error);
       
       if (this.config.features?.enableAuditLogging) {
         this.auditLog('clinical_transcription_failed', {
           patientId: context.patientId,
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         });
       }
 
-      throw error;
+      throw (error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -259,11 +259,9 @@ export class WhisperOpenEMRIntegration {
       // Configure streaming service with medical vocabulary
       const prompt = this.getMedicalVocabularyPrompt(context.transcriptionType);
       
-      // Start streaming with clinical context
-      await this.streamingService.startTranscription();
-
-      // Set up event handlers
-      this.streamingService.onFinalResult = (text: string, confidence: number, language: string) => {
+      // Configure event handlers
+      this.streamingService.setEvents({
+        onFinalResult: (text: string, confidence: number, language?: string) => {
         let finalText = text;
         
         // Apply PHI protection if enabled
@@ -271,25 +269,32 @@ export class WhisperOpenEMRIntegration {
           const { text: protectedText } = this.applyPHIProtection(text);
           finalText = protectedText;
         }
+          callbacks.onTranscription?.(finalText, true);
 
-        callbacks.onTranscription?.(finalText, true);
-
-        // Auto-save if enabled and encounter ID provided
-        if (this.config.features?.autoSaveToEncounter && context.encounterId) {
-          this.saveStreamingTranscriptionToEncounter(finalText, context, confidence, language);
+          // Auto-save if enabled and encounter ID provided
+          if (this.config.features?.autoSaveToEncounter && context.encounterId) {
+            this.saveStreamingTranscriptionToEncounter(finalText, context, confidence, language || this.config.clinical?.defaultLanguage || 'en');
+          }
+        },
+        onError: (error) => {
+          this.log('Streaming transcription error:', error);
+          callbacks.onError?.(new Error(error.message));
+        },
+        onStart: () => {
+          callbacks.onStateChange?.(true);
+        },
+        onStop: () => {
+          callbacks.onStateChange?.(false);
         }
-      };
+      });
 
-      this.streamingService.onError = (error: Error) => {
-        this.log('Streaming transcription error:', error);
-        callbacks.onError?.(error);
-      };
+      // Start streaming after setting events
+      await this.streamingService.startTranscription();
 
-      callbacks.onStateChange?.(true);
 
-    } catch (error) {
+    } catch (error: unknown) {
       this.log('Failed to start streaming transcription:', error);
-      callbacks.onError?.(error as Error);
+      callbacks.onError?.(error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -332,13 +337,13 @@ export class WhisperOpenEMRIntegration {
 
       return result;
 
-    } catch (error) {
+    } catch (error: unknown) {
       this.log('Failed to save transcription to encounter:', error);
       return {
         success: false,
         error: {
           code: 'ENCOUNTER_SAVE_FAILED',
-          message: error.message
+          message: error instanceof Error ? error.message : String(error)
         }
       };
     }
@@ -443,12 +448,12 @@ export class WhisperOpenEMRIntegration {
       // );
 
       return { success: true };
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         success: false,
         error: {
           code: 'NOTE_SAVE_FAILED',
-          message: error.message
+          message: error instanceof Error ? error.message : String(error)
         }
       };
     }

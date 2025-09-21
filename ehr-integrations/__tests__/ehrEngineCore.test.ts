@@ -149,7 +149,7 @@ describe('EHR Engine Integration', () => {
     });
 
     test('should subscribe to real-time updates', (done) => {
-      const eventTypes = ['resource_created', 'resource_updated'];
+      const eventTypes: any = ['resource_created', 'resource_updated'];
       
       const subscriptionId = ehrEngine.subscribeToRealTimeUpdates(
         eventTypes,

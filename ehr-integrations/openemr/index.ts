@@ -6,6 +6,7 @@
  */
 
 export { OpenEMRIntegration } from './services/integration';
+import { OpenEMRIntegration } from './services/integration';
 export type {
   OpenEMRConfig,
   OpenEMRTokens,

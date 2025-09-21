@@ -26,6 +26,7 @@ describe('WhisperOpenEMRIntegration', () => {
     mockConfig = createConfig('development', 'general', {
       openemr: {
         baseUrl: 'http://test-openemr.local',
+        apiVersion: '7.0.2',
         oauth: {
           clientId: 'test-client',
           clientSecret: 'test-secret',
@@ -46,8 +47,8 @@ describe('WhisperOpenEMRIntegration', () => {
   describe('Initialization', () => {
     test('should initialize successfully with valid configuration', async () => {
       const mockOpenEMRIntegration = {
-        initialize: jest.fn().mockResolvedValue(undefined)
-      };
+        initialize: jest.fn(() => Promise.resolve())
+      } as any;
 
       (integration as any).openemrService = mockOpenEMRIntegration;
 
@@ -57,8 +58,8 @@ describe('WhisperOpenEMRIntegration', () => {
 
     test('should throw error when OpenEMR initialization fails', async () => {
       const mockOpenEMRIntegration = {
-        initialize: jest.fn().mockRejectedValue(new Error('OpenEMR connection failed'))
-      };
+        initialize: jest.fn(() => Promise.reject(new Error('OpenEMR connection failed')))
+      } as any;
 
       (integration as any).openemrService = mockOpenEMRIntegration;
 
@@ -82,21 +83,21 @@ describe('WhisperOpenEMRIntegration', () => {
 
       // Mock OpenEMR service
       (integration as any).openemrService = {
-        getPatient: jest.fn().mockResolvedValue({
+        getPatient: jest.fn().mockImplementation(() => Promise.resolve({
           success: true,
           data: { id: 'patient-123', name: 'John Doe' }
-        })
-      };
+        } as any))
+      } as any;
 
       // Mock Whisper service
       (integration as any).whisperService = {
-        transcribeAudio: jest.fn().mockResolvedValue({
+        transcribeAudio: jest.fn().mockImplementation(() => Promise.resolve({
           text: 'Patient presents with chief complaint of headache.',
           confidence: 0.95,
           language: 'en',
           duration: 5.2
-        })
-      };
+        } as any))
+      } as any;
     });
 
     test('should successfully transcribe clinical audio', async () => {
@@ -115,10 +116,10 @@ describe('WhisperOpenEMRIntegration', () => {
     });
 
     test('should throw error when patient not found', async () => {
-      (integration as any).openemrService.getPatient.mockResolvedValue({
+      (integration as any).openemrService.getPatient.mockImplementation(() => Promise.resolve({
         success: false,
         error: { message: 'Patient not found' }
-      });
+      } as any));
 
       await expect(
         integration.transcribeClinicalAudio(mockAudioFile, clinicalContext)
@@ -137,12 +138,12 @@ describe('WhisperOpenEMRIntegration', () => {
       const integrationWithPHI = new WhisperOpenEMRIntegration(configWithPHI);
       (integrationWithPHI as any).openemrService = (integration as any).openemrService;
       (integrationWithPHI as any).whisperService = {
-        transcribeAudio: jest.fn().mockResolvedValue({
+        transcribeAudio: jest.fn().mockImplementation(() => Promise.resolve({
           text: 'Patient John Doe, SSN 123-45-6789, has headache.',
           confidence: 0.95,
           language: 'en'
-        })
-      };
+        } as any))
+      } as any;
 
       const result = await integrationWithPHI.transcribeClinicalAudio(mockAudioFile, clinicalContext);
 
@@ -211,18 +212,18 @@ describe('WhisperOpenEMRIntegration', () => {
 
       // Mock services
       (integration as any).openemrService = {
-        getPatient: jest.fn().mockResolvedValue({
+        getPatient: jest.fn().mockImplementation(() => Promise.resolve({
           success: true,
           data: { id: 'patient-123' }
-        })
-      };
+        } as any))
+      } as any;
 
       (integration as any).streamingService = {
-        startTranscription: jest.fn().mockResolvedValue(undefined),
-        stopTranscription: jest.fn().mockResolvedValue(undefined),
+        startTranscription: jest.fn().mockImplementation(async () => undefined as any),
+        stopTranscription: jest.fn().mockImplementation(async () => undefined as any),
         onFinalResult: null,
         onError: null
-      };
+      } as any;
     });
 
     test('should start streaming transcription successfully', async () => {
@@ -478,8 +479,8 @@ describe('Error Handling', () => {
     const integration = new WhisperOpenEMRIntegration(createConfig('development'));
     
     (integration as any).openemrService = {
-      getPatient: jest.fn().mockRejectedValue(new Error('Network error'))
-    };
+      getPatient: jest.fn().mockImplementation(() => Promise.reject(new Error('Network error') as any))
+    } as any;
 
     const mockFile = new File(['audio'], 'test.wav', { type: 'audio/wav' });
     const context = {
@@ -497,12 +498,12 @@ describe('Error Handling', () => {
     const integration = new WhisperOpenEMRIntegration(createConfig('development'));
     
     (integration as any).openemrService = {
-      getPatient: jest.fn().mockResolvedValue({ success: true, data: {} })
-    };
+      getPatient: jest.fn().mockImplementation(() => Promise.resolve({ success: true, data: {} } as any))
+    } as any;
     
     (integration as any).whisperService = {
-      transcribeAudio: jest.fn().mockRejectedValue(new Error('Whisper API error'))
-    };
+      transcribeAudio: jest.fn().mockImplementation(() => Promise.reject(new Error('Whisper API error') as any))
+    } as any;
 
     const mockFile = new File(['audio'], 'test.wav', { type: 'audio/wav' });
     const context = {
@@ -527,16 +528,16 @@ describe('Audit Logging', () => {
     const auditLogSpy = jest.spyOn(integration as any, 'auditLog');
     
     (integration as any).openemrService = {
-      getPatient: jest.fn().mockResolvedValue({ success: true, data: {} })
-    };
+      getPatient: jest.fn().mockImplementation(() => Promise.resolve({ success: true, data: {} } as any))
+    } as any;
     
     (integration as any).whisperService = {
-      transcribeAudio: jest.fn().mockResolvedValue({
+      transcribeAudio: jest.fn().mockImplementation(() => Promise.resolve({
         text: 'Test transcription',
         confidence: 0.9,
         language: 'en'
-      })
-    };
+      } as any))
+    } as any;
 
     const mockFile = new File(['audio'], 'test.wav', { type: 'audio/wav' });
     const context = {

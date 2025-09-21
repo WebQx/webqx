@@ -1,5 +1,4 @@
 module.exports = {
-  preset: 'ts-jest',
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/patient-portal', '<rootDir>/services', '<rootDir>/ehr-integrations', '<rootDir>/modules', '<rootDir>/fhir', '<rootDir>/openehr', '<rootDir>/auth', '<rootDir>/interoperability', '<rootDir>/sso', '<rootDir>/telehealth', '<rootDir>/compliance'],
   testMatch: [
@@ -7,12 +6,11 @@ module.exports = {
     '**/*.(test|spec).+(ts|tsx|js)'
   ],
   transform: {
-    '^.+\\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: '<rootDir>/tsconfig.json'
-    }]
+    '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  modulePathIgnorePatterns: ['<rootDir>/patient-portal/node_modules', '<rootDir>/dist'],
   collectCoverageFrom: [
     'patient-portal/**/*.{ts,tsx}',
     'services/**/*.{ts,tsx}',
@@ -43,7 +41,11 @@ module.exports = {
     '^@azure/identity$': '<rootDir>/__mocks__/@azure-identity.js',
     '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js',
     '^jwks-rsa$': '<rootDir>/__mocks__/jwks-rsa.js',
-    '^\.\./\.\./prescriptions/services/whisperTranslator$': '<rootDir>/patient-portal/prescriptions/services/whisperTranslator.ts'
+    '^\\.\.\/\\.\.\/prescriptions/services/whisperTranslator$': '<rootDir>/patient-portal/prescriptions/services/whisperTranslator.ts',
+    '^react$': require.resolve('react'),
+    '^react/jsx-runtime$': require.resolve('react/jsx-runtime'),
+    '^react-dom$': require.resolve('react-dom'),
+    '^react-dom/client$': require.resolve('react-dom/client')
   },
   testEnvironmentOptions: {
     node: true
@@ -54,18 +56,21 @@ module.exports = {
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/patient-portal/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/services/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/ehr-integrations/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/modules/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/compliance/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/interoperability/**/*.(test|spec).+(ts|tsx|js)', '<rootDir>/sso/**/*.(test|spec).+(ts|tsx|js)'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  modulePathIgnorePatterns: ['<rootDir>/patient-portal/node_modules', '<rootDir>/dist'],
       moduleNameMapper: {
         '\\.(css|less|scss)$': 'identity-obj-proxy',
         '^keycloak-js$': '<rootDir>/__mocks__/keycloak-js.js',
         '^@azure/identity$': '<rootDir>/__mocks__/@azure-identity.js',
         '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js',
         '^jwks-rsa$': '<rootDir>/__mocks__/jwks-rsa.js',
-        '^\.\./\.\./prescriptions/services/whisperTranslator$': '<rootDir>/patient-portal/prescriptions/services/whisperTranslator.ts'
+        '^\\.\.\/\\.\.\/prescriptions/services/whisperTranslator$': '<rootDir>/patient-portal/prescriptions/services/whisperTranslator.ts',
+        '^react$': require.resolve('react'),
+        '^react/jsx-runtime$': require.resolve('react/jsx-runtime'),
+        '^react-dom$': require.resolve('react-dom'),
+        '^react-dom/client$': require.resolve('react-dom/client')
       },
       transform: {
-        '^.+\\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: '<rootDir>/tsconfig.json'
-        }]
+        '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
       }
     },
     {
@@ -76,11 +81,14 @@ module.exports = {
         '\\.(css|less|scss)$': 'identity-obj-proxy',
         '^keycloak-js$': '<rootDir>/__mocks__/keycloak-js.js',
         '^@azure/identity$': '<rootDir>/__mocks__/@azure-identity.js',
-        '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js'
+        '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js',
+        '^react$': require.resolve('react'),
+        '^react/jsx-runtime$': require.resolve('react/jsx-runtime'),
+        '^react-dom$': require.resolve('react-dom'),
+        '^react-dom/client$': require.resolve('react-dom/client')
       },
       transform: {
-        '^.+\\.(ts)$': 'ts-jest',
-        '^.+\\.js$': 'babel-jest'
+        '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
       }
     },
     {
@@ -91,10 +99,14 @@ module.exports = {
         '\\.(css|less|scss)$': 'identity-obj-proxy',
         '^keycloak-js$': '<rootDir>/__mocks__/keycloak-js.js',
         '^@azure/identity$': '<rootDir>/__mocks__/@azure-identity.js',
-        '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js'
+        '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js',
+        '^react$': require.resolve('react'),
+        '^react/jsx-runtime$': require.resolve('react/jsx-runtime'),
+        '^react-dom$': require.resolve('react-dom'),
+        '^react-dom/client$': require.resolve('react-dom/client')
       },
       transform: {
-        '^.+\\.js$': 'babel-jest'
+        '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
       }
     },
     {
@@ -105,10 +117,14 @@ module.exports = {
         '\\.(css|less|scss)$': 'identity-obj-proxy',
         '^keycloak-js$': '<rootDir>/__mocks__/keycloak-js.js',
         '^@azure/identity$': '<rootDir>/__mocks__/@azure-identity.js',
-        '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js'
+        '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js',
+        '^react$': require.resolve('react'),
+        '^react/jsx-runtime$': require.resolve('react/jsx-runtime'),
+        '^react-dom$': require.resolve('react-dom'),
+        '^react-dom/client$': require.resolve('react-dom/client')
       },
       transform: {
-        '^.+\\.js$': 'babel-jest'
+        '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
       }
     },
     {
@@ -119,10 +135,14 @@ module.exports = {
         '\\.(css|less|scss)$': 'identity-obj-proxy',
         '^keycloak-js$': '<rootDir>/__mocks__/keycloak-js.js',
         '^@azure/identity$': '<rootDir>/__mocks__/@azure-identity.js',
-        '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js'
+        '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js',
+        '^react$': require.resolve('react'),
+        '^react/jsx-runtime$': require.resolve('react/jsx-runtime'),
+        '^react-dom$': require.resolve('react-dom'),
+        '^react-dom/client$': require.resolve('react-dom/client')
       },
       transform: {
-        '^.+\\.js$': 'babel-jest'
+        '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
       }
     },
     {
@@ -133,10 +153,14 @@ module.exports = {
         '\\.(css|less|scss)$': 'identity-obj-proxy',
         '^keycloak-js$': '<rootDir>/__mocks__/keycloak-js.js',
         '^@azure/identity$': '<rootDir>/__mocks__/@azure-identity.js',
-        '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js'
+        '^@microsoft/microsoft-graph-client$': '<rootDir>/__mocks__/@microsoft-microsoft-graph-client.js',
+        '^react$': require.resolve('react'),
+        '^react/jsx-runtime$': require.resolve('react/jsx-runtime'),
+        '^react-dom$': require.resolve('react-dom'),
+        '^react-dom/client$': require.resolve('react-dom/client')
       },
       transform: {
-        '^.+\\.js$': 'babel-jest'
+        '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
       }
     }
   ]

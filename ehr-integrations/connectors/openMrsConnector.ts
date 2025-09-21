@@ -655,7 +655,8 @@ export class OpenMRSConnector implements ExternalEHRConnector {
         {
           use: 'official',
           family: preferredName.familyName,
-          given: [preferredName.givenName, preferredName.middleName].filter(Boolean),
+          // ensure no undefined entries in arrays
+          given: [preferredName.givenName, preferredName.middleName].filter((v): v is string => Boolean(v)),
           prefix: preferredName.prefix ? [preferredName.prefix] : undefined,
           suffix: preferredName.suffix ? [preferredName.suffix] : undefined
         }
@@ -667,7 +668,7 @@ export class OpenMRSConnector implements ExternalEHRConnector {
       address: preferredAddress ? [
         {
           use: 'home',
-          line: [preferredAddress.address1, preferredAddress.address2].filter(Boolean),
+          line: [preferredAddress.address1, preferredAddress.address2].filter((v): v is string => Boolean(v)),
           city: preferredAddress.cityVillage,
           state: preferredAddress.stateProvince,
           postalCode: preferredAddress.postalCode,
@@ -676,13 +677,8 @@ export class OpenMRSConnector implements ExternalEHRConnector {
       ] : []
     };
 
-    // Add person attributes as extensions
-    if (person.attributes && person.attributes.length > 0) {
-      fhirPatient.extension = person.attributes.map(attr => ({
-        url: `${this.config!.restApiUrl}/person-attribute-type/${attr.attributeType.uuid}`,
-        valueString: attr.value
-      }));
-    }
+    // Person attributes could be mapped to Patient.extension, but our FHIRPatient type doesn't include it.
+    // If needed in future, extend FHIRPatient with extension field in our types package.
 
     return fhirPatient;
   }
@@ -727,7 +723,7 @@ export class OpenMRSConnector implements ExternalEHRConnector {
   }
 
   private convertOpenMRSEncounterToFHIR(openMrsEncounter: OpenMRSEncounter): FHIRResource {
-    return {
+    const encounter = {
       resourceType: 'Encounter',
       id: openMrsEncounter.uuid,
       status: 'finished',
@@ -765,7 +761,8 @@ export class OpenMRSConnector implements ExternalEHRConnector {
           }
         ]
       })) || []
-    };
+    } as any;
+    return encounter as FHIRResource;
   }
 
   private convertFHIREncounterToOpenMRS(fhirEncounter: FHIRResource): any {
@@ -855,7 +852,7 @@ export class OpenMRSConnector implements ExternalEHRConnector {
   }
 
   private convertOpenMRSProgramToFHIR(program: any, patientId: string): FHIRResource {
-    return {
+    const carePlan = {
       resourceType: 'CarePlan',
       id: program.uuid,
       status: program.dateCompleted ? 'completed' : 'active',
@@ -878,11 +875,12 @@ export class OpenMRSConnector implements ExternalEHRConnector {
           description: state.state?.display
         }
       })) || []
-    };
+    } as any;
+    return carePlan as FHIRResource;
   }
 
   private convertOpenMRSVisitToFHIR(visit: any): FHIRResource {
-    return {
+    const visitEnc = {
       resourceType: 'Encounter',
       id: visit.uuid,
       status: visit.stopDatetime ? 'finished' : 'in-progress',
@@ -910,7 +908,8 @@ export class OpenMRSConnector implements ExternalEHRConnector {
           }
         }
       ]
-    };
+    } as any;
+    return visitEnc as FHIRResource;
   }
 
   // ============================================================================

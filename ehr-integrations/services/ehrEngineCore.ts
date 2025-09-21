@@ -161,8 +161,7 @@ export class EHREngineCore extends EventEmitter {
     });
 
     this.auditLogger = new AuditLogger({
-      enabled: config.security?.auditLevel !== undefined,
-      logLevel: this.mapAuditLevel(config.security?.auditLevel || 'standard')
+      enabled: config.security?.auditLevel !== undefined
     });
 
     this.setupEventHandlers();
@@ -200,7 +199,7 @@ export class EHREngineCore extends EventEmitter {
       this.logInfo('EHR Engine Core initialization completed', { operationId, duration });
 
       await this.auditLogger.log({
-        action: 'initialize_engine',
+        action: 'configure_ehr',
         resourceType: 'ehr_engine',
         resourceId: 'core',
         success: true,
@@ -232,7 +231,7 @@ export class EHREngineCore extends EventEmitter {
       this.logError('EHR Engine initialization failed', error, { operationId });
 
       await this.auditLogger.log({
-        action: 'initialize_engine',
+        action: 'configure_ehr',
         resourceType: 'ehr_engine',
         resourceId: 'core',
         success: false,
@@ -308,9 +307,9 @@ export class EHREngineCore extends EventEmitter {
 
         // Audit log
         await this.auditLogger.log({
-          action: 'create_resource',
+          action: 'sync_ehr_data',
           resourceType: resource.resourceType.toLowerCase(),
-          resourceId: response.data.id,
+          resourceId: response.data.id || 'unknown',
           success: true,
           context: { operationId }
         });
@@ -389,9 +388,9 @@ export class EHREngineCore extends EventEmitter {
 
         // Audit log
         await this.auditLogger.log({
-          action: 'update_resource',
+          action: 'sync_ehr_data',
           resourceType: resource.resourceType.toLowerCase(),
-          resourceId: resource.id,
+          resourceId: resource.id || 'unknown',
           success: true,
           context: { operationId }
         });
@@ -452,7 +451,7 @@ export class EHREngineCore extends EventEmitter {
 
       // Audit log
       await this.auditLogger.log({
-        action: 'view_resource',
+        action: 'view_patient_data',
         resourceType: resourceType.toLowerCase(),
         resourceId,
         success: response.success,
@@ -524,7 +523,7 @@ export class EHREngineCore extends EventEmitter {
 
         // Audit log
         await this.auditLogger.log({
-          action: 'delete_resource',
+          action: 'sync_ehr_data',
           resourceType: resourceType.toLowerCase(),
           resourceId,
           success: true,
@@ -778,8 +777,9 @@ export class EHREngineCore extends EventEmitter {
         'appointment_cancelled'
       ],
       callback: async (event) => {
+        const action = this.mapRealTimeEventToAuditAction(event.type);
         await this.auditLogger.log({
-          action: event.type,
+          action,
           resourceType: event.resourceType || 'unknown',
           resourceId: event.resourceId || 'unknown',
           patientMrn: event.patientId,
@@ -788,6 +788,27 @@ export class EHREngineCore extends EventEmitter {
         });
       }
     });
+  }
+
+  private mapRealTimeEventToAuditAction(type: RealTimeEventType): 'sync_ehr_data' | 'view_patient_data' | 'export_data' {
+    switch (type) {
+      case 'appointment_booked':
+      case 'appointment_cancelled':
+      case 'resource_created':
+      case 'resource_updated':
+      case 'resource_deleted':
+      case 'patient_updated':
+      case 'observation_added':
+      case 'medication_prescribed':
+      case 'sync_started':
+      case 'sync_completed':
+        return 'sync_ehr_data';
+      case 'connection_established':
+      case 'connection_lost':
+      case 'error_occurred':
+      default:
+        return 'export_data';
+    }
   }
 
   private setupEventHandlers(): void {

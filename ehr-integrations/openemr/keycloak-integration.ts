@@ -21,7 +21,7 @@ import {
 } from '../../auth/keycloak/types';
 import { getKeycloakProviderConfig } from '../../auth/keycloak/client';
 import { User, UserRole, MedicalSpecialty } from '../../auth/types';
-import { OAuth2Connector, TokenExchangeRequest } from '../connectors/oauth2-connector';
+import { OAuth2Connector, TokenExchangeRequest } from './connectors/oauth2-connector';
 
 // Extend Express Request to include both Keycloak and OpenEMR context
 declare global {
@@ -205,7 +205,11 @@ export class OpenEMRKeycloakIntegration {
       };
 
       const result = await this.oauth2Connector.exchangeForOpenEMRTokens(exchangeRequest);
-      return result;
+      return {
+        success: result.success,
+        openemrTokens: result.openemrTokens,
+        error: result.error ? (typeof result.error === 'string' ? result.error : result.error.message || String(result.error)) : undefined
+      };
     } catch (error) {
       console.error('Token exchange error:', error);
       return {

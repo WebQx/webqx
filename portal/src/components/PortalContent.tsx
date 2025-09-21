@@ -21,11 +21,7 @@ export const MODULE_CATALOG: ModuleMeta[] = [
   { id: 'labs', title: 'Lab Results Viewer', description: 'FHIR R4 lab result rendering demo', externalHref: 'demo-lab-results-viewer.html', category: 'FHIR', keywords: ['lab','results','fhir'], roles: ['patient','provider'] },
   { id: 'appt', title: 'Appointment Booking', description: 'FHIR scheduling demonstration', externalHref: 'demo-fhir-r4-appointment-booking.html', category: 'FHIR', keywords: ['appointment','scheduling','fhir'], roles: ['patient','provider'] },
   { id: 'login', title: 'Login Page', description: 'Standalone authentication UI example', externalHref: 'login.html', category: 'Auth', keywords: ['login','auth'], roles: ['patient','provider','admin'] },
-  { id: 'billing', title: 'Medical Billing', description: 'Submit and track mock claims (resets daily 08:00 UTC)', category: 'Operations', keywords: ['billing','claims'], roles: ['provider','admin'] },
-  { id: 'accounting', title: 'Accounting', description: 'Create demo invoices and totals (resets daily 08:00 UTC)', category: 'Operations', keywords: ['accounting','invoices'], roles: ['admin'] },
-  { id: 'access', title: 'Access Controls', description: 'Assign roles to demo users (resets daily 08:00 UTC)', category: 'Operations', keywords: ['access','roles'], roles: ['admin'] },
-  { id: 'ai', title: 'AI Assist', description: 'Summarize notes, extract tasks, draft plans (mock)', category: 'AI', keywords: ['ai','summary','assistant'], roles: ['provider','admin'] },
-  { id: 'transcription', title: 'Medical Transcription', description: 'WebQx Medical Transcription using Whisper (mock)', category: 'AI', keywords: ['whisper','transcription','voice'], roles: ['provider','admin'] },
+  { id: 'transcription', title: 'Medical Transcription', description: 'WebQx Medical Transcription powered by Whisper (production)', category: 'AI', keywords: ['whisper','transcription','voice'], roles: ['provider','admin'] },
   { id: 'whisper', title: 'Whisper Full Demo', description: 'Standalone Whisper UI demo pages (file & realtime)', externalHref: 'whisper-demo.html', category: 'AI', keywords: ['whisper','demo'], roles: ['provider','admin'] },
   { id: 'admin', title: 'Admin Console', description: 'Operational oversight & configuration', externalHref: 'admin-console/', category: 'Operations', keywords: ['admin','ops'], roles: ['admin'] },
   { id: 'docs', title: 'System README', description: 'Platform architecture & guidance', externalHref: 'README.md', category: 'Docs', keywords: ['docs','readme'], roles: ['patient','provider','admin'] }
@@ -112,12 +108,6 @@ const InteractiveBlock: React.FC<{ meta: ModuleMeta; base: string }> = ({ meta, 
   }
   // Fallback to synthetic mini-demos where appropriate
   switch (meta.id) {
-    case 'billing':
-      return <BillingDemo />;
-    case 'accounting':
-      return <AccountingDemo />;
-    case 'access':
-      return <AccessDemo />;
     case 'labs':
       return <FhirObservationDemo />;
     case 'appt':
@@ -130,8 +120,6 @@ const InteractiveBlock: React.FC<{ meta: ModuleMeta; base: string }> = ({ meta, 
       return <PatientChartMini />;
     case 'provider':
       return <EncounterNoteDemo />;
-    case 'ai':
-      return <AiAssistDemo />;
     case 'transcription':
       return <TranscriptionDemo />;
     case 'admin':
@@ -292,168 +280,37 @@ function randomId() {
 // Lightweight styling hooks (leveraging existing .panel and tokens)
 // Additional small utility classes could eventually move to styles.css if reused.
 
-// AI Assist inline demo ---------------------------------------------------------------
-const AiAssistDemo: React.FC = () => {
-  const [text, setText] = useState('Patient reports intermittent headaches with light sensitivity. Sleep quality improved over last week. No vision changes.');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const runSummary = async () => {
-    setLoading(true); setError(null); setResult(null);
-    try {
-      const res = await fetch('/api/ai/summary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ note: text, patient: { id: 'P001', name: 'John Doe' }, context: { visitType: 'follow-up' } })
-      });
-      if (!res.ok) throw new Error('Request failed: ' + res.status);
-      const data = await res.json();
-      setResult(data);
-    } catch (e:any) {
-      setError(e.message || 'Unknown error');
-    } finally { setLoading(false); }
-  };
-
-  return (
-    <div className="mini-block">
-      <p style={{ fontSize: '.7rem', marginTop: 0 }}>Draft a clinical summary from free text (mock endpoint).</p>
-      <textarea value={text} onChange={e=>setText(e.target.value)} style={{ width:'100%', minHeight:100, fontFamily:'monospace', fontSize:'.7rem' }} />
-      <div style={{ display:'flex', gap:'.5rem', marginTop:'.4rem' }}>
-        <button className="btn" onClick={runSummary} disabled={loading}>{loading ? 'Summarizing…' : 'Summarize'}</button>
-        <button className="btn secondary" onClick={()=>{setText(''); setResult(null); setError(null);}}>Clear</button>
-      </div>
-      {error && <div style={{ color:'#b00020', fontSize:'.7rem', marginTop:'.4rem' }}>{error}</div>}
-      {result && (
-        <div style={{ marginTop: '.6rem' }}>
-          <pre className="code-block" style={{ maxHeight: 220, overflow:'auto' }}>{JSON.stringify(result, null, 2)}</pre>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Billing demo (uses /api/v1/demo/billing/*) ----------------------------------------
-const BillingDemo: React.FC = () => {
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const load = async () => {
-    try {
-      setLoading(true); setError(null);
-      const r = await fetch('/api/v1/demo/billing/claims');
-      if (!r.ok) throw new Error(String(r.status));
-      setItems(await r.json());
-    } catch (e:any) { setError(e.message); } finally { setLoading(false); }
-  };
-  const add = async () => {
-    const payload = { patient: 'John Doe', code: '99213', amount: 125.00 };
-    await fetch('/api/v1/demo/billing/claims', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-    load();
-  };
-  useEffect(() => { load(); }, []);
-  return (
-    <div className="mini-block">
-      <p style={{ fontSize: '.7rem', marginTop: 0 }}>Create and view mock claims. Resets daily at 08:00 UTC.</p>
-      <div style={{ display:'flex', gap:'.5rem', flexWrap:'wrap' }}>
-        <button className="btn" onClick={add} disabled={loading}>New claim</button>
-        <button className="btn secondary" onClick={load} disabled={loading}>Refresh</button>
-      </div>
-      {error && <div style={{ color:'#b00020', fontSize:'.7rem' }}>{error}</div>}
-      <pre className="code-block" style={{ maxHeight: 220, overflow:'auto' }}>{JSON.stringify(items, null, 2)}</pre>
-    </div>
-  );
-};
-
-// Accounting demo (uses /api/v1/demo/accounting/*) ----------------------------------
-const AccountingDemo: React.FC = () => {
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const load = async () => {
-    try {
-      setLoading(true); setError(null);
-      const r = await fetch('/api/v1/demo/accounting/invoices');
-      if (!r.ok) throw new Error(String(r.status));
-      setItems(await r.json());
-    } catch (e:any) { setError(e.message); } finally { setLoading(false); }
-  };
-  const add = async () => {
-    const payload = { patient: 'John Doe', items:[{ desc:'Consult', qty:1, price:125 } ] };
-    await fetch('/api/v1/demo/accounting/invoices', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-    load();
-  };
-  useEffect(() => { load(); }, []);
-  return (
-    <div className="mini-block">
-      <p style={{ fontSize: '.7rem', marginTop: 0 }}>Create and view demo invoices. Resets daily at 08:00 UTC.</p>
-      <div style={{ display:'flex', gap:'.5rem', flexWrap:'wrap' }}>
-        <button className="btn" onClick={add} disabled={loading}>New invoice</button>
-        <button className="btn secondary" onClick={load} disabled={loading}>Refresh</button>
-      </div>
-      {error && <div style={{ color:'#b00020', fontSize:'.7rem' }}>{error}</div>}
-      <pre className="code-block" style={{ maxHeight: 220, overflow:'auto' }}>{JSON.stringify(items, null, 2)}</pre>
-    </div>
-  );
-};
-
-// Access controls demo (uses /api/v1/demo/access/*) ---------------------------------
-const AccessDemo: React.FC = () => {
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState('demo-user');
-  const [role, setRole] = useState('patient');
-  const load = async () => {
-    try {
-      setLoading(true); setError(null);
-      const r = await fetch('/api/v1/demo/access/roles');
-      if (!r.ok) throw new Error(String(r.status));
-      setItems(await r.json());
-    } catch (e:any) { setError(e.message); } finally { setLoading(false); }
-  };
-  const add = async () => {
-    const payload = { user, role };
-    await fetch('/api/v1/demo/access/roles', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
-    load();
-  };
-  useEffect(() => { load(); }, []);
-  return (
-    <div className="mini-block">
-      <p style={{ fontSize: '.7rem', marginTop: 0 }}>Assign roles for demo users (no persistence; daily reset 08:00 UTC).</p>
-      <div style={{ display:'flex', gap:'.5rem', flexWrap:'wrap', alignItems:'center' }}>
-        <input style={{ fontSize:'.7rem' }} value={user} onChange={e=>setUser(e.target.value)} placeholder="user id" />
-        <select value={role} onChange={e=>setRole(e.target.value)}>
-          <option value="patient">patient</option>
-          <option value="provider">provider</option>
-          <option value="admin">admin</option>
-        </select>
-        <button className="btn" onClick={add} disabled={loading}>Assign</button>
-        <button className="btn secondary" onClick={load} disabled={loading}>Refresh</button>
-      </div>
-      {error && <div style={{ color:'#b00020', fontSize:'.7rem' }}>{error}</div>}
-      <pre className="code-block" style={{ maxHeight: 220, overflow:'auto' }}>{JSON.stringify(items, null, 2)}</pre>
-    </div>
-  );
-};
-
-// Transcription inline demo (mock Whisper) --------------------------------------------
+// Transcription inline demo (production Whisper) ---------------------------------------
 const TranscriptionDemo: React.FC = () => {
-  const [language, setLanguage] = useState('en');
-  const [mode, setMode] = useState<'encounter'|'dictation'>('encounter');
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const runMock = async () => {
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    setFile(f || null);
+  };
+
+  const upload = async () => {
+    if (!file) return;
     setLoading(true); setError(null); setResult(null);
     try {
-      const res = await fetch('/api/transcription/mock', {
+      const fd = new FormData();
+      fd.append('file', file);
+      const headers: Record<string,string> = {};
+      const token = localStorage.getItem('webqx_token');
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/transcription/v1/transcribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ language, mode })
+        body: fd,
+        headers
       });
-      if (!res.ok) throw new Error('Request failed: ' + res.status);
+      if (!res.ok) {
+        let msg = `Request failed: ${res.status}`;
+        try { const j = await res.json(); if (j?.detail) msg += ` - ${j.detail}`; } catch {}
+        throw new Error(msg);
+      }
       const data = await res.json();
       setResult(data);
     } catch (e:any) {
@@ -463,25 +320,15 @@ const TranscriptionDemo: React.FC = () => {
 
   return (
     <div className="mini-block">
-      <p style={{ fontSize: '.7rem', marginTop: 0 }}>WebQx Medical Transcription using Whisper (mock). Generates transcript and summary.</p>
+      <p style={{ fontSize: '.7rem', marginTop: 0 }}>Upload an audio file to transcribe using the production Whisper service.</p>
       <div style={{ display:'flex', gap:'.5rem', flexWrap:'wrap', alignItems:'center' }}>
-        <label style={{ fontSize: '.65rem' }}>Language</label>
-        <select value={language} onChange={e=>setLanguage(e.target.value)}>
-          <option value="en">English</option>
-          <option value="es">Spanish</option>
-          <option value="fr">French</option>
-        </select>
-        <label style={{ fontSize: '.65rem' }}>Mode</label>
-        <select value={mode} onChange={e=>setMode(e.target.value as any)}>
-          <option value="encounter">Encounter</option>
-          <option value="dictation">Dictation</option>
-        </select>
-        <button className="btn" onClick={runMock} disabled={loading}>{loading ? 'Transcribing…' : 'Run mock'}</button>
+        <input type="file" accept="audio/*,video/*" onChange={onPick} />
+        <button className="btn" onClick={upload} disabled={loading || !file}>{loading ? 'Transcribing…' : 'Transcribe'}</button>
       </div>
       {error && <div style={{ color:'#b00020', fontSize:'.7rem', marginTop:'.4rem' }}>{error}</div>}
       {result && (
         <div style={{ marginTop: '.6rem' }}>
-          <pre className="code-block" style={{ maxHeight: 220, overflow:'auto' }}>{JSON.stringify(result, null, 2)}</pre>
+          <pre className="code-block" style={{ maxHeight: 280, overflow:'auto' }}>{JSON.stringify(result, null, 2)}</pre>
         </div>
       )}
     </div>

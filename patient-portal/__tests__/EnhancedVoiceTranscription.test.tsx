@@ -9,7 +9,7 @@ jest.mock('../../services/whisperService', () => ({
   whisperService: {
     validateFile: jest.fn(),
     transcribeAudio: jest.fn(),
-    onLoadingStateChange: jest.fn(() => () => {})
+    onLoadingStateChange: jest.fn((cb: (state: any) => void) => () => {})
   }
 }));
 
@@ -200,7 +200,7 @@ describe('EnhancedVoiceTranscription', () => {
       // Mock getUserMedia
       Object.defineProperty(navigator, 'mediaDevices', {
         value: {
-          getUserMedia: jest.fn().mockResolvedValue(new MediaStream())
+          getUserMedia: jest.fn(() => Promise.resolve(new (window as any).MediaStream() as any))
         },
         writable: true
       });
@@ -513,7 +513,7 @@ describe('EnhancedVoiceTranscription', () => {
       whisperService.validateFile.mockReturnValue({ isValid: true });
       
       // Mock loading state
-      whisperService.onLoadingStateChange.mockImplementation((callback) => {
+      whisperService.onLoadingStateChange.mockImplementation((callback: (state: any) => void) => {
         setTimeout(() => {
           callback({ isLoading: true, message: 'Processing...', progress: 50 });
         }, 100);

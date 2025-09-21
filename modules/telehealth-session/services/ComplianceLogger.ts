@@ -15,8 +15,6 @@ export class ComplianceLogger {
     this.config = config;
     this.logEvent({
       id: this.generateEventId(),
-      sessionId,
-      timestamp: new Date(),
       type: 'session_started',
       complianceLevel: 'high',
       data: { config }
@@ -26,7 +24,7 @@ export class ComplianceLogger {
   /**
    * Log a session event for compliance tracking
    */
-  logEvent(event: Omit<SessionEvent, 'id'> & { id?: string }): void {
+  logEvent(event: Omit<SessionEvent, 'id' | 'sessionId' | 'timestamp'> & { id?: string }): void {
     if (!this.config.enableAuditLogging) {
       return;
     }

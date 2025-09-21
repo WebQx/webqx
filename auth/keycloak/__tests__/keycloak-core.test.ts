@@ -300,7 +300,7 @@ describe('Keycloak Integration Core Tests', () => {
         'OPENEMR_BASE_URL',
       ];
 
-      const mockEnv = {
+      const mockEnv: Record<string, string> = {
         KEYCLOAK_URL: 'http://localhost:8080/auth',
         KEYCLOAK_REALM: 'webqx-healthcare',
         KEYCLOAK_CLIENT_ID: 'webqx-openemr',

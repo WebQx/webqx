@@ -6,6 +6,6 @@
  */
 
 export { KeycloakAuthProvider } from './provider';
-export { KeycloakConfig, KeycloakUser, KeycloakTokenInfo } from './types';
+export type { KeycloakConfig, KeycloakUser, KeycloakTokenInfo } from './types';
 export { keycloakMiddleware, validateKeycloakToken, mapKeycloakRoles } from './middleware';
 export { createKeycloakClient, getKeycloakConfig } from './client';

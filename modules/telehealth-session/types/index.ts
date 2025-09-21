@@ -100,10 +100,13 @@ export interface SessionEvent {
   id: string;
   sessionId: string;
   timestamp: Date;
-  type: 'participant_joined' | 'participant_left' | 'screen_share_started' | 'screen_share_stopped' | 
-        'recording_started' | 'recording_stopped' | 'session_paused' | 'session_resumed' | 
+  type: 'participant_joined' | 'participant_left' | 'screen_share_started' | 'screen_share_stopped' |
+        'recording_started' | 'recording_stopped' | 'session_paused' | 'session_resumed' |
         'session_ended' | 'participant_muted' | 'participant_unmuted' | 'invitation_sent' |
-        'technical_issue' | 'consent_given' | 'consent_revoked';
+        'technical_issue' | 'consent_given' | 'consent_revoked' |
+        // Additional lifecycle/UI events used by services
+        'session_started' | 'session_minimized' | 'session_maximized' | 'media_settings_updated' |
+        'participant_permissions_updated';
   participantId?: string;
   data?: Record<string, unknown>;
   complianceLevel: 'low' | 'medium' | 'high';

@@ -1,4 +1,9 @@
+// Extend Jest with @testing-library/jest-dom matchers for TS awareness
 require('@testing-library/jest-dom');
+try {
+  const matchers = require('@testing-library/jest-dom/matchers');
+  expect.extend(matchers);
+} catch {}
 
 // Polyfill for TextEncoder/TextDecoder in Node.js test environment
 if (typeof TextEncoder === 'undefined') {

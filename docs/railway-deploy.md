@@ -16,10 +16,8 @@ The repo includes `railway.json` with:
 
 Environment variables (set in Railway project):
 - NODE_ENV=production
-- AI_ASSIST_ENABLED=true
-- Choose one of:
-  - USE_FHIR_MOCK=true (quick demo without external FHIR), or
-  - USE_REMOTE_OPENEMR=true and OPENEMR_REMOTE_URL=https://your-openemr.example (remote FHIR)
+- USE_REMOTE_OPENEMR=true and OPENEMR_REMOTE_URL=https://your-openemr.example (remote FHIR)
+- TRANSCRIPTION_BASE_URL=https://your-transcription-service.example
 
 CORS: The gateway allows `https://webqx.github.io` and preflight OPTIONS globally.
 
@@ -53,8 +51,7 @@ Option B — locally with CLI:
 ## 4) Verify
 - Backend health: `GET https://<railway-app>.up.railway.app/health`
 - Open SPA: `https://webqx.github.io/EMR/`
-  - AI Assist → calls `POST /api/ai/summary` → expect 200 with mock summary
-  - Medical Transcription → calls `POST /api/transcription/mock` → expect 201 with mock transcript
+  - Medical Transcription → calls `POST /api/transcription/v1/transcribe` → expect 200 with JSON response (requires Authorization if service enforces JWT). If unconfigured, server returns 503.
   - Network: OPTIONS preflight 200; Access-Control-Allow-Origin: https://webqx.github.io
 
 ## Notes

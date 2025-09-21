@@ -249,7 +249,7 @@ export class OpenEMRConnectorManager {
       // Check API Gateway (simplified check)
       try {
         const app = this.apiGateway.getApp();
-        this.status.apiGateway = app ? 'healthy' : 'unhealthy';
+        this.status.apiGateway = typeof app?.use === 'function' ? 'healthy' : 'unhealthy';
       } catch (error) {
         this.status.apiGateway = 'unhealthy';
       }
@@ -280,12 +280,13 @@ export class OpenEMRConnectorManager {
         data: result.openemrTokens,
         error: result.error
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error during token exchange';
       return {
         success: false,
         error: {
           code: 'TOKEN_EXCHANGE_ERROR',
-          message: error.message
+          message
         }
       };
     }

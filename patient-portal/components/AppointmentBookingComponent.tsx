@@ -16,13 +16,13 @@ import {
   AppointmentBookingResult,
   SlotAvailability,
   RealTimeUpdateEvent
-} from '../../services/appointmentBookingService';
+} from '../../ehr-integrations/services/appointmentBookingService';
 import {
   FHIRAppointment,
   FHIRCodeableConcept,
   FHIRReference,
   FHIRPatient
-} from '../../types/fhir-r4';
+} from '../../ehr-integrations/types/fhir-r4';
 
 /**
  * Component props interface
@@ -375,7 +375,7 @@ export const AppointmentBookingComponent: React.FC<AppointmentBookingComponentPr
         startOfDay.toISOString(),
         endOfDay.toISOString(),
         selectedService?.text,
-        selectedPractitioner
+  selectedPractitioner ?? undefined
       );
 
       setAvailableSlots(slots);

@@ -138,7 +138,7 @@ export class OpenEMRIntegration {
         userId: 'user',
         timestamp: new Date(),
         outcome: 'failure',
-        details: { error: error.message }
+        details: { error: (error as any)?.message || String(error) }
       });
       throw error;
     }
@@ -230,7 +230,7 @@ export class OpenEMRIntegration {
         success: false,
         error: {
           code: 'PATIENT_ACCESS_ERROR',
-          message: error.message
+          message: (error as any)?.message || String(error)
         }
       };
     }
@@ -286,7 +286,7 @@ export class OpenEMRIntegration {
         success: false,
         error: {
           code: 'PATIENT_SEARCH_ERROR',
-          message: error.message
+          message: (error as any)?.message || String(error)
         }
       };
     }
@@ -310,7 +310,7 @@ export class OpenEMRIntegration {
         success: false,
         error: {
           code: 'SLOTS_ACCESS_ERROR',
-          message: error.message
+          message: (error as any)?.message || String(error)
         }
       };
     }
@@ -377,7 +377,7 @@ export class OpenEMRIntegration {
         success: false,
         error: {
           code: 'APPOINTMENT_BOOKING_ERROR',
-          message: error.message
+          message: (error as any)?.message || String(error)
         }
       };
     }
@@ -430,7 +430,7 @@ export class OpenEMRIntegration {
         success: false,
         error: {
           code: 'APPOINTMENT_ACCESS_ERROR',
-          message: error.message
+          message: (error as any)?.message || String(error)
         }
       };
     }
@@ -446,7 +446,7 @@ export class OpenEMRIntegration {
       // Get patient data
       const patientResult = await this.getPatient(patientId);
       if (!patientResult.success) {
-        return patientResult as OpenEMROperationResult<OpenEMRClinicalSummary>;
+        return { success: false, error: patientResult.error } as OpenEMROperationResult<OpenEMRClinicalSummary>;
       }
 
       // Get additional clinical data
@@ -481,7 +481,7 @@ export class OpenEMRIntegration {
         success: false,
         error: {
           code: 'CLINICAL_SUMMARY_ERROR',
-          message: error.message
+          message: (error as any)?.message || String(error)
         }
       };
     }
@@ -492,9 +492,10 @@ export class OpenEMRIntegration {
    */
   async getStatus(): Promise<{ healthy: boolean; version?: string; fhir?: boolean }> {
     try {
-      const response = await fetch(`${this.config.baseUrl}/apis/default/api/version`, {
-        timeout: this.config.security?.timeout || 5000
-      });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), this.config.security?.timeout || 5000);
+      const response = await fetch(`${this.config.baseUrl}/apis/default/api/version`, { signal: controller.signal });
+      clearTimeout(timer);
 
       if (response.ok) {
         const data = await response.json();
@@ -529,9 +530,10 @@ export class OpenEMRIntegration {
   }
 
   private async testConnectivity(): Promise<void> {
-    const response = await fetch(`${this.config.baseUrl}/apis/default/api/version`, {
-      timeout: this.config.security?.timeout || 5000
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.config.security?.timeout || 5000);
+    const response = await fetch(`${this.config.baseUrl}/apis/default/api/version`, { signal: controller.signal });
+    clearTimeout(timer);
 
     if (!response.ok) {
       throw new Error(`OpenEMR connectivity test failed: ${response.statusText}`);

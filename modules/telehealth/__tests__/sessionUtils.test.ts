@@ -267,7 +267,7 @@ describe('Session Utilities', () => {
     it('should validate correct session configuration', () => {
       const sessionConfig = {
         patient: { id: 'patient-1', name: 'John Doe' },
-        provider: { id: 'provider-1', name: 'Dr. Smith' },
+  provider: { id: 'provider-1', name: 'Dr. Smith', email: 'dr.smith@example.com' },
         scheduledDateTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
         durationMinutes: 30,
         platform: { type: 'webrtc_native' as const }
@@ -281,7 +281,7 @@ describe('Session Utilities', () => {
 
     it('should reject session without patient', () => {
       const sessionConfig = {
-        provider: { id: 'provider-1', name: 'Dr. Smith' },
+  provider: { id: 'provider-1', name: 'Dr. Smith', email: 'dr.smith@example.com' },
         scheduledDateTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
         durationMinutes: 30,
         platform: { type: 'webrtc_native' as const }
@@ -296,7 +296,7 @@ describe('Session Utilities', () => {
     it('should reject session in the past', () => {
       const sessionConfig = {
         patient: { id: 'patient-1', name: 'John Doe' },
-        provider: { id: 'provider-1', name: 'Dr. Smith' },
+  provider: { id: 'provider-1', name: 'Dr. Smith', email: 'dr.smith@example.com' },
         scheduledDateTime: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
         durationMinutes: 30,
         platform: { type: 'webrtc_native' as const }
@@ -311,7 +311,7 @@ describe('Session Utilities', () => {
     it('should reject session with excessive duration', () => {
       const sessionConfig = {
         patient: { id: 'patient-1', name: 'John Doe' },
-        provider: { id: 'provider-1', name: 'Dr. Smith' },
+        provider: { id: 'provider-1', name: 'Dr. Smith', email: 'dr.smith@example.com' },
         scheduledDateTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
         durationMinutes: 300, // 5 hours
         platform: { type: 'webrtc_native' as const }

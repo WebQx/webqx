@@ -259,7 +259,12 @@ describe('OAuth2Connector', () => {
       (fetch as jest.MockedFunction<typeof fetch>)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ sub: 'test-user', email: 'test@test.com' })
+          json: async () => ({
+            sub: 'test-user',
+            email: 'test@test.com',
+            iss: testConfig.centralIdp.issuer,
+            aud: [testConfig.centralIdp.clientId]
+          })
         } as Response)
         // Mock OpenEMR token request
         .mockResolvedValueOnce({

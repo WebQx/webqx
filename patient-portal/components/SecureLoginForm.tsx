@@ -434,7 +434,7 @@ const SecureLoginForm: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .secure-login-container {
           display: flex;
           justify-content: center;

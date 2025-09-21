@@ -13,7 +13,7 @@
  * - Security headers
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import type { 
   User, 
   AuthSession, 
@@ -75,8 +75,9 @@ export interface AuthProxyConfig {
 }
 
 export interface AuthProxyRequest extends Request {
-  user?: User;
-  session?: AuthSession;
+  // Keep global req.user/req.session from SSO middleware intact; use separate fields for our richer types
+  webqxUser?: User;
+  webqxSession?: AuthSession;
   openemrTokens?: OpenEMRTokens;
   requestId?: string;
   patientContext?: string;
@@ -187,11 +188,12 @@ export class AuthProxyMiddleware {
   /**
    * Main authentication middleware
    */
-  authenticate() {
-    return async (req: AuthProxyRequest, res: Response, next: NextFunction): Promise<void> => {
+  authenticate(): RequestHandler {
+    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      const aReq = req as AuthProxyRequest;
       try {
         // Add request ID
-        req.requestId = this.generateRequestId();
+        aReq.requestId = this.generateRequestId();
         
         // Add security headers
         if (this.config.security.enableSecurityHeaders) {
@@ -199,9 +201,9 @@ export class AuthProxyMiddleware {
         }
         
         // Extract and validate token
-        const authResult = await this.extractAndValidateToken(req);
+        const authResult = await this.extractAndValidateToken(aReq);
         if (!authResult.success) {
-          this.auditAuthFailure(req, authResult.error!);
+          this.auditAuthFailure(aReq, authResult.error!);
           res.status(401).json({ 
             error: authResult.error!.message,
             details: authResult.error!.message
@@ -209,25 +211,25 @@ export class AuthProxyMiddleware {
           return;
         }
         
-        req.user = authResult.user!;
-        req.session = authResult.session!;
+  aReq.webqxUser = authResult.user!;
+  aReq.webqxSession = authResult.session!;
         
         // Get or exchange for OpenEMR tokens
-        const tokenResult = await this.getOpenEMRTokens(req);
+        const tokenResult = await this.getOpenEMRTokens(aReq);
         if (!tokenResult.success) {
-          this.auditAuthFailure(req, tokenResult.error!);
+          this.auditAuthFailure(aReq, tokenResult.error!);
           res.status(500).json({ error: 'Failed to obtain OpenEMR access' });
           return;
         }
         
-        req.openemrTokens = tokenResult.data!;
+        aReq.openemrTokens = tokenResult.data!;
         
         // Extract context information
-        this.extractContextInformation(req);
+        this.extractContextInformation(aReq);
         
-        this.auditAuthSuccess(req);
+        this.auditAuthSuccess(aReq);
         next();
-      } catch (error) {
+      } catch (error: unknown) {
         this.log('Authentication error:', error);
         res.status(500).json({ error: 'Authentication failed' });
       }
@@ -237,32 +239,33 @@ export class AuthProxyMiddleware {
   /**
    * Role-based authorization middleware
    */
-  authorize(requiredRoles: UserRole[] = [], requiredPermissions: Permission[] = []) {
-    return async (req: AuthProxyRequest, res: Response, next: NextFunction): Promise<void> => {
-      if (!req.user) {
+  authorize(requiredRoles: UserRole[] = [], requiredPermissions: Permission[] = []) : RequestHandler {
+    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      const aReq = req as AuthProxyRequest;
+      if (!aReq.webqxUser) {
         res.status(401).json({ error: 'Authentication required' });
         return;
       }
 
       try {
         // Check role-based access
-        if (requiredRoles.length > 0 && !requiredRoles.includes(req.user.role)) {
-          this.auditPermissionDenied(req, 'role', { requiredRoles, userRole: req.user.role });
+        if (requiredRoles.length > 0 && !requiredRoles.includes(aReq.webqxUser.role)) {
+          this.auditPermissionDenied(aReq, 'role', { requiredRoles, userRole: aReq.webqxUser.role });
           res.status(403).json({ 
             error: 'Insufficient role privileges',
             required: requiredRoles,
-            actual: req.user.role
+            actual: aReq.webqxUser.role
           });
           return;
         }
 
         // Check permission-based access
         if (requiredPermissions.length > 0 && this.config.accessControl.enableRBAC) {
-          const userPermissions = await this.accessControlProvider.getUserPermissions(req.user.id);
+          const userPermissions = await this.accessControlProvider.getUserPermissions(aReq.webqxUser.id);
           const hasPermissions = requiredPermissions.every(perm => userPermissions.includes(perm));
           
           if (!hasPermissions) {
-            this.auditPermissionDenied(req, 'permission', { requiredPermissions, userPermissions });
+            this.auditPermissionDenied(aReq, 'permission', { requiredPermissions, userPermissions });
             res.status(403).json({ 
               error: 'Insufficient permissions',
               required: requiredPermissions,
@@ -275,20 +278,20 @@ export class AuthProxyMiddleware {
         // Check resource-level access if enabled
         if (this.config.accessControl.enableResourceLevelAccess) {
           const accessControlRequest: AccessControlRequest = {
-            userId: req.user.id,
-            resource: this.extractResourceFromRequest(req),
-            action: this.mapMethodToAction(req.method),
+            userId: aReq.webqxUser.id,
+            resource: this.extractResourceFromRequest(aReq),
+            action: this.mapMethodToAction(aReq.method),
             context: {
-              patientId: req.patientContext,
-              specialty: req.user.specialty
+              patientId: aReq.patientContext,
+              specialty: aReq.webqxUser.specialty
             }
           };
 
           const accessResult = await this.accessControlProvider.checkAccess(accessControlRequest);
-          req.accessControl = accessResult;
+          aReq.accessControl = accessResult;
           
           if (!accessResult.granted) {
-            this.auditPermissionDenied(req, 'resource', { reason: accessResult.reason });
+            this.auditPermissionDenied(aReq, 'resource', { reason: accessResult.reason });
             res.status(403).json({ 
               error: 'Access denied to resource',
               reason: accessResult.reason
@@ -298,7 +301,7 @@ export class AuthProxyMiddleware {
         }
 
         next();
-      } catch (error) {
+      } catch (error: unknown) {
         this.log('Authorization error:', error);
         res.status(500).json({ error: 'Authorization failed' });
       }
@@ -308,20 +311,21 @@ export class AuthProxyMiddleware {
   /**
    * Patient context middleware - ensures access is scoped to specific patient
    */
-  requirePatientContext() {
-    return (req: AuthProxyRequest, res: Response, next: NextFunction): void => {
+  requirePatientContext(): RequestHandler {
+    return (req: Request, res: Response, next: NextFunction): void => {
+      const aReq = req as AuthProxyRequest;
       if (!this.config.accessControl.enablePatientContext) {
         next();
         return;
       }
 
-      const patientId = req.params.patientId || req.params.id || req.query.patient;
+      const patientId = (req as any).params?.patientId || (req as any).params?.id || (req as any).query?.patient;
       if (!patientId) {
         res.status(400).json({ error: 'Patient context required' });
         return;
       }
 
-      req.patientContext = patientId as string;
+      aReq.patientContext = patientId as string;
       next();
     };
   }
@@ -329,20 +333,21 @@ export class AuthProxyMiddleware {
   /**
    * Provider context middleware - ensures access is scoped to specific provider
    */
-  requireProviderContext() {
-    return (req: AuthProxyRequest, res: Response, next: NextFunction): void => {
+  requireProviderContext(): RequestHandler {
+    return (req: Request, res: Response, next: NextFunction): void => {
+      const aReq = req as AuthProxyRequest;
       if (!this.config.accessControl.enableProviderContext) {
         next();
         return;
       }
 
-      const providerId = req.params.providerId || req.query.provider || req.user?.id;
+  const providerId = (req as any).params?.providerId || (req as any).query?.provider || aReq.webqxUser?.id;
       if (!providerId) {
         res.status(400).json({ error: 'Provider context required' });
         return;
       }
 
-      req.providerContext = providerId as string;
+      aReq.providerContext = providerId as string;
       next();
     };
   }
@@ -350,8 +355,8 @@ export class AuthProxyMiddleware {
   /**
    * Request validation middleware
    */
-  validateRequest() {
-    return (req: AuthProxyRequest, res: Response, next: NextFunction): void => {
+  validateRequest(): RequestHandler {
+    return (req: Request, res: Response, next: NextFunction): void => {
       if (!this.config.security.enableRequestValidation) {
         next();
         return;
@@ -372,27 +377,28 @@ export class AuthProxyMiddleware {
   /**
    * Session management middleware
    */
-  manageSession() {
-    return async (req: AuthProxyRequest, res: Response, next: NextFunction): Promise<void> => {
-      if (!this.config.session.enableSessionManagement || !req.session) {
+  manageSession(): RequestHandler {
+    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      const aReq = req as AuthProxyRequest;
+      if (!this.config.session.enableSessionManagement || !aReq.webqxSession) {
         next();
         return;
       }
 
       try {
         // Check if session exists in store
-        const storedSession = await this.sessionStore.get(req.session.id);
+        const storedSession = await this.sessionStore.get(aReq.webqxSession.id);
         if (!storedSession) {
           res.status(401).json({ error: 'Session not found' });
           return;
         }
 
         // Update session activity
-        storedSession.updatedAt = new Date();
-        await this.sessionStore.set(req.session.id, storedSession);
+        storedSession.expiresAt = new Date(Math.max(Date.now(), storedSession.expiresAt.getTime()));
+        await this.sessionStore.set(aReq.webqxSession.id, storedSession);
 
         next();
-      } catch (error) {
+      } catch (error: unknown) {
         this.log('Session management error:', error);
         next();
       }
@@ -431,7 +437,7 @@ export class AuthProxyMiddleware {
   }
 
   private async getOpenEMRTokens(req: AuthProxyRequest): Promise<OpenEMROperationResult<OpenEMRTokens>> {
-    const cacheKey = req.user!.id;
+  const cacheKey = req.webqxUser!.id;
     
     // Check cache first
     if (this.config.token.cacheTokens) {
@@ -443,8 +449,8 @@ export class AuthProxyMiddleware {
 
     // Exchange tokens
     const exchangeResult = await this.oauth2Connector.exchangeForOpenEMRTokens({
-      centralIdpToken: req.session!.token,
-      userContext: req.user!
+  centralIdpToken: req.webqxSession!.token,
+  userContext: req.webqxUser!
     });
 
     if (exchangeResult.success && this.config.token.cacheTokens) {
@@ -492,7 +498,7 @@ export class AuthProxyMiddleware {
 
     // Extract provider context
     if (this.config.accessControl.enableProviderContext) {
-      req.providerContext = req.params.providerId || req.query.provider as string || req.user?.id;
+  req.providerContext = req.params.providerId || req.query.provider as string || req.webqxUser?.id;
     }
   }
 
@@ -564,8 +570,8 @@ export class AuthProxyMiddleware {
       this.auditLog({
         id: this.generateRequestId(),
         eventType: 'LOGIN_SUCCESS',
-        userId: req.user?.id,
-        sessionId: req.session?.id,
+  userId: req.webqxUser?.id,
+  sessionId: req.webqxSession?.id,
         ipAddress: req.ip || 'unknown',
         userAgent: req.headers['user-agent'] || 'unknown',
         success: true,
@@ -580,7 +586,7 @@ export class AuthProxyMiddleware {
       this.auditLog({
         id: this.generateRequestId(),
         eventType: 'LOGIN_FAILURE',
-        userId: req.user?.id,
+  userId: req.webqxUser?.id,
         ipAddress: req.ip || 'unknown',
         userAgent: req.headers['user-agent'] || 'unknown',
         success: false,
@@ -595,8 +601,8 @@ export class AuthProxyMiddleware {
       this.auditLog({
         id: this.generateRequestId(),
         eventType: 'PERMISSION_DENIED',
-        userId: req.user?.id,
-        sessionId: req.session?.id,
+  userId: req.webqxUser?.id,
+  sessionId: req.webqxSession?.id,
         ipAddress: req.ip || 'unknown',
         userAgent: req.headers['user-agent'] || 'unknown',
         success: false,

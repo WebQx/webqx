@@ -22,7 +22,9 @@ export class ParticipantManager {
   /**
    * Add a participant to the session
    */
-  async addParticipant(participant: Omit<SessionParticipant, 'isConnected' | 'joinedAt'>): Promise<{ success: boolean; error?: TelehealthError }> {
+  async addParticipant(
+    participant: Omit<SessionParticipant, 'isConnected' | 'joinedAt' | 'permissions'> & { permissions?: ParticipantPermissions }
+  ): Promise<{ success: boolean; error?: TelehealthError }> {
     try {
       // Check if session is at capacity
       if (this.participants.size >= this.maxParticipants) {
@@ -54,7 +56,7 @@ export class ParticipantManager {
         ...participant,
         isConnected: true,
         joinedAt: new Date(),
-        permissions: this.getDefaultPermissions(participant.role)
+        permissions: participant.permissions ?? this.getDefaultPermissions(participant.role)
       };
 
       this.participants.set(participant.id, fullParticipant);

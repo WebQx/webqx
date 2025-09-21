@@ -11,7 +11,8 @@ import {
   CreateUserData, 
   User, 
   AuthSession,
-  AuthProviderConfig 
+  AuthProviderConfig,
+  AuthErrorCode 
 } from '../types';
 import { 
   KeycloakConfig, 
@@ -84,9 +85,9 @@ export class KeycloakAuthProvider implements AuthProvider {
       return {
         success: false,
         error: {
-          code: 'UNSUPPORTED_AUTH_METHOD',
+          code: 'CONFIGURATION_ERROR' as AuthErrorCode,
           message: 'Direct username/password authentication not supported. Use token-based authentication.',
-          details: 'Keycloak authentication should be handled client-side, then the token provided for validation.'
+          details: { hint: 'Keycloak authentication should be handled client-side, then the token provided for validation.' }
         }
       };
     } catch (error) {
@@ -94,9 +95,9 @@ export class KeycloakAuthProvider implements AuthProvider {
       return {
         success: false,
         error: {
-          code: 'AUTHENTICATION_ERROR',
+          code: 'UNKNOWN_ERROR',
           message: 'Authentication failed',
-          details: error instanceof Error ? error.message : 'Unknown error'
+          details: { message: error instanceof Error ? error.message : 'Unknown error' }
         }
       };
     }
@@ -151,9 +152,9 @@ export class KeycloakAuthProvider implements AuthProvider {
       return {
         success: false,
         error: {
-          code: 'TOKEN_VALIDATION_ERROR',
+          code: 'INVALID_TOKEN',
           message: 'Token validation failed',
-          details: error instanceof Error ? error.message : 'Unknown error'
+          details: { message: error instanceof Error ? error.message : 'Unknown error' }
         }
       };
     }

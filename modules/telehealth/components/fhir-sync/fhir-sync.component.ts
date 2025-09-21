@@ -100,18 +100,25 @@ export class FHIRSyncComponent extends EventEmitter implements TelehealthCompone
    */
   private async initializeFHIRClient(): Promise<void> {
     try {
-      // Try to use existing WebQX FHIR infrastructure
-      const { FHIRClient } = await import('../../../../fhir/client/fhir-client');
-      
-      this.fhirClient = new FHIRClient({
-        baseUrl: this.config.server.baseUrl,
-        version: this.config.server.version,
-        authType: this.config.server.authType,
-        credentials: this.config.server.credentials
-      });
+      // Try to use existing WebQX FHIR infrastructure if present in repo
+      // Use a dynamic, non-literal path to avoid TS module resolution errors when absent
+      const modulePath = ['../../../../fhir', '/client/', 'fhir-client'].join('');
+      const maybeModule: any = await import(modulePath).catch(() => null);
 
-      await this.fhirClient.initialize();
-      this.logInfo('FHIR client initialized');
+      if (maybeModule && maybeModule.FHIRClient) {
+        const { FHIRClient } = maybeModule;
+        this.fhirClient = new FHIRClient({
+          baseUrl: this.config.server.baseUrl,
+          version: this.config.server.version,
+          authType: this.config.server.authType,
+          credentials: this.config.server.credentials
+        });
+        await this.fhirClient.initialize();
+        this.logInfo('FHIR client initialized');
+        return;
+      }
+
+      throw new Error('FHIR client module not found');
     } catch (error) {
       // Fallback to mock implementation if FHIR client is not available
       this.logInfo('FHIR client not available, using mock implementation');

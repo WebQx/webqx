@@ -2,7 +2,7 @@
 
 > Cloud-based, FHIR-compliant, global healthcare ecosystem with OpenEMR integration
 
-> Latest Enhancements (2025-09): Added security middleware stack, AI Assist mock endpoint, optional in-memory FHIR R4 mock (Patient & Appointment), circuit breaker for remote OpenEMR/FHIR proxy, internal metrics & audit endpoints.
+> Latest Enhancements (2025-09): Added security middleware stack, circuit breaker for remote OpenEMR/FHIR proxy, internal metrics & audit endpoints. All mock/demo endpoints removed from production build.
 
 > Operational Hardening (2025-09-18): Port reservation & retry (prevents EADDRINUSE), dual user lookup (email + UUID) fixing inactive profile issue, deferred OpenEMR/FHIR proxy mounting (eliminates early 404/metadata race), structured platform gateway logging helper, dev diagnostics endpoint `/internal/users` (non-production), graceful retry for child service startup.
 
@@ -53,8 +53,7 @@
 - Secure Messaging (Matrix channels)
 - Clinical Alerts/Decision Support (OpenCDS/Drools)
 - CME Tracker (Open Badges)
-- Provider Assistant Bot (LLM + Whisper)
-- Transcription Suite (Whisper + Google Speech-to-Text)
+- Medical Transcription (Whisper-based; production microservice)
 
 ### Admin Console
 - Access Control (Keycloak/Firebase)
@@ -74,53 +73,6 @@
 - Appointment Scheduling
 
 ---
-
-## 🧠 AI Assist (Mock Preview)
-
-Endpoint: `POST /api/ai/summary`
-
-Modes (`mode` field): `summary | plan | triage | education`
-
-Request Body (example):
-```json
-{
-	"patientId": "demo-patient-1",
-	"mode": "summary",
-	"transcript": [ { "speaker": "patient", "text": "Headaches improving" } ]
-}
-```
-
-Response (summary mode excerpt):
-```json
-{
-	"patientId": "demo-patient-1",
-	"mode": "summary",
-	"model": "webqx-ai-mock-1",
-	"output": {
-		"headline": "Stable follow-up visit with mild symptom reporting",
-		"soap": { "subjective": "...", "plan": "..." }
-	}
-}
-```
-Feature Flag: `AI_ASSIST_ENABLED=true` (default). Disable with `false` to remove route.
-
-Roadmap: streaming transcript summarization, structured ICD/SNOMED extraction, care plan templating.
-
----
-
-## 🧪 FHIR Mock Server
-
-Enable fast local prototyping without a full OpenEMR stack.
-
-Flag: `USE_FHIR_MOCK=true`
-
-Resources Implemented (in-memory, volatile):
-| Resource | Routes |
-|----------|--------|
-| Patient | `POST /fhir/Patient`, `GET /fhir/Patient/:id`, search `GET /fhir/Patient?name=` |
-| Appointment | `POST /fhir/Appointment`, `GET /fhir/Appointment/:id`, search `GET /fhir/Appointment?patient=` |
-
-Returns FHIR `Bundle` for collection/search endpoints. Not persistent; state resets on restart.
 
 ---
 
@@ -157,10 +109,9 @@ Do NOT expose publicly without auth. Future: secure with JWT scope + IP allowlis
 |----------|---------|---------|
 | `USE_REMOTE_OPENEMR` | false | Proxy to hosted OpenEMR instead of local integration layer |
 | `OPENEMR_REMOTE_URL` | (empty) | Base URL for remote OpenEMR when remote mode enabled |
-| `USE_FHIR_MOCK` | true | Serve in-memory FHIR mock instead of proxying FHIR |
-| `AI_ASSIST_ENABLED` | true | Enable `/api/ai` routes |
 | `OPENEMR_CIRCUIT_THRESHOLD` | 5 | Failures per 60s before circuit opens |
 | `OPENEMR_CIRCUIT_COOLDOWN_MS` | 15000 | Circuit open duration before probe re-checks |
+| `TRANSCRIPTION_BASE_URL` | (empty) | Base URL of the Whisper microservice; when unset, gateway returns 503 for transcription API |
 
 Full list: see `.env.example`.
 
@@ -168,24 +119,11 @@ Full list: see `.env.example`.
 
 ## 🚀 Quick Start (Healthcare Platform Gateway)
 
-Run with mock FHIR + AI Assist:
-```bash
-git clone https://github.com/WebQx/webqx
-cd webqx
-npm install
-export USE_FHIR_MOCK=true
-export AI_ASSIST_ENABLED=true
-node server.js
-```
-Visit:
-* Health: http://localhost:3000/health
-* AI Assist: `POST http://localhost:3000/api/ai/summary`
-* Create Patient: `POST http://localhost:3000/fhir/Patient`
-
-Switch to remote OpenEMR:
+Quick start:
 ```bash
 export USE_REMOTE_OPENEMR=true
 export OPENEMR_REMOTE_URL="https://your-remote-openemr.example"
+export TRANSCRIPTION_BASE_URL="https://your-transcription-service.example"
 node server.js
 ```
 

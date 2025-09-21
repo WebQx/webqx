@@ -12,6 +12,24 @@ import { ExternalEHRConnector } from '../services/ehrEngineCore';
 import { EHRConfiguration } from '../types';
 import { FHIRResource, FHIRPatient, FHIRObservation, FHIRMedicationRequest } from '../types/fhir-r4';
 
+// Minimal local definitions to avoid assigning non-generic fields to FHIRResource
+interface FHIREncounter extends FHIRResource {
+  resourceType: 'Encounter';
+  status?: string;
+  class?: { system?: string; code?: string; display?: string };
+  subject?: { reference?: string };
+  period?: { start?: string; end?: string };
+}
+
+interface FHIRAllergyIntolerance extends FHIRResource {
+  resourceType: 'AllergyIntolerance';
+  clinicalStatus?: { coding?: { system?: string; code?: string }[] };
+  verificationStatus?: { coding?: { system?: string; code?: string }[] };
+  patient?: { reference?: string };
+  code?: { text?: string };
+  reaction?: { manifestation?: { text?: string }[] }[];
+}
+
 /**
  * OpenEMR specific configuration
  */
@@ -20,8 +38,6 @@ export interface OpenEMRConfig extends EHRConfiguration {
   apiBaseUrl: string;
   /** OpenEMR FHIR endpoint URL */
   fhirBaseUrl?: string;
-  /** API version */
-  apiVersion?: string;
   /** Site identifier for multi-site OpenEMR installations */
   siteId?: string;
 }
@@ -124,11 +140,11 @@ export class OpenEMRConnector implements ExternalEHRConnector {
   /**
    * Sync patient data from OpenEMR
    */
-  async syncPatientData(patientId: string): Promise<FHIRResource[]> {
+  async syncPatientData(patientId: string): Promise<(FHIRResource | FHIREncounter | FHIRAllergyIntolerance)[]> {
     this.validateConnection();
 
     try {
-      const resources: FHIRResource[] = [];
+  const resources: (FHIRResource | FHIREncounter | FHIRAllergyIntolerance)[] = [];
 
       // Fetch patient demographics
       const patient = await this.fetchPatientDemographics(patientId);
@@ -254,12 +270,20 @@ export class OpenEMRConnector implements ExternalEHRConnector {
 
     try {
       const authUrl = `${this.config.apiBaseUrl}/oauth2/default/token`;
-      const authData = {
+      const authData: Record<string, string> = {
         grant_type: 'client_credentials',
-        client_id: this.config.authentication.clientId,
-        client_secret: this.config.authentication.clientSecret,
+        client_id: this.config.authentication.clientId as string,
+        client_secret: this.config.authentication.clientSecret as string,
         scope: 'openemr:read openemr:write'
       };
+
+      // Remove any undefined entries to satisfy URLSearchParams typing
+      Object.keys(authData).forEach((k) => {
+        const key = k as keyof typeof authData;
+        if (authData[key] === undefined || authData[key] === null) {
+          delete authData[key];
+        }
+      });
 
       const response = await fetch(authUrl, {
         method: 'POST',
@@ -314,7 +338,7 @@ export class OpenEMRConnector implements ExternalEHRConnector {
     }
   }
 
-  private async fetchPatientEncounters(patientId: string): Promise<FHIRResource[]> {
+  private async fetchPatientEncounters(patientId: string): Promise<FHIREncounter[]> {
     try {
       const url = `${this.config!.apiBaseUrl}/api/patient/${patientId}/encounter`;
       const response = await this.makeApiRequest('GET', url);
@@ -324,7 +348,7 @@ export class OpenEMRConnector implements ExternalEHRConnector {
       }
 
       // Convert OpenEMR encounters to FHIR Encounter resources
-      return response.data.map((encounter: any) => this.convertOpenEMREncounterToFHIR(encounter));
+  return response.data.map((encounter: any) => this.convertOpenEMREncounterToFHIR(encounter));
 
     } catch (error) {
       this.logError('Failed to fetch patient encounters from OpenEMR', error, { patientId });
@@ -368,7 +392,7 @@ export class OpenEMRConnector implements ExternalEHRConnector {
     }
   }
 
-  private async fetchPatientAllergies(patientId: string): Promise<FHIRResource[]> {
+  private async fetchPatientAllergies(patientId: string): Promise<FHIRAllergyIntolerance[]> {
     try {
       const url = `${this.config!.apiBaseUrl}/api/patient/${patientId}/allergy`;
       const response = await this.makeApiRequest('GET', url);
@@ -378,7 +402,7 @@ export class OpenEMRConnector implements ExternalEHRConnector {
       }
 
       // Convert OpenEMR allergies to FHIR AllergyIntolerance resources
-      return response.data.map((allergy: any) => this.convertOpenEMRAllergyToFHIR(allergy, patientId));
+  return response.data.map((allergy: any) => this.convertOpenEMRAllergyToFHIR(allergy, patientId));
 
     } catch (error) {
       this.logError('Failed to fetch patient allergies from OpenEMR', error, { patientId });
@@ -511,7 +535,7 @@ export class OpenEMRConnector implements ExternalEHRConnector {
       identifier: [
         {
           use: 'usual',
-          system: `${this.config!.baseUrl}/patient-id`,
+          system: `${this.config!.apiBaseUrl || this.config!.baseUrl}/patient-id`,
           value: openEmrPatient.id
         }
       ],
@@ -554,7 +578,7 @@ export class OpenEMRConnector implements ExternalEHRConnector {
     };
   }
 
-  private convertOpenEMREncounterToFHIR(openEmrEncounter: any): FHIRResource {
+  private convertOpenEMREncounterToFHIR(openEmrEncounter: any): FHIREncounter {
     // Simplified encounter conversion
     return {
       resourceType: 'Encounter',
@@ -622,7 +646,7 @@ export class OpenEMRConnector implements ExternalEHRConnector {
     };
   }
 
-  private convertOpenEMRAllergyToFHIR(openEmrAllergy: any, patientId: string): FHIRResource {
+  private convertOpenEMRAllergyToFHIR(openEmrAllergy: any, patientId: string): FHIRAllergyIntolerance {
     return {
       resourceType: 'AllergyIntolerance',
       id: openEmrAllergy.id || openEmrAllergy.uuid,

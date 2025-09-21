@@ -406,8 +406,8 @@ export class MessagingComponent extends EventEmitter implements TelehealthCompon
         lastActivity: new Date(),
         archived: false,
         metadata: {
-          emergencyId,
-          priority: 'high'
+          consultationId: `emergency_${emergencyId}`,
+          specialty: 'emergency'
         }
       };
 

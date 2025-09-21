@@ -112,10 +112,10 @@ describe('AuthProxyMiddleware', () => {
       const middleware = authProxy.authenticate();
       await middleware(mockReq as AuthProxyRequest, mockRes as Response, mockNext);
 
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockReq.user).toBeDefined();
-      expect(mockReq.user?.id).toBe('user-123');
-      expect(mockReq.openemrTokens).toBeDefined();
+  expect(mockNext).toHaveBeenCalled();
+  expect(mockReq.webqxUser).toBeDefined();
+  expect(mockReq.webqxUser?.id).toBe('user-123');
+  expect(mockReq.openemrTokens).toBeDefined();
       expect(mockRes.setHeader).toHaveBeenCalledWith('X-Content-Type-Options', 'nosniff');
     });
 
@@ -163,8 +163,8 @@ describe('AuthProxyMiddleware', () => {
 
       mockOAuth2Connector.exchangeForOpenEMRTokens.mockResolvedValue({
         success: false,
-        error: { code: 'EXCHANGE_FAILED', message: 'Exchange failed' }
-      });
+        error: { code: 'OPENEMR_TOKEN_EXCHANGE_FAILED', message: 'Exchange failed' }
+      } as any);
 
       const middleware = authProxy.authenticate();
       await middleware(mockReq as AuthProxyRequest, mockRes as Response, mockNext);
@@ -205,7 +205,7 @@ describe('AuthProxyMiddleware', () => {
 
   describe('Authorization Middleware', () => {
     beforeEach(() => {
-      mockReq.user = {
+      mockReq.webqxUser = {
         id: 'user-123',
         email: 'test@test.com',
         firstName: 'Test',
@@ -250,7 +250,7 @@ describe('AuthProxyMiddleware', () => {
     });
 
     it('should reject unauthenticated request', async () => {
-      delete mockReq.user;
+  delete mockReq.webqxUser;
 
       const middleware = authProxy.authorize(['PROVIDER'], []);
       await middleware(mockReq as AuthProxyRequest, mockRes as Response, mockNext);
@@ -317,7 +317,7 @@ describe('AuthProxyMiddleware', () => {
 
   describe('Provider Context Middleware', () => {
     beforeEach(() => {
-      mockReq.user = {
+      mockReq.webqxUser = {
         id: 'provider-123',
         email: 'provider@test.com',
         firstName: 'Provider',
@@ -347,12 +347,12 @@ describe('AuthProxyMiddleware', () => {
       const middleware = authProxy.requireProviderContext();
       middleware(mockReq as AuthProxyRequest, mockRes as Response, mockNext);
 
-      expect(mockReq.providerContext).toBe('provider-123');
+  expect(mockReq.providerContext).toBe('provider-123');
       expect(mockNext).toHaveBeenCalled();
     });
 
     it('should reject request without provider context when user not available', () => {
-      delete mockReq.user;
+  delete mockReq.webqxUser;
       mockReq.params = {};
       mockReq.query = {};
 
@@ -419,7 +419,7 @@ describe('AuthProxyMiddleware', () => {
         createdAt: new Date()
       };
 
-      mockReq.session = mockSession;
+      mockReq.webqxSession = mockSession as any;
       
       // Mock the session store to return the session
       mockSessionStore.get.mockResolvedValue(mockSession);
@@ -468,7 +468,7 @@ describe('AuthProxyMiddleware', () => {
     });
 
     it('should handle authorization errors gracefully', async () => {
-      mockReq.user = {
+      mockReq.webqxUser = {
         id: 'user-123',
         email: 'test@test.com',
         firstName: 'Test',

@@ -48,6 +48,7 @@ export const BasicClinicalTranscriptionExample: React.FC = () => {
       const config = createConfig('development', 'general', {
         openemr: {
           baseUrl: process.env.REACT_APP_OPENEMR_BASE_URL || 'http://localhost:8080',
+          apiVersion: process.env.REACT_APP_OPENEMR_API_VERSION || '7.0.2',
           oauth: {
             clientId: process.env.REACT_APP_OPENEMR_CLIENT_ID || 'demo-client-id',
             clientSecret: process.env.REACT_APP_OPENEMR_CLIENT_SECRET || 'demo-client-secret',

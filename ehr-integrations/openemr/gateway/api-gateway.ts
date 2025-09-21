@@ -16,7 +16,6 @@ import express, { Request, Response, NextFunction, Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import type { 
   User, 
-  AuthSession, 
   Permission,
   UserRole 
 } from '../../../auth/types/index';
@@ -79,12 +78,11 @@ export interface APIGatewayConfig {
   };
 }
 
-export interface GatewayRequest extends Request {
-  user?: User;
-  session?: AuthSession;
+export type GatewayRequest = Request & {
+  webqxUser?: User;
   openemrTokens?: OpenEMRTokens;
   requestId?: string;
-}
+};
 
 export interface RouteConfig {
   path: string;
@@ -232,9 +230,10 @@ export class APIGateway {
     this.app.use(express.urlencoded({ extended: true }));
     
     // Request ID middleware
-    this.app.use((req: GatewayRequest, res: Response, next: NextFunction) => {
-      req.requestId = this.generateRequestId();
-      res.setHeader('X-Request-ID', req.requestId);
+    this.app.use((req: Request, res: Response, next: NextFunction) => {
+      const gReq = req as GatewayRequest;
+      gReq.requestId = this.generateRequestId();
+      res.setHeader('X-Request-ID', gReq.requestId || '');
       next();
     });
     
@@ -273,19 +272,19 @@ export class APIGateway {
     
     // Request logging middleware
     if (this.config.audit.logRequests) {
-      this.app.use(this.logRequest.bind(this));
+      this.app.use((req, res, next) => this.logRequest(req as GatewayRequest, res, next));
     }
     
     // Circuit breaker middleware
     if (this.config.circuitBreaker.enabled) {
-      this.app.use(this.circuitBreakerMiddleware.bind(this));
+      this.app.use((req, res, next) => this.circuitBreakerMiddleware(req as GatewayRequest, res, next));
     }
     
     // Mount router
     this.app.use(this.config.server.basePath, this.router);
     
     // Error handling middleware
-    this.app.use(this.errorHandler.bind(this));
+    this.app.use(((err: any, req: Request, res: Response, next: NextFunction) => this.errorHandler(err, req as GatewayRequest, res, next)) as any);
   }
 
   private setupRoutes(): void {
@@ -329,8 +328,9 @@ export class APIGateway {
     this.registerRoutes(defaultRoutes);
   }
 
-  private async authenticateRequest(req: GatewayRequest, res: Response, next: NextFunction): Promise<void> {
+  private async authenticateRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const gReq = req as GatewayRequest;
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         res.status(401).json({ error: 'Missing or invalid authorization header' });
@@ -342,8 +342,8 @@ export class APIGateway {
       // Check token cache first
       const cached = this.tokenCache.get(token);
       if (cached && cached.expiresAt > Date.now()) {
-        req.user = cached.user;
-        req.openemrTokens = cached.tokens;
+        gReq.webqxUser = cached.user;
+        gReq.openemrTokens = cached.tokens;
         next();
         return;
       }
@@ -356,7 +356,7 @@ export class APIGateway {
       }
       
       // Exchange for OpenEMR tokens
-      const user = this.mapClaimsToUser(validation.claims!);
+  const user = this.mapClaimsToUser(validation.claims!);
       const exchangeRequest: TokenExchangeRequest = {
         centralIdpToken: token,
         userContext: user
@@ -375,8 +375,8 @@ export class APIGateway {
         expiresAt: Date.now() + (this.config.auth.tokenCacheTtl * 1000)
       });
       
-      req.user = user;
-      req.openemrTokens = exchangeResult.openemrTokens;
+  gReq.webqxUser = user;
+  gReq.openemrTokens = exchangeResult.openemrTokens;
       
       this.auditLog({
         action: 'request_authenticated',
@@ -384,7 +384,7 @@ export class APIGateway {
         userId: user.id,
         timestamp: new Date(),
         outcome: 'success',
-        details: { requestId: req.requestId }
+        details: { requestId: (gReq as GatewayRequest).requestId }
       });
       
       next();
@@ -395,24 +395,25 @@ export class APIGateway {
   }
 
   private authorizeRequest(requiredPermissions: Permission[], requiredRole?: UserRole) {
-    return (req: GatewayRequest, res: Response, next: NextFunction) => {
-      if (!req.user) {
+    return (req: Request, res: Response, next: NextFunction) => {
+      const gReq = req as GatewayRequest;
+      if (!gReq.webqxUser) {
         res.status(401).json({ error: 'Authentication required' });
         return;
       }
       
       // Check role if specified
-      if (requiredRole && req.user.role !== requiredRole) {
+      if (requiredRole && gReq.webqxUser.role !== requiredRole) {
         this.auditLog({
           action: 'authorization_denied_role',
           resourceType: 'request',
-          userId: req.user.id,
+          userId: gReq.webqxUser.id,
           timestamp: new Date(),
           outcome: 'failure',
           details: { 
-            requestId: req.requestId,
+            requestId: (gReq as GatewayRequest).requestId,
             requiredRole,
-            userRole: req.user.role
+            userRole: gReq.webqxUser.role
           }
         });
         
@@ -421,18 +422,18 @@ export class APIGateway {
       }
       
       // Check permissions (simplified - in real implementation, this would use a proper RBAC system)
-      const hasPermissions = this.checkPermissions(req.user, requiredPermissions);
+      const hasPermissions = this.checkPermissions(gReq.webqxUser, requiredPermissions);
       if (!hasPermissions) {
         this.auditLog({
           action: 'authorization_denied_permission',
           resourceType: 'request',
-          userId: req.user.id,
+          userId: gReq.webqxUser.id,
           timestamp: new Date(),
           outcome: 'failure',
           details: { 
-            requestId: req.requestId,
+            requestId: (gReq as GatewayRequest).requestId,
             requiredPermissions,
-            userRole: req.user.role
+            userRole: gReq.webqxUser.role
           }
         });
         
@@ -445,8 +446,9 @@ export class APIGateway {
   }
 
   private proxyToOpenEMR(routeConfig: RouteConfig) {
-    return async (req: GatewayRequest, res: Response) => {
+    return async (req: Request, res: Response) => {
       try {
+        const gReq = req as GatewayRequest;
         // Check circuit breaker
         if (this.circuitBreakerState.state === 'OPEN') {
           if (Date.now() < this.circuitBreakerState.nextAttemptTime) {
@@ -460,7 +462,7 @@ export class APIGateway {
         // Transform request if needed
         let requestBody = req.body;
         if (routeConfig.transformRequest) {
-          requestBody = routeConfig.transformRequest(req);
+          requestBody = routeConfig.transformRequest(gReq);
         }
         
         // Build OpenEMR URL
@@ -474,16 +476,19 @@ export class APIGateway {
         const fullUrl = queryString ? `${openemrUrl}?${queryString}` : openemrUrl;
         
         // Make request to OpenEMR
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), this.config.routing.timeoutMs);
         const response = await fetch(fullUrl, {
           method: req.method,
           headers: {
-            'Authorization': `${req.openemrTokens?.tokenType || 'Bearer'} ${req.openemrTokens?.accessToken}`,
+            'Authorization': `${gReq.openemrTokens?.tokenType || 'Bearer'} ${gReq.openemrTokens?.accessToken}`,
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
           body: requestBody ? JSON.stringify(requestBody) : undefined,
-          timeout: this.config.routing.timeoutMs
+          signal: controller.signal
         });
+        clearTimeout(timer);
         
         if (!response.ok) {
           this.handleCircuitBreakerFailure();
@@ -504,11 +509,11 @@ export class APIGateway {
           this.auditLog({
             action: 'openemr_request_success',
             resourceType: 'openemr_request',
-            userId: req.user?.id || 'anonymous',
+            userId: gReq.webqxUser?.id || 'anonymous',
             timestamp: new Date(),
             outcome: 'success',
             details: { 
-              requestId: req.requestId,
+              requestId: (gReq as GatewayRequest).requestId,
               endpoint: openemrPath,
               statusCode: response.status
             }
@@ -523,12 +528,12 @@ export class APIGateway {
         this.auditLog({
           action: 'openemr_request_failure',
           resourceType: 'openemr_request',
-          userId: req.user?.id || 'anonymous',
+          userId: (req as GatewayRequest).webqxUser?.id || 'anonymous',
           timestamp: new Date(),
           outcome: 'failure',
           details: { 
-            requestId: req.requestId,
-            error: error.message
+            requestId: (req as GatewayRequest).requestId,
+            error: (error as any)?.message || String(error)
           }
         });
         
@@ -562,7 +567,7 @@ export class APIGateway {
   }
 
   private errorHandler(error: any, req: GatewayRequest, res: Response, next: NextFunction): void {
-    this.log('Unhandled error:', error);
+    this.log('Unhandled error:', error instanceof Error ? error.message : String(error));
     
     if (res.headersSent) {
       return next(error);

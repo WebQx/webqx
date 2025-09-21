@@ -5,7 +5,7 @@
  * with rate limiting, audit logging, and session management.
  */
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { body, validationResult } from 'express-validator';
 import { userService } from '../services/userService';
@@ -54,7 +54,7 @@ router.post('/login',
       .isLength({ min: 1 })
       .withMessage('Password is required')
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       // Check validation errors
       const errors = validationResult(req);
@@ -143,7 +143,7 @@ router.post('/register',
       .isIn(['PATIENT', 'PROVIDER', 'NURSE', 'ADMIN', 'STAFF'])
       .withMessage('Valid role is required')
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       // Check validation errors
       const errors = validationResult(req);
@@ -213,7 +213,7 @@ router.post('/register',
  * POST /auth/logout
  * Logout user and invalidate session
  */
-router.post('/logout', async (req, res) => {
+router.post('/logout', async (req: Request, res: Response) => {
   try {
     const sessionId = req.cookies.sessionId || req.body.sessionId;
 
@@ -245,7 +245,7 @@ router.post('/logout', async (req, res) => {
  * GET /auth/verify
  * Verify current session
  */
-router.get('/verify', async (req, res) => {
+router.get('/verify', async (req: Request, res: Response) => {
   try {
     const sessionId = req.cookies.sessionId || req.headers['x-session-id'];
 
@@ -305,7 +305,7 @@ router.put('/password',
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/)
       .withMessage('Password must contain uppercase, lowercase, number, and special character')
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       // Check validation errors
       const errors = validationResult(req);
@@ -377,7 +377,7 @@ router.put('/password',
  * GET /auth/audit-logs
  * Get audit logs for current user (admin only for all logs)
  */
-router.get('/audit-logs', async (req, res) => {
+router.get('/audit-logs', async (req: Request, res: Response) => {
   try {
     const sessionId = req.cookies.sessionId || req.headers['x-session-id'];
     if (!sessionId) {

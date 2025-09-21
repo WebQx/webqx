@@ -60,6 +60,100 @@ const generalLimiter = rateLimit({
     message: { error: 'Too many requests. Please try again later.' }
 });
 
+// Django-style User Model (define before using in persistence rehydration)
+class WebQXUser {
+    constructor(data) {
+        this.id = data.id || uuidv4();
+        this.email = data.email.toLowerCase();
+        this.password_hash = data.password_hash;
+        this.first_name = data.first_name;
+        this.last_name = data.last_name;
+        this.middle_name = data.middle_name || '';
+        this.date_of_birth = data.date_of_birth;
+        this.phone_number = data.phone_number;
+        this.user_type = data.user_type || 'PATIENT';
+        this.verification_status = data.verification_status || 'PENDING';
+        this.is_active = data.is_active !== undefined ? data.is_active : true;
+        this.is_staff = data.is_staff || false;
+        this.is_verified = data.is_verified || false;
+        this.email_verified = data.email_verified || false;
+        this.phone_verified = data.phone_verified || false;
+        this.mfa_enabled = data.mfa_enabled || false;
+        this.mfa_secret = data.mfa_secret || null;
+        this.backup_tokens = data.backup_tokens || [];
+        this.last_login_ip = data.last_login_ip || null;
+        this.failed_login_attempts = data.failed_login_attempts || 0;
+        this.lockout_until = data.lockout_until || null;
+        this.country = data.country || '';
+        this.timezone = data.timezone || 'UTC';
+        this.language = data.language || 'en';
+        this.hipaa_authorization = data.hipaa_authorization || false;
+        this.gdpr_consent = data.gdpr_consent || false;
+        this.privacy_policy_accepted = data.privacy_policy_accepted || false;
+        this.terms_accepted = data.terms_accepted || false;
+        this.created_at = data.created_at || new Date();
+        this.updated_at = data.updated_at || new Date();
+        this.last_activity = data.last_activity || new Date();
+        this.metadata = data.metadata || {};
+    }
+
+    get_full_name() {
+        if (this.middle_name) {
+            return `${this.first_name} ${this.middle_name} ${this.last_name}`.trim();
+        }
+        return `${this.first_name} ${this.last_name}`.trim();
+    }
+
+    is_locked_out() {
+        return this.lockout_until && new Date() < new Date(this.lockout_until);
+    }
+
+    increment_failed_login() {
+        this.failed_login_attempts += 1;
+        if (this.failed_login_attempts >= 5) {
+            this.lockout_until = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        }
+        this.updated_at = new Date();
+    }
+
+    reset_failed_login() {
+        this.failed_login_attempts = 0;
+        this.lockout_until = null;
+        this.updated_at = new Date();
+    }
+
+    requires_mfa() {
+        const userRole = ROLES[this.user_type];
+        return userRole ? userRole.mfa_required : false;
+    }
+
+    get_permissions() {
+        const userRole = ROLES[this.user_type];
+        return userRole ? userRole.permissions : [];
+    }
+
+    get_role_info() {
+        const userRole = ROLES[this.user_type];
+        return userRole ? {
+            name: userRole.name,
+            level: userRole.level,
+            dashboard: userRole.dashboard,
+            permissions: userRole.permissions,
+            mfa_required: userRole.mfa_required
+        } : null;
+    }
+
+    has_permission(permission) {
+        const permissions = this.get_permissions();
+        return permissions.includes(permission) || permissions.includes('all_permissions');
+    }
+
+    toJSON() {
+        const { password_hash, mfa_secret, backup_tokens, ...userWithoutSensitive } = this;
+        return userWithoutSensitive;
+    }
+}
+
 app.use('/api/v1/auth/token/', authLimiter);
 app.use('/api/v1/auth/register/', authLimiter);
 app.use('/api/v1/', generalLimiter);
@@ -221,100 +315,6 @@ const users = new Map();
 const userSessions = new Map();
 const securityEvents = new Map();
 const loginHistory = new Map();
-
-// Django-style User Model
-class WebQXUser {
-    constructor(data) {
-        this.id = data.id || uuidv4();
-        this.email = data.email.toLowerCase();
-        this.password_hash = data.password_hash;
-        this.first_name = data.first_name;
-        this.last_name = data.last_name;
-        this.middle_name = data.middle_name || '';
-        this.date_of_birth = data.date_of_birth;
-        this.phone_number = data.phone_number;
-        this.user_type = data.user_type || 'PATIENT';
-        this.verification_status = data.verification_status || 'PENDING';
-        this.is_active = data.is_active !== undefined ? data.is_active : true;
-        this.is_staff = data.is_staff || false;
-        this.is_verified = data.is_verified || false;
-        this.email_verified = data.email_verified || false;
-        this.phone_verified = data.phone_verified || false;
-        this.mfa_enabled = data.mfa_enabled || false;
-        this.mfa_secret = data.mfa_secret || null;
-        this.backup_tokens = data.backup_tokens || [];
-        this.last_login_ip = data.last_login_ip || null;
-        this.failed_login_attempts = data.failed_login_attempts || 0;
-        this.lockout_until = data.lockout_until || null;
-        this.country = data.country || '';
-        this.timezone = data.timezone || 'UTC';
-        this.language = data.language || 'en';
-        this.hipaa_authorization = data.hipaa_authorization || false;
-        this.gdpr_consent = data.gdpr_consent || false;
-        this.privacy_policy_accepted = data.privacy_policy_accepted || false;
-        this.terms_accepted = data.terms_accepted || false;
-        this.created_at = data.created_at || new Date();
-        this.updated_at = data.updated_at || new Date();
-        this.last_activity = data.last_activity || new Date();
-        this.metadata = data.metadata || {};
-    }
-
-    get_full_name() {
-        if (this.middle_name) {
-            return `${this.first_name} ${this.middle_name} ${this.last_name}`.trim();
-        }
-        return `${this.first_name} ${this.last_name}`.trim();
-    }
-
-    is_locked_out() {
-        return this.lockout_until && new Date() < new Date(this.lockout_until);
-    }
-
-    increment_failed_login() {
-        this.failed_login_attempts += 1;
-        if (this.failed_login_attempts >= 5) {
-            this.lockout_until = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-        }
-        this.updated_at = new Date();
-    }
-
-    reset_failed_login() {
-        this.failed_login_attempts = 0;
-        this.lockout_until = null;
-        this.updated_at = new Date();
-    }
-
-    requires_mfa() {
-        const userRole = ROLES[this.user_type];
-        return userRole ? userRole.mfa_required : false;
-    }
-
-    get_permissions() {
-        const userRole = ROLES[this.user_type];
-        return userRole ? userRole.permissions : [];
-    }
-
-    get_role_info() {
-        const userRole = ROLES[this.user_type];
-        return userRole ? {
-            name: userRole.name,
-            level: userRole.level,
-            dashboard: userRole.dashboard,
-            permissions: userRole.permissions,
-            mfa_required: userRole.mfa_required
-        } : null;
-    }
-
-    has_permission(permission) {
-        const permissions = this.get_permissions();
-        return permissions.includes(permission) || permissions.includes('all_permissions');
-    }
-
-    toJSON() {
-        const { password_hash, mfa_secret, backup_tokens, ...userWithoutSensitive } = this;
-        return userWithoutSensitive;
-    }
-}
 
 // Utility Functions
 function getClientIP(req) {

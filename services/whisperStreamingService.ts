@@ -121,6 +121,13 @@ export class WhisperStreamingService {
   }
 
   /**
+   * Update event callbacks
+   */
+  setEvents(events: StreamingEvents): void {
+    this.events = events;
+  }
+
+  /**
    * Initialize Voice Activity Detection
    */
   private initializeVAD(): void {

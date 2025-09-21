@@ -399,11 +399,12 @@ export function createConfig(
           openemr: {
             ...baseConfig.openemr,
             security: {
-              ...baseConfig.openemr.security,
+              verifySSL: baseConfig.openemr.security?.verifySSL ?? true,
               timeout: 20000
             },
             features: {
-              ...baseConfig.openemr.features,
+              enableAudit: baseConfig.openemr.features?.enableAudit ?? true,
+              enableSync: baseConfig.openemr.features?.enableSync ?? true,
               syncInterval: 5
             }
           },

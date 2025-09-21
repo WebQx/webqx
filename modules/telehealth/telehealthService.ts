@@ -245,6 +245,8 @@ const DEFAULT_CONFIG: Partial<TelehealthConfig> = {
   sessionTimeoutMs: 7200000, // 2 hours
   enableFHIRIntegration: true,
   comlink: {
+    apiKey: 'DUMMY_KEY',
+    apiSecret: 'DUMMY_SECRET',
     baseUrl: 'https://api.comlink.dev',
     environment: 'sandbox'
   },

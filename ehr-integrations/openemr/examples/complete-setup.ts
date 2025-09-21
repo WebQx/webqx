@@ -159,11 +159,11 @@ async function setupOpenEMRConnectors() {
         requiredPermissions: ['create:appointments'],
         requiredRole: 'PROVIDER',
         openemrEndpoint: '/apis/default/api/appointment',
-        transformRequest: (req) => {
+        transformRequest: (req: any) => {
           // Add audit trail
           return {
             ...req.body,
-            createdBy: req.user?.id,
+            createdBy: req.webqxUser?.id,
             createdAt: new Date().toISOString()
           };
         }
@@ -202,10 +202,10 @@ async function createApp() {
   app.get('/protected', 
     authProxy.authenticate(),
     authProxy.authorize(['PROVIDER'], ['read:patient_records']),
-    (req, res) => {
+    (req: any, res) => {
       res.json({ 
         message: 'Access granted', 
-        user: req.user 
+        user: req.webqxUser 
       });
     }
   );
@@ -215,7 +215,7 @@ async function createApp() {
     authProxy.authenticate(),
     authProxy.requirePatientContext(),
     authProxy.authorize(['PROVIDER', 'NURSE'], ['read:patient_records']),
-    (req, res) => {
+    (req: any, res) => {
       res.json({
         patientId: req.patientContext,
         data: 'Patient data here'

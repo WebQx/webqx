@@ -48,6 +48,8 @@ export class VideoConsultationComponent extends EventEmitter implements Teleheal
         // Use mock implementation if no Jitsi config
         this.jitsiApi = {
           JitsiMeetExternalAPI: class MockJitsiAPI {
+            public domain: string;
+            public options: any;
             constructor(domain: string, options: any) {
               this.domain = domain;
               this.options = options;
@@ -112,6 +114,8 @@ export class VideoConsultationComponent extends EventEmitter implements Teleheal
         // Server-side: Mock implementation for testing
         this.jitsiApi = {
           JitsiMeetExternalAPI: class MockJitsiAPI {
+            public domain: string;
+            public options: any;
             constructor(domain: string, options: any) {
               this.domain = domain;
               this.options = options;

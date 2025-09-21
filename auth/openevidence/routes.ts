@@ -374,7 +374,7 @@ router.get('/profile', requireOpenEvidenceAuth, auditRequest, async (req: OpenEv
     const profile = {
       id: session.userId,
       email: webqxUser.email,
-      name: webqxUser.preferred_username || webqxUser.name,
+      name: `${webqxUser.firstName || ''} ${webqxUser.lastName || ''}`.trim() || webqxUser.username,
       openEvidenceRole: session.evidenceRole,
       accessLevel: session.accessLevel,
       researchPermissions: session.researchPermissions,
@@ -407,7 +407,7 @@ router.get('/profile', requireOpenEvidenceAuth, auditRequest, async (req: OpenEv
  * GET /auth/openevidence/admin/stats
  * Get authentication statistics (admin only)
  */
-router.get('/admin/stats', requireOpenEvidenceAuth, requirePermissions(['ADMIN_USERS']), auditRequest, (req: Request, res: Response) => {
+router.get('/admin/stats', requireOpenEvidenceAuth, requirePermissions(['ADMIN_USERS']), auditRequest, (req: OpenEvidenceRequest, res: Response) => {
   const stats = openEvidenceAuth.getSessionStats();
   
   res.json({
@@ -422,22 +422,22 @@ router.get('/admin/stats', requireOpenEvidenceAuth, requirePermissions(['ADMIN_U
  * GET /auth/openevidence/admin/sessions
  * Get all active sessions (admin only)
  */
-router.get('/admin/sessions', requireOpenEvidenceAuth, requirePermissions(['ADMIN_USERS']), auditRequest, (req: Request, res: Response) => {
-  const allSessions = Array.from((openEvidenceAuth as any).activeSessions.values());
+router.get('/admin/sessions', requireOpenEvidenceAuth, requirePermissions(['ADMIN_USERS']), auditRequest, (req: OpenEvidenceRequest, res: Response) => {
+  const allSessions = Array.from((openEvidenceAuth as any).activeSessions.values()) as any as import('./index').OpenEvidenceSession[];
   
   res.json({
     success: true,
-    sessions: allSessions.map(session => ({
-      id: session.id,
-      userId: session.userId,
-      evidenceRole: session.evidenceRole,
-      accessLevel: session.accessLevel,
-      institutionalId: session.institutionalId,
-      createdAt: session.createdAt,
-      expiresAt: session.expiresAt,
-      ipAddress: session.ipAddress,
-      userAgent: session.userAgent,
-      isActive: session.isActive
+    sessions: allSessions.map((s) => ({
+      id: s.id,
+      userId: s.userId,
+      evidenceRole: s.evidenceRole,
+      accessLevel: s.accessLevel,
+      institutionalId: s.institutionalId,
+      createdAt: s.createdAt,
+      expiresAt: s.expiresAt,
+      ipAddress: s.ipAddress,
+      userAgent: s.userAgent,
+      isActive: s.isActive
     })),
     platform: 'OpenEvidence'
   });
@@ -447,7 +447,7 @@ router.get('/admin/sessions', requireOpenEvidenceAuth, requirePermissions(['ADMI
  * DELETE /auth/openevidence/admin/sessions/:sessionId
  * Terminate any session (admin only)
  */
-router.delete('/admin/sessions/:sessionId', requireOpenEvidenceAuth, requirePermissions(['ADMIN_USERS']), auditRequest, (req: Request, res: Response) => {
+router.delete('/admin/sessions/:sessionId', requireOpenEvidenceAuth, requirePermissions(['ADMIN_USERS']), auditRequest, (req: OpenEvidenceRequest, res: Response) => {
   const { sessionId } = req.params;
   
   openEvidenceAuth.terminateSession(sessionId);

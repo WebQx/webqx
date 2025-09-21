@@ -25,6 +25,9 @@ import {
   VideoPlatform
 } from '../types';
 
+// Re-export select types for tests and consumers that import from the service module
+export type { CreateSessionRequest, SessionLaunchRequest, TelehealthServiceConfig };
+
 /**
  * Telehealth Session Service
  * 

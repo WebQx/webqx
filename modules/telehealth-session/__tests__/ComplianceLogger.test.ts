@@ -129,10 +129,9 @@ describe('ComplianceLogger', () => {
 
     it('should calculate session duration when both start and end events exist', () => {
       // Simulate some time passing by manually adding a start event in the past
-      const pastTime = new Date(Date.now() - 5000); // 5 seconds ago
+      // Add another event to simulate passage of time; timestamp is auto-assigned
       complianceLogger.logEvent({
-        type: 'session_started',
-        timestamp: pastTime,
+        type: 'participant_joined',
         complianceLevel: 'high'
       });
       

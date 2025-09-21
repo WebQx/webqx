@@ -55,10 +55,10 @@ export class TelehealthManager extends EventEmitter {
       'messaging', 
       'ehr-integration',
       'fhir-sync'
-    ];
+    ] as const;
 
     for (const componentName of componentsToLoad) {
-      if (this.config.enabledComponents.includes(componentName)) {
+      if (this.config.enabledComponents.includes(componentName as any)) {
         await this.loadComponent(componentName);
       }
     }
@@ -106,8 +106,8 @@ export class TelehealthManager extends EventEmitter {
           throw new Error(`Unknown component: ${componentName}`);
       }
 
-      const componentConfig = this.config.components[componentName] || {};
-      const component = new ComponentClass(componentConfig);
+  const componentConfig = (this.config.components as any)[componentName] || {};
+  const component = new ComponentClass(componentConfig);
       
       await component.initialize();
       this.components.set(componentName, component);
@@ -152,12 +152,12 @@ export class TelehealthManager extends EventEmitter {
     if (videoComponent && messagingComponent) {
       // When video call starts, create messaging channel
       videoComponent.on('call:started', async (callData) => {
-        await messagingComponent.createConsultationChannel(callData.sessionId);
+        await (messagingComponent as any).createConsultationChannel?.(callData.sessionId);
       });
 
       // When video call ends, archive messaging channel
       videoComponent.on('call:ended', async (callData) => {
-        await messagingComponent.archiveChannel(callData.sessionId);
+        await (messagingComponent as any).archiveChannel?.(callData.sessionId);
       });
     }
   }
@@ -172,12 +172,12 @@ export class TelehealthManager extends EventEmitter {
     if (ehrComponent && fhirComponent) {
       // When EHR data is updated, sync to FHIR
       ehrComponent.on('data:updated', async (updateData) => {
-        await fhirComponent.syncFromEHR(updateData);
+        await (fhirComponent as any).syncFromEHR?.(updateData);
       });
 
       // When FHIR data is received, update EHR
       fhirComponent.on('data:received', async (fhirData) => {
-        await ehrComponent.updateFromFHIR(fhirData);
+        await (ehrComponent as any).updateFromFHIR?.(fhirData);
       });
     }
   }

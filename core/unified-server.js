@@ -25,14 +25,13 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 require('dotenv').config();
 
 const { PortManager } = require('./port-manager');
-// Optional middleware & feature routers (wrapped in try/catch so missing files won't break startup)
-let securityMiddleware, metricsMiddleware, auditMiddleware, authOptional, aiAssistRouter, mockFhirRouter;
+// Optional middleware (wrapped in try/catch so missing files won't break startup)
+let securityMiddleware, metricsMiddleware, auditMiddleware, authOptional;
 try { securityMiddleware = require('../middleware/security'); } catch (_) {}
 try { metricsMiddleware = require('../middleware/metrics'); } catch (_) {}
 try { auditMiddleware = require('../middleware/audit'); } catch (_) {}
 try { authOptional = require('../middleware/auth'); } catch (_) {}
-try { aiAssistRouter = require('../services/ai/ai-assist-router'); } catch (_) {}
-try { mockFhirRouter = require('../services/fhir/mock-fhir-router'); } catch (_) {}
+// Removed mock AI Assist and mock FHIR routers for production-only build
 
 class UnifiedHealthcareServer {
     constructor() {
@@ -51,10 +50,10 @@ class UnifiedHealthcareServer {
             environment: process.env.NODE_ENV || 'development',
             useRemoteOpenEMR: /^true$/i.test(process.env.USE_REMOTE_OPENEMR || ''),
             remoteOpenEMRUrl: process.env.OPENEMR_REMOTE_URL || '',
-            useFhirMock: /^true$/i.test(process.env.USE_FHIR_MOCK || ''),
-            aiAssistEnabled: !/^false$/i.test(process.env.AI_ASSIST_ENABLED || 'true'),
+            aiAssistEnabled: false,
             openemrCircuitThreshold: parseInt(process.env.OPENEMR_CIRCUIT_THRESHOLD || '5', 10),
-            openemrCircuitCooldownMs: parseInt(process.env.OPENEMR_CIRCUIT_COOLDOWN_MS || '15000', 10)
+            openemrCircuitCooldownMs: parseInt(process.env.OPENEMR_CIRCUIT_COOLDOWN_MS || '15000', 10),
+            transcriptionBaseUrl: (process.env.TRANSCRIPTION_BASE_URL || '').trim()
         };
         // Circuit breaker state
         this._openemrFailures = [];
@@ -68,47 +67,7 @@ class UnifiedHealthcareServer {
             main: false
         };
 
-        // In-memory demo stores (reset daily 08:00 UTC)
-        this.demoStore = {
-            billing: { claims: [] },
-            accounting: { invoices: [] },
-            access: { roles: [] },
-            nextResetAt: null
-        };
-        this.scheduleDailyDemoReset();
-        
         this.log('info', 'Initializing WebQX Healthcare Platform Gateway');
-    }
-
-    // --- Demo store reset helpers ---
-    resetDemoStores() {
-        this.demoStore.billing.claims = [];
-        this.demoStore.accounting.invoices = [];
-        this.demoStore.access.roles = [];
-        // Compute next 08:00 UTC from now
-        const now = new Date();
-        const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 8, 0, 0, 0));
-        if (now.getUTCHours() >= 8) {
-            // today 08:00 passed; schedule for tomorrow
-            next.setUTCDate(next.getUTCDate() + 1);
-        }
-        this.demoStore.nextResetAt = next.toISOString();
-        console.log(`🧹 Demo stores reset. Next reset at ${this.demoStore.nextResetAt}`);
-    }
-
-    scheduleDailyDemoReset() {
-        // Initial reset on startup
-        this.resetDemoStores();
-        const tick = () => {
-            const now = new Date();
-            // If we've reached/passed nextResetAt, reset and compute the next one.
-            const due = this.demoStore.nextResetAt ? new Date(this.demoStore.nextResetAt).getTime() : 0;
-            if (now.getTime() >= due) {
-                this.resetDemoStores();
-            }
-        };
-        // Check every 60s (simple scheduler sufficient here)
-        setInterval(tick, 60 * 1000);
     }
 
     /**
@@ -170,7 +129,9 @@ class UnifiedHealthcareServer {
      * Create the main API gateway that routes to all services
      */
     async createMainGateway() {
-        this.app = express();
+    this.app = express();
+    // Respect X-Forwarded-* headers from Railway (and other proxies)
+    this.app.set('trust proxy', 1);
         
         // Security middleware with remote access support (fixed CSP)
         this.app.use(helmet({
@@ -217,14 +178,16 @@ class UnifiedHealthcareServer {
                 if (this.config.environment === 'production') {
                     // Add your allowed domains here
                     const allowedOrigins = [
-                        /^https?:\/\/.*\.webqx\..*$/,  // WebQX subdomains on any TLD (e.g., app.webqx.com)
-                        /^https?:\/\/webqx\.github\.io$/, // GitHub Pages for this repo/org
-                        /^https?:\/\/localhost:\d+$/,   // Local development
-                        /^https?:\/\/192\.168\.\d+\.\d+:\d+$/,  // Local network
-                        /^https?:\/\/10\.\d+\.\d+\.\d+:\d+$/,   // Private network
-                        /^https?:\/\/172\.1[6-9]\.\d+\.\d+:\d+$/,  // Private network
-                        /^https?:\/\/172\.2[0-9]\.\d+\.\d+:\d+$/,  // Private network
-                        /^https?:\/\/172\.3[0-1]\.\d+\.\d+:\d+$/   // Private network
+                        /^https?:\/\/.*\.webqx\..*$/,          // WebQx subdomains on any TLD (e.g., emr.webqx.com)
+                        /^https?:\/\/(www\.)?webqx\.com$/,      // Apex/root domain and www
+                        /^https?:\/\/.*\.railway\.app$/,        // Railway hosted domains
+                        /^https?:\/\/webqx\.github\.io$/,       // GitHub Pages for this repo/org
+                        /^https?:\/\/localhost:\\d+$/,          // Local development
+                        /^https?:\/\/192\.168\.\d+\.\d+:\\d+$/,  // Local network
+                        /^https?:\/\/10\.\d+\.\d+\.\d+:\\d+$/,   // Private network
+                        /^https?:\/\/172\.1[6-9]\.\d+\.\d+:\\d+$/,  // Private network
+                        /^https?:\/\/172\.2[0-9]\.\d+\.\d+:\\d+$/,  // Private network
+                        /^https?:\/\/172\.3[0-1]\.\d+\.\d+:\\d+$/   // Private network
                     ];
                     
                     const isAllowed = allowedOrigins.some(pattern => pattern.test(origin));
@@ -258,6 +221,24 @@ class UnifiedHealthcareServer {
         this.app.use(cors(corsOptions));
         // Ensure preflight requests are handled for all routes
         this.app.options('*', cors(corsOptions));
+
+        // Friendly redirects for legacy paths and guaranteed serve for emr-login
+        this.app.get(['/openemr-login.html', '/openemr-login'], (req, res) => {
+            return res.redirect(301, '/emr-login');
+        });
+
+        this.app.get(['/emr-login.html', '/emr-login'], (req, res, next) => {
+            try {
+                const p = path.resolve(__dirname, '..', 'emr-login.html');
+                if (fs.existsSync(p)) return res.sendFile(p);
+                // Fallback: if not found in repo root, try current working directory
+                const alt = path.resolve(process.cwd(), 'emr-login.html');
+                if (fs.existsSync(alt)) return res.sendFile(alt);
+                return res.status(404).send('emr-login not found');
+            } catch (e) {
+                return next(e);
+            }
+        });
         
             // Remote server management endpoints
             /**
@@ -276,6 +257,13 @@ class UnifiedHealthcareServer {
             this.app.post('/api/wake', (req, res) => {
                 console.log('🔔 Remote wake requested:', req.ip);
                 res.json({ success: true, message: 'Server wake triggered (demo mode)' });
+            });
+
+            // Local UX helper: allow the login page to call /api/start-server without error
+            this.app.post('/api/start-server', (req, res) => {
+                console.log('🟢 /api/start-server invoked (stub)');
+                // In real deployments, start or check the EMR service here.
+                res.json({ success: true, message: 'Start command accepted (stub). Ensure EMR is running on http://localhost:8080' });
             });
 
             /**
@@ -366,6 +354,11 @@ class UnifiedHealthcareServer {
                     django: this.config.djangoPort,
                     openemr: this.config.openEMRPort,
                     telehealth: this.config.telehealthPort
+                },
+                config: {
+                    environment: this.config.environment,
+                    useRemoteOpenEMR: this.config.useRemoteOpenEMR,
+                    transcriptionConfigured: !!(this.config.transcriptionBaseUrl && this.config.transcriptionBaseUrl.length > 0)
                 }
             });
         });
@@ -464,104 +457,33 @@ class UnifiedHealthcareServer {
         this.setupServiceProxies();
 
         // AI Assist router (mount after proxies to keep ordering predictable)
-        if (this.config.aiAssistEnabled && aiAssistRouter) {
-            this.app.use('/api/ai', aiAssistRouter);
-            console.log('🧠 AI Assist mock mounted at /api/ai');
-        }
+            // AI Assist mock removed for production-only build
         
-        // Serve main frontend
+        // Serve main frontend (prefer built artifacts)
         this.app.get('/', (req, res) => {
-            res.sendFile(path.join(__dirname, 'index.html'));
+            try {
+                const cwd = process.cwd();
+                const distDir = path.join(cwd, 'dist');
+                const portalDistDir = path.join(cwd, 'portal', 'dist');
+                const candidates = [
+                    path.join(distDir, 'index.html'),
+                    path.join(portalDistDir, 'index.html'),
+                    path.join(cwd, 'index.html')
+                ];
+                for (const p of candidates) {
+                    if (p && fs.existsSync(p)) {
+                        return res.sendFile(p);
+                    }
+                }
+            } catch (_) { /* fall through */ }
+            return res.status(404).send('index.html not found');
         });
 
-        // ---- Demo APIs (stateless demo data, resets daily @ 08:00 UTC) ----
-        // Info endpoint
-        this.app.get('/api/v1/demo/info', (req, res) => {
-            res.json({ nextResetAt: this.demoStore.nextResetAt });
-        });
-        // Manual reset (for QA)
-        this.app.post('/api/v1/demo/reset', (req, res) => {
-            this.resetDemoStores();
-            res.json({ ok: true, nextResetAt: this.demoStore.nextResetAt });
+        // Normalize legacy login paths to provider production login
+        this.app.get(['/login', '/login.html'], (req, res) => {
+            return res.redirect(302, '/auth/providers/login.html');
         });
 
-        // Billing: claims
-        this.app.get('/api/v1/demo/billing/claims', (req, res) => {
-            res.json(this.demoStore.billing.claims);
-        });
-        this.app.post('/api/v1/demo/billing/claims', (req, res) => {
-            const claim = req.body || {};
-            const id = 'clm_' + Math.random().toString(36).slice(2, 10);
-            const now = new Date().toISOString();
-            const record = {
-                id,
-                createdAt: now,
-                patient: claim.patient || 'John Doe',
-                code: claim.code || '99213',
-                amount: Number(claim.amount || 125.00),
-                status: claim.status || 'submitted',
-                payer: claim.payer || 'Demo Health Plan'
-            };
-            this.demoStore.billing.claims.unshift(record);
-            res.status(201).json(record);
-        });
-        this.app.post('/api/v1/demo/billing/seed', (req, res) => {
-            const seeds = [
-                { patient: 'Alice Patient', code: '99213', amount: 125.00, status: 'submitted', payer: 'Demo Health Plan' },
-                { patient: 'Bob Member', code: '93000', amount: 210.00, status: 'adjudicated', payer: 'Demo Health Plan' },
-                { patient: 'Cara Test', code: '80053', amount: 75.50, status: 'denied', payer: 'Demo Health Plan' }
-            ];
-            seeds.forEach(s => {
-                const id = 'clm_' + Math.random().toString(36).slice(2, 10);
-                this.demoStore.billing.claims.push({ id, createdAt: new Date().toISOString(), ...s });
-            });
-            res.json({ ok: true, count: this.demoStore.billing.claims.length });
-        });
-        this.app.delete('/api/v1/demo/billing/reset', (req, res) => {
-            this.demoStore.billing.claims = [];
-            res.json({ ok: true });
-        });
-
-        // Accounting: invoices
-        this.app.get('/api/v1/demo/accounting/invoices', (req, res) => {
-            res.json(this.demoStore.accounting.invoices);
-        });
-        this.app.post('/api/v1/demo/accounting/invoices', (req, res) => {
-            const inv = req.body || {};
-            const id = 'inv_' + Math.random().toString(36).slice(2, 10);
-            const now = new Date().toISOString();
-            const rec = {
-                id,
-                createdAt: now,
-                patient: inv.patient || 'John Doe',
-                items: Array.isArray(inv.items) ? inv.items : [{ desc: 'Consultation', qty: 1, price: 125.00 }],
-                total: Number(inv.total || (Array.isArray(inv.items) ? inv.items.reduce((s, it) => s + (it.qty*it.price||0), 0) : 125.00)),
-                status: inv.status || 'unpaid'
-            };
-            this.demoStore.accounting.invoices.unshift(rec);
-            res.status(201).json(rec);
-        });
-        this.app.delete('/api/v1/demo/accounting/reset', (req, res) => {
-            this.demoStore.accounting.invoices = [];
-            res.json({ ok: true });
-        });
-
-        // Access controls: roles
-        this.app.get('/api/v1/demo/access/roles', (req, res) => {
-            res.json(this.demoStore.access.roles);
-        });
-        this.app.post('/api/v1/demo/access/roles', (req, res) => {
-            const body = req.body || {};
-            const id = 'role_' + Math.random().toString(36).slice(2, 10);
-            const rec = { id, user: body.user || 'demo-user', role: body.role || 'patient', assignedAt: new Date().toISOString() };
-            this.demoStore.access.roles.unshift(rec);
-            res.status(201).json(rec);
-        });
-        this.app.delete('/api/v1/demo/access/reset', (req, res) => {
-            this.demoStore.access.roles = [];
-            res.json({ ok: true });
-        });
-        
         console.log('✅ Main API Gateway created');
     }
 
@@ -671,26 +593,21 @@ class UnifiedHealthcareServer {
                 }
             }));
 
-            if (this.config.useFhirMock && mockFhirRouter) {
-                this.app.use('/fhir', mockFhirRouter);
-                console.log('🧪 FHIR mock enabled at /fhir');
-            } else {
-                this.app.use('/fhir', circuitGuard, createProxyMiddleware({
-                    target: openEMRTarget,
-                    changeOrigin: true,
-                    pathRewrite: (path) => {
-                        if (!path.startsWith('/fhir/')) {
-                            return '/fhir' + path;
-                        }
-                        return path;
-                    },
-                    onError: (err, req, res) => {
-                        console.error('❌ FHIR proxy error:', err.message);
-                        if (this.recordOpenEMRFailure) this.recordOpenEMRFailure();
-                        res.status(503).json({ error: 'FHIR service unavailable', remote: this.config.useRemoteOpenEMR, circuitOpen: this.isOpenEMRCircuitOpen && this.isOpenEMRCircuitOpen() });
+            this.app.use('/fhir', circuitGuard, createProxyMiddleware({
+                target: openEMRTarget,
+                changeOrigin: true,
+                pathRewrite: (path) => {
+                    if (!path.startsWith('/fhir/')) {
+                        return '/fhir' + path;
                     }
-                }));
-            }
+                    return path;
+                },
+                onError: (err, req, res) => {
+                    console.error('❌ FHIR proxy error:', err.message);
+                    if (this.recordOpenEMRFailure) this.recordOpenEMRFailure();
+                    res.status(503).json({ error: 'FHIR service unavailable', remote: this.config.useRemoteOpenEMR, circuitOpen: this.isOpenEMRCircuitOpen && this.isOpenEMRCircuitOpen() });
+                }
+            }));
             console.log('🔌 OpenEMR & FHIR proxies mounted');
         };
 
@@ -746,13 +663,39 @@ class UnifiedHealthcareServer {
 
         console.log('✅ Service proxies configured');
 
-        // Transcription (mock) local router (non-proxied yet) mounted after proxies
-        try {
-            const transcriptionRouter = require('../services/transcription/whisper-service.js').default || require('../services/transcription/whisper-service.js');
-            this.app.use('/api/transcription', transcriptionRouter);
-            console.log('📝 Transcription mock service mounted at /api/transcription');
-        } catch (e) {
-            console.warn('⚠️ Transcription service not available:', e.message);
+    // Transcription service: production proxy required; if not configured, 503
+        const base = this.config.transcriptionBaseUrl;
+        if (base) {
+            const target = base.replace(/\/$/, '');
+            try {
+                this.app.use('/api/transcription', createProxyMiddleware({
+                    target,
+                    changeOrigin: true,
+                    ws: false,
+                    onError: (err, req, res) => {
+                        console.error('❌ Transcription proxy error:', err.message);
+                        if (!res.headersSent) res.status(503).json({ error: 'Transcription service unavailable' });
+                    }
+                }));
+                // WebSocket proxy for streaming endpoint if service supports it
+                this.app.use('/api/transcription/v1/ws', createProxyMiddleware({
+                    target,
+                    changeOrigin: true,
+                    ws: true,
+                    pathRewrite: (path) => path.replace(/^\/api\/transcription/, ''),
+                    onError: (err) => console.error('❌ Transcription WS proxy error:', err.message)
+                }));
+                console.log(`📝 Transcription PROXY enabled -> ${target}`);
+            } catch (e) {
+                console.warn('⚠️ Failed to mount transcription proxy. Transcription will return 503. Error:', e.message);
+                this.app.use('/api/transcription', (req, res) => {
+                    res.status(503).json({ error: 'TRANSCRIPTION_UNAVAILABLE', message: 'Transcription proxy mount failed' });
+                });
+            }
+        } else {
+            this.app.use('/api/transcription', (req, res) => {
+                res.status(503).json({ error: 'TRANSCRIPTION_UNAVAILABLE', message: 'Transcription service not configured' });
+            });
         }
     }
 
@@ -1118,10 +1061,13 @@ class UnifiedHealthcareServer {
     console.log(`   • OpenEMR/FHIR    : http://localhost:${this.config.mainPort}/api/openemr/* (remote=${this.config.useRemoteOpenEMR})`);
     console.log(`   • FHIR Direct     : http://localhost:${this.config.mainPort}/fhir/* (remote=${this.config.useRemoteOpenEMR})`);
         console.log(`   • Telehealth      : http://localhost:${this.config.mainPort}/api/telehealth/*`);
-        console.log(`   • Transcription   : http://localhost:${this.config.mainPort}/api/transcription/mock`);
-        if (this.config.aiAssistEnabled) console.log(`   • AI Assist       : http://localhost:${this.config.mainPort}/api/ai/summary`);
-        if (this.config.useFhirMock) console.log('   • FHIR Mock       : ENABLED (Patient, Appointment)');
+        // AI Assist and FHIR Mock are removed in production
         console.log(`   • WebSocket       : ws://localhost:${this.config.mainPort}/ws`);
+        if (this.config.transcriptionBaseUrl) {
+            console.log(`   • Transcription   : PROXY ${this.config.transcriptionBaseUrl}`);
+        } else {
+            console.log(`   • Transcription   : UNCONFIGURED (503)`);
+        }
     console.log('\n🎯 All services are proxied through the main gateway for unified access');
     }
 

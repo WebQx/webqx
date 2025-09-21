@@ -226,7 +226,7 @@
             <a href="patient-portal/" style="color: #4299e1; text-decoration: none; margin-right: 1rem;">Patient Portal</a>
             <a href="provider/" style="color: #4299e1; text-decoration: none; margin-right: 1rem;">Provider Portal</a>
             <a href="admin-console/" style="color: #4299e1; text-decoration: none; margin-right: 1rem;">Admin Console</a>
-            <a href="openemr-login.html" style="color: #10b981; text-decoration: none; font-weight: bold;">🏥 OpenEMR Login</a>
+            <a href="emr-login.html" style="color: #10b981; text-decoration: none; font-weight: bold;">🏥 WebQx EMR Login</a>
         </div>
 
         <!-- Role Selector -->
@@ -294,9 +294,9 @@
                 </div>
             </div>
             <div style="background: #e6fffa; border: 1px solid #38b2ac; border-radius: 5px; padding: 1rem; margin-top: 1rem;">
-                <h5 style="color: #2c7a7b; margin-bottom: 0.5rem;">🏥 OpenEMR MariaDB Access</h5>
+                <h5 style="color: #2c7a7b; margin-bottom: 0.5rem;">🏥 WebQx EMR Database Access</h5>
                 <p style="color: #2c7a7b; font-size: 0.8rem; margin: 0;">
-                    For direct OpenEMR system access, use the <strong>OpenEMR Login</strong> link above.<br>
+                    For direct EMR system access, use the <strong>WebQx EMR Login</strong> link above.<br>
                     Demo credentials: admin/pass, physician/physician, clinician/clinician
                 </p>
             </div>
@@ -520,13 +520,13 @@
                 } else if (username === 'admin@webqx.com' && password === 'admin123') {
                     setDemoSession('admin', username);
                     window.location.href = 'admin-console/';
-                } else if (username === 'physician' && password === 'physician') { // OpenEMR demo
+                } else if (username === 'physician' && password === 'physician') { // EMR demo
                     setDemoSession('provider', 'physician@webqx.com');
                     window.location.href = 'provider/';
-                } else if (username === 'clinician' && password === 'clinician') { // OpenEMR demo
+                } else if (username === 'clinician' && password === 'clinician') { // EMR demo
                     setDemoSession('provider', 'clinician@webqx.com');
                     window.location.href = 'provider/';
-                } else if (username === 'admin' && password === 'pass') { // OpenEMR demo
+                } else if (username === 'admin' && password === 'pass') { // EMR demo
                     setDemoSession('admin', 'admin@webqx.com');
                     window.location.href = 'admin-console/';
                 } else if (username === 'demo' && password === 'patient123') {

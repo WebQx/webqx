@@ -1,241 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-    <title>OpenEMR Login - WebQX™ EMR System</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #0f766e 0%, #0891b2 50%, #164e63 100%);
-            min-height: 100vh;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .login-container {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 16px;
-            padding: 2rem;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        .logo {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-            text-align: left;
-        }
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-        input, select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            background: rgba(255,255,255,0.1);
-            color: white;
-            font-size: 1rem;
-        }
-        input::placeholder {
-            color: rgba(255,255,255,0.6);
-        }
-        .btn {
-            width: 100%;
-            padding: 0.75rem;
-            background: #0d9488;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 1rem;
-        }
-        .btn:hover {
-            background: #0f766e;
-        }
-        .demo-section {
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-        .demo-account {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.25rem 0;
-            font-size: 0.9rem;
-        }
-        .back-link {
-            color: #7dd3fc;
-            text-decoration: none;
-            margin-top: 1rem;
-            display: inline-block;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redirecting…</title>
+  <meta http-equiv="refresh" content="0;url=/emr-login" />
+  <link rel="canonical" href="/emr-login" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif; background:#0f172a; color:#e5e7eb; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:2rem; }
+    .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:24px; max-width:740px; width:100%; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+    a { color:#60a5fa; }
+  </style>
+  <script>
+    (function(){
+  var target = '/emr-login';
+      try { if (location.pathname !== target) location.replace(target); } catch (e) { location.href = target; }
+    })();
+  </script>
+  <noscript>
+  <meta http-equiv="refresh" content="0;url=/emr-login" />
+  </noscript>
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo">🏥 WebQX™ OpenEMR</div>
-        <p>MariaDB OpenEMR System Access</p>
-        
-        <form id="openemrLogin">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" placeholder="Enter username" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter password" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="facility">Facility</label>
-                <select id="facility">
-                    <option value="default">Default Facility</option>
-                    <option value="webqx">WebQX Healthcare</option>
-                    <option value="demo">Demo Clinic</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="btn">Login to OpenEMR</button>
-        </form>
-        
-        <div class="demo-section">
-            <h4>OpenEMR Demo Accounts</h4>
-            <div class="demo-account">
-                <span>Administrator:</span>
-                <code>admin / pass</code>
-            </div>
-            <div class="demo-account">
-                <span>Physician:</span>
-                <code>physician / physician</code>
-            </div>
-            <div class="demo-account">
-                <span>Clinician:</span>
-                <code>clinician / clinician</code>
-            </div>
-            <div class="demo-account">
-                <span>Accountant:</span>
-                <code>accountant / accountant</code>
-            </div>
-            <div class="demo-account">
-                <span>Receptionist:</span>
-                <code>receptionist / receptionist</code>
-            </div>
-        </div>
-        
-        <div style="text-align: center; margin-top: 1rem;">
-            <button onclick="startServer()" class="btn" style="background: #10b981; margin-bottom: 1rem;">🚀 Start WebQX Server</button><br>
-            <a href="index.html" class="back-link">← Back to WebQX Portal</a>
-        </div>
-    </div>
-
-    <script>
-        document.getElementById('openemrLogin').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const facility = document.getElementById('facility').value;
-            
-            // Show loading
-            const btn = document.querySelector('.btn');
-            btn.textContent = 'Connecting to OpenEMR...';
-            btn.disabled = true;
-            
-            // Check if server is running first
-            fetch('http://localhost:8080/api/status')
-                .then(response => response.json())
-                .then(data => {
-                    // Server is running, proceed with login
-                    const validCredentials = [
-                        {user: 'admin', pass: 'pass'},
-                        {user: 'physician', pass: 'physician'},
-                        {user: 'clinician', pass: 'clinician'},
-                        {user: 'accountant', pass: 'accountant'},
-                        {user: 'receptionist', pass: 'receptionist'}
-                    ];
-                    
-                    const isValid = validCredentials.some(cred => 
-                        cred.user === username && cred.pass === password
-                    );
-                    
-                    if (isValid) {
-                        localStorage.setItem('openemr_user', username);
-                        localStorage.setItem('openemr_facility', facility);
-                        window.open('http://localhost:8080', '_blank');
-                        btn.textContent = 'Login to OpenEMR';
-                        btn.disabled = false;
-                    } else {
-                        alert('Invalid credentials. Please use demo accounts shown below.');
-                        btn.textContent = 'Login to OpenEMR';
-                        btn.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    // Server not running - try to start it
-                    btn.textContent = 'Starting Server...';
-                    
-                    // Try to start server via API
-                    fetch('/api/start-server', { method: 'POST' })
-                        .then(() => {
-                            // Wait 3 seconds then try login again
-                            setTimeout(() => {
-                                window.open('http://localhost:8080', '_blank');
-                                btn.textContent = 'Login to OpenEMR';
-                                btn.disabled = false;
-                            }, 3000);
-                        })
-                        .catch(() => {
-                            // Fallback: direct server start
-                            alert('🚀 Starting WebQX EMR Server...\n\nServer will open in new window.');
-                            window.open('webqx-emr-system/', '_blank');
-                            btn.textContent = 'Login to OpenEMR';
-                            btn.disabled = false;
-                        });
-                });
-        });
-        
-        function startServer() {
-            const btn = event.target;
-            btn.textContent = 'Starting...';
-            btn.disabled = true;
-            
-            // Try to start via API first
-            fetch('/api/start-server', { method: 'POST' })
-                .then(() => {
-                    btn.textContent = '✅ Server Started';
-                    btn.style.background = '#059669';
-                    setTimeout(() => {
-                        window.open('http://localhost:8080', '_blank');
-                    }, 2000);
-                })
-                .catch(() => {
-                    // Fallback: open local server
-                    btn.textContent = '🚀 Opening Server';
-                    window.open('webqx-emr-system/', '_blank');
-                    setTimeout(() => {
-                        btn.textContent = '🚀 Start WebQX Server';
-                        btn.disabled = false;
-                        btn.style.background = '#10b981';
-                    }, 3000);
-                });
-        }
-    </script>
+  <div class="card" role="alert" aria-live="polite">
+    <h1>Redirecting…</h1>
+  <p>If you are not redirected automatically, <a href="/emr-login">click here</a>.</p>
+  </div>
 </body>
 </html>
