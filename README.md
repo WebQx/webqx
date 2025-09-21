@@ -1,5 +1,8 @@
 # WebQX™ Healthcare Platform
 
+[!IMPORTANT]
+Read the Authoritative Roadmap first: docs/ROADMAP.md. All changes must align with RabbitMQ messaging, Whisper transcription, OpenEMR rebrand, multilingual templates, compliance (GDPR/HIPAA/ISO 27701), Django ops, and Railway deployment strategy.
+
 > Cloud-based, FHIR-compliant, global healthcare ecosystem with OpenEMR integration
 
 > Latest Enhancements (2025-09): Added security middleware stack, circuit breaker for remote OpenEMR/FHIR proxy, internal metrics & audit endpoints. All mock/demo endpoints removed from production build.
@@ -313,6 +316,25 @@ npm run test:e2e
 ```
 
 CI integration pending; can be added as a separate GitHub Actions job.
+
+---
+
+## ⚠️ PostCSS in Production Builds
+
+The portal uses Vite + PostCSS. In environments that only install production dependencies (e.g., Railway, Docker with `npm ci --only=production`), PostCSS plugins referenced by `portal/postcss.config.js` must be available at runtime. To prevent build failures like:
+
+```
+Loading PostCSS Plugin failed: Cannot find module 'autoprefixer'
+```
+
+we keep `autoprefixer` and `postcss` in the root `dependencies` rather than `devDependencies`.
+
+Files involved:
+- `portal/postcss.config.js`
+- `portal/vite.config.ts`
+- `package.json` (root)
+
+If you add more PostCSS plugins, ensure they are placed in `dependencies` as well.
 
 ---
 
@@ -634,19 +656,4 @@ Lets you quickly test evolving endpoints (e.g., adding a new `/api/v1/auth/roles
 ### Dev Notes
 * Not for production use—shared secret JWT, in-memory sessions, and no external store
 * Designed to mimic Django validation patterns (field error arrays) for seamless gateway swap
-### Configure Pages → Railway (WebQX frontend + OpenEMR backend)
-
-To run the full WebQX EMR with a static frontend on GitHub Pages and a production backend on Railway:
-* Return shape intentionally stable to allow frontends to test progressive enhancement (e.g., lockout overlay, MFA prompts)
-
-### Next Hardening Ideas (Optional)
-| Enhancement | Rationale |
-|-------------|-----------|
-| Move to RS256 + JWKS | Align with Phase 2 Django key strategy |
-| MFA enforcement during login | Full two-step auth simulation |
-| Refresh rotation + reuse detection | Session hijack mitigation demo |
-| Token blacklist / logout endpoint | Show server-side revocation pattern |
-| Pluggable persistence adapter | Swap JSON for SQLite or Redis easily |
-
----
 
