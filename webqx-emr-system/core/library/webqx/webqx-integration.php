@@ -7,7 +7,7 @@
 // Define WebQX constants
 define('WEBQX_VERSION', '7.0.3');
 define('WEBQX_BRAND_NAME', 'WebQX EMR');
-define('WEBQX_BASE_URL', 'https://webqx.github.io/webqx/');
+define('WEBQX_BASE_URL', 'https://webqx.github.io/EMR/');
 define('WEBQX_THEME_PATH', dirname(__FILE__) . '/../themes/');
 define('WEBQX_INCLUDES_PATH', dirname(__FILE__) . '/');
 

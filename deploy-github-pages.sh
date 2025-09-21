@@ -103,7 +103,7 @@ webqx/
 ### 🌐 Access Information
 
 #### **Live Deployment**
-- **Main Site**: https://webqx.github.io/webqx/
+- **Main Site**: https://webqx.github.io/EMR/
 - **Documentation**: https://docs.webqx.healthcare
 - **GitHub Repository**: https://github.com/webqx/webqx
 
@@ -356,7 +356,7 @@ cat > deployment-status.html << 'EOF'
         <code>git clone https://github.com/webqx/webqx.git && cd webqx && ./start-webqx-complete.sh</code>
         
         <p><strong>Online Demo:</strong></p>
-        <a href="https://webqx.github.io/webqx/" target="_blank">https://webqx.github.io/webqx/</a>
+    <a href="https://webqx.github.io/EMR/" target="_blank">https://webqx.github.io/EMR/</a>
         
         <p><strong>Documentation:</strong></p>
         <a href="https://docs.webqx.healthcare" target="_blank">https://docs.webqx.healthcare</a>
@@ -416,7 +416,7 @@ echo "• System documentation comprehensive"
 echo "• All OpenEMR components documented"
 echo ""
 echo "🌐 Access Your System:"
-echo "• Live Demo: https://webqx.github.io/webqx/"
+echo "• Live Demo: https://webqx.github.io/EMR/"
 echo "• Documentation: README.md and deployment-summary.md"
 echo "• Local Development: ./start-webqx-complete.sh"
 echo ""
