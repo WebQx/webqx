@@ -90,8 +90,11 @@ class UnifiedHealthcareServer {
             
             // Create main API gateway
             await this.createMainGateway();
-            
-            // Start all backend services in parallel
+
+            // Start the main gateway server FIRST so /health is up immediately
+            await this.startMainServer();
+
+            // Start all backend services in parallel (non-blocking for health)
             if (this.config.useRemoteOpenEMR) {
                 console.log('🌐 Remote OpenEMR mode ENABLED. Backend OpenEMR will not be spawned.');
                 await Promise.all([
@@ -101,18 +104,13 @@ class UnifiedHealthcareServer {
                 ]);
                 // Mark OpenEMR as healthy (remote assumption) after lightweight probe (optional)
                 this.serviceHealth.openemr = true;
+                this.scheduleRemoteOpenEMRProbe();
             } else {
                 await Promise.all([
                     this.startDjangoAuth(),
                     this.startOpenEMRServer(),
                     this.startTelehealthServer()
                 ]);
-            }
-            
-            // Start the main gateway server
-            await this.startMainServer();
-            if (this.config.useRemoteOpenEMR) {
-                this.scheduleRemoteOpenEMRProbe();
             }
             
             this.log('info', 'All WebQX Healthcare Platform Services are running');
