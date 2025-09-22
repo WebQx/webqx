@@ -512,7 +512,7 @@
                     </div>
                 </div>
                 
-                <div class="module-card" data-href="../demo-fhir-r4-appointment-booking.html">
+                <div class="module-card" data-href="../index.html#appt">
                     <div class="module-header">
                         <div class="module-icon">�</div>
                         <div class="module-info">
@@ -528,7 +528,7 @@
                     </div>
                 </div>
                 
-                <div class="module-card" data-href="../demo-lab-results-viewer.html">
+                <div class="module-card" data-href="../index.html#labs">
                     <div class="module-header">
                         <div class="module-icon">�</div>
                         <div class="module-info">
@@ -863,7 +863,7 @@
                     break;
                 case 'telehealth':
                     setTimeout(() => {
-                        window.open(`${baseUrl}/telehealth-realtime-demo.html`, '_blank');
+                        window.open(`${baseUrl}/telehealth/`, '_blank');
                         hideModuleLoading();
                     }, 500);
                     break;
@@ -1362,7 +1362,7 @@
                     break;
                 case 'urgent-telehealth':
                     setTimeout(() => {
-                        window.open(`${baseUrl}/telehealth-realtime-demo.html`, '_blank');
+                        window.open(`${baseUrl}/telehealth/`, '_blank');
                     }, 300);
                     break;
                 case 'back-to-main':
@@ -1377,9 +1377,9 @@
             // Find the matching module card by known mapping
             const map = {
                 'openemr-patients': '#card-emr',
-                'telehealth': '.module-card[data-href="../telehealth.html"]',
-                'openemr-appointments': '.module-card[data-href="../demo-fhir-r4-appointment-booking.html"]',
-                'openemr-clinical': '.module-card[data-href="../demo-lab-results-viewer.html"]',
+                'telehealth': '.module-card[data-href="../telehealth/"]',
+                'openemr-appointments': '.module-card[data-href="../index.html#appt"]',
+                'openemr-clinical': '.module-card[data-href="../index.html#labs"]',
                 'admin': '#adminModule'
             };
             const sel = map[moduleName];

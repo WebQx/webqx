@@ -68,46 +68,8 @@ module "security_groups" {
   tags = local.common_tags
 }
 
-# API Gateway
-module "api_gateway" {
-  source = "./modules/api_gateway"
-  
-  name_prefix = local.name_prefix
-  environment = var.environment
-  
-  # Lambda function ARNs (will be provided by lambda module)
-  lambda_function_arns = module.lambda.function_arns
-  
-  tags = local.common_tags
-}
-
-# Lambda Functions
-module "lambda" {
-  source = "./modules/lambda"
-  
-  name_prefix = local.name_prefix
-  environment = var.environment
-  
-  subnet_ids = module.vpc.private_subnet_ids
-  security_group_ids = [module.security_groups.lambda_security_group_id]
-  
-  # DynamoDB table names for environment variables
-  dynamodb_tables = module.dynamodb.table_names
-  
-  tags = local.common_tags
-}
-
-# DynamoDB Tables
-module "dynamodb" {
-  source = "./modules/dynamodb"
-  
-  name_prefix = local.name_prefix
-  environment = var.environment
-  
-  backup_retention_days = local.backup_retention_days
-  
-  tags = local.common_tags
-}
+## Serverless modules removed (lambda, api gateway, dynamodb)
+## This Terraform stack is dormant. Prefer Docker/Railway for deployment.
 
 # S3 Buckets for file storage
 module "s3" {
@@ -122,56 +84,9 @@ module "s3" {
   tags = local.common_tags
 }
 
-# CloudWatch Monitoring
-module "monitoring" {
-  source = "./modules/monitoring"
-  
-  name_prefix = local.name_prefix
-  environment = var.environment
-  
-  # Resources to monitor
-  lambda_function_names = module.lambda.function_names
-  dynamodb_table_names = module.dynamodb.table_names
-  api_gateway_name = module.api_gateway.api_name
-  
-  tags = local.common_tags
-}
+## Monitoring removed due to dependency on removed modules
 
-# IAM Roles and Policies
-module "iam" {
-  source = "./modules/iam"
-  
-  name_prefix = local.name_prefix
-  
-  # DynamoDB table ARNs for policies
-  dynamodb_table_arns = module.dynamodb.table_arns
-  s3_bucket_arns = module.s3.bucket_arns
-  
-  tags = local.common_tags
-}
+## IAM module removed (was tailored for Lambda/DynamoDB)
 
 # Secrets Manager for sensitive configuration
-resource "aws_secretsmanager_secret" "webqx_config" {
-  name = "${local.name_prefix}-config"
-  description = "WebQX Healthcare Platform configuration secrets"
-  
-  tags = merge(local.common_tags, {
-    Name = "${local.name_prefix}-config"
-    Type = "Configuration"
-  })
-}
-
-resource "aws_secretsmanager_secret_version" "webqx_config" {
-  secret_id = aws_secretsmanager_secret.webqx_config.id
-  secret_string = jsonencode({
-    database_url = "placeholder"
-    jwt_secret = "placeholder"
-    encryption_key = "placeholder"
-    fhir_server_url = "placeholder"
-    keycloak_config = "placeholder"
-  })
-  
-  lifecycle {
-    ignore_changes = [secret_string]
-  }
-}
+## Secrets Manager resources removed

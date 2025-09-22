@@ -7,11 +7,8 @@ const TARGETS: { id: string; path: string }[] = [
   { id: 'patient-portal', path: 'patient-portal/' },
   { id: 'provider', path: 'provider/' },
   { id: 'admin-console', path: 'admin-console/' },
-  { id: 'telehealth-demo', path: 'telehealth-demo.html' },
-  { id: 'labs', path: 'demo-lab-results-viewer.html' },
-  { id: 'appointment', path: 'demo-fhir-r4-appointment-booking.html' },
+  // Demo pages removed; keep only production-relevant sections
   { id: 'login', path: 'login.html' },
-  { id: 'demo', path: 'demo/' },
   { id: 'auth', path: 'auth/' },
   { id: 'modules', path: 'modules/' }
 ];

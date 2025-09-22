@@ -1,24 +1,24 @@
 # WebQX Healthcare Platform - Infrastructure as Code
 
-This directory contains Infrastructure as Code (IaC) configurations for deploying the WebQX Healthcare Platform on AWS. The platform supports multiple deployment approaches to accommodate different organizational needs and preferences.
+This directory contains Infrastructure as Code (IaC) configurations for deploying the WebQX Healthcare Platform. The primary deployment targets are container-based (Docker) on Railway (or equivalent container platforms). AWS-specific Serverless (Lambda, API Gateway, DynamoDB, CloudFormation) paths have been deprecated and removed from the active stack.
 
 ## 🏗️ Architecture Overview
 
-The WebQX Healthcare Platform uses a serverless, microservices architecture designed for:
-- **HIPAA Compliance**: End-to-end encryption, audit logging, access controls
-- **Scalability**: Auto-scaling Lambda functions and DynamoDB
-- **High Availability**: Multi-AZ deployment across AWS regions
-- **Security**: VPC isolation, WAF protection, IAM roles with least privilege
+The WebQX Healthcare Platform uses a containerized, microservices architecture designed for:
+- HIPAA-grade controls: end-to-end encryption, audit logging, access controls
+- Horizontal scalability via containers and queue-based processing
+- High availability using platform-native scaling and health checks
+- Security through network segmentation and least-privilege service accounts
 
-### Core AWS Services
+### Core Platform Services
 
-- **AWS Lambda**: Serverless compute for API functions
-- **Amazon API Gateway**: RESTful API endpoints
-- **Amazon DynamoDB**: NoSQL database for healthcare data
-- **Amazon S3**: Storage for medical documents and backups
-- **AWS Secrets Manager**: Secure configuration management
-- **Amazon CloudWatch**: Monitoring, logging, and alerting
-- **AWS VPC**: Network isolation and security
+- Nginx: reverse proxy / TLS termination
+- Django + DRF (PostgreSQL)
+- OpenEMR (MariaDB)
+- RabbitMQ + Celery (Redis broker)
+- Redis: cache and Celery broker
+- Whisper STT service
+- Optional Keycloak for SSO
 
 ## 📁 Directory Structure
 
@@ -30,131 +30,41 @@ infrastructure/
 │   ├── outputs.tf      # Output values
 │   └── modules/        # Reusable Terraform modules
 │       ├── vpc/        # VPC and networking
-│       ├── lambda/     # Lambda functions
-│       ├── dynamodb/   # DynamoDB tables
-│       ├── api_gateway/# API Gateway configuration
-│       ├── s3/         # S3 buckets
-│       ├── iam/        # IAM roles and policies
-│       ├── security/   # Security groups and WAF
-│       └── monitoring/ # CloudWatch and alarms
-├── cloudformation/      # CloudFormation templates
-│   └── webqx-main.yaml # Main infrastructure stack
-├── serverless/          # Serverless Framework configuration
-│   └── serverless.yml  # Lambda functions and resources
+│       ├── vpc/        # (legacy AWS) VPC and networking (optional)
+│       ├── security/   # Security groups / WAF (if applicable)
+│       └── monitoring/ # Platform metrics/alerts (container focused)
 └── scripts/            # Deployment scripts
-    ├── deploy-terraform.sh
-    ├── deploy-cloudformation.sh
-    └── deploy-serverless.sh
+  └── deploy-terraform.sh
 ```
 
 ## 🚀 Deployment Options
 
-### Option 1: Terraform (Recommended)
+### Option 1: Docker + Railway (Recommended)
 
-**Best for**: Organizations with existing Terraform expertise or complex infrastructure requirements.
+Best for: Teams wanting fast, managed container deployments.
 
-**Features**:
-- Modular, reusable infrastructure components
-- State management and drift detection
-- Comprehensive resource coverage
-- Infrastructure versioning
+Features:
+- Simple Dockerfile-based deploys (Nginx, Django, OpenEMR, workers)
+- Environment variables and secrets managed by the platform
+- Built-in HTTP routing, TLS, health checks
 
-**Quick Start**:
-```bash
-# Navigate to project root
-cd /path/to/webqx
+Quick Start:
+1) Build images locally and push or let Railway auto-build from repo
+2) Configure environment variables (DB URLs, API_BASE, EMR_BASE)
+3) Set up Postgres, Redis, RabbitMQ services
+4) Point Nginx service to Django/OpenEMR backends
 
-# Deploy infrastructure
-./infrastructure/scripts/deploy-terraform.sh dev us-east-1
-
-# Customize configuration
-cp infrastructure/terraform/terraform.tfvars.example infrastructure/terraform/terraform.tfvars
-# Edit terraform.tfvars with your settings
-```
-
-### Option 2: CloudFormation
-
-**Best for**: AWS-native organizations or those preferring AWS-managed infrastructure.
-
-**Features**:
-- Native AWS integration
-- CloudFormation drift detection
-- AWS CloudFormation Console management
-- Stack-based deployments
-
-**Quick Start**:
-```bash
-# Deploy infrastructure
-./infrastructure/scripts/deploy-cloudformation.sh dev us-east-1
-```
-
-### Option 3: Serverless Framework
-
-**Best for**: Lambda-focused deployments or rapid prototyping.
-
-**Features**:
-- Lambda-centric deployment
-- Plugin ecosystem
-- Easy local development
-- Built-in CloudFormation generation
-
-**Quick Start**:
-```bash
-# Deploy Lambda functions
-./infrastructure/scripts/deploy-serverless.sh dev us-east-1
-```
+Note: AWS CloudFormation and Serverless Framework paths are retired in this repository to focus on the containerized stack.
 
 ## ⚙️ Configuration
 
 ### Environment Variables
 
-Create a `.env` file in the project root:
+Core application variables are documented in `.env.example`. For managed platforms, set them via the dashboard or CLI.
 
-```bash
-# AWS Configuration
-AWS_REGION=us-east-1
-AWS_PROFILE=default
+### Terraform (Optional)
 
-# Environment Settings
-ENVIRONMENT=dev
-PROJECT_NAME=webqx-healthcare
-
-# Healthcare Configuration
-FHIR_VERSION=R4
-ENABLE_HIPAA_LOGGING=true
-BACKUP_RETENTION_DAYS=2555
-
-# Security Settings
-ENABLE_WAF=true
-ENABLE_VPC_ENDPOINTS=true
-```
-
-### Terraform Variables
-
-Edit `infrastructure/terraform/terraform.tfvars`:
-
-```hcl
-# Basic Configuration
-aws_region = "us-east-1"
-environment = "dev"
-
-# Networking
-vpc_cidr = "10.0.0.0/16"
-availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
-
-# Healthcare Settings
-enable_hipaa_logging = true
-audit_log_retention_days = 2555
-enable_phi_encryption = true
-
-# Security
-enable_waf = true
-allowed_cidr_blocks = ["10.0.0.0/8"]
-
-# Monitoring
-enable_detailed_monitoring = true
-sns_alarm_endpoint = "admin@yourhealthcareorg.com"
-```
+If you maintain AWS infrastructure, keep Terraform focused on container runtimes and data stores. Remove Lambda/Dynamo/API Gateway modules.
 
 ## 🔒 Security & Compliance
 
@@ -176,13 +86,12 @@ sns_alarm_endpoint = "admin@yourhealthcareorg.com"
 
 ## 📊 Monitoring & Logging
 
-### CloudWatch Dashboards
+### Platform Monitoring
 
-The infrastructure includes pre-configured dashboards for:
-- Lambda function performance and errors
-- API Gateway metrics and latency
-- DynamoDB performance and throttling
-- Security metrics and alerts
+Dashboards should cover:
+- App latency and error rate
+- Worker queue depth and processing times
+- Database health and slow queries
 
 ### Audit Logging
 
@@ -204,20 +113,7 @@ Automated alerts for:
 
 ### Infrastructure Testing
 
-```bash
-# Validate Terraform configuration
-cd infrastructure/terraform
-terraform validate
-terraform plan
-
-# Test CloudFormation template
-aws cloudformation validate-template \
-  --template-body file://infrastructure/cloudformation/webqx-main.yaml
-
-# Test Serverless configuration
-cd infrastructure/serverless
-serverless print
-```
+If using Terraform, run `terraform validate` and `terraform plan` within `infrastructure/terraform`.
 
 ### Integration Testing
 
@@ -236,11 +132,7 @@ npm run test:security
 
 ### GitHub Actions
 
-The platform includes GitHub Actions workflows for:
-- Infrastructure validation
-- Automated deployments
-- Security scanning
-- Compliance checks
+CI/CD can validate builds, run tests, and deploy containers to Railway or similar.
 
 ### Example Workflow
 
@@ -276,23 +168,7 @@ terraform force-unlock <lock-id>
 terraform import aws_dynamodb_table.patients webqx-dev-patients
 ```
 
-**Lambda Deployment Failures**:
-```bash
-# Check function logs
-aws logs tail /aws/lambda/webqx-dev-patient-api --follow
-
-# Update function code
-serverless deploy function --function patientApi
-```
-
-**CloudFormation Stack Errors**:
-```bash
-# Check stack events
-aws cloudformation describe-stack-events --stack-name webqx-dev
-
-# Cancel stack update
-aws cloudformation cancel-update-stack --stack-name webqx-dev
-```
+Remove serverless-specific troubleshooting; focus on container health checks and logs.
 
 ### Support Resources
 
@@ -305,11 +181,7 @@ aws cloudformation cancel-update-stack --stack-name webqx-dev
 
 ### Resource Sizing
 
-The infrastructure is configured with cost-optimized defaults:
-- Lambda: Pay-per-execution with optimized memory allocation
-- DynamoDB: On-demand billing for variable workloads
-- S3: Intelligent tiering for automatic cost optimization
-- CloudWatch: Log retention policies to manage storage costs
+Use modest container sizes initially; scale replicas horizontally. Set retention on logs and metrics to control cost.
 
 ### Monitoring Costs
 
@@ -337,16 +209,8 @@ aws budgets create-budget --account-id 123456789012 \
 
 ### Version Updates
 
-```bash
-# Update Terraform providers
-terraform init -upgrade
-
-# Update Serverless Framework
-npm update -g serverless
-
-# Update Lambda dependencies
-cd lambda && npm update
-```
+- Update Terraform providers: `terraform init -upgrade`
+- Keep Docker base images and packages patched
 
 ## 📞 Support
 

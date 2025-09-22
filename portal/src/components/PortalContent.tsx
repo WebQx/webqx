@@ -16,13 +16,12 @@ export interface ModuleMeta {
 export const MODULE_CATALOG: ModuleMeta[] = [
   { id: 'patient', title: 'Patient Portal', description: 'Patient-facing experience & onboarding flows', externalHref: 'patient-portal/', category: 'Experience', keywords: ['patient','onboarding','engagement'], roles: ['patient'] },
   { id: 'provider', title: 'Provider Workspace', description: 'Clinical tools & encounter management', externalHref: 'provider/', category: 'Experience', keywords: ['provider','clinical','encounter'], roles: ['provider'] },
-  { id: 'emr', title: 'EMR (Read-only Demo)', description: 'EMR dashboard preview (static sample)', externalHref: 'emr-dashboard.html', category: 'Experience', keywords: ['emr','ehr'], roles: ['provider','admin'] },
-  { id: 'telehealth', title: 'Telehealth Demo', description: 'Live session / virtual visit examples', externalHref: 'telehealth-demo.html', category: 'Demo', keywords: ['telehealth','video','virtual-care'], roles: ['patient','provider','admin'] },
-  { id: 'labs', title: 'Lab Results Viewer', description: 'FHIR R4 lab result rendering demo', externalHref: 'demo-lab-results-viewer.html', category: 'FHIR', keywords: ['lab','results','fhir'], roles: ['patient','provider'] },
-  { id: 'appt', title: 'Appointment Booking', description: 'FHIR scheduling demonstration', externalHref: 'demo-fhir-r4-appointment-booking.html', category: 'FHIR', keywords: ['appointment','scheduling','fhir'], roles: ['patient','provider'] },
+  { id: 'emr', title: 'EMR', description: 'EMR patient management (production environment)', category: 'Experience', keywords: ['emr','ehr'], roles: ['provider','admin'] },
+  { id: 'telehealth', title: 'Telehealth', description: 'Live session / virtual visit (production)', category: 'Core', keywords: ['telehealth','video','virtual-care'], roles: ['patient','provider','admin'] },
+  { id: 'labs', title: 'Lab Results', description: 'FHIR R4 lab result rendering', category: 'FHIR', keywords: ['lab','results','fhir'], roles: ['patient','provider'] },
+  { id: 'appt', title: 'Scheduling', description: 'FHIR appointment scheduling', category: 'FHIR', keywords: ['appointment','scheduling','fhir'], roles: ['patient','provider'] },
   { id: 'login', title: 'Login Page', description: 'Standalone authentication UI example', externalHref: 'login.html', category: 'Auth', keywords: ['login','auth'], roles: ['patient','provider','admin'] },
   { id: 'transcription', title: 'Medical Transcription', description: 'WebQx Medical Transcription powered by Whisper (production)', category: 'AI', keywords: ['whisper','transcription','voice'], roles: ['provider','admin'] },
-  { id: 'whisper', title: 'Whisper Full Demo', description: 'Standalone Whisper UI demo pages (file & realtime)', externalHref: 'whisper-demo.html', category: 'AI', keywords: ['whisper','demo'], roles: ['provider','admin'] },
   { id: 'admin', title: 'Admin Console', description: 'Operational oversight & configuration', externalHref: 'admin-console/', category: 'Operations', keywords: ['admin','ops'], roles: ['admin'] },
   { id: 'docs', title: 'System README', description: 'Platform architecture & guidance', externalHref: 'README.md', category: 'Docs', keywords: ['docs','readme'], roles: ['patient','provider','admin'] }
 ];
@@ -103,7 +102,7 @@ const PurposeBlock: React.FC<{ meta: ModuleMeta }> = ({ meta }) => {
 // Simple interactive block per module id
 const InteractiveBlock: React.FC<{ meta: ModuleMeta; base: string }> = ({ meta, base }) => {
   // For key modules, embed the actual static demo page inline for an immediate "live" experience.
-  if (meta.externalHref && ['labs','appt','telehealth','login'].includes(meta.id)) {
+  if (meta.externalHref && ['login'].includes(meta.id)) {
     return <ExternalDemoFrame src={base + meta.externalHref} />;
   }
   // Fallback to synthetic mini-demos where appropriate

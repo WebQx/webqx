@@ -1,7 +1,7 @@
 /**
  * @fileoverview WebQX Unified Login System - Keycloak Integration Example
  * 
- * This file demonstrates how to integrate the Ottehr-Keycloak authentication
+ * This file demonstrates how to integrate Keycloak authentication
  * with the WebQX Unified Login System for seamless SSO experience.
  * 
  * @author WebQX Health
@@ -11,7 +11,7 @@
 import type { KeycloakUser, KeycloakTokenInfo } from './keycloak/types';
 import { getKeycloakProviderConfig } from './keycloak/client';
 
-// Minimal auth shim to satisfy the interface used in this file without pulling in non-existent Ottehr manager.
+// Minimal auth shim to satisfy the interface used in this file without pulling in any external vendor-specific manager.
 // In a real browser app, these would be implemented via keycloak-js or backend endpoints.
 type TokenInfo = Partial<KeycloakTokenInfo> & { roles?: string[]; metadata?: Record<string, any> };
 type KeycloakUserInfo = KeycloakUser;
@@ -90,7 +90,7 @@ export class WebQXLoginManager {
       // Handle other authentication methods
       this.emit('userAuthenticated', {
         tokenInfo,
-        provider: tokenInfo.metadata?.grantType || 'ottehr'
+        provider: tokenInfo.metadata?.grantType || 'custom'
       });
     }
   }
@@ -360,28 +360,28 @@ export const RoleGuards = {
    * Check if current user can access admin features
    */
   canAccessAdmin(): boolean {
-    return webqxLogin.hasRole('ottehr-admin');
+    return webqxLogin.hasRole('admin');
   },
 
   /**
    * Check if current user can access pharmacy features
    */
   canAccessPharmacy(): boolean {
-    return webqxLogin.hasAnyRole(['ottehr-admin', 'ottehr-pharmacy']);
+    return webqxLogin.hasAnyRole(['admin', 'pharmacy']);
   },
 
   /**
    * Check if current user can access delivery features
    */
   canAccessDelivery(): boolean {
-    return webqxLogin.hasAnyRole(['ottehr-admin', 'ottehr-delivery']);
+    return webqxLogin.hasAnyRole(['admin', 'delivery']);
   },
 
   /**
    * Check if current user is a standard user
    */
   isStandardUser(): boolean {
-    return webqxLogin.hasRole('ottehr-user');
+    return webqxLogin.hasRole('user');
   },
 
   /**

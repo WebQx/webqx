@@ -8,19 +8,20 @@ class ModuleCardsAPI {
     }
 
     async openAppointments() {
-        window.location.href = `${this.baseURL}/demo-fhir-r4-appointment-booking.html`;
+    window.location.href = `${this.baseURL}/index.html#appt`;
     }
 
     async openMedicalRecords() {
-        window.location.href = `${this.baseURL}/demo-lab-results-viewer.html`;
+    window.location.href = `${this.baseURL}/index.html#labs`;
     }
 
     async openPrescriptions() {
-        window.location.href = `${this.baseURL}/demo/PharmacyLocator-demo.html`;
+        // Route to patient portal prescriptions (production target TBD)
+        window.location.href = `${this.baseURL}/patient-portal/`;
     }
 
     async openTelehealth() {
-        window.location.href = `${this.baseURL}/telehealth.html`;
+        window.location.href = `${this.baseURL}/telehealth/`;
     }
 
     async openMessages() {

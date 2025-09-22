@@ -46,7 +46,7 @@ function start() {
   });
 
   // Feature modules / static sections
-  const sections = ['provider', 'patient-portal', 'admin-console', 'auth', 'modules', 'demo', 'telehealth'];
+  const sections = ['provider', 'patient-portal', 'admin-console', 'auth', 'modules', 'telehealth'];
   sections.forEach(sec => {
     if (fs.existsSync(sec)) copyRecursive(sec, path.join(dist, sec));
   });

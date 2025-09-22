@@ -14,9 +14,6 @@ const STATIC_RESOURCES = [
     '/',
     '/index.html',
     '/login.html',
-    '/telehealth-demo.html',
-    '/api-mock.js',
-    '/github-pages-integration-patch.js',
     '/assets/webqx-styles.css',
     '/assets/healthcare-themes.css',
     '/manifest.json'

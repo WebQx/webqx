@@ -9,7 +9,7 @@ if (!fs.existsSync(distDir)) {
     fs.mkdirSync(distDir, { recursive: true });
 }
 
-console.log('Building static site for GitHub Pages...');
+console.log('Building static site for GitHub Pages (production-only)...');
 
 // Detect Railway-backed API/EMR endpoints provided via CI environment or local config/pages-runtime.json
 let RUNTIME_API_BASE = process.env.RAILWAY_PUBLIC_API_BASE || '';
@@ -51,21 +51,9 @@ try {
     console.warn('Portal build failed (continuing without portal):', err.message);
 }
 
-// HTML files to copy
+// HTML files to copy (demos removed)
 const htmlFiles = [
-    'index.html',
-    'login.html',
-    'demo.html',
-    'emr-dashboard.html',
-    'demo-fhir-r4-appointment-booking.html',
-    'demo-lab-results-simple.html',
-    'demo-lab-results-viewer.html',
-    'header-demo.html',
-    'telehealth_demo.html',
-    'telehealth-demo.html',
-    'telehealth-session-demo.html',
-    'whisper-demo.html',
-    'whisper-openemr-demo.html'
+    'index.html'
 ];
 
 // Copy HTML files
@@ -90,7 +78,6 @@ htmlFiles.forEach(file => {
 
 // Copy directories with HTML files
 const directoriesToCopy = [
-    'demo',
     'provider',
     'patient-portal',
     'auth',
@@ -146,180 +133,21 @@ function copyDirectoryRecursive(src, dest) {
     });
 }
 
-// Copy demo directory if it exists
-const demoDir = path.join(__dirname, '..', 'demo');
-if (fs.existsSync(demoDir)) {
-    const demoDest = path.join(distDir, 'demo');
-    if (!fs.existsSync(demoDest)) {
-        fs.mkdirSync(demoDest, { recursive: true });
-    }
-    
-    const demoFiles = fs.readdirSync(demoDir);
-    demoFiles.forEach(file => {
-        if (file.endsWith('.html') || file.endsWith('.js') || file.endsWith('.css')) {
-            fs.copyFileSync(
-                path.join(demoDir, file),
-                path.join(demoDest, file)
-            );
-            console.log(`Copied demo: ${file}`);
-        }
-    });
-}
+// Demo directory intentionally excluded from production build
 
-// Copy standalone JS files (not server files or tests)
-const rootFiles = fs.readdirSync(path.join(__dirname, '..'));
-rootFiles.forEach(file => {
-    if (file.endsWith('.js') && 
-        !file.includes('server') && 
-        !file.includes('lambda') && 
-        !file.includes('test') &&
-        !file.startsWith('jest')) {
-        
-        const srcPath = path.join(__dirname, '..', file);
-        const destPath = path.join(distDir, file);
-        fs.copyFileSync(srcPath, destPath);
-        console.log(`Copied JS: ${file}`);
-    }
-});
+// Skip copying arbitrary root JS files for production build
 
-// Copy CSS files if any exist
-rootFiles.forEach(file => {
-    if (file.endsWith('.css')) {
-        const srcPath = path.join(__dirname, '..', file);
-        const destPath = path.join(distDir, file);
-        fs.copyFileSync(srcPath, destPath);
-        console.log(`Copied CSS: ${file}`);
-    }
-});
+// Skip copying root CSS; handled by app pipelines
 
-// Create mock API script for GitHub Pages
-const mockApiScript = `
-// Mock API endpoints for GitHub Pages static deployment
-window.mockAPI = {
-    '/health': {
-        status: 'healthy',
-        fhir: 'connected',
-        timestamp: new Date().toISOString()
-    },
-    '/dev/token': {
-        access_token: 'demo-token-' + Math.random().toString(36).substr(2, 9)
-    },
-    '/fhir/Patient': {
-        entry: [{
-            resource: {
-                id: 'demo-patient-1',
-                name: [{
-                    given: ['John'],
-                    family: 'Doe'
-                }],
-                birthDate: '1980-01-15',
-                gender: 'male',
-                telecom: [{
-                    system: 'email',
-                    value: 'john.doe@example.com'
-                }],
-                identifier: [{
-                    value: 'P001234567'
-                }]
-            }
-        }]
-    },
-    '/fhir/Appointment': {
-        entry: [{
-            resource: {
-                id: 'demo-appointment-1',
-                status: 'booked',
-                start: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                description: 'Annual Physical Examination',
-                participant: [{
-                    actor: {
-                        display: 'Dr. Sarah Johnson'
-                    }
-                }]
-            }
-        }]
-    },
-    '/api/auth/profile': {
-        success: false,
-        message: 'Demo mode - authentication disabled'
-    }
-};
-
-// Override fetch for demo endpoints
-const originalFetch = window.fetch;
-window.fetch = function(url, options) {
-    // Handle relative URLs
-    const fullUrl = url.startsWith('/') ? url : '/' + url;
-    
-    if (window.mockAPI[fullUrl]) {
-        return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(window.mockAPI[fullUrl])
-        });
-    }
-    
-    // For authentication endpoints, return demo data
-    if (fullUrl.includes('/api/auth/') || fullUrl.includes('/login')) {
-        return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({
-                success: true,
-                user: {
-                    id: 'demo-user-1',
-                    name: 'Demo User',
-                    email: 'demo@webqx.com',
-                    accountStatus: 'Active'
-                },
-                token: 'demo-token-12345'
-            })
-        });
-    }
-    
-    // For other URLs, try original fetch but handle errors gracefully
-    return originalFetch.apply(this, arguments).catch(error => {
-        console.warn('Fetch failed, using mock data:', error);
-        return {
-            ok: false,
-            json: () => Promise.resolve({error: 'Service unavailable in demo mode'})
-        };
-    });
-};
-
-// Set up demo authentication for GitHub Pages
-if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('authToken', 'demo-token-12345');
-    localStorage.setItem('user', JSON.stringify({
-        id: 'demo-user-1',
-        name: 'Demo User',
-        email: 'demo@webqx.com',
-        accountStatus: 'Active'
-    }));
-}
-
-// GitHub Pages specific: Handle routing for login
-if (window.location.pathname === '/login' || window.location.pathname === '/webqx/login') {
-    window.location.href = window.location.href.replace(/\\/login$/, '/login.html');
-}
-`;
-
-fs.writeFileSync(path.join(distDir, 'api-mock.js'), mockApiScript);
-console.log('Created: api-mock.js');
-
-// Copy GitHub Pages integration patch
-const integrationPatchSrc = path.join(__dirname, '..', 'integrations', 'github-pages-integration-patch.js');
-if (fs.existsSync(integrationPatchSrc)) {
-    const integrationPatchDest = path.join(distDir, 'github-pages-integration-patch.js');
-    fs.copyFileSync(integrationPatchSrc, integrationPatchDest);
-    console.log('Copied: github-pages-integration-patch.js');
-}
+// No demo mocks or Pages integration patch in production build
 
 // If Railway endpoints are provided, generate a tiny runtime config consumed by webqx-remote-config.js
 if (USING_RUNTIME_CONFIG) {
-    const runtimeCfg = `// Generated by build-pages.js (GitHub Actions)
+    const runtimeCfg = `// Generated by build-pages.js (production)
 window.WEBQX_PROD_API = ${JSON.stringify(RUNTIME_API_BASE)};
 window.WEBQX_PROD_EMR = ${JSON.stringify(RUNTIME_EMR_BASE || RUNTIME_API_BASE.replace('api.', 'emr.'))};
 window.WEBQX_FORCE_ENV = 'remote';
-console.log('🔧 Runtime config injected for Railway:', window.WEBQX_PROD_API, '→ EMR:', window.WEBQX_PROD_EMR);
+console.log('🔧 Runtime config injected:', window.WEBQX_PROD_API, '→ EMR:', window.WEBQX_PROD_EMR);
 `;
     fs.writeFileSync(path.join(distDir, 'runtime-config.js'), runtimeCfg);
     console.log('Created: runtime-config.js');
@@ -333,63 +161,9 @@ if (fs.existsSync(swSrc)) {
     console.log('Copied: webqx-sw.js');
 }
 
-// Update HTML files to include mock API and integration patch
-htmlFiles.forEach(file => {
-    const filePath = path.join(distDir, file);
-    if (fs.existsSync(filePath)) {
-        let content = fs.readFileSync(filePath, 'utf8');
-        
-        // Add mock API script and integration patch before closing head tag
-        if (content.includes('</head>') && !content.includes('api-mock.js')) {
-            const inject = [];
-            // For standalone demo HTMLs, keep mock API to make them functional on Pages
-            inject.push('    <script src="api-mock.js"></script>');
-            inject.push('    <script src="github-pages-integration-patch.js"></script>');
-            content = content.replace('</head>', inject.join('\n') + '\n</head>');
-            fs.writeFileSync(filePath, content);
-            console.log(`Updated: ${file} with mock API and integration patch`);
-        }
-    }
-});
+// No mock or patch injection
 
-// Create README for GitHub Pages
-const readmeContent = `# WebQX Healthcare Platform - GitHub Pages Demo
-
-This is a static demo deployment of the WebQX Healthcare Platform.
-
-## Available Demos:
-- [Main Patient Portal](index.html)
-- [Login Demo](login.html)
-- [Telehealth Demo](telehealth-demo.html)
-- [Whisper Demo](whisper-demo.html)
-- [FHIR Appointment Booking](demo-fhir-r4-appointment-booking.html)
-- [Lab Results Viewer](demo-lab-results-viewer.html)
-- [OpenEMR Integration](whisper-openemr-demo.html)
-
-## Features Demonstrated:
-- Patient portal interface
-- Appointment scheduling
-- Lab results viewing
-- Telehealth integration
-- Multi-language support
-- FHIR R4 compatibility
-- Mock authentication system
-
-Note: This is a static demo with mock data for demonstration purposes.
-The full platform includes backend services, real authentication, and database integration.
-
-## Local Development:
-\`\`\`bash
-npm install
-npm run build:pages
-\`\`\`
-
-## Live Demo:
-Visit the GitHub Pages deployment to see the platform in action.
-`;
-
-fs.writeFileSync(path.join(distDir, 'README.md'), readmeContent);
-console.log('Created: README.md');
+// Skip demo-oriented README in production build
 
 // Copy portal dist output if built, but place at root (unified SPA)
 const portalDist = path.join(__dirname, '..', 'portal', 'dist');
@@ -420,33 +194,8 @@ if (fs.existsSync(portalDist)) {
             }
             // Ensure tags (idempotent)
             if (USING_RUNTIME_CONFIG) ensure(`  <script src="./runtime-config.js?v=${ver}"></script>`);
-            // Redirect GitHub Pages visitors to the live Railway app (can be disabled via WEBQX_DISABLE_REDIRECT)
-            const redirectSnippet = [
-                '  <script id="webqx-redirect">',
-                '    (function(){try{',
-                '      // Opt-out via global, localStorage flag, or query param',
-                "      var qsNo = /[?&]no-redirect=1(?:&|$)/.test(location.search);",
-                "      var lsNo = false; try { lsNo = localStorage.getItem('WEBQX_DISABLE_REDIRECT') === 'true'; } catch(e) {}",
-                '      if (window.WEBQX_DISABLE_REDIRECT || lsNo || qsNo) return;',
-                '      var isPages = /github\\.io$/i.test(location.hostname);',
-                '      var p = location.pathname.toLowerCase();',
-                "      var isEMR = p.indexOf('/emr') === 0 || p === '/' || p.endsWith('/index.html') || p.endsWith('/emr/index.html');",
-                '      if (!isPages || !isEMR) return;',
-                "      var target = (window.WEBQX_PROD_EMR || 'https://webqx-production.up.railway.app').replace(/\\/$/, '');",
-                "      var dest = target + '/index.html';",
-                '      if (location.href !== dest) { location.replace(dest); }',
-                '    }catch(e){console.warn("redirect skipped:", e);} })();',
-                '  </script>'
-            ].join('\n');
-            ensure(redirectSnippet);
             ensure(`  <script src="./webqx-remote-config.js?v=${ver}"></script>`);
             ensure(`  <script src="./pages-spa-api-proxy.js?v=${ver}"></script>`);
-            if (fs.existsSync(path.join(distDir, 'github-pages-integration-patch.js'))) {
-                ensure(`  <script src="./github-pages-integration-patch.js?v=${ver}"></script>`);
-            }
-            if (!USING_RUNTIME_CONFIG && fs.existsSync(path.join(distDir, 'api-mock.js'))) {
-                ensure(`  <script src="./api-mock.js?v=${ver}"></script>`);
-            }
             const marker = '<!-- webqx-runtime-injected -->';
             if (!html.includes(marker)) {
                 html = html.replace('</head>', '  ' + marker + '\n</head>');
@@ -494,4 +243,4 @@ try {
 }
 
 console.log('\\nBuild complete! The static site is ready in the dist/ directory.');
-console.log('You can now commit and push to trigger GitHub Pages deployment.');
+console.log('You can now commit and push to trigger GitHub Pages deployment (production-only).');

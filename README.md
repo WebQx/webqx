@@ -228,9 +228,9 @@ Primary Care, Radiology, Cardiology, Pediatrics, Oncology, Psychiatry, Endocrino
 
 ## 🚀 Deployment
 
-- AWS Lambda: Automated packaging, optimized dependencies
-- Railway: Zero-config deployment, health monitoring
-- Local: Mock FHIR/openEHR servers
+- Railway (recommended): Zero-config container deployment, health monitoring
+- Docker Compose: Local multi-service orchestration
+- Local: Mock FHIR/openEHR servers for dev
 
 ---
 
