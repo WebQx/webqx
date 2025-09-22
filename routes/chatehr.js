@@ -8,6 +8,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { body, param, query, validationResult } = require('express-validator');
 const ChatEHRService = require('../services/chatEHRService');
+const { createDynamicRateLimit } = require('../middleware/dynamicRateLimit');
 
 const router = express.Router();
 
@@ -16,19 +17,24 @@ const chatEHRService = new ChatEHRService({
     enableAuditLogging: process.env.HIPAA_AUDIT_ENABLED === 'true'
 });
 
-// Rate limiting for ChatEHR endpoints
-const chatEHRRateLimit = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: {
-        error: 'Too many ChatEHR requests from this IP, please try again later.',
-        code: 'RATE_LIMIT_EXCEEDED'
-    },
-    standardHeaders: true,
-    legacyHeaders: false
+// Dynamic rate limiting for ChatEHR endpoints
+const chatEHRRateLimit = createDynamicRateLimit({
+    configType: 'chatEHR',
+    endpointName: 'chatehr',
+    // Fallback to static rate limiting if dynamic fails
+    fallbackOptions: {
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100, // Limit each IP to 100 requests per windowMs
+        message: {
+            error: 'Too many ChatEHR requests from this IP, please try again later.',
+            code: 'RATE_LIMIT_EXCEEDED'
+        },
+        standardHeaders: true,
+        legacyHeaders: false
+    }
 });
 
-// Apply rate limiting to all ChatEHR routes
+// Apply dynamic rate limiting to all ChatEHR routes
 router.use(chatEHRRateLimit);
 
 // Middleware to validate request and handle errors
@@ -398,6 +404,80 @@ router.get('/health',
                 service: 'ChatEHR',
                 error: error.message,
                 timestamp: new Date().toISOString()
+            });
+        }
+    }
+);
+
+/**
+ * GET /chatehr/rate-limit-stats
+ * Get dynamic rate limiting statistics for monitoring
+ */
+router.get('/rate-limit-stats',
+    requireAuth,
+    requireRole(['admin', 'system']),
+    async (req, res) => {
+        try {
+            const stats = chatEHRRateLimit.getStats();
+            const allStats = chatEHRRateLimit.getAllStats();
+            
+            res.json({
+                success: true,
+                data: {
+                    endpoint: stats,
+                    global: allStats,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        } catch (error) {
+            console.error('[ChatEHR Routes] Error getting rate limit stats:', error);
+            res.status(500).json({
+                success: false,
+                error: {
+                    code: 'INTERNAL_ERROR',
+                    message: 'Failed to get rate limit statistics'
+                }
+            });
+        }
+    }
+);
+
+/**
+ * POST /chatehr/rate-limit-config
+ * Update dynamic rate limiting configuration (admin only)
+ */
+router.post('/rate-limit-config',
+    requireAuth,
+    requireRole(['admin']),
+    [
+        body('lowTrafficThreshold').optional().isInt({ min: 1 }),
+        body('highTrafficThreshold').optional().isInt({ min: 1 }),
+        body('minRateLimit').optional().isInt({ min: 1 }),
+        body('maxRateLimit').optional().isInt({ min: 1 }),
+        body('adjustmentSensitivity').optional().isFloat({ min: 0, max: 1 })
+    ],
+    validateRequest,
+    async (req, res) => {
+        try {
+            const newConfig = req.body;
+            chatEHRRateLimit.updateConfig(newConfig);
+            
+            res.json({
+                success: true,
+                message: 'Rate limiting configuration updated',
+                data: {
+                    updatedConfig: newConfig,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        } catch (error) {
+            console.error('[ChatEHR Routes] Error updating rate limit config:', error);
+            res.status(500).json({
+                success: false,
+                error: {
+                    code: 'INTERNAL_ERROR',
+                    message: 'Failed to update rate limit configuration'
+                }
             });
         }
     }
