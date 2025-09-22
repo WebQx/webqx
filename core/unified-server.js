@@ -21,6 +21,8 @@ const fs = require('fs');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 require('dotenv').config();
 
@@ -298,9 +300,10 @@ class UnifiedHealthcareServer {
         });
         this.app.use(globalLimiter);
 
-    // Body parsing middleware
+    // Body & cookie parsing middleware
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
+    this.app.use(cookieParser());
 
     // Custom layered middleware (order matters lightly: security -> auth decode -> metrics -> audit)
     if (securityMiddleware) this.app.use(securityMiddleware);
@@ -351,6 +354,29 @@ class UnifiedHealthcareServer {
 
         // Patient portal routes
         this.setupPatientPortalRoutes();
+
+        // Simple auth gate for provider/admin areas
+        const requireProviderAuth = (req, res, next) => {
+            try {
+                const token = req.cookies && req.cookies.provider_token;
+                if (!token) throw new Error('NO_TOKEN');
+                const secret = process.env.JWT_SECRET || 'webqx-provider-secret';
+                const decoded = jwt.verify(token, secret);
+                req.user = decoded;
+                return next();
+            } catch (_) {
+                const ret = encodeURIComponent(req.originalUrl || '/provider/');
+                return res.redirect(302, `/auth/providers/login.html?return=${ret}`);
+            }
+        };
+
+        // Apply the gate to provider and admin-console sections (GET navigations only)
+        this.app.use((req, res, next) => {
+            if (req.method === 'GET' && (req.path.startsWith('/provider') || req.path.startsWith('/admin-console'))) {
+                return requireProviderAuth(req, res, next);
+            }
+            return next();
+        });
 
         // Health check for the platform gateway
         this.app.get('/health', (req, res) => {
