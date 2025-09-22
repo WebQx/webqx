@@ -169,43 +169,47 @@ class UnifiedHealthcareServer {
         // CORS configuration for remote access
         const corsOptions = {
             origin: (origin, callback) => {
-                // Allow requests with no origin (mobile apps, Postman, etc.)
+                // Allow requests with no origin (mobile apps, Postman, curl)
                 if (!origin) return callback(null, true);
-                
-                // In production, you might want to restrict to specific domains
+
+                // In production, restrict to known domains (with optional env override)
                 if (this.config.environment === 'production') {
-                    // Add your allowed domains here
-                    const allowedOrigins = [
-                        /^https?:\/\/.*\.webqx\..*$/,          // WebQx subdomains on any TLD (e.g., emr.webqx.com)
-                        /^https?:\/\/(www\.)?webqx\.com$/,      // Apex/root domain and www
-                        /^https?:\/\/.*\.railway\.app$/,        // Railway hosted domains
-                        /^https?:\/\/webqx\.github\.io$/,       // GitHub Pages for this repo/org
-                        /^https?:\/\/localhost:\\d+$/,          // Local development
-                        /^https?:\/\/192\.168\.\d+\.\d+:\\d+$/,  // Local network
-                        /^https?:\/\/10\.\d+\.\d+\.\d+:\\d+$/,   // Private network
-                        /^https?:\/\/172\.1[6-9]\.\d+\.\d+:\\d+$/,  // Private network
-                        /^https?:\/\/172\.2[0-9]\.\d+\.\d+:\\d+$/,  // Private network
-                        /^https?:\/\/172\.3[0-1]\.\d+\.\d+:\\d+$/   // Private network
+                    const envAllowed = (process.env.ALLOWED_ORIGINS || '')
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(Boolean);
+
+                    const defaultAllowedOrigins = [
+                        /^https?:\/\/(.+\.)?webqx\.[a-z]+$/i,  // WebQx subdomains on any TLD
+                        /^https?:\/\/(www\.)?webqx\.com$/i,    // Apex/root domain and www
+                        /^https?:\/\/.+\.railway\.app$/i,      // Railway hosted domains
+                        /^https?:\/\/webqx\.github\.io$/i,     // GitHub Pages
+                        /^https?:\/\/localhost(:\d+)?$/i,       // Localhost (any port)
+                        /^https?:\/\/127\.0\.0\.1(:\d+)?$/i,  // Loopback
+                        /^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/i, // Private network
+                        /^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/i,  // Private network
+                        /^https?:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+(:\d+)?$/i // Private network
                     ];
-                    
-                    const isAllowed = allowedOrigins.some(pattern => pattern.test(origin));
-                    if (isAllowed) {
-                        callback(null, true);
-                    } else {
-                        console.warn(`⚠️ CORS blocked origin: ${origin}`);
-                        callback(new Error('CORS policy violation'));
+
+                    const isAllowedByEnv = envAllowed.length > 0 && envAllowed.includes(origin);
+                    const isAllowedByDefault = defaultAllowedOrigins.some(pattern => pattern.test(origin));
+
+                    if (isAllowedByEnv || isAllowedByDefault) {
+                        return callback(null, true);
                     }
-                } else {
-                    // Development mode - allow all origins
-                    callback(null, true);
+                    console.warn(`⚠️ CORS blocked origin: ${origin}`);
+                    return callback(new Error('CORS policy violation'));
                 }
+
+                // Development mode - allow all origins
+                return callback(null, true);
             },
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
             allowedHeaders: [
-                'Content-Type', 
-                'Authorization', 
-                'Accept', 
-                'Origin', 
+                'Content-Type',
+                'Authorization',
+                'Accept',
+                'Origin',
                 'X-Requested-With',
                 'X-HTTP-Method-Override',
                 'Cache-Control',
@@ -238,31 +242,40 @@ class UnifiedHealthcareServer {
             }
         });
         
-            // Remote server management endpoints
-            /**
-             * Remotely trigger server start (for placement card)
-             */
-            this.app.post('/api/remote-start', async (req, res) => {
-                // This is a stub: in production, you would use systemd, PM2, or a cloud API
-                // For demo, just return success and log the request
-                console.log('🔔 Remote server start requested from placement card:', req.ip);
-                res.json({ success: true, message: 'Server start triggered (demo mode)' });
-            });
+            // Helper to protect internal endpoints (token-based)
+            const requireInternalAuth = (req, res, next) => {
+                const expected = process.env.INTERNAL_API_TOKEN;
+                if (!expected) return res.status(403).json({ error: 'INTERNAL_API_DISABLED' });
+                const token = req.headers['x-internal-token'] || req.query.token;
+                if (token !== expected) return res.status(401).json({ error: 'UNAUTHORIZED' });
+                return next();
+            };
 
-            /**
-             * Wake endpoint (for remote wake-up)
-             */
-            this.app.post('/api/wake', (req, res) => {
-                console.log('🔔 Remote wake requested:', req.ip);
-                res.json({ success: true, message: 'Server wake triggered (demo mode)' });
-            });
+            // Remote server management endpoints (opt-in only)
+            if (this.config.environment !== 'production' || process.env.ENABLE_REMOTE_CONTROL === 'true') {
+                /**
+                 * Remotely trigger server start (for placement card)
+                 */
+                this.app.post('/api/remote-start', requireInternalAuth, async (req, res) => {
+                    console.log('🔔 Remote server start requested from placement card:', req.ip);
+                    res.json({ success: true, message: 'Server start triggered (demo mode)' });
+                });
 
-            // Local UX helper: allow the login page to call /api/start-server without error
-            this.app.post('/api/start-server', (req, res) => {
-                console.log('🟢 /api/start-server invoked (stub)');
-                // In real deployments, start or check the EMR service here.
-                res.json({ success: true, message: 'Start command accepted (stub). Ensure EMR is running on http://localhost:8080' });
-            });
+                /**
+                 * Wake endpoint (for remote wake-up)
+                 */
+                this.app.post('/api/wake', requireInternalAuth, (req, res) => {
+                    console.log('🔔 Remote wake requested:', req.ip);
+                    res.json({ success: true, message: 'Server wake triggered (demo mode)' });
+                });
+
+                // Local UX helper: allow the login page to call /api/start-server without error
+                this.app.post('/api/start-server', requireInternalAuth, (req, res) => {
+                    console.log('🟢 /api/start-server invoked (stub)');
+                    // In real deployments, start or check the EMR service here.
+                    res.json({ success: true, message: 'Start command accepted (stub). Ensure EMR is running on http://localhost:8080' });
+                });
+            }
 
             /**
              * Server status endpoint (for placement card health check)
@@ -372,12 +385,21 @@ class UnifiedHealthcareServer {
             });
         });
 
-        // Internal observability endpoints (unauthenticated for now)
-        if (metricsMiddleware && metricsMiddleware.metricsEndpoint) {
-            this.app.get('/internal/metrics', metricsMiddleware.metricsEndpoint);
-        }
-        if (auditMiddleware && auditMiddleware.auditEndpoint) {
-            this.app.get('/internal/audit', auditMiddleware.auditEndpoint);
+        // Internal observability endpoints (disabled by default; require opt-in + token)
+        if (process.env.ENABLE_INTERNAL_OBSERVABILITY === 'true') {
+            const internalGuard = (req, res, next) => {
+                const expected = process.env.INTERNAL_API_TOKEN;
+                if (!expected) return res.status(403).json({ error: 'INTERNAL_API_DISABLED' });
+                const token = req.headers['x-internal-token'] || req.query.token;
+                if (token !== expected) return res.status(401).json({ error: 'UNAUTHORIZED' });
+                next();
+            };
+            if (metricsMiddleware && metricsMiddleware.metricsEndpoint) {
+                this.app.get('/internal/metrics', internalGuard, metricsMiddleware.metricsEndpoint);
+            }
+            if (auditMiddleware && auditMiddleware.auditEndpoint) {
+                this.app.get('/internal/audit', internalGuard, auditMiddleware.auditEndpoint);
+            }
         }
 
             // Lightweight module/status API expected by GitHub Pages integration
@@ -489,6 +511,23 @@ class UnifiedHealthcareServer {
      * Setup proxy middleware for all backend services
      */
     setupServiceProxies() {
+        // Mount provider authentication and SSO routes BEFORE generic /api/auth proxy
+        try {
+            const providerAuthRoutes = require('../auth/providers/routes');
+            this.app.use('/api/auth/provider', providerAuthRoutes);
+            console.log('✅ Provider auth routes mounted at /api/auth/provider');
+        } catch (e) {
+            console.warn('⚠️ Provider auth routes not available:', e.message);
+        }
+
+        try {
+            const providerSSORoutes = require('../auth/providers/sso-routes');
+            this.app.use('/api/auth/sso', providerSSORoutes);
+            console.log('✅ Provider SSO routes mounted at /api/auth/sso');
+        } catch (e) {
+            console.warn('⚠️ Provider SSO routes not available:', e.message);
+        }
+
         // Circuit breaker guard for OpenEMR / FHIR
         const circuitGuard = (req, res, next) => {
             if (this.isOpenEMRCircuitOpen && this.isOpenEMRCircuitOpen()) {
@@ -606,6 +645,7 @@ class UnifiedHealthcareServer {
                     res.status(503).json({ error: 'FHIR service unavailable', remote: this.config.useRemoteOpenEMR, circuitOpen: this.isOpenEMRCircuitOpen && this.isOpenEMRCircuitOpen() });
                 }
             }));
+            this._openemrProxiesMounted = true;
             console.log('🔌 OpenEMR & FHIR proxies mounted');
         };
 
