@@ -202,6 +202,18 @@ router.post('/login',
             // Generate token
             const token = generateToken(provider);
 
+            // Set HttpOnly session cookie for server-side protection
+            try {
+                const isProd = (process.env.NODE_ENV === 'production');
+                res.cookie('provider_token', token, {
+                    httpOnly: true,
+                    secure: isProd,
+                    sameSite: 'lax',
+                    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+                    path: '/'
+                });
+            } catch (_) { /* ignore cookie set errors */ }
+
             // Create session
             const sessionId = uuidv4();
             sessions.set(sessionId, {
@@ -420,6 +432,9 @@ router.post('/logout', async (req, res) => {
                 }
             }
         }
+
+        // Clear server-side auth cookie
+        try { res.clearCookie('provider_token', { path: '/' }); } catch {}
 
         res.json({
             success: true,

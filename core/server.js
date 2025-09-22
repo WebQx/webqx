@@ -240,34 +240,7 @@ try {
 
 // Ottehr API routes (removed)
 
-// Telepsychiatry API routes
-const sessionRoutes = require('./routes/session');
-const consentRoutes = require('./routes/consent');
-const workflowRoutes = require('./routes/workflow');
-const emrRoutes = require('./routes/emr');
-const analyticsRoutes = require('./routes/analytics');
-const chatRoutes = require('./routes/chat');
-const uiRoutes = require('./routes/ui');
-
-// Mount telepsychiatry routes with authentication
-app.use('/session', authenticateToken, sessionRoutes);
-app.use('/consent', authenticateToken, consentRoutes);
-app.use('/workflow', authenticateToken, workflowRoutes);
-app.use('/emr', authenticateToken, emrRoutes);
-app.use('/analytics', authenticateToken, analyticsRoutes);
-app.use('/chat', authenticateToken, chatRoutes);
-app.use('/ui', authenticateToken, uiRoutes);
-
-console.log('✅ Telepsychiatry API routes loaded');
-
-// ChatEHR Integration routes
-try {
-    const chatEHRRoutes = require('./routes/chatehr');
-    app.use('/api/chatehr', authenticateToken, chatEHRRoutes);
-    console.log('✅ ChatEHR API routes loaded');
-} catch (error) {
-    console.warn('⚠️ ChatEHR routes not available:', error.message);
-}
+// Telepsychiatry and ChatEHR integrations removed
 
 // Test routes (development only)
 if (process.env.NODE_ENV === 'development') {
@@ -287,9 +260,9 @@ try {
 
 
 
-// Serve login page
+// Serve login page: redirect to provider login
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html'));
+    res.redirect(302, '/auth/providers/login.html');
 });
 
 // Authentication middleware for patient portal
@@ -410,14 +383,14 @@ app.post('/api/whisper/translate', (req, res) => {
     }
 });
 
-// Serve the login page
+// Serve the login page: redirect to provider login
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html'));
+    res.redirect(302, '/auth/providers/login.html');
 });
 
-// Serve the main patient portal (only for root path)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// Home page is production login
+app.get(['/', '/index.html'], (req, res) => {
+    res.redirect(302, '/auth/providers/login.html');
 });
 
 // Catch all other routes and serve the patient portal (moved to end)
