@@ -1,5 +1,7 @@
 # WebQx Global - Frontend-Backend Communication Architecture 🌐
 
+> NOTE: This repository is now container-first (Docker/Railway). Any references or examples involving AWS Serverless/Lambda/API Gateway or CloudFormation are historical and deprecated. Prefer Nginx reverse proxy, container deployments, and Railway/GitHub Pages workflows described below.
+
 ## Current Architecture Overview
 
 ### **Frontend (GitHub Pages) ↔ Backend (Local Server) Communication**
@@ -52,7 +54,7 @@ const corsOptions = {
 
 ### **Option 1: Cloud API Gateway (Recommended for Production)**
 
-#### **AWS API Gateway + Lambda**
+#### [DEPRECATED] AWS API Gateway + Lambda
 ```yaml
 # serverless.yml
 service: webqx-api-gateway

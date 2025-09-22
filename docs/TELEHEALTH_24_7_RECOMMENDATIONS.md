@@ -1,5 +1,7 @@
 # 🎥 **WebQx Global - 24/7 Telehealth Accessibility Recommendations**
 
+> NOTE: The active deployment strategy is container-first (Docker/Railway) with Nginx as the gateway. Any serverless/Lambda examples in this document are for historical context and are deprecated. Use the Railway/Docker guidance and reverse proxy patterns instead.
+
 ## 🌍 **Executive Summary: Global 24/7 Telehealth Strategy**
 
 Based on your comprehensive telehealth infrastructure and global EMR platform, here are my strategic recommendations for **24/7 Telehealth accessibility** for millions of users worldwide.
