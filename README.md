@@ -1,21 +1,70 @@
-# WebQX™ Healthcare Platform
+WebQx EMR is a fully customized, production-ready healthcare platform built on the latest version of OpenEMR, rebranded and deployed via Railway for seamless scalability. Every page, URL, and login screen reflects the WebQx EMR identity, offering a unified experience across roles. The home page features a secure, role-based login for Physicians, Patients, and Admins, directing each to tailored portals: the Provider Panel includes enhanced OpenEMR modules, a Telehealth Physician Bot, and Whisper-powered medical transcription; the Patient Portal combines personalized health records with telehealth access and an AI-driven health literacy assistant; and the Admin Console supports system oversight, compliance, and multilingual identity flows. WebQx EMR is designed to deliver privacy-preserving, accessible care with intelligent automation and global usability at its core.
 
-[!IMPORTANT]
-Read the Authoritative Roadmap first: docs/ROADMAP.md. All changes must align with RabbitMQ messaging, Whisper transcription, OpenEMR rebrand, multilingual templates, compliance (GDPR/HIPAA/ISO 27701), Django ops, and Railway deployment strategy.
+# WebQx EMR — Roadmap-First README
 
-> Cloud-based, FHIR-compliant, global healthcare ecosystem with OpenEMR integration
+This README is intentionally lean and focuses on the active roadmap. For setup and deployment, refer to repository folders/scripts. The authoritative plan lives in `docs/ROADMAP.md`.
 
-> Latest Enhancements (2025-09): Added security middleware stack, circuit breaker for remote OpenEMR/FHIR proxy, internal metrics & audit endpoints. All mock/demo endpoints removed from production build.
+## High-level roadmap (snapshot)
 
-> Operational Hardening (2025-09-18): Port reservation & retry (prevents EADDRINUSE), dual user lookup (email + UUID) fixing inactive profile issue, deferred OpenEMR/FHIR proxy mounting (eliminates early 404/metadata race), structured platform gateway logging helper, dev diagnostics endpoint `/internal/users` (non-production), graceful retry for child service startup.
+Read first: `docs/ROADMAP.md`. This snapshot mirrors its Milestones and Principles.
 
-![WebQX CI & Deployment](https://github.com/${GITHUB_REPOSITORY:-webqx/webqx}/actions/workflows/deploy.yml/badge.svg)
+M1 — Stabilize Build/Deploy (Short term)
+- [x] GitHub Pages deploy
+- [x] Railway API deploy
+- [ ] Railway EMR deploy (secrets + health check wired)
+- [ ] Set `RAILWAY_PUBLIC_EMR_BASE` and ensure SPA integrations
 
-## 🌍 Live Demo
-**GitHub Pages:** https://webqx.github.io/EMR/  
-**OpenEMR Instance:** https://fuzzy-goldfish-7vx645x7wgvv3rjxg-8085.app.github.dev
+M2 — Telehealth + Whisper
+- [ ] Whisper microservice packaged with auth
+- [ ] Telehealth physician assistant service endpoints
+- [ ] Audio capture, streaming, and consent UI
 
----
+M3 — Messaging Backbone
+- [ ] RabbitMQ service provisioning
+- [ ] Event schemas and module adapters
+- [ ] Dead-letter and monitoring dashboards
+
+M4 — Multilingual & Accessibility
+- [ ] i18n baseline with locale switcher across portals
+- [ ] Template parity with OpenEMR patterns
+- [ ] WCAG 2.2 AA auditing
+
+M5 — Compliance & Django Ops
+- [ ] Audit trail ingestion and visualization
+- [ ] DSAR/export flows and RBAC scopes
+- [ ] Django ops backend deployed (Railway)
+
+Principles (must not break)
+- Security-first; no plaintext secrets or debug endpoints in prod
+- Privacy-preserving defaults; collect only what’s needed
+- Maintainability; keep structure consistent and patches modular
+- Observability; structured logs, health checks, metrics everywhere
+- Backward compatibility for public URLs unless redirect plan exists
+
+Last updated snapshot: 2025-09-22 • Source of truth: `docs/ROADMAP.md`
+﻿WebQx EMR is a fully customized, production-ready healthcare platform built on the latest version of OpenEMR, rebranded and deployed via Railway for seamless scalability. Every page, URL, and login screen reflects the WebQx EMR identity, offering a unified experience across roles. The home page features a secure, role-based login for Physicians, Patients, and Admins, directing each to tailored portals: the Provider Panel includes enhanced OpenEMR modules, a Telehealth Physician Bot, and Whisper-powered medical transcription; the Patient Portal combines personalized health records with telehealth access and an AI-driven health literacy assistant; and the Admin Console supports system oversight, compliance, and multilingual identity flows. WebQx EMR is designed to deliver privacy-preserving, accessible care with intelligent automation and global usability at its core.
+
+# WebQx EMR — Roadmap-First README
+
+This README is intentionally lean and focuses on the active roadmap. For setup and deployment, refer to repository folders/scripts. The authoritative plan lives in `docs/ROADMAP.md`.
+
+## High-level roadmap (snapshot)
+
+Read first: `docs/ROADMAP.md`. This snapshot mirrors its Milestones and Principles.
+
+M1 — Stabilize Build/Deploy (Short term)
+
+M2 — Telehealth + Whisper
+
+M3 — Messaging Backbone
+
+M4 — Multilingual & Accessibility
+
+M5 — Compliance & Django Ops
+
+Principles (must not break)
+
+Last updated snapshot: 2025-09-22 • Source of truth: `docs/ROADMAP.md`
 
 ## ✨ Features
 
