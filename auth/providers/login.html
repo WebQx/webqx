@@ -692,11 +692,9 @@
 
     <!-- JavaScript -->
     <script>
-        // GitHub Pages compatibility - detect if we're on GitHub Pages
-        const isGitHubPages = window.location.hostname.includes('github.io');
+        // Production mode only
+        const isGitHubPages = false;
         const urlParams = new URLSearchParams(window.location.search);
-    const demoParam = urlParams.get('demo');
-    const autologinParam = urlParams.get('autologin');
         const preselectRoleParam = urlParams.get('role');
         const returnParam = urlParams.get('return');
     const launchParam = urlParams.get('launch');
@@ -711,25 +709,25 @@
                         name: 'Physician',
                         description: 'Full access to patient records, prescribing, and clinical modules',
                         modules: ['patients', 'prescriptions', 'lab-results', 'imaging', 'scheduling', 'billing'],
-                        redirect: isGitHubPages ? '/webqx/provider/' : '/provider/dashboard/'
+                        redirect: '/provider/dashboard/'
                     },
                     'nurse': {
                         name: 'Nurse',
                         description: 'Access to patient care, medication administration, and vital signs',
                         modules: ['patients', 'vitals', 'medication-admin', 'scheduling', 'care-plans'],
-                        redirect: isGitHubPages ? '/webqx/provider/' : '/provider/dashboard/'
+                        redirect: '/provider/dashboard/'
                     },
                     'pharmacist': {
                         name: 'Pharmacist',
                         description: 'Access to prescription management and medication reconciliation',
                         modules: ['prescriptions', 'medication-reconciliation', 'drug-interactions', 'inventory'],
-                        redirect: isGitHubPages ? '/webqx/provider/' : '/provider/dashboard/'
+                        redirect: '/provider/dashboard/'
                     },
                     'administrator': {
                         name: 'Administrator',
                         description: 'Administrative access to system management and reporting',
                         modules: ['users', 'reporting', 'billing', 'system-config', 'audit-logs'],
-                        redirect: isGitHubPages ? '/webqx/admin-console/' : '/provider/dashboard/'
+                        redirect: '/provider/dashboard/'
                     }
                 };
                 this.init();
@@ -738,7 +736,6 @@
             init() {
                 this.setupFormHandlers();
                 this.checkExistingSession();
-                this.applyDemoAutofillFromQuery();
             }
 
             setupFormHandlers() {
@@ -766,46 +763,11 @@
                 this.setLoading(true);
                 this.clearAlert();
 
-                // Simulate authentication delay
-                setTimeout(() => {
-                    if (this.forceDemoMode()) {
-                        // Mock authentication for GitHub Pages
-                        this.handleMockLogin(credentials);
-                    } else {
-                        // Real authentication would go here
-                        this.handleServerLogin(credentials);
-                    }
-                }, 1000);
+                // Production: perform server login directly
+                this.handleServerLogin(credentials);
             }
 
-            handleMockLogin(credentials) {
-                // Mock successful login for demo
-                const mockUser = {
-                    id: 'demo-provider-1',
-                    username: credentials.username,
-                    name: 'Dr. Demo Provider',
-                    email: credentials.username.includes('@') ? credentials.username : 'demo@webqx.com',
-                    roles: ['physician', 'administrator'],
-                    department: 'Internal Medicine',
-                    licenseNumber: 'MD123456',
-                    lastLogin: new Date().toISOString()
-                };
-
-                // Store auth data
-                this.storeAuthData({
-                    success: true,
-                    token: 'demo-provider-token-' + Math.random().toString(36).substr(2, 9),
-                    user: mockUser
-                }, credentials.rememberMe);
-
-                this.setLoading(false);
-                this.showAlert('Login successful! Please select your role.', 'success');
-                
-                // Show role selection
-                setTimeout(() => {
-                    this.showRoleConfirmation(mockUser.roles);
-                }, 1000);
-            }
+            /* Demo login removed for production */
 
             async handleServerLogin(credentials) {
                 try {
@@ -837,18 +799,7 @@
                 storage.setItem('providerUser', JSON.stringify(result.user));
                 storage.setItem('providerLoginTime', Date.now().toString());
 
-                // Set unified demo session keys for cross-module recognition
-                try {
-                    localStorage.setItem('webqx_demo', '1');
-                    localStorage.setItem('webqx_token', result.token);
-                    localStorage.setItem('webqx_auth_provider', 'demo');
-                    localStorage.setItem('webqx_user', JSON.stringify({
-                        id: result.user.id,
-                        name: result.user.name,
-                        username: result.user.username,
-                        roles: result.user.roles
-                    }));
-                } catch {}
+                // Production: no demo flags stored
             }
 
             showRoleConfirmation(userRoles) {
@@ -927,7 +878,7 @@
                         window.location.href = roleConfig.redirect;
                     }
                 } else {
-                    window.location.href = isGitHubPages ? '/webqx/provider/' : '/provider/dashboard';
+                    window.location.href = '/provider/dashboard';
                 }
             }
 
@@ -978,31 +929,23 @@
                     return;
                 }
                 
-                if (isGitHubPages) {
-                    // Mock forgot password for demo
-                    alert('Demo: Password reset instructions would be sent to ' + email);
-                    this.closeForgotPassword();
-                } else {
-                    // Real forgot password logic would go here
-                    try {
-                        const response = await fetch('/api/auth/provider/forgot-password', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email })
-                        });
-                        
-                        const result = await response.json();
-                        
-                        if (result.success) {
-                            alert('Password reset instructions have been sent to your email address.');
-                            this.closeForgotPassword();
-                        } else {
-                            alert(result.error || 'Failed to send reset instructions. Please try again.');
-                        }
-                    } catch (error) {
-                        console.error('Forgot password error:', error);
-                        alert('Network error. Please check your connection and try again.');
+                // Production: real forgot password
+                try {
+                    const response = await fetch('/api/auth/provider/forgot-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Password reset instructions have been sent to your email address.');
+                        this.closeForgotPassword();
+                    } else {
+                        alert(result.error || 'Failed to send reset instructions. Please try again.');
                     }
+                } catch (error) {
+                    console.error('Forgot password error:', error);
+                    alert('Network error. Please check your connection and try again.');
                 }
             }
 
@@ -1059,23 +1002,9 @@
         }
 
         function initiateSSO(provider) {
-            if (isGitHubPages) {
-                // Mock SSO for demo
-                alert(`Demo: SSO login with ${provider} would be initiated in a real deployment.`);
-                // For demo, proceed with mock login
-                setTimeout(() => {
-                    if (window.providerAuth) {
-                        window.providerAuth.handleMockLogin({
-                            username: `sso-user@${provider}.com`,
-                            password: 'sso-auth',
-                            rememberMe: false
-                        });
-                    }
-                }, 500);
-            } else {
-                // Real SSO logic would go here
-                window.location.href = `/auth/sso/${provider}`;
-            }
+            // Real SSO flow requires server/provider configuration.
+            // Redirect placeholder; update when SSO auth endpoints are finalized.
+            window.location.href = `/auth/providers/login.html?sso=${encodeURIComponent(provider)}`;
         }
 
         function changeLanguage(lang) {
@@ -1100,46 +1029,9 @@
         }
 
         // Helper methods added to prototype
-        GitHubPagesProviderAuth.prototype.forceDemoMode = function() {
-            try {
-                return (demoParam === '1' || demoParam === 'true' || localStorage.getItem('webqx_demo') === '1' || isGitHubPages);
-            } catch { return isGitHubPages; }
-        };
+        GitHubPagesProviderAuth.prototype.forceDemoMode = function() { return false; };
 
-        GitHubPagesProviderAuth.prototype.applyDemoAutofillFromQuery = function() {
-            try {
-                if (!((demoParam === '1' || demoParam === 'true') || (autologinParam === '1' || autologinParam === 'true'))) return;
-                const u = document.getElementById('username');
-                const p = document.getElementById('password');
-                if (u && !u.value) u.value = preselectRoleParam === 'administrator' ? 'admin@webqx.com' : 'physician';
-                if (p && !p.value) p.value = preselectRoleParam === 'administrator' ? 'pass' : 'physician';
-
-                // Trigger mock login immediately with filled credentials
-                const creds = { username: u ? u.value : 'physician', password: p ? p.value : 'physician', rememberMe: true };
-                this.setLoading(true);
-                setTimeout(() => {
-                    this.handleMockLogin(creds);
-                    // After role modal appears, auto-select and confirm if role specified
-                    if (preselectRoleParam) {
-                        const desired = preselectRoleParam;
-                        const trySelect = () => {
-                            if (!this.selectedRole && (desired in this.providerRoles)) {
-                                this.selectedRole = desired;
-                                const confirmBtn = document.getElementById('confirmRoleBtn');
-                                if (confirmBtn) confirmBtn.disabled = false;
-                                if (typeof window.confirmRole === 'function') {
-                                    window.confirmRole();
-                                    return true;
-                                }
-                            }
-                            return false;
-                        };
-                        const maxTries = 20; let count = 0;
-                        const iv = setInterval(() => { if (trySelect() || ++count >= maxTries) clearInterval(iv); }, 200);
-                    }
-                }, 300);
-            } catch {}
-        };
+        GitHubPagesProviderAuth.prototype.applyDemoAutofillFromQuery = function() { /* disabled in production */ };
 
         // Initialize when DOM loads
         document.addEventListener('DOMContentLoaded', () => {
@@ -1177,22 +1069,6 @@
         });
     </script>
     
-    <!-- Add demo user hint for GitHub Pages -->
-    <script>
-        if (window.location.hostname.includes('github.io')) {
-            // Add demo instructions
-            setTimeout(() => {
-                const alertContainer = document.getElementById('alertContainer');
-                const alertMessage = document.getElementById('alertMessage');
-                
-                alertMessage.innerHTML = `
-                    <strong>🎯 Demo Mode:</strong> Use any username/password to test the provider login flow. 
-                    Try: admin@webqx.com / demo123
-                `;
-                alertMessage.className = 'p-4 rounded-lg text-sm bg-blue-500 bg-opacity-20 text-blue-100 border border-blue-400';
-                alertContainer.classList.remove('hidden');
-            }, 2000);
-        }
-    </script>
+    <!-- Production: no demo hints -->
 </body>
 </html>

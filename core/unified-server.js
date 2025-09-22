@@ -479,24 +479,9 @@ class UnifiedHealthcareServer {
         // AI Assist router (mount after proxies to keep ordering predictable)
             // AI Assist mock removed for production-only build
         
-        // Serve main frontend (prefer built artifacts)
-        this.app.get('/', (req, res) => {
-            try {
-                const cwd = process.cwd();
-                const distDir = path.join(cwd, 'dist');
-                const portalDistDir = path.join(cwd, 'portal', 'dist');
-                const candidates = [
-                    path.join(distDir, 'index.html'),
-                    path.join(portalDistDir, 'index.html'),
-                    path.join(cwd, 'index.html')
-                ];
-                for (const p of candidates) {
-                    if (p && fs.existsSync(p)) {
-                        return res.sendFile(p);
-                    }
-                }
-            } catch (_) { /* fall through */ }
-            return res.status(404).send('index.html not found');
+        // Serve homepage as login (root and index explicitly redirect to provider login)
+        this.app.get(['/', '/index.html'], (req, res) => {
+            return res.redirect(302, '/auth/providers/login.html');
         });
 
         // Normalize legacy login paths to provider production login
