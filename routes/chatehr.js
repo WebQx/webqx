@@ -8,6 +8,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { body, param, query, validationResult } = require('express-validator');
 const ChatEHRService = require('../services/chatEHRService');
+const { RateControlMiddleware } = require('../auth/rateControl');
 
 const router = express.Router();
 
@@ -16,20 +17,31 @@ const chatEHRService = new ChatEHRService({
     enableAuditLogging: process.env.HIPAA_AUDIT_ENABLED === 'true'
 });
 
-// Rate limiting for ChatEHR endpoints
-const chatEHRRateLimit = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: {
-        error: 'Too many ChatEHR requests from this IP, please try again later.',
-        code: 'RATE_LIMIT_EXCEEDED'
-    },
-    standardHeaders: true,
-    legacyHeaders: false
-});
+// Initialize rate control middleware
+const rateControlMiddleware = new RateControlMiddleware();
 
-// Apply rate limiting to all ChatEHR routes
-router.use(chatEHRRateLimit);
+// Rate limiting configuration for ChatEHR endpoints
+const chatEHRRateConfig = {
+    standardRateLimit: {
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100, // Limit each IP to 100 requests per windowMs
+        message: {
+            error: 'Too many ChatEHR requests from this IP, please try again later.',
+            code: 'RATE_LIMIT_EXCEEDED'
+        },
+        standardHeaders: true,
+        legacyHeaders: false
+    },
+    tokenCosts: {
+        '/api/chatehr/consultation': { 'post': 5, 'get': 2, 'default': 3 },
+        '/api/chatehr/messages': { 'post': 3, 'get': 1, 'default': 2 },
+        '/api/chatehr/appointments': { 'post': 4, 'get': 1, 'default': 2 },
+        '/api/chatehr/.*': 2 // Default for all other ChatEHR endpoints
+    }
+};
+
+// Apply rate control middleware that handles both premium and standard users
+router.use(rateControlMiddleware.manageRateControl(chatEHRRateConfig));
 
 // Middleware to validate request and handle errors
 const validateRequest = (req, res, next) => {
