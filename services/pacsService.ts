@@ -42,7 +42,17 @@ export interface SeriesInfo {
 }
 
 export interface PACSConfig {
-  orthancUrl: string;
+  /**
+   * DICOMweb base URL (QIDO-RS/WADO-RS/STOW-RS root)
+   * Example (dcm4chee): https://example.com/dcm4chee-arc/aets/DCM4CHEE/rs
+   */
+  dicomwebBaseUrl: string;
+  /**
+   * Backwards-compat: if provided, will be translated to dicomwebBaseUrl when possible
+   * Example (Orthanc): https://orthanc.local -> dicom-web
+   */
+  orthancUrl?: string;
+  /** OHIF viewer base URL */
   ohifViewerUrl: string;
   username?: string;
   password?: string;
@@ -72,9 +82,11 @@ export class PACSService extends EventEmitter {
   private config: PACSConfig;
   private auditLogger?: AuditLogger;
   private cache: Map<string, any> = new Map();
+  private baseUrl: string = '';
 
   constructor(config: PACSConfig) {
     super();
+    // Normalize configuration and maintain backward compatibility
     this.config = {
       ...config,
       maxConcurrentDownloads: config.maxConcurrentDownloads ?? 3,
@@ -82,6 +94,15 @@ export class PACSService extends EventEmitter {
       auditLogging: config.auditLogging ?? true,
       enableDICOMWeb: config.enableDICOMWeb ?? true
     };
+
+    // If only orthancUrl provided, construct a DICOMweb base from it
+    if (!this.config.dicomwebBaseUrl && this.config.orthancUrl) {
+      const trimmed = this.config.orthancUrl.replace(/\/$/, '');
+      // Orthanc DICOMweb is typically exposed at /dicom-web
+      this.config.dicomwebBaseUrl = `${trimmed}/dicom-web`;
+    }
+
+    this.baseUrl = (this.config.dicomwebBaseUrl || '').replace(/\/$/, '');
 
     if (this.config.auditLogging) {
       this.auditLogger = new AuditLogger({
@@ -91,7 +112,82 @@ export class PACSService extends EventEmitter {
       });
     }
 
-    this.logInfo('PACS Service initialized', { config: this.config });
+    this.logInfo('PACS Service initialized', { config: { ...this.config, orthancUrl: undefined } });
+  }
+
+  // --- DICOMweb helpers ---
+  private getTag(ds: any, tag: string): any {
+    if (!ds) return undefined;
+    const e = ds[tag];
+    if (!e) return undefined;
+    if (Array.isArray(e.Value)) return e.Value[0];
+    return e.Value ?? e;
+  }
+
+  private toString(v: any): string { return (v === undefined || v === null) ? '' : String(v); }
+
+  private studyFromQido(ds: any): StudyInfo {
+    const StudyInstanceUID = this.toString(this.getTag(ds, '0020000D'));
+    const PatientID = this.toString(this.getTag(ds, '00100020'));
+    const PatientName = this.toString(this.getTag(ds, '00100010'));
+    const StudyDate = this.toString(this.getTag(ds, '00080020'));
+    const StudyDescription = this.toString(this.getTag(ds, '00081030'));
+    // ModalitiesInStudy can be an array
+    const Modalities = this.getTag(ds, '00080061');
+    const modality = Array.isArray(Modalities?.Value) ? Modalities.Value.join(',') : this.toString(Modalities);
+    const NumberOfStudyRelatedSeries = Number(this.getTag(ds, '00201206')) || 0;
+    const NumberOfStudyRelatedInstances = Number(this.getTag(ds, '00201208')) || 0;
+    return {
+      studyInstanceUID: StudyInstanceUID,
+      patientId: PatientID,
+      patientName: PatientName,
+      studyDate: StudyDate,
+      studyDescription: StudyDescription,
+      modality: modality || 'Unknown',
+      numberOfSeries: NumberOfStudyRelatedSeries,
+      numberOfImages: NumberOfStudyRelatedInstances,
+      series: []
+    };
+  }
+
+  private seriesFromQido(ds: any): SeriesInfo {
+    const SeriesInstanceUID = this.toString(this.getTag(ds, '0020000E'));
+    const SeriesNumber = Number(this.getTag(ds, '00200011')) || 0;
+    const SeriesDescription = this.toString(this.getTag(ds, '0008103E'));
+    const Modality = this.toString(this.getTag(ds, '00080060')) || 'Unknown';
+    const NumberOfSeriesRelatedInstances = Number(this.getTag(ds, '00201209')) || 0;
+    return {
+      seriesInstanceUID: SeriesInstanceUID,
+      seriesNumber: SeriesNumber,
+      seriesDescription: SeriesDescription,
+      modality: Modality,
+      numberOfImages: NumberOfSeriesRelatedInstances,
+      images: []
+    };
+  }
+
+  private imageFromQido(ds: any): DICOMImage {
+    const StudyInstanceUID = this.toString(this.getTag(ds, '0020000D'));
+    const SeriesInstanceUID = this.toString(this.getTag(ds, '0020000E'));
+    const SOPInstanceUID = this.toString(this.getTag(ds, '00080018'));
+    const PatientID = this.toString(this.getTag(ds, '00100020'));
+    const StudyDate = this.toString(this.getTag(ds, '00080020'));
+    const Modality = this.toString(this.getTag(ds, '00080060')) || 'Unknown';
+    const BodyPart = this.toString(this.getTag(ds, '00180015'));
+    const base = this.baseUrl;
+    return {
+      id: SOPInstanceUID,
+      studyInstanceUID: StudyInstanceUID,
+      seriesInstanceUID: SeriesInstanceUID,
+      sopInstanceUID: SOPInstanceUID,
+      patientId: PatientID,
+      studyDate: StudyDate,
+      modality: Modality,
+      bodyPart: BodyPart,
+      imageUrl: `${base}/studies/${StudyInstanceUID}/series/${SeriesInstanceUID}/instances/${SOPInstanceUID}/rendered`,
+      thumbnailUrl: `${base}/studies/${StudyInstanceUID}/series/${SeriesInstanceUID}/instances/${SOPInstanceUID}/thumbnail`,
+      metadata: ds
+    };
   }
 
   /**
@@ -116,15 +212,11 @@ export class PACSService extends EventEmitter {
         return this.cache.get(cacheKey);
       }
 
-      const url = `${this.config.orthancUrl}/patients/${patientId}/studies`;
-      const response = await this.makeRequest(url);
-      
-      const studies: StudyInfo[] = await Promise.all(
-        response.map(async (studyId: string) => {
-          const studyData = await this.getStudyDetails(studyId);
-          return studyData;
-        })
-      );
+      // QIDO-RS search by PatientID
+      const url = `${this.baseUrl}/studies?PatientID=${encodeURIComponent(patientId)}&includefield=all`;
+      const response = await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
+      const studies: StudyInfo[] = (Array.isArray(response) ? response : [])
+        .map((ds: any) => this.studyFromQido(ds));
 
       if (this.config.cacheEnabled) {
         this.cache.set(cacheKey, studies);
@@ -155,25 +247,43 @@ export class PACSService extends EventEmitter {
    */
   async getStudyDetails(studyInstanceUID: string): Promise<StudyInfo> {
     try {
-      const url = `${this.config.orthancUrl}/studies/${studyInstanceUID}`;
-      const studyData = await this.makeRequest(url);
-      
-      const seriesData = await Promise.all(
-        studyData.Series.map(async (seriesId: string) => {
-          return await this.getSeriesDetails(seriesId);
-        })
-      );
+      // QIDO-RS for study record
+      const studyUrl = `${this.baseUrl}/studies?StudyInstanceUID=${encodeURIComponent(studyInstanceUID)}&includefield=all`;
+      const studyResp = await this.makeRequest(studyUrl, { headers: { 'Accept': 'application/dicom+json' } });
+      const study = (Array.isArray(studyResp) && studyResp[0]) ? this.studyFromQido(studyResp[0]) : {
+        studyInstanceUID,
+        patientId: '',
+        patientName: '',
+        studyDate: '',
+        studyDescription: '',
+        modality: 'Unknown',
+        numberOfSeries: 0,
+        numberOfImages: 0,
+        series: []
+      } as StudyInfo;
+
+      // QIDO-RS list series for study
+      const seriesUrl = `${this.baseUrl}/studies/${encodeURIComponent(studyInstanceUID)}/series?includefield=all`;
+      const seriesResp = await this.makeRequest(seriesUrl, { headers: { 'Accept': 'application/dicom+json' } });
+      const seriesList: SeriesInfo[] = (Array.isArray(seriesResp) ? seriesResp : []).map((ds: any) => this.seriesFromQido(ds));
+
+      // For each series, get instances count and a few images
+      const seriesWithImages: SeriesInfo[] = await Promise.all(seriesList.map(async (s) => {
+        try {
+          const instUrl = `${this.baseUrl}/studies/${encodeURIComponent(studyInstanceUID)}/series/${encodeURIComponent(s.seriesInstanceUID)}/instances?includefield=all`;
+          const instResp = await this.makeRequest(instUrl, { headers: { 'Accept': 'application/dicom+json' } });
+          const images: DICOMImage[] = (Array.isArray(instResp) ? instResp : []).map((ds: any) => this.imageFromQido(ds));
+          return { ...s, numberOfImages: images.length || s.numberOfImages, images };
+        } catch (_) {
+          return s;
+        }
+      }));
 
       return {
-        studyInstanceUID: studyData.MainDicomTags.StudyInstanceUID,
-        patientId: studyData.PatientMainDicomTags.PatientID,
-        patientName: studyData.PatientMainDicomTags.PatientName,
-        studyDate: studyData.MainDicomTags.StudyDate,
-        studyDescription: studyData.MainDicomTags.StudyDescription || '',
-        modality: studyData.MainDicomTags.Modality || 'Unknown',
-        numberOfSeries: seriesData.length,
-        numberOfImages: seriesData.reduce((total, series) => total + series.numberOfImages, 0),
-        series: seriesData
+        ...study,
+        numberOfSeries: seriesWithImages.length,
+        numberOfImages: seriesWithImages.reduce((acc, si) => acc + (si.numberOfImages || 0), 0),
+        series: seriesWithImages
       };
 
     } catch (error) {
@@ -187,23 +297,24 @@ export class PACSService extends EventEmitter {
    */
   async getSeriesDetails(seriesInstanceUID: string): Promise<SeriesInfo> {
     try {
-      const url = `${this.config.orthancUrl}/series/${seriesInstanceUID}`;
-      const seriesData = await this.makeRequest(url);
-      
-      const images: DICOMImage[] = await Promise.all(
-        seriesData.Instances.map(async (instanceId: string) => {
-          return await this.getImageDetails(instanceId);
-        })
-      );
+      // QIDO-RS lookup by SeriesInstanceUID
+      const url = `${this.baseUrl}/series?SeriesInstanceUID=${encodeURIComponent(seriesInstanceUID)}&includefield=all`;
+      const resp = await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
+      const series = (Array.isArray(resp) && resp[0]) ? this.seriesFromQido(resp[0]) : {
+        seriesInstanceUID: seriesInstanceUID,
+        seriesNumber: 0,
+        seriesDescription: '',
+        modality: 'Unknown',
+        numberOfImages: 0,
+        images: []
+      } as SeriesInfo;
 
-      return {
-        seriesInstanceUID: seriesData.MainDicomTags.SeriesInstanceUID,
-        seriesNumber: parseInt(seriesData.MainDicomTags.SeriesNumber) || 0,
-        seriesDescription: seriesData.MainDicomTags.SeriesDescription || '',
-        modality: seriesData.MainDicomTags.Modality || 'Unknown',
-        numberOfImages: images.length,
-        images
-      };
+      // Get instances
+      // We also need StudyInstanceUID to build URLs for images; fetch via instances list
+      const instUrl = `${this.baseUrl}/series/${encodeURIComponent(seriesInstanceUID)}/instances?includefield=all`;
+      const instResp = await this.makeRequest(instUrl, { headers: { 'Accept': 'application/dicom+json' } });
+      const images: DICOMImage[] = (Array.isArray(instResp) ? instResp : []).map((ds: any) => this.imageFromQido(ds));
+      return { ...series, numberOfImages: images.length, images };
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -216,23 +327,13 @@ export class PACSService extends EventEmitter {
    */
   async getImageDetails(sopInstanceUID: string): Promise<DICOMImage> {
     try {
-      const url = `${this.config.orthancUrl}/instances/${sopInstanceUID}`;
-      const imageData = await this.makeRequest(url);
-      
-      return {
-        id: sopInstanceUID,
-        studyInstanceUID: imageData.MainDicomTags.StudyInstanceUID,
-        seriesInstanceUID: imageData.MainDicomTags.SeriesInstanceUID,
-        sopInstanceUID: imageData.MainDicomTags.SOPInstanceUID,
-        patientId: imageData.PatientMainDicomTags?.PatientID || '',
-        studyDate: imageData.MainDicomTags.StudyDate || '',
-        modality: imageData.MainDicomTags.Modality || 'Unknown',
-        bodyPart: imageData.MainDicomTags.BodyPartExamined || '',
-        imageUrl: `${this.config.orthancUrl}/instances/${sopInstanceUID}/preview`,
-        thumbnailUrl: `${this.config.orthancUrl}/instances/${sopInstanceUID}/preview?size=150`,
-        metadata: imageData
-      };
-
+      // QIDO-RS: Instances by SOPInstanceUID
+      const url = `${this.baseUrl}/instances?SOPInstanceUID=${encodeURIComponent(sopInstanceUID)}&includefield=all`;
+      const resp = await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
+      if (Array.isArray(resp) && resp[0]) {
+        return this.imageFromQido(resp[0]);
+      }
+      throw new Error('Instance not found');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to get image details: ${errorMessage}`);
@@ -243,10 +344,8 @@ export class PACSService extends EventEmitter {
    * Get OHIF viewer URL for a study
    */
   getViewerUrl(studyInstanceUID: string): string {
-    const orthancStudiesUrl = encodeURIComponent(
-      `${this.config.orthancUrl}/dicom-web/studies`
-    );
-    return `${this.config.ohifViewerUrl}?url=${orthancStudiesUrl}&StudyInstanceUIDs=${studyInstanceUID}`;
+    const qidoStudiesUrl = encodeURIComponent(`${this.baseUrl}/studies`);
+    return `${this.config.ohifViewerUrl}?url=${qidoStudiesUrl}&StudyInstanceUIDs=${encodeURIComponent(studyInstanceUID)}`;
   }
 
   /**
@@ -271,29 +370,19 @@ export class PACSService extends EventEmitter {
         }
       });
 
-      const searchParams = new URLSearchParams();
-      
-      Object.entries(criteria).forEach(([key, value]) => {
-        if (value) {
-          searchParams.append(key, value);
-        }
-      });
+      // Map friendly keys to QIDO query parameters
+      const params = new URLSearchParams();
+      if (criteria.patientId) params.set('PatientID', criteria.patientId);
+      if (criteria.patientName) params.set('PatientName', criteria.patientName);
+      if (criteria.studyDate) params.set('StudyDate', criteria.studyDate);
+      if (criteria.modality) params.set('Modality', criteria.modality);
+      if (criteria.studyDescription) params.set('StudyDescription', criteria.studyDescription);
+      params.set('includefield', 'all');
 
-      const url = `${this.config.orthancUrl}/tools/find`;
-      const response = await this.makeRequest(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          Level: 'Study',
-          Query: Object.fromEntries(searchParams)
-        })
-      });
+      const url = `${this.baseUrl}/studies?${params.toString()}`;
+      const response = await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
 
-      const studies = await Promise.all(
-        response.map(async (studyId: string) => {
-          return await this.getStudyDetails(studyId);
-        })
-      );
+      const studies: StudyInfo[] = (Array.isArray(response) ? response : []).map((ds: any) => this.studyFromQido(ds));
 
       return studies;
 
@@ -331,11 +420,13 @@ export class PACSService extends EventEmitter {
         }
       });
 
-      const url = `${this.config.orthancUrl}/instances`;
+      // STOW-RS single instance upload (some servers require multipart/related)
+      const url = `${this.baseUrl}/studies`;
       const response = await this.makeRequest(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/dicom' },
-        body: file
+        headers: { 'Content-Type': 'application/dicom', 'Accept': 'application/dicom+json' },
+        // Cast Buffer to BodyInit for Node.js fetch
+        body: (file as unknown as any)
       });
 
       await this.auditLogger?.log({
@@ -345,13 +436,14 @@ export class PACSService extends EventEmitter {
         success: true,
         context: {
           filename,
-          instanceId: response.ID,
+          instanceId: (response && response[0] && (response[0]['00080018']?.Value?.[0])) || undefined,
           timestamp: new Date().toISOString()
         }
       });
 
-      this.emit('dicomUploaded', { filename, instanceId: response.ID });
-      return { success: true, instanceId: response.ID };
+      const instanceId = (response && response[0] && (response[0]['00080018']?.Value?.[0])) || undefined;
+      this.emit('dicomUploaded', { filename, instanceId });
+      return { success: true, instanceId };
 
     } catch (error) {
       await this.auditLogger?.log({
@@ -374,13 +466,10 @@ export class PACSService extends EventEmitter {
    */
   async checkConnectivity(): Promise<{ connected: boolean; version?: string; error?: string }> {
     try {
-      const url = `${this.config.orthancUrl}/system`;
-      const response = await this.makeRequest(url);
-      
-      return {
-        connected: true,
-        version: response.Version
-      };
+      // Lightweight QIDO probe
+      const url = `${this.baseUrl}/studies?limit=1`;
+      await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
+      return { connected: true };
 
     } catch (error) {
       return {
@@ -395,7 +484,6 @@ export class PACSService extends EventEmitter {
    */
   private async makeRequest(url: string, options: RequestInit = {}): Promise<any> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       ...options.headers as Record<string, string>
     };
 
@@ -414,7 +502,7 @@ export class PACSService extends EventEmitter {
     }
 
     const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
+    if (contentType && (contentType.includes('application/json') || contentType.includes('application/dicom+json'))) {
       return await response.json();
     }
 

@@ -23,6 +23,18 @@
                     alert('🔗 Connecting to Telehealth Service...');
                     return;
                 }
+                if (act === 'pacs:open') {
+                    // Open OHIF viewer pointing to our DICOMweb proxy
+                    try {
+                        const ohif = (window.WEBQX_CONFIG && WEBQX_CONFIG.getConfig && WEBQX_CONFIG.getConfig().ohif_viewer) || 'https://ohif.org/viewer';
+                        const dicomweb = window.location.origin.replace(/\/$/, '') + '/dicomweb/studies';
+                        const url = `${ohif}?url=${encodeURIComponent(dicomweb)}`;
+                        window.open(url, '_blank');
+                    } catch (e) {
+                        alert('Unable to launch imaging viewer: ' + (e && e.message || 'unknown error'));
+                    }
+                    return;
+                }
                 if (act && act.startsWith('openemr:')){
                     const module = act.split(':')[1] || 'home';
                     if (window.openEMRLauncher) {
@@ -272,10 +284,20 @@
             </div>
 
             <div class="dashboard-card">
+                <h3><span class="icon">🩻</span> Imaging & PACS</h3>
+                <p>View diagnostic images, radiology studies, and DICOM series via DICOMweb using dcm4chee with the OHIF viewer.</p>
+                <div style="margin-top: 1rem;">
+                    <button data-action="pacs:open" class="provider-btn">Open Imaging Viewer</button>
+                    <button data-action="openemr:imaging_reports" class="provider-btn secondary">Imaging Reports</button>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
                 <h3><span class="icon">📹</span> Telehealth Consultations</h3>
                 <p>Conduct virtual patient consultations, emergency teleconsults, and remote monitoring. Access telemedicine tools and protocols.</p>
                 <div style="margin-top: 1rem;">
                     <button data-action="telehealth:start" class="provider-btn">Start Video Call</button>
+                    <a href="/telehealth/jitsi.html" target="_blank" class="provider-btn secondary" style="text-decoration:none;">Jitsi (POC)</a>
                     <button data-action="openemr:telehealth_history" class="provider-btn secondary">History</button>
                 </div>
             </div>

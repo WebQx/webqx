@@ -24,7 +24,6 @@
   "include": [
     "patient-portal/**/*",
     "services/**/*",
-    "ehr-integrations/**/*",
     "modules/**/*",
     "sso/**/*",
     "auth/**/*"

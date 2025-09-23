@@ -19,7 +19,7 @@
         .back-link { color: #7dd3fc; text-decoration: none; margin-top: 1rem; display: inline-block; }
     </style>
     <script>
-            // If this file is reached in production domain, redirect to hosted version (but allow localhost)
+            // Environment-aware behavior: avoid localhost in production and use same-origin APIs
             (function(){
                 var hosted = 'https://webqx.railway.app/emr-login';
                 try {
@@ -27,54 +27,34 @@
                     var onRailway = /railway\.app$/i.test(location.hostname || '');
                     var onLocal = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(location.hostname || '');
                     var bypass = /(^|[?&])disableRedirect=1(&|$)/.test(location.search || '');
+                    // Only redirect if we're on a completely foreign domain; allow same-origin Railway and local
                     if (!bypass && isRailwayHosted && !onRailway && !onLocal) {
                         location.replace(hosted);
                     }
+                    // Expose a small env helper
+                    window.__WEBQX_ENV__ = {
+                        isLocal: onLocal,
+                        isRailway: onRailway,
+                        origin: location.origin
+                    };
                 } catch(e) {}
             })();
     </script>
 </head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="refresh" content="0; url=/" />
+  <title>Redirecting…</title>
+</head>
 <body>
-    <div class="login-container" role="region" aria-label="WebQx EMR Login">
-        <div class="logo">🏥 WebQx EMR</div>
-        <p>WebQx EMR Access (with Medical Transcription & Telehealth)</p>
-        
-        <form id="emrLogin">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" placeholder="Enter username" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter password" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="facility">Facility</label>
-                <select id="facility">
-                    <option value="default">Default Facility</option>
-                    <option value="webqx">WebQx Healthcare</option>
-                    <option value="demo">Demo Clinic</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="btn">Login to WebQx EMR</button>
-        </form>
-        
-        <div class="demo-section">
-            <h4>Demo Accounts</h4>
-            <div class="demo-account"><span>Administrator:</span><code>admin / pass</code></div>
-            <div class="demo-account"><span>Physician:</span><code>physician / physician</code></div>
-            <div class="demo-account"><span>Clinician:</span><code>clinician / clinician</code></div>
-            <div class="demo-account"><span>Accountant:</span><code>accountant / accountant</code></div>
-            <div class="demo-account"><span>Receptionist:</span><code>receptionist / receptionist</code></div>
-        </div>
-        
-        <div style="text-align: center; margin-top: 1rem;">
-            <button onclick="startServer()" class="btn" style="background: #10b981; margin-bottom: 1rem;">🚀 Start WebQx EMR Server</button><br>
-            <a href="index.html" class="back-link">← Back to WebQx Portal</a>
-        </div>
+  <noscript>
+    <p>If you are not redirected automatically, <a href="/">go to the WebQX home page</a>.</p>
+  </noscript>
+</body>
+</html>
     </div>
 
     <script>
@@ -87,8 +67,12 @@
             btn.textContent = 'Connecting to WebQx EMR...';
             btn.disabled = true;
 
-            fetch('http://localhost:8080/api/status')
-                .then(r => r.json())
+            // Always use same-origin gateway for status
+            fetch('/api/server-status')
+                .then(r => {
+                    if (!r.ok) throw new Error('status_not_ok');
+                    return r.json();
+                })
                 .then(() => {
                     const valid = [
                         {u:'admin',p:'pass'},
@@ -100,25 +84,16 @@
                     if (valid) {
                         localStorage.setItem('webqx_emr_user', username);
                         localStorage.setItem('webqx_emr_facility', facility);
-                        window.open('http://localhost:8080', '_blank');
+                        // Open the bundled EMR UI on the same origin
+                        window.open('/webqx-emr-system/', '_blank', 'noopener');
                     } else {
                         alert('Invalid credentials. Please use the demo accounts shown.');
                     }
                 })
                 .catch(() => {
-                    btn.textContent = 'Starting Server...';
-                    fetch('/api/start-server', { method: 'POST' })
-                        .then(() => setTimeout(() => {
-                            window.open('http://localhost:8080', '_blank');
-                        }, 3000))
-                        .catch(() => {
-                            alert('🚀 Starting WebQx EMR Server...');
-                            window.open('webqx-emr-system/', '_blank');
-                        })
-                        .finally(() => {
-                            btn.textContent = 'Login to WebQx EMR';
-                            btn.disabled = false;
-                        });
+                    // In production we do not remotely start servers; open the UI directly
+                    btn.textContent = 'Opening WebQx EMR...';
+                    window.open('/webqx-emr-system/', '_blank', 'noopener');
                 })
                 .finally(() => {
                     btn.textContent = 'Login to WebQx EMR';
@@ -126,20 +101,30 @@
                 });
         });
         
-        function startServer() {
-            const btn = event.target;
+        function startServer(event) {
+            const btn = event && event.target ? event.target : document.querySelector('.btn');
             btn.textContent = 'Starting...';
             btn.disabled = true;
+            // In production, remote start is disabled; simply open the EMR UI
+            if (window.__WEBQX_ENV__ && !window.__WEBQX_ENV__.isLocal) {
+                btn.textContent = '🚀 Opening EMR';
+                window.open('/webqx-emr-system/', '_blank', 'noopener');
+                setTimeout(() => { btn.textContent = '🚀 Start WebQx EMR Server'; btn.disabled = false; btn.style.background = '#10b981'; }, 1500);
+                return;
+            }
+            // Local dev: attempt to hit start endpoint; falls back if blocked
             fetch('/api/start-server', { method: 'POST' })
                 .then(() => {
                     btn.textContent = '✅ Server Started';
                     btn.style.background = '#059669';
-                    setTimeout(() => window.open('http://localhost:8080', '_blank'), 2000);
+                    setTimeout(() => window.open('/webqx-emr-system/', '_blank', 'noopener'), 1500);
                 })
                 .catch(() => {
                     btn.textContent = '🚀 Opening Server';
-                    window.open('webqx-emr-system/', '_blank');
-                    setTimeout(() => { btn.textContent = '🚀 Start WebQx EMR Server'; btn.disabled = false; btn.style.background = '#10b981'; }, 3000);
+                    window.open('/webqx-emr-system/', '_blank', 'noopener');
+                })
+                .finally(() => {
+                    setTimeout(() => { btn.textContent = '🚀 Start WebQx EMR Server'; btn.disabled = false; btn.style.background = '#10b981'; }, 1500);
                 });
         }
     </script>

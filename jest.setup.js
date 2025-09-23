@@ -6,23 +6,90 @@ try {
 } catch {}
 
 // Polyfill for TextEncoder/TextDecoder in Node.js test environment
-if (typeof TextEncoder === 'undefined') {
-  const { TextEncoder, TextDecoder } = require('util');
-  global.TextEncoder = TextEncoder;
-  global.TextDecoder = TextDecoder;
-}
+(() => {
+  try {
+    if (typeof global.TextEncoder === 'undefined' || typeof global.TextDecoder === 'undefined') {
+      const util = require('util');
+      if (util.TextEncoder && util.TextDecoder) {
+        global.TextEncoder = util.TextEncoder;
+        global.TextDecoder = util.TextDecoder;
+      }
+    }
+  } catch {}
+})();
 
-// Mock for crypto.subtle
-if (typeof global.crypto === 'undefined') {
-  global.crypto = {};
-}
-if (typeof global.crypto.subtle === 'undefined') {
+// Ensure Web Crypto is available without overriding read-only properties
+(() => {
   const { webcrypto } = require('crypto');
-  global.crypto.subtle = webcrypto.subtle;
-}
+  if (typeof global.crypto === 'undefined') {
+    global.crypto = webcrypto;
+  } else {
+    // Only provide getRandomValues if missing. Do NOT assign to crypto.subtle (read-only in Node).
+    if (typeof global.crypto.getRandomValues !== 'function') {
+      global.crypto.getRandomValues = webcrypto.getRandomValues.bind(webcrypto);
+    }
+  }
+})();
+
+// Patch Express' dependency on mime.charsets.lookup when running tests
+// Some environments hoist a newer mime version without charsets.lookup, causing res.header to crash
+(() => {
+  try {
+    const send = require('send');
+    if (send && send.mime) {
+      const m = send.mime;
+      if (!m.charsets || typeof m.charsets.lookup !== 'function') {
+        m.charsets = m.charsets || {};
+        // Minimal implementation: default to utf-8 for known text types, else undefined -> no charset append
+        m.charsets.lookup = (type) => {
+          try {
+            const t = String(type || '').toLowerCase();
+            if (t.startsWith('text/') || t === 'application/json' || t === 'application/javascript') {
+              return 'utf-8';
+            }
+          } catch {}
+          return undefined;
+        };
+      }
+    }
+  } catch {}
+})();
 
 // Ensure we are in test mode for conditionals in code
 process.env.NODE_ENV = 'test';
+
+// Polyfill btoa/atob for Node test environments
+(() => {
+  try {
+    if (typeof global.btoa !== 'function') {
+      global.btoa = (str) => Buffer.from(String(str), 'utf8').toString('base64');
+    }
+    if (typeof global.atob !== 'function') {
+      global.atob = (b64) => Buffer.from(String(b64), 'base64').toString('utf8');
+    }
+  } catch {}
+})();
+
+// Patch Express' dependency on send.mime.charsets.lookup to avoid crashes in tests
+(() => {
+  try {
+    const send = require('send');
+    if (send && send.mime) {
+      if (!send.mime.charsets) send.mime.charsets = {};
+      if (typeof send.mime.charsets.lookup !== 'function') {
+        // Minimal lookup: default to utf-8 for text/*, */json, */xml, and javascript types
+        send.mime.charsets.lookup = (type) => {
+          try {
+            const t = String(type || '').toLowerCase();
+            return /^text\//.test(t) || /\/(json|xml|javascript)$/.test(t) ? 'utf-8' : undefined;
+          } catch {
+            return 'utf-8';
+          }
+        };
+      }
+    }
+  } catch {}
+})();
 
 // Note: Do not reset OTP/SMS between individual tests because some suites
 // depend on state across tests (e.g., OTP existing for subsequent checks).
@@ -80,6 +147,17 @@ beforeEach(() => {
 // Polyfill MediaStream for tests that reference it (used when mocking getUserMedia)
 if (typeof global.MediaStream === 'undefined') {
   global.MediaStream = function MediaStream() {};
+}
+
+// Provide basic navigator.mediaDevices with getUserMedia/getDisplayMedia mocks if missing
+if (!global.navigator.mediaDevices) {
+  global.navigator.mediaDevices = {};
+}
+if (typeof global.navigator.mediaDevices.getUserMedia !== 'function') {
+  global.navigator.mediaDevices.getUserMedia = jest.fn(async () => new MediaStream());
+}
+if (typeof global.navigator.mediaDevices.getDisplayMedia !== 'function') {
+  global.navigator.mediaDevices.getDisplayMedia = jest.fn(async () => new MediaStream());
 }
 
 // Note: Do not enable fake timers globally. React Testing Library and userEvent

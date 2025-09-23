@@ -8,6 +8,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { body, param, query, validationResult } = require('express-validator');
 const ChatEHRService = require('../services/chatEHRService');
+const ChatEHRAssistant = require('../services/chatEHRAssistant');
 
 const router = express.Router();
 
@@ -15,6 +16,7 @@ const router = express.Router();
 const chatEHRService = new ChatEHRService({
     enableAuditLogging: process.env.HIPAA_AUDIT_ENABLED === 'true'
 });
+const assistant = new ChatEHRAssistant({ fhirBase: process.env.FHIR_BASE_URL || process.env.PUBLIC_FHIR_BASE || 'http://localhost:3000/fhir' });
 
 // Rate limiting for ChatEHR endpoints
 const chatEHRRateLimit = rateLimit({
@@ -369,6 +371,7 @@ router.get('/messages/:consultationId',
  * Health check endpoint for ChatEHR service
  */
 router.get('/health',
+    chatEHRRateLimit,
     async (req, res) => {
         try {
             const result = await chatEHRService.healthCheck();
@@ -447,5 +450,26 @@ router.get('/specialties',
         }
     }
 );
+
+/**
+ * POST /assistant/ask
+ * Conversational access to medical records using FHIR-only lookups (no external LLM by default)
+ * body: { question: string }
+ */
+router.post('/assistant/ask', requireAuth, [
+    body('question').notEmpty().withMessage('Question is required')
+], validateRequest, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const role = (req.user.roles || []).includes('physician') ? 'physician' : 'patient';
+        const { question } = req.body;
+
+        const result = await assistant.ask({ userId, role, question });
+        return res.status(200).json({ success: true, ...result });
+    } catch (error) {
+        console.error('[ChatEHR Assistant] Error:', error);
+        return res.status(500).json({ success: false, error: { code: 'ASSISTANT_ERROR', message: 'Failed to answer question' } });
+    }
+});
 
 module.exports = router;

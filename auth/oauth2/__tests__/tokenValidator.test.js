@@ -375,7 +375,7 @@ describe('OAuth2 Token Validator', () => {
             const result = tokenValidator.validateMockToken('invalid-mock-token');
             
             expect(result.valid).toBe(false);
-            expect(result.errorCode).toBe('INVALID_MOCK_TOKEN');
+            expect(result.errorCode).toBe('INVALID_FORMAT');
         });
     });
 

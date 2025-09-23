@@ -23,7 +23,7 @@
             <p class="mt-2 text-sm text-gray-600">Sign in to access your health information</p>
         </div>
 
-        <!-- Login Form -->
+    <!-- Login Form -->
         <form @submit.prevent="handleLogin()" class="mt-8 space-y-6">
             <div class="space-y-4">
                 <!-- Username Field -->
@@ -132,6 +132,29 @@
             </div>
         </form>
 
+        <!-- SSO Divider -->
+        <div class="flex items-center gap-2 my-4">
+            <div class="flex-1 h-px bg-gray-200"></div>
+            <span class="text-xs text-gray-500">or</span>
+            <div class="flex-1 h-px bg-gray-200"></div>
+        </div>
+
+        <!-- SSO Buttons -->
+        <div class="grid grid-cols-2 gap-3" id="patientSsoButtons">
+            <button type="button" class="border border-gray-200 rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50" data-sso="google">
+                <span>Continue with Google</span>
+            </button>
+            <button type="button" class="border border-gray-200 rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50" data-sso="microsoft">
+                <span>Microsoft account</span>
+            </button>
+            <button type="button" class="border border-gray-200 rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50" data-sso="apple">
+                <span>Apple</span>
+            </button>
+            <button type="button" class="border border-gray-200 rounded-md py-2 text-sm flex items-center justify-center gap-2 hover:bg-gray-50" data-sso="smart-fhir">
+                <span>My Health Record</span>
+            </button>
+        </div>
+
         <!-- Demo Credentials -->
         <div class="mt-6 border-t border-gray-200 pt-6">
             <div class="text-center">
@@ -166,7 +189,17 @@
         </div>
     </div>
 
+    <script src="/auth/js/post-login-router.js"></script>
     <script>
+        // Configure SSO to finalize to patient endpoint and redirect to patient portal after login
+        window.WEBQX_SSO_OVERRIDE = {
+            finalizeEndpoint: '/api/auth/patient/sso-login',
+            callbackPathPrefix: '/auth/providers/callback',
+            redirectAfterLogin: '/patient-portal'
+        };
+        // Enable/disable providers per environment if needed
+        window.WEBQX_SSO_PROVIDERS = window.WEBQX_SSO_PROVIDERS || { apple: false };
+
         function patientLogin() {
             return {
                 credentials: {
@@ -178,7 +211,7 @@
                 loading: false,
                 errorMessage: '',
                 successMessage: '',
-                baseURL: 'http://localhost:3000',
+                baseURL: window.location.origin,
 
                 initLogin() {
                     // Check if user is already logged in
@@ -195,8 +228,11 @@
                         });
                         
                         if (response.ok) {
-                            // Token is valid, redirect to portal
-                            window.location.href = '/patient-portal';
+                                                        // Token is valid, redirect using router precedence
+                                                        const dest = (window.WebQXPostLoginRouter && WebQXPostLoginRouter.computeRedirect)
+                                                            ? WebQXPostLoginRouter.computeRedirect('patient', { defaultPatient: '/patient-portal' })
+                                                            : '/patient-portal';
+                                                        window.location.href = dest;
                         } else {
                             // Token is invalid, remove it
                             localStorage.removeItem('webqx_token');
@@ -241,10 +277,13 @@
 
                             this.successMessage = 'Login successful! Redirecting...';
                             
-                            // Redirect to patient portal
-                            setTimeout(() => {
-                                window.location.href = '/patient-portal';
-                            }, 1500);
+                                                        // Redirect using router
+                                                        setTimeout(() => {
+                                                                const dest = (window.WebQXPostLoginRouter && WebQXPostLoginRouter.computeRedirect)
+                                                                    ? WebQXPostLoginRouter.computeRedirect('patient', { defaultPatient: '/patient-portal' })
+                                                                    : '/patient-portal';
+                                                                window.location.href = dest;
+                                                        }, 1000);
                         } else {
                             this.showError(data.message || 'Login failed');
                         }
@@ -279,6 +318,16 @@
                 }
             }
         }
+    </script>
+    <script src="/auth/providers/js/sso.js"></script>
+    <script>
+        // Wire SSO buttons once DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.ssoManager) {
+                // Attach click handlers via ssoManager.updateSSOButtonStates
+                ssoManager.updateSSOButtonStates();
+            }
+        });
     </script>
 </body>
 </html>

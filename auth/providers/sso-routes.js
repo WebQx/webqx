@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
+const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
@@ -17,6 +18,19 @@ const ssoConfigs = {
         userInfoUrl: 'https://graph.microsoft.com/v1.0/me',
         clientId: process.env.AZURE_CLIENT_ID || 'your-azure-client-id',
         clientSecret: process.env.AZURE_CLIENT_SECRET || 'your-azure-secret'
+    },
+    google: {
+        tokenUrl: 'https://oauth2.googleapis.com/token',
+        userInfoUrl: 'https://openidconnect.googleapis.com/v1/userinfo',
+        clientId: process.env.GOOGLE_CLIENT_ID || 'your-google-client-id',
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'your-google-secret'
+    },
+    apple: {
+        tokenUrl: 'https://appleid.apple.com/auth/token',
+        // Apple does not provide a separate userinfo endpoint; use id_token claims
+        userInfoUrl: null,
+        clientId: process.env.APPLE_CLIENT_ID || 'your-apple-service-id',
+        clientSecret: process.env.APPLE_CLIENT_SECRET || 'your-apple-client-secret'
     },
     'smart-fhir': {
         tokenUrl: process.env.FHIR_TOKEN_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token',
@@ -97,6 +111,24 @@ async function exchangeCodeForToken(provider, code, redirectUri, config) {
                 redirect_uri: redirectUri
             };
             break;
+        case 'google':
+            tokenRequestData = {
+                grant_type: 'authorization_code',
+                client_id: config.clientId,
+                client_secret: config.clientSecret,
+                code: code,
+                redirect_uri: redirectUri
+            };
+            break;
+        case 'apple':
+            tokenRequestData = {
+                grant_type: 'authorization_code',
+                client_id: config.clientId,
+                client_secret: config.clientSecret,
+                code: code,
+                redirect_uri: redirectUri
+            };
+            break;
             
         case 'smart-fhir':
             tokenRequestData = {
@@ -127,9 +159,26 @@ async function getUserInfo(provider, accessToken, config) {
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json'
     };
-    
+    // Apple has no userinfo endpoint; decode id_token instead
+    if (provider === 'apple') {
+        try {
+            const decoded = jwt.decode(accessToken) || {};
+            return {
+                id: decoded.sub,
+                email: decoded.email,
+                email_verified: decoded.email_verified,
+                name: decoded.name || decoded.given_name || decoded.family_name ? `${decoded.given_name || ''} ${decoded.family_name || ''}`.trim() : undefined,
+                given_name: decoded.given_name,
+                family_name: decoded.family_name,
+                provider: 'apple'
+            };
+        } catch (e) {
+            throw new Error('Failed to parse Apple ID token');
+        }
+    }
+
     const response = await axios.get(config.userInfoUrl, { headers });
-    
+
     // Normalize user info based on provider
     switch (provider) {
         case 'keycloak':
@@ -151,6 +200,19 @@ async function getUserInfo(provider, accessToken, config) {
                 family_name: response.data.surname,
                 provider: 'microsoft'
             };
+        case 'google':
+            return {
+                id: response.data.sub,
+                email: response.data.email,
+                name: response.data.name,
+                given_name: response.data.given_name,
+                family_name: response.data.family_name,
+                provider: 'google',
+                email_verified: response.data.email_verified
+            };
+        case 'apple':
+            // handled above
+            break;
             
         case 'smart-fhir':
             // SMART on FHIR returns FHIR Practitioner resource

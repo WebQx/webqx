@@ -47,6 +47,14 @@ The platform uses RabbitMQ for real-time messaging across modules, OpenAI for in
 - Railway deploy: API Gateway (Node), OpenEMR (PHP/Apache), Whisper svc, RabbitMQ, DBs
 - GitHub Pages for the SPA and static content
 
+7) Identity & SSO (Keycloak broker)
+- Centralize authentication with Keycloak (realm: webqx-healthcare, client: webqx-provider-portal)
+- Broker social logins (Microsoft, Google, Apple) via Keycloak using kc_idp_hint; no separate IdP branding exposed on the login screen
+- Login UI shows only Microsoft, Google, Apple options; no explicit “Keycloak” or “SMART on FHIR” labels on the home login page
+- Callback: `/auth/providers/callback.html` (same-origin popup parsing)
+- Backend finalization at `/api/auth/provider/sso-login`; token/userinfo obtained via Keycloak
+- Keycloak configuration (valid redirect URIs, web origins, IdP aliases) maintained per environment
+
 ---
 
 ## Architecture (Current + Target)
@@ -54,10 +62,12 @@ The platform uses RabbitMQ for real-time messaging across modules, OpenAI for in
 - Frontend
   - GitHub Pages SPA with runtime-config pointing to Railway backends
   - Patient, Provider, Admin sections; unified top bar and theme
+  - Provider login uses Keycloak-brokered social login; visible buttons: Microsoft, Google, Apple
 
 - API Gateway (Node)
   - Security middleware, circuit breaker for remote EMR/FHIR
   - Proxies for OpenEMR and services; observability endpoints
+  - DICOMweb proxy mounted at `/dicomweb` (dcm4chee `${BASE}/aets/${AET}/rs`), optional Basic Auth via env
 
 - OpenEMR Service (PHP/Apache)
   - Fully rebranded, lives as its own Railway service
@@ -81,6 +91,7 @@ M1 — Stabilize Build/Deploy (Short term)
 - [x] Railway API deploy
 - [ ] Railway EMR deploy (secrets + health check wired)
 - [ ] Set `RAILWAY_PUBLIC_EMR_BASE` and ensure SPA integrations
+- [x] Unified SSO via Keycloak broker (Microsoft/Google/Apple) with clean login UI (no Keycloak/FHIR labels)
 
 M2 — Telehealth + Whisper
 - [ ] Whisper microservice packaged with auth
@@ -101,6 +112,13 @@ M5 — Compliance & Django Ops
 - [ ] Audit trail ingestion and visualization
 - [ ] DSAR/export flows and RBAC scopes
 - [ ] Django ops backend deployed (Railway)
+
+M6 — Imaging & PACS (DICOMweb + OHIF)
+- [ ] DICOMweb proxy stable at `/dicomweb` with env‐configurable target (dcm4chee) and Basic Auth passthrough
+- [ ] Provider portal OHIF launch wired against proxy and runtime viewer URL
+- [ ] PACS service helpers (`services/pacsService.ts`) validated against target PACS (QIDO/WADO/STOW)
+- [ ] Study search from EMR context (PatientID) with direct open‑in‑OHIF
+- [ ] Basic smoke tests for proxy availability and QIDO 200
 
 ---
 
@@ -132,4 +150,5 @@ M5 — Compliance & Django Ops
 
 ---
 
-Last updated: 2025-09-21
+Last updated: 2025-09-22
+Last updated: 2025-09-23

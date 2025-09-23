@@ -1,0 +1,28 @@
+name: Build EMR Docker Image
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: webqx-emr-system
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./webqx-emr-system
+          file: ./webqx-emr-system/Dockerfile
+          push: false
+          tags: webqx/emr:ci-${{ github.sha }}

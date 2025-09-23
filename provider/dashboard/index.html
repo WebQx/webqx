@@ -179,7 +179,12 @@
         </div>
     </div>
 
+    <script src="/auth/js/post-login-router.js"></script>
     <script>
+        // Track provider navigation for post-login routing
+        if (window.WebQXPostLoginRouter && typeof WebQXPostLoginRouter.trackRoute === 'function') {
+            WebQXPostLoginRouter.trackRoute('provider');
+        }
         // Role-based module definitions
         const roleModules = {
             physician: [

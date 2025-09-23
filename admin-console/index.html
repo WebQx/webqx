@@ -92,6 +92,12 @@
     </style>
 </head>
 <body class="webqx-theme">
+        <script src="/auth/js/post-login-router.js"></script>
+        <script>
+            if (window.WebQXPostLoginRouter && typeof WebQXPostLoginRouter.trackRoute === 'function') {
+                WebQXPostLoginRouter.trackRoute('admin');
+            }
+        </script>
     <div class="wqx-topbar">
         <div class="nav-brand">WebQX Admin</div>
         <div class="nav-group">

@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebQX EMR - Admin Console</title>
+    <script src="/auth/js/post-login-router.js"></script>
+        <script>
+            if (window.WebQXPostLoginRouter && typeof WebQXPostLoginRouter.trackRoute === 'function') {
+                WebQXPostLoginRouter.trackRoute('admin');
+            }
+        </script>
     <link rel="stylesheet" href="../themes/webqx-modern.css">
     <style>
         body {

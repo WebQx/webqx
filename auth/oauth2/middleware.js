@@ -477,4 +477,12 @@ class OAuth2Middleware {
     }
 }
 
+// Create a singleton instance
+const oauth2Middleware = new OAuth2Middleware();
+
+// Export convenience functions for direct use
+const authenticateToken = oauth2Middleware.authenticate();
+
 module.exports = OAuth2Middleware;
+module.exports.authenticateToken = authenticateToken;
+module.exports.OAuth2Middleware = OAuth2Middleware;

@@ -14,6 +14,8 @@ function buildConfig() {
     const local = {
         api_base: envApiBase || 'http://localhost:8080',
         emr_base: envEmrBase || 'http://localhost:8085',
+        pacs_dicomweb: (envApiBase || 'http://localhost:8080') + '/dicomweb',
+        ohif_viewer: window.WEBQX_OHIF_VIEWER || 'https://ohif.org/viewer',
         endpoints: {
             server_status: (envApiBase || 'http://localhost:8080') + '/api/system/status',
             remote_start: (envApiBase || 'http://localhost:8080') + '/api/system/start',
@@ -30,6 +32,8 @@ function buildConfig() {
     const remote = {
         api_base: remoteApi,
         emr_base: remoteEmr,
+        pacs_dicomweb: (remoteApi + '/dicomweb'),
+        ohif_viewer: window.WEBQX_OHIF_VIEWER || 'https://ohif.org/viewer',
         endpoints: {
             server_status: remoteApi + '/api/system/status',
             remote_start: remoteApi + '/api/system/start',

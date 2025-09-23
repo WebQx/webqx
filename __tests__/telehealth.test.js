@@ -11,11 +11,17 @@ describe('Telehealth Integration', () => {
 
     beforeEach(() => {
         mockOAuth2Client = {
-            getCachedToken: jest.fn(() => ({
-                sub: 'test-provider-123',
-                name: 'Dr. Test Provider',
-                role: 'practitioner'
-            }))
+            getCachedToken: jest.fn((token) => {
+                // Return cached token for valid tokens, null for invalid ones
+                if (token === 'invalid_token') {
+                    return null;
+                }
+                return {
+                    sub: 'mock-provider-123',
+                    name: 'Dr. Test Provider',
+                    role: 'practitioner'
+                };
+            })
         };
         telehealthService = new TelehealthService(mockOAuth2Client);
     });

@@ -25,6 +25,8 @@ const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 require('dotenv').config();
+// ChatEHR API routes
+let chatehrRouter; try { chatehrRouter = require('../routes/chatehr'); } catch (_) {}
 
 const { PortManager } = require('./port-manager');
 // Optional middleware (wrapped in try/catch so missing files won't break startup)
@@ -133,8 +135,12 @@ class UnifiedHealthcareServer {
     // Respect X-Forwarded-* headers from Railway (and other proxies)
     this.app.set('trust proxy', 1);
         
-        // Security middleware with remote access support (fixed CSP)
+        // Security middleware with remote access support (CSP tuned for dev previews)
+    const isProd = (process.env.NODE_ENV === 'production');
+    const allowEmbed = (process.env.ALLOW_IFRAME === 'true') || (process.env.ALLOW_SIMPLE_BROWSER === 'true') || (!isProd && process.env.ALLOW_IFRAME !== 'false');
         this.app.use(helmet({
+            // Allow embedding in VS Code Simple Browser or similar when enabled
+            frameguard: allowEmbed ? false : { action: 'sameorigin' },
             crossOriginEmbedderPolicy: false,
             contentSecurityPolicy: {
                 directives: {
@@ -142,10 +148,16 @@ class UnifiedHealthcareServer {
                     scriptSrc: [
                         "'self'",
                         "'unsafe-inline'",
-                        "'unsafe-eval'",
+                        ...(isProd ? [] : ["'unsafe-eval'"]),
                         "https://cdn.tailwindcss.com",
                         "https://unpkg.com",
-                        "https://cdnjs.cloudflare.com"
+                        "https://cdnjs.cloudflare.com",
+                        // Allow Jitsi IFrame API script when configured (defaults to meet.jit.si)
+                        ...(process.env.JITSI_DOMAIN ? [
+                            `https://${process.env.JITSI_DOMAIN}`
+                        ] : [
+                            'https://meet.jit.si'
+                        ])
                     ],
                     styleSrc: [
                         "'self'",
@@ -158,8 +170,25 @@ class UnifiedHealthcareServer {
                         "ws:",
                         "wss:",
                         "http:",
-                        "https:"
-                    ]
+                        "https:",
+                        // Jitsi websocket/xhr connections
+                        ...(process.env.JITSI_DOMAIN ? [
+                            `https://${process.env.JITSI_DOMAIN}`
+                        ] : [
+                            'https://meet.jit.si'
+                        ])
+                    ],
+                    frameSrc: [
+                        "'self'",
+                        // Allow embedding Jitsi meeting frames
+                        ...(process.env.JITSI_DOMAIN ? [
+                            `https://${process.env.JITSI_DOMAIN}`
+                        ] : [
+                            'https://meet.jit.si'
+                        ])
+                    ],
+                    // Allow embedding this app itself in dev/simple browser
+                    frameAncestors: allowEmbed ? ["*"] : ["'self'"]
                 }
             },
             hsts: {
@@ -226,22 +255,9 @@ class UnifiedHealthcareServer {
         // Ensure preflight requests are handled for all routes
         this.app.options('*', cors(corsOptions));
 
-        // Friendly redirects for legacy paths and guaranteed serve for emr-login
-        this.app.get(['/openemr-login.html', '/openemr-login'], (req, res) => {
-            return res.redirect(301, '/emr-login');
-        });
-
-        this.app.get(['/emr-login.html', '/emr-login'], (req, res, next) => {
-            try {
-                const p = path.resolve(__dirname, '..', 'emr-login.html');
-                if (fs.existsSync(p)) return res.sendFile(p);
-                // Fallback: if not found in repo root, try current working directory
-                const alt = path.resolve(process.cwd(), 'emr-login.html');
-                if (fs.existsSync(alt)) return res.sendFile(alt);
-                return res.status(404).send('emr-login not found');
-            } catch (e) {
-                return next(e);
-            }
+        // Legacy EMR login paths now route to the unified home page
+        this.app.get(['/openemr-login.html', '/openemr-login', '/emr-login.html', '/emr-login'], (req, res) => {
+            return res.redirect(302, '/');
         });
         
             // Helper to protect internal endpoints (token-based)
@@ -311,7 +327,20 @@ class UnifiedHealthcareServer {
     if (metricsMiddleware) this.app.use(metricsMiddleware);
     if (auditMiddleware) this.app.use(auditMiddleware);
 
-        // Serve static files (prefer built artifacts if present)
+        // Mount ChatEHR API if available (provides consultations, appointments, messages)
+        if (chatehrRouter) {
+            this.app.use('/api/chatehr', chatehrRouter);
+            this.log('info', '✅ ChatEHR routes mounted at /api/chatehr');
+        } else {
+            this.log('warn', '⚠️ ChatEHR routes not found; conversational care APIs disabled');
+        }
+
+        // Serve homepage as login (redirect root/index explicitly to provider login)
+        this.app.get(['/', '/index.html'], (req, res) => {
+            return res.redirect(302, '/auth/providers/login.html');
+        });
+
+        // Serve static files (prefer built artifacts if present) without auto index
         const cwd = process.cwd();
         const distDir = path.join(cwd, 'dist');
         const portalDistDir = path.join(cwd, 'portal', 'dist');
@@ -334,14 +363,14 @@ class UnifiedHealthcareServer {
         });
         if (fs.existsSync(distDir)) {
             this.log('info', `Serving static content from dist/: ${distDir}`);
-            this.app.use(express.static(distDir));
+            this.app.use(express.static(distDir, { index: false }));
         }
         if (fs.existsSync(portalDistDir)) {
             this.log('info', `Serving static content from portal/dist: ${portalDistDir}`);
-            this.app.use(express.static(portalDistDir));
+            this.app.use(express.static(portalDistDir, { index: false }));
         }
-        // Fallback to repo root for legacy static files
-        this.app.use(express.static('.'));
+        // Fallback to repo root for legacy static files (no auto index)
+        this.app.use(express.static('.', { index: false }));
 
         // Friendly redirects for legacy SPA paths
         this.app.get(['/portal', '/portal/'], (req, res) => {
@@ -354,6 +383,15 @@ class UnifiedHealthcareServer {
 
         // Patient portal routes
         this.setupPatientPortalRoutes();
+
+        // Mount Telepsychiatry session routes (lightweight) so /session/* is available
+        try {
+            const telepsychiatryRoutes = require('../routes/session');
+            this.app.use('/session', telepsychiatryRoutes);
+            console.log('✅ Telepsychiatry routes mounted at /session');
+        } catch (e) {
+            console.warn('⚠️ Telepsychiatry routes not available:', e.message);
+        }
 
         // Simple auth gate for provider/admin areas
         const requireProviderAuth = (req, res, next) => {
@@ -481,6 +519,7 @@ class UnifiedHealthcareServer {
 
         // SPA HTML fallback for unknown GET routes (after all APIs and static)
         this.app.get('*', (req, res, next) => {
+            // Root path handled by explicit handler above; just fall through here
             try {
                 // Only handle HTML navigations
                 if (req.method === 'GET' && (req.accepts('html') || req.headers.accept?.includes('text/html'))) {
@@ -505,10 +544,7 @@ class UnifiedHealthcareServer {
         // AI Assist router (mount after proxies to keep ordering predictable)
             // AI Assist mock removed for production-only build
         
-        // Serve homepage as login (root and index explicitly redirect to provider login)
-        this.app.get(['/', '/index.html'], (req, res) => {
-            return res.redirect(302, '/auth/providers/login.html');
-        });
+        // Serve homepage as login (already handled early before static)
 
         // Normalize legacy login paths to provider production login
         this.app.get(['/login', '/login.html'], (req, res) => {
@@ -537,6 +573,15 @@ class UnifiedHealthcareServer {
             console.log('✅ Provider SSO routes mounted at /api/auth/sso');
         } catch (e) {
             console.warn('⚠️ Provider SSO routes not available:', e.message);
+        }
+
+        // Mount patient SSO finalize routes (reuses provider SSO exchange/userinfo)
+        try {
+            const patientSSORoutes = require('../auth/patient/sso-routes');
+            this.app.use('/api/auth/patient', patientSSORoutes);
+            console.log('✅ Patient SSO routes mounted at /api/auth/patient');
+        } catch (e) {
+            console.warn('⚠️ Patient SSO routes not available:', e.message);
         }
 
         // Circuit breaker guard for OpenEMR / FHIR
@@ -709,6 +754,40 @@ class UnifiedHealthcareServer {
                 console.error('❌ WebSocket proxy error:', err.message);
             }
         }));
+
+        // DICOMweb (dcm4chee) Proxy to avoid CORS in browser
+        // Configure with:
+        //   DCM4CHEE_BASE example: https://pacs.example.com/dcm4chee-arc
+        //   DCM4CHEE_AET  example: DCM4CHEE
+        // Final target: ${DCM4CHEE_BASE}/aets/${DCM4CHEE_AET}/rs
+        const dcmBase = (process.env.DCM4CHEE_BASE || '').replace(/\/$/, '');
+        const dcmAet = process.env.DCM4CHEE_AET || 'DCM4CHEE';
+        if (dcmBase) {
+            const dicomwebTarget = `${dcmBase}/aets/${dcmAet}/rs`;
+            this.app.use('/dicomweb', createProxyMiddleware({
+                target: dicomwebTarget,
+                changeOrigin: true,
+                pathRewrite: (path) => path.replace(/^\/dicomweb/, ''),
+                onProxyReq: (proxyReq, req) => {
+                    // Forward optional basic auth from env
+                    const u = process.env.DCM4CHEE_USERNAME;
+                    const p = process.env.DCM4CHEE_PASSWORD;
+                    if (u && p) {
+                        const auth = Buffer.from(`${u}:${p}`).toString('base64');
+                        proxyReq.setHeader('Authorization', `Basic ${auth}`);
+                    }
+                },
+                onError: (err, req, res) => {
+                    console.error('❌ DICOMweb proxy error:', err.message);
+                    if (!res.headersSent) res.status(503).json({ error: 'DICOMWEB_UNAVAILABLE' });
+                }
+            }));
+            console.log(`🩻 DICOMweb proxy enabled at /dicomweb -> ${dicomwebTarget}`);
+        } else {
+            this.app.use('/dicomweb', (req, res) => {
+                res.status(503).json({ error: 'DICOMWEB_UNCONFIGURED', message: 'Set DCM4CHEE_BASE and DCM4CHEE_AET env vars' });
+            });
+        }
 
         console.log('✅ Service proxies configured');
 

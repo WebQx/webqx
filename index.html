@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Redirecting to WebQx Role-based Login…</title>
-  <!-- Prefer Railway short path; fallback to current production after 1s -->
-  <meta http-equiv="refresh" content="1;url=https://webqx-production.up.railway.app/emr-login" />
-  <link rel="canonical" href="https://webqx.railway.app/emr-login" />
+  <title>WebQX — Sign in</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif; background:#0f172a; color:#e5e7eb; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:2rem; }
     .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:24px; max-width:740px; width:100%; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
@@ -18,29 +15,17 @@
     .role { background:#0b1220; border:1px dashed #1f2937; border-radius:8px; padding:12px; }
     .muted { color:#94a3b8; font-size:.9rem; }
   </style>
-  <script>
-    (function(){
-      var primary = 'https://webqx.railway.app/emr-login';
-      var fallback = 'https://webqx-production.up.railway.app/emr-login';
-      try { if (location.href !== primary) location.replace(primary); } catch (e) { location.href = fallback; }
-    })();
-  </script>
-  <noscript>
-    <meta http-equiv="refresh" content="1;url=https://webqx-production.up.railway.app/emr-login" />
-  </noscript>
 </head>
 <body>
-  <div class="card" role="alert" aria-live="polite">
-    <h1>Redirecting to WebQx role-based login…</h1>
-  <p class="muted">If you are not redirected automatically, <a href="https://webqx.railway.app/emr-login">try the shorter path</a> or <a href="https://webqx-production.up.railway.app/emr-login">use the current login</a>.</p>
-    <p class="muted">Demo credentials (for convenience if redirect is blocked):</p>
+  <div class="card" role="region" aria-label="Choose how to sign in">
+    <h1>Welcome to WebQX</h1>
+    <p class="muted">This is the login home for all users. Pick your portal to continue:</p>
     <div class="roles">
-      <div class="role"><strong>Administrator</strong><br/><span class="mono">admin / pass</span></div>
-      <div class="role"><strong>Physician</strong><br/><span class="mono">physician / physician</span></div>
-      <div class="role"><strong>Clinician</strong><br/><span class="mono">clinician / clinician</span></div>
-      <div class="role"><strong>Accountant</strong><br/><span class="mono">accountant / accountant</span></div>
-      <div class="role"><strong>Receptionist</strong><br/><span class="mono">receptionist / receptionist</span></div>
+      <div class="role"><strong>Patients</strong><br/><a href="/patient-portal/login.html">Patient portal login</a></div>
+      <div class="role"><strong>Providers</strong><br/><a href="/auth/providers/login.html">Provider login</a></div>
+      <div class="role"><strong>Admin/Staff</strong><br/><a href="/admin-console/">Admin console</a></div>
     </div>
+    <p class="muted" style="margin-top:12px;">Single sign-on (Microsoft, Google, Apple, or your health record) is available on the specific login pages.</p>
   </div>
 </body>
 </html>

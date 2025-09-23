@@ -455,33 +455,84 @@ router.post('/logout', async (req, res) => {
 router.post('/sso-login', async (req, res) => {
     try {
         const { provider, tokenData, userInfo } = req.body;
-        
-        // In production, validate the SSO token and user info
-        // For now, return a mock response
-        console.log(`SSO login attempt with ${provider}:`, { tokenData, userInfo });
-        
-        // Mock SSO user data
-        const ssoUser = {
-            id: uuidv4(),
-            username: userInfo.email,
-            email: userInfo.email,
-            name: userInfo.name || userInfo.display_name,
-            roles: ['physician'], // Default role, should be determined by organization mapping
-            specialty: 'General Practice',
-            isActive: true,
-            ssoProvider: provider,
-            externalId: userInfo.sub || userInfo.id
-        };
-        
-        const token = generateToken(ssoUser);
-        
-        res.json({
+
+        if (!provider || !userInfo) {
+            return res.status(400).json({ success: false, error: 'Missing provider or user info', code: 'BAD_REQUEST' });
+        }
+
+        const email = (userInfo.email || '').toLowerCase();
+        const externalId = userInfo.sub || userInfo.id;
+
+        // Try to find an existing provider by email first
+        let account = email ? providers.get(email) : null;
+
+        // If not found by email, try by externalId (scan map)
+        if (!account && externalId) {
+            account = [...providers.values()].find(p => p.externalId === externalId && p.ssoProvider === provider) || null;
+        }
+
+        const displayName = userInfo.name || userInfo.display_name || [userInfo.given_name, userInfo.family_name].filter(Boolean).join(' ') || 'Healthcare Professional';
+
+        if (!account) {
+            // Create a new provider account (Just-In-Time provisioning)
+            const randomPassword = await bcrypt.hash(uuidv4(), 10);
+            account = {
+                id: uuidv4(),
+                username: email || (externalId ? `${provider}:${externalId}` : `sso:${uuidv4()}`),
+                email: email || undefined,
+                name: displayName,
+                password: randomPassword,
+                roles: ['physician'], // Default; in production derive from org/policy mapping
+                specialty: 'General Practice',
+                isActive: true,
+                failedAttempts: 0,
+                createdAt: new Date(),
+                lastLogin: new Date(),
+                ssoProvider: provider,
+                externalId
+            };
+
+            // Store by primary key (email if present, otherwise username)
+            providers.set(account.email || account.username, account);
+        } else {
+            // Update existing account metadata
+            account.name = account.name || displayName;
+            account.ssoProvider = provider;
+            account.externalId = externalId || account.externalId;
+            account.isActive = true;
+            account.lastLogin = new Date();
+        }
+
+        // Generate token and set cookie
+        const token = generateToken(account);
+        try {
+            const isProd = (process.env.NODE_ENV === 'production');
+            res.cookie('provider_token', token, {
+                httpOnly: true,
+                secure: isProd,
+                sameSite: 'lax',
+                maxAge: 8 * 60 * 60 * 1000, // 8 hours
+                path: '/'
+            });
+        } catch {}
+
+        return res.json({
             success: true,
             message: 'SSO login successful',
             token,
-            user: ssoUser
+            user: {
+                id: account.id,
+                username: account.username,
+                email: account.email,
+                name: account.name,
+                roles: account.roles,
+                specialty: account.specialty,
+                licenseNumber: account.licenseNumber,
+                licenseState: account.licenseState,
+                ssoProvider: account.ssoProvider
+            }
         });
-        
+
     } catch (error) {
         console.error('Provider SSO login error:', error);
         res.status(500).json({

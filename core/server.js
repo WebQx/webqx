@@ -65,7 +65,9 @@ const portManager = new PortManager();
 let PORT = process.env.PORT || 3000;
 
 // Security middleware
+const allowEmbed = (process.env.ALLOW_IFRAME === 'true') || (process.env.ALLOW_SIMPLE_BROWSER === 'true') || (process.env.NODE_ENV !== 'production' && process.env.ALLOW_IFRAME !== 'false');
 app.use(helmet({
+    frameguard: allowEmbed ? false : { action: 'sameorigin' },
     crossOriginEmbedderPolicy: false, // Allow embedding for development
     contentSecurityPolicy: {
         directives: {
@@ -74,6 +76,7 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"], // Allow inline styles and TailwindCSS
             connectSrc: ["'self'"],
             imgSrc: ["'self'", "data:", "https:"],
+            frameAncestors: allowEmbed ? ["*"] : ["'self'"]
         },
     },
 }));
@@ -110,8 +113,13 @@ app.use(cookieParser());
 // Secure authentication routes
 app.use('/auth', authRoutes);
 
-// Serve static files
-app.use(express.static(path.join(__dirname, '.')));
+// Force homepage to provider login before static
+app.get(['/', '/index.html'], (req, res) => {
+    res.redirect(302, '/auth/providers/login.html');
+});
+
+// Serve static files without auto index
+app.use(express.static(path.join(__dirname, '.'), { index: false }));
 
 // Patient Portal API endpoints for module cards
 app.get('/api/patient/dashboard', (req, res) => {
@@ -388,10 +396,7 @@ app.get('/login', (req, res) => {
     res.redirect(302, '/auth/providers/login.html');
 });
 
-// Home page is production login
-app.get(['/', '/index.html'], (req, res) => {
-    res.redirect(302, '/auth/providers/login.html');
-});
+// Home page redirect handled above before static
 
 // Catch all other routes and serve the patient portal (moved to end)
 app.get('*', (req, res) => {

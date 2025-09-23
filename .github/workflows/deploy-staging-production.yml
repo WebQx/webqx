@@ -1,0 +1,196 @@
+name: Deploy (Staging & Production)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy"
+        required: true
+        type: choice
+        options: [staging, production]
+        default: staging
+      version:
+        description: "Version tag to deploy (e.g., v1.2.3). Defaults to release tag when triggered by release."
+        required: false
+      deployEmr:
+        description: "Also deploy EMR service (webqx-emr)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  deployments: write
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  context:
+    name: Prepare context
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.getver.outputs.version }}
+      envName: ${{ steps.envsel.outputs.envName }}
+    steps:
+      - name: Derive version
+        id: getver
+        run: |
+          if [ -n "${{ github.event.release.tag_name }}" ]; then
+            echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Version tag required when not triggered by a release"; exit 1
+          fi
+      - name: Select environment
+        id: envsel
+        run: |
+          ENV_INPUT="${{ inputs.environment }}"
+          if [ -z "$ENV_INPUT" ]; then
+            ENV_INPUT="staging"
+          fi
+          echo "envName=$ENV_INPUT" >> $GITHUB_OUTPUT
+
+  deploy-backend:
+    name: Deploy backend services to Railway
+    needs: context
+    runs-on: ubuntu-latest
+    environment: ${{ needs.context.outputs.envName }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Normalize Railway secrets
+        env:
+          RWY_T_1: ${{ secrets.RAILWAY_TOKEN }}
+          RWY_T_2: ${{ secrets.RWY_TOKEN }}
+          RWY_T_3: ${{ secrets.RAILWAY_API_TOKEN }}
+          RWY_P_1: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RWY_P_2: ${{ secrets.RWY_PROJECT_ID }}
+          RWY_P_3: ${{ secrets.RAILWAY_PROJECT }}
+        run: |
+          set -e
+          RAILWAY_TOKEN="${RWY_T_1:-${RWY_T_2:-${RWY_T_3}}}"
+          RAILWAY_PROJECT_ID="${RWY_P_1:-${RWY_P_2:-${RWY_P_3}}}"
+          if [ -z "$RAILWAY_TOKEN" ]; then echo "::error::Railway token is not set (RAILWAY_TOKEN/RWY_TOKEN/RAILWAY_API_TOKEN)."; exit 1; fi
+          echo "RAILWAY_TOKEN=$RAILWAY_TOKEN" >> $GITHUB_ENV
+          if [ -n "$RAILWAY_PROJECT_ID" ]; then echo "RAILWAY_PROJECT_ID=$RAILWAY_PROJECT_ID" >> $GITHUB_ENV; fi
+
+      - name: Determine image tags
+        id: img
+        run: |
+          VERSION="${{ needs.context.outputs.version }}"
+          OWNER="${{ github.repository_owner }}"
+          echo "api=ghcr.io/${OWNER}/webqx-api:${VERSION}" >> $GITHUB_OUTPUT
+          echo "emr=ghcr.io/${OWNER}/webqx-emr:${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Resolve deploy flags
+        id: flags
+        env:
+          EMR_FLAG_INPUT: ${{ inputs.deployEmr }}
+          EMR_FLAG_SECRET_1: ${{ secrets.DEPLOY_EMR }}
+          EMR_FLAG_SECRET_2: ${{ secrets.EMR_ENABLED }}
+        run: |
+          set -e
+          FLAG="${EMR_FLAG_INPUT}"
+          if [ -z "$FLAG" ]; then FLAG="${EMR_FLAG_SECRET_1}"; fi
+          if [ -z "$FLAG" ]; then FLAG="${EMR_FLAG_SECRET_2}"; fi
+          FLAG_LC="$(echo "${FLAG}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$FLAG_LC" = "true" ] || [ "$FLAG_LC" = "yes" ] || [ "$FLAG" = "1" ]; then
+            echo "deploy_emr=true" >> $GITHUB_OUTPUT
+            echo "EMR deployment enabled"
+          else
+            echo "deploy_emr=false" >> $GITHUB_OUTPUT
+            echo "EMR deployment disabled"
+          fi
+
+      - name: Deploy API Gateway (pinned image)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then echo "Missing RAILWAY_TOKEN" >&2; exit 1; fi
+          if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
+          echo "Deploying API using image: ${{ steps.img.outputs.api }}"
+          railway deploy --service webqx-api --image "${{ steps.img.outputs.api }}" --detach \
+            || railway up --service webqx-api --detach || railway up --detach
+
+      - name: Deploy OpenEMR service (pinned image)
+        if: steps.flags.outputs.deploy_emr == 'true'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then echo "Missing RAILWAY_TOKEN" >&2; exit 1; fi
+          if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
+          echo "Deploying EMR using image: ${{ steps.img.outputs.emr }}"
+          railway deploy --service webqx-emr --image "${{ steps.img.outputs.emr }}" --detach \
+            || (cd webqx-emr-system && railway up --service webqx-emr --detach || railway up --detach)
+
+      - name: Health checks
+        env:
+          API_H_1: ${{ secrets.API_HEALTH_URL }}
+          API_H_2: ${{ secrets.HEALTHCHECK_API_URL }}
+          API_H_3: ${{ secrets.RAILWAY_HEALTH_URL }}
+          EMR_H_1: ${{ secrets.EMR_HEALTH_URL }}
+          EMR_H_2: ${{ secrets.HEALTHCHECK_EMR_URL }}
+        run: |
+          set -e
+          API_HEALTH_URL="${API_H_1:-${API_H_2:-${API_H_3}}}"
+          EMR_HEALTH_URL="${EMR_H_1:-${EMR_H_2}}"
+          if [ -n "$API_HEALTH_URL" ]; then
+            echo "Checking API: $API_HEALTH_URL"; curl -fsSL "$API_HEALTH_URL" | head -c 200; echo
+          else echo "API health URL not set"; fi
+          if [ -n "$EMR_HEALTH_URL" ]; then
+            echo "Checking EMR: $EMR_HEALTH_URL"; curl -fsSL "$EMR_HEALTH_URL" | head -c 200; echo
+          else echo "EMR health URL not set"; fi
+
+  deploy-pages:
+    name: Deploy GitHub Pages
+    needs: [context, deploy-backend]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.context.outputs.envName }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Install deps
+        run: npm ci --ignore-scripts
+      - name: Build static site (with runtime config)
+        env:
+          API_BASE_1: ${{ secrets.RAILWAY_PUBLIC_API_BASE }}
+          API_BASE_2: ${{ secrets.PUBLIC_API_BASE }}
+          API_BASE_3: ${{ secrets.PAGES_API_BASE }}
+          EMR_BASE_1: ${{ secrets.RAILWAY_PUBLIC_EMR_BASE }}
+          EMR_BASE_2: ${{ secrets.PUBLIC_EMR_BASE }}
+          EMR_BASE_3: ${{ secrets.PAGES_EMR_BASE }}
+        run: |
+          export RAILWAY_PUBLIC_API_BASE="${API_BASE_1:-${API_BASE_2:-${API_BASE_3}}}"
+          export RAILWAY_PUBLIC_EMR_BASE="${EMR_BASE_1:-${EMR_BASE_2:-${EMR_BASE_3}}}"
+          echo "Using API base: ${RAILWAY_PUBLIC_API_BASE:-<unset>}"
+          echo "Using EMR base: ${RAILWAY_PUBLIC_EMR_BASE:-<unset>}"
+          npm run build:pages
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Deploy to Pages
+        uses: actions/deploy-pages@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -389,7 +389,7 @@ describe('ChatEHR Integration', () => {
                 const messageData = {
                     toId: 'physician-456',
                     content: 'Test message via API',
-                    consultationId: 'consultation-1',
+                    consultationId: '550e8400-e29b-41d4-a716-446655440000', // Valid UUID
                     type: 'text'
                 };
 
@@ -423,7 +423,7 @@ describe('ChatEHR Integration', () => {
         describe('GET /api/chatehr/messages/:consultationId', () => {
             it('should get messages for a consultation', async () => {
                 const response = await request(app)
-                    .get('/api/chatehr/messages/consultation-1')
+                    .get('/api/chatehr/messages/550e8400-e29b-41d4-a716-446655440000')
                     .expect(200);
 
                 expect(response.body.success).toBe(true);
@@ -433,7 +433,7 @@ describe('ChatEHR Integration', () => {
 
             it('should handle pagination', async () => {
                 const response = await request(app)
-                    .get('/api/chatehr/messages/consultation-1')
+                    .get('/api/chatehr/messages/550e8400-e29b-41d4-a716-446655440000')
                     .query({
                         limit: 10,
                         offset: 0

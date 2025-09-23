@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebQX Telehealth - Jitsi Meet</title>
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #0f172a; color: #e2e8f0; }
+    header { padding: 0.75rem 1rem; background: #111827; display: flex; align-items: center; justify-content: space-between; }
+    .brand { font-weight: 700; }
+    .controls { display: flex; gap: 0.5rem; align-items: center; }
+    input, select, button { border-radius: 6px; border: 1px solid #334155; background: #0b1220; color: #e2e8f0; padding: 0.5rem 0.75rem; }
+    button { background: #2563eb; border: none; cursor: pointer; }
+    button.secondary { background: #475569; }
+    #meet { position: absolute; top: 56px; left: 0; right: 0; bottom: 0; }
+    .notice { padding: 0.4rem 0.6rem; color: #94a3b8; font-size: 0.9rem; }
+  </style>
+  <script src="https://meet.jit.si/external_api.js"></script>
+</head>
+<body>
+  <header>
+    <div class="brand">🩺 WebQX Telehealth · Jitsi Meet</div>
+    <div class="controls">
+      <input id="room" placeholder="Room name (e.g. patient-1234)" />
+      <select id="domain">
+        <option value="meet.jit.si">meet.jit.si</option>
+      </select>
+      <button id="start">Start / Join</button>
+      <button id="leave" class="secondary">Leave</button>
+    </div>
+  </header>
+  <div class="notice">Tip: You can pass ?room=patient-1234&domain=meet.jit.si in the URL.</div>
+  <div id="meet"></div>
+
+  <script>
+    (function(){
+      const params = new URLSearchParams(location.search);
+      const roomInput = document.getElementById('room');
+      const domainSelect = document.getElementById('domain');
+      roomInput.value = params.get('room') || '';
+      domainSelect.value = params.get('domain') || domainSelect.value;
+
+      let api = null;
+      const startBtn = document.getElementById('start');
+      const leaveBtn = document.getElementById('leave');
+      const container = document.getElementById('meet');
+
+      function startMeeting() {
+        const roomName = roomInput.value.trim();
+        const domain = domainSelect.value;
+        if (!roomName) { alert('Please enter a room name'); return; }
+        if (api) { try { api.dispose(); } catch(e){} }
+        const options = {
+          roomName,
+          parentNode: container,
+          lang: 'en',
+          configOverwrite: {
+            disableDeepLinking: true,
+            prejoinPageEnabled: true
+          },
+          interfaceConfigOverwrite: {
+            VIDEO_LAYOUT_FIT: 'both'
+          }
+        };
+        api = new JitsiMeetExternalAPI(domain, options);
+      }
+
+      function leaveMeeting(){ if (api) { try { api.dispose(); } catch(e){} api = null; } }
+      startBtn.addEventListener('click', startMeeting);
+      leaveBtn.addEventListener('click', leaveMeeting);
+
+      if (roomInput.value) { startMeeting(); }
+    })();
+  </script>
+</body>
+  
+</html>

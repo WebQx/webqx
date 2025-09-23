@@ -1,21 +1,6 @@
-name: Frontend Deploy
+name: Frontend Deploy (manual)
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'assets/**'
-      - 'patient-portal/**'
-      - 'provider/**'
-      - 'admin-console/**'
-      - 'auth/**'
-      - 'modules/**'
-      - 'demo/**'
-      - 'scripts/build-pages.js'
-      - 'tailwind.config.js'
-      - 'package.json'
-      - 'webqx-remote-config.js'
-      - 'index.html'
   workflow_dispatch:
 
 permissions:

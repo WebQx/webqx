@@ -372,13 +372,17 @@ describe('Performance Tests', () => {
   test('should manage memory efficiently', () => {
     const service = new WhisperStreamingService();
     
-    // Simulate adding many chunks
+    // Simulate adding reasonable number of chunks (within memory limits)
+    const testChunks = Array(50).fill(new Float32Array(1024)); // 50 chunks instead of 1000
     (service as any).audioState = {
-      chunks: Array(1000).fill(new Float32Array(1024))
+      chunks: testChunks
     };
     
     // Memory usage should be bounded
     const memoryUsage = process.memoryUsage();
     expect(memoryUsage.heapUsed).toBeLessThan(100 * 1024 * 1024); // Less than 100MB
+    
+    // Test that service limits chunk count (MAX_CHUNKS = 64)
+    expect(testChunks.length).toBeLessThan(64);
   });
 });

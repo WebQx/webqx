@@ -1,8 +1,6 @@
-name: WebQX CI & Deployment
+name: WebQX CI (no deploy)
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -43,133 +41,14 @@ jobs:
           path: junit.xml
           if-no-files-found: ignore
 
-  build-docker:
-    name: Build & Publish Docker Images
-    runs-on: ubuntu-latest
-    needs: test
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Extract Metadata (EMR)
-        id: meta_emr
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ env.IMAGE_NAMESPACE }}/webqx-emr
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha
-      - name: Extract Metadata (Auth)
-        id: meta_auth
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ env.IMAGE_NAMESPACE }}/webqx-auth
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha
-      - name: Build & Push EMR Image
-        uses: docker/build-push-action@v6
-        with:
-          context: webqx-emr-system
-          file: webqx-emr-system/Dockerfile
-          push: true
-          tags: ${{ steps.meta_emr.outputs.tags }}
-          labels: ${{ steps.meta_emr.outputs.labels }}
-      - name: Build & Push Django Auth Image
-        uses: docker/build-push-action@v6
-        with:
-          context: django-auth-backend
-          push: true
-          tags: ${{ steps.meta_auth.outputs.tags }}
-          labels: ${{ steps.meta_auth.outputs.labels }}
+  # Build Docker images step removed from PR pipeline; release workflow handles versioned images
 
-  pages-build:
-    name: Build Static Pages (Unified)
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      - name: Cache Portal Node Modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            portal/node_modules
-            patient-portal/node_modules
-          key: ${{ runner.os }}-portal-${{ hashFiles('package-lock.json', 'portal/package.json', 'patient-portal/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-portal-
-      - name: Install Dependencies
-        run: npm ci
-      - name: Build Static Assets & Apps
-        run: |
-          set -e
-          echo "== Tailwind/CSS =="
-          npm run build:css:prod
-          echo "== Legacy static pages script (if present) =="
-          if [ -f scripts/build-pages.js ]; then npm run build:pages; fi
-          echo "== Patient Portal Build (Parcel) =="
-          if [ -d patient-portal ]; then \
-            pushd patient-portal; npm ci || npm install; npm run build; popd; \
-          else echo "patient-portal directory missing"; fi
-          echo "== Vite Portal Build (if portal dir exists) =="
-          if [ -d portal ]; then \
-            npm run portal:build || echo "portal:build script missing"; \
-          fi
-      - name: Verify Portal Build
-        run: |
-          if [ -d portal/dist ]; then
-            echo 'Portal build contents:'
-            find portal/dist -maxdepth 3 -type f | head -n 60
-            test -f portal/dist/index.html || (echo 'ERROR: portal/dist/index.html missing' && exit 1)
-          else
-            echo 'WARNING: portal/dist not found'; ls -al portal || true
-          fi
-      - name: Assemble Dist Artifact
-        run: npm run build:dist
-      - name: List Dist Contents
-        run: |
-          echo "=== dist tree (first 200 files) ==="; find dist -maxdepth 4 -type f | head -n 200
-          echo "=== portal directory listing ==="; (cd dist/portal 2>/dev/null && find . -maxdepth 3 -type f | head -n 60 || echo 'no portal assets')
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy-pages:
-    name: Deploy GitHub Pages
-    runs-on: ubuntu-latest
-    needs: pages-build
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+  # Pages deployment handled by dedicated workflows (staging/production)
 
   summary:
-    name: Deployment Summary
+    name: CI Summary
     runs-on: ubuntu-latest
-    needs: [build-docker, deploy-pages]
+    needs: [test]
     steps:
       - name: Summary
-        run: |
-          echo 'CI & Deployment complete.'
-          echo 'Images and Pages deployed.'
+        run: echo 'CI run complete (tests only). Deployments occur via release workflows.'

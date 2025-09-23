@@ -27,7 +27,7 @@ import {
   ComplianceServiceConfig 
 } from '../types/compliance';
 
-import { AuditLogger, AuditLogInput } from '../../ehr-integrations/services/auditLogger';
+import { AuditLogger } from './auditLogger';
 
 /**
  * HIPAA Service Configuration

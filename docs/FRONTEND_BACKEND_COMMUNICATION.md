@@ -52,27 +52,7 @@ const corsOptions = {
 
 ## 🛡️ **24/7 Communication Solutions**
 
-### **Option 1: Cloud API Gateway (Recommended for Production)**
-
-#### [DEPRECATED] AWS API Gateway + Lambda
-```yaml
-# serverless.yml
-service: webqx-api-gateway
-
-provider:
-  name: aws
-  runtime: nodejs18.x
-  stage: prod
-  
-functions:
-  authProxy:
-    handler: lambda/auth-proxy.handler
-    events:
-      - http:
-          path: /api/{proxy+}
-          method: ANY
-          cors: true
-```
+### **Option 1: Managed Cloud API Gateways (Container-first)**
 
 #### **Google Cloud API Gateway**
 ```yaml

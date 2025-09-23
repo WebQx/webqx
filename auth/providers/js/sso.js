@@ -1,38 +1,40 @@
 /**
  * WebQX Provider Portal - Single Sign-On (SSO) Module
- * Handles integration with Keycloak, Microsoft, and SMART on FHIR
+ * Unified via Keycloak (brokered social login for Microsoft, Google, Apple)
  */
 
 class SSOManager {
     constructor() {
+        // Allow per-page overrides before instantiation
+        const override = (window.WEBQX_SSO_OVERRIDE || {});
+    this.finalizeEndpoint = override.finalizeEndpoint || '/api/auth/provider/sso-login';
+    // Use a concrete callback HTML file so static hosting returns same-origin content
+    this.callbackPathPrefix = override.callbackPathPrefix || '/auth/providers/callback';
+        this.redirectAfterLogin = override.redirectAfterLogin || null;
+
+        // Base Keycloak config (acts as broker)
+        const keycloakBase = {
+            name: 'Keycloak',
+            enabled: true,
+            authUrl: 'https://keycloak.webqx.health/auth',
+            realm: 'webqx-healthcare',
+            clientId: 'webqx-provider-portal',
+            scope: 'openid profile email',
+            redirectUri: `${window.location.origin}${this.callbackPathPrefix}.html`
+        };
+
+        // Map friendly providers to Keycloak with kc_idp_hint
+        this.idpHints = Object.assign({
+            microsoft: 'microsoft',
+            google: 'google',
+            apple: 'apple'
+        }, (window.WEBQX_SSO_IDP_HINTS || {}));
+
         this.ssoConfigs = {
-            keycloak: {
-                name: 'Keycloak',
-                enabled: true,
-                authUrl: 'https://keycloak.webqx.health/auth',
-                realm: 'webqx-healthcare',
-                clientId: 'webqx-provider-portal',
-                scope: 'openid profile email',
-                redirectUri: `${window.location.origin}/auth/providers/callback/keycloak`
-            },
-            microsoft: {
-                name: 'Microsoft',
-                enabled: true,
-                authUrl: 'https://login.microsoftonline.com',
-                tenantId: 'common',
-                clientId: 'your-azure-client-id',
-                scope: 'https://graph.microsoft.com/User.Read openid profile email',
-                redirectUri: `${window.location.origin}/auth/providers/callback/microsoft`
-            },
-            'smart-fhir': {
-                name: 'SMART on FHIR',
-                enabled: true,
-                authUrl: 'https://fhir.epic.com/interconnect-fhir-oauth',
-                clientId: 'your-fhir-client-id',
-                scope: 'launch/patient patient/*.read user/*.read openid profile',
-                redirectUri: `${window.location.origin}/auth/providers/callback/smart-fhir`,
-                aud: 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/'
-            }
+            keycloak: keycloakBase,
+            microsoft: { name: 'Microsoft', enabled: true },
+            google: { name: 'Google', enabled: true },
+            apple: { name: 'Apple', enabled: true }
         };
 
         this.currentProvider = null;
@@ -43,6 +45,11 @@ class SSOManager {
     }
 
     init() {
+        // Optional: page can override provider enablement flags
+        const providerOverrides = (window.WEBQX_SSO_PROVIDERS || {});
+        Object.keys(providerOverrides).forEach(p => {
+            if (this.ssoConfigs[p]) this.ssoConfigs[p].enabled = !!providerOverrides[p];
+        });
         // Check for OAuth callback parameters
         this.handleOAuthCallback();
         
@@ -116,36 +123,22 @@ class SSOManager {
     buildAuthUrl(provider, state) {
         const config = this.ssoConfigs[provider];
         
-        switch (provider) {
-            case 'keycloak':
-                return `${config.authUrl}/realms/${config.realm}/protocol/openid-connect/auth?` +
-                       `client_id=${encodeURIComponent(config.clientId)}&` +
-                       `redirect_uri=${encodeURIComponent(config.redirectUri)}&` +
+        // Always broker through Keycloak; use kc_idp_hint for social providers
+        const kc = this.ssoConfigs.keycloak;
+        const base = `${kc.authUrl}/realms/${kc.realm}/protocol/openid-connect/auth`;
+        const common = `client_id=${encodeURIComponent(kc.clientId)}&` +
+                       `redirect_uri=${encodeURIComponent(kc.redirectUri)}&` +
                        `response_type=code&` +
-                       `scope=${encodeURIComponent(config.scope)}&` +
+                       `scope=${encodeURIComponent(kc.scope)}&` +
                        `state=${encodeURIComponent(state)}`;
-                       
-            case 'microsoft':
-                return `${config.authUrl}/${config.tenantId}/oauth2/v2.0/authorize?` +
-                       `client_id=${encodeURIComponent(config.clientId)}&` +
-                       `redirect_uri=${encodeURIComponent(config.redirectUri)}&` +
-                       `response_type=code&` +
-                       `scope=${encodeURIComponent(config.scope)}&` +
-                       `state=${encodeURIComponent(state)}&` +
-                       `response_mode=query`;
-                       
-            case 'smart-fhir':
-                return `${config.authUrl}/authorize?` +
-                       `client_id=${encodeURIComponent(config.clientId)}&` +
-                       `redirect_uri=${encodeURIComponent(config.redirectUri)}&` +
-                       `response_type=code&` +
-                       `scope=${encodeURIComponent(config.scope)}&` +
-                       `state=${encodeURIComponent(state)}&` +
-                       `aud=${encodeURIComponent(config.aud)}`;
-                       
-            default:
-                throw new Error(`Unknown SSO provider: ${provider}`);
+        if (provider === 'keycloak') {
+            return `${base}?${common}`;
         }
+        if (provider === 'microsoft' || provider === 'google' || provider === 'apple') {
+            const hint = encodeURIComponent(this.idpHints[provider] || provider);
+            return `${base}?${common}&kc_idp_hint=${hint}`;
+        }
+        throw new Error(`Unknown SSO provider: ${provider}`);
     }
 
     openAuthWindow(authUrl) {
@@ -188,8 +181,20 @@ class SSOManager {
         try {
             // Check if we can access the window URL (same origin)
             const url = this.authWindow.location.href;
-            if (url.includes('/auth/providers/callback/')) {
-                // Callback URL reached, close window and handle on main page
+            if (url.includes(`${this.callbackPathPrefix}`)) {
+                // Callback URL reached on same origin: parse params from popup
+                try {
+                    const search = this.authWindow.location.search || '';
+                    const params = new URLSearchParams(search);
+                    const code = params.get('code');
+                    const state = params.get('state');
+                    if (code && state && this.currentProvider) {
+                        // Process callback in the main window
+                        this.handleSSOCallback(this.currentProvider, code, state);
+                    }
+                } catch (_) { /* ignore parse errors */ }
+
+                // Close popup and cleanup
                 this.authWindow.close();
                 this.cleanupAuthWindow();
             }
@@ -218,8 +223,9 @@ class SSOManager {
             // Exchange code for tokens
             const tokenData = await this.exchangeCodeForTokens(provider, code);
             
-            // Get user info
-            const userInfo = await this.getUserInfo(provider, tokenData.access_token);
+            // Get user info (Apple returns user claims in id_token)
+            const tokenForUserInfo = provider === 'apple' ? tokenData.id_token : tokenData.access_token;
+            const userInfo = await this.getUserInfo(provider, tokenForUserInfo);
             
             // Authenticate with WebQX backend
             await this.authenticateWithBackend(provider, tokenData, userInfo);
@@ -237,9 +243,10 @@ class SSOManager {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                provider,
+                // Use Keycloak as the broker for token exchange
+                provider: 'keycloak',
                 code,
-                redirectUri: this.ssoConfigs[provider].redirectUri
+                redirectUri: this.ssoConfigs.keycloak.redirectUri
             })
         });
         
@@ -257,7 +264,8 @@ class SSOManager {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                provider,
+                // Userinfo via Keycloak (regardless of upstream IdP)
+                provider: 'keycloak',
                 accessToken
             })
         });
@@ -270,7 +278,7 @@ class SSOManager {
     }
 
     async authenticateWithBackend(provider, tokenData, userInfo) {
-        const response = await fetch('/api/auth/provider/sso-login', {
+        const response = await fetch(this.finalizeEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -285,30 +293,46 @@ class SSOManager {
         const result = await response.json();
         
         if (result.success) {
-            // Store authentication data
-            providerAuth.storeAuthData(result, false);
-            
-            // Show role confirmation modal
-            providerAuth.showRoleConfirmation(result.user.roles);
+            // If provider auth UI exists, delegate to it
+            if (window.providerAuth && typeof window.providerAuth.storeAuthData === 'function') {
+                window.providerAuth.storeAuthData(result, false);
+                if (typeof window.providerAuth.showRoleConfirmation === 'function') {
+                    window.providerAuth.showRoleConfirmation(result.user.roles);
+                }
+                return;
+            }
+
+            // Generic fallback for other pages
+            try {
+                const storage = window.localStorage;
+                if (result.token) storage.setItem('webqx_token', result.token);
+                if (result.user) storage.setItem('webqx_user', JSON.stringify(result.user));
+                storage.setItem('webqx_auth_provider', provider);
+            } catch {}
+
+            const dest = this.redirectAfterLogin || '/';
+            window.location.assign(dest);
         } else {
             throw new Error(result.error || 'SSO authentication failed');
         }
     }
 
     setSSOButtonLoading(provider, loading) {
-        const button = document.querySelector(`[onclick="initiateSSO('${provider}')"]`);
+        const button = document.querySelector(`button[data-sso="${provider}"]`);
         if (button) {
             button.disabled = loading;
             if (loading) {
                 button.classList.add('opacity-50', 'cursor-not-allowed');
-                button.innerHTML = `
-                    <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                `;
+                button.dataset.prevHtml = button.innerHTML;
+                button.innerHTML = `<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`;
             } else {
                 button.classList.remove('opacity-50', 'cursor-not-allowed');
-                this.restoreButtonIcon(provider, button);
+                if (button.dataset.prevHtml) {
+                    button.innerHTML = button.dataset.prevHtml;
+                    delete button.dataset.prevHtml;
+                } else {
+                    this.restoreButtonIcon(provider, button);
+                }
             }
         }
     }
@@ -332,6 +356,19 @@ class SSOManager {
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>`;
                 break;
+            case 'google':
+                iconSvg = `<svg class="w-5 h-5" viewBox="0 0 533.5 544.3">
+                    <path fill="#4285F4" d="M533.5 278.4c0-18.6-1.5-37.7-4.7-55.8H272v105.5h146.9c-6.4 34.5-25.7 63.7-54.9 83.3v68h88.7c52-47.9 81.8-118.4 81.8-201z"/>
+                    <path fill="#34A853" d="M272 544.3c74.2 0 136.5-24.5 182-66.3l-88.7-68c-24.6 16.5-56.1 26-93.3 26-71.5 0-132-48.2-153.7-113.1H27.2v70.9c45.2 89.7 137.9 150.5 244.8 150.5z"/>
+                    <path fill="#FBBC04" d="M118.3 322.9c-10.6-31.9-10.6-66.2 0-98.1v-70.9H27.2c-40.3 80.5-40.3 176.5 0 257z"/>
+                    <path fill="#EA4335" d="M272 107.7c38.3-.6 74.9 13.8 102.8 40.9l77-77C404.4 24.8 339.9-1.1 272 0 165.1 0 72.4 60.8 27.2 150.5l91.1 70.9C140 155.9 200.5 107.7 272 107.7z"/>
+                </svg>`;
+                break;
+            case 'apple':
+                iconSvg = `<svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M16.365 1.43c0 1.14-.463 2.2-1.248 2.993-.713.72-1.88 1.275-3.026 1.152-.123-1.148.47-2.31 1.186-3.032.76-.756 2.047-1.3 3.088-1.113zm3.512 17.556c-.64 1.457-.94 2.116-1.759 3.415-1.14 1.742-2.748 3.927-4.729 3.945-1.782.017-2.25-1.148-4.697-1.137-2.447.01-2.962 1.157-4.744 1.14-1.98-.018-3.5-1.981-4.64-3.723-3.18-4.85-3.518-10.56-1.558-13.57 1.39-2.15 3.595-3.415 5.668-3.415 2.123 0 3.46 1.163 5.22 1.163 1.71 0 2.75-1.164 5.23-1.164 1.933 0 3.978 1.05 5.37 2.855-4.72 2.586-3.96 9.33.64 10.491z"/>
+                </svg>`;
+                break;
         }
         
         button.innerHTML = iconSvg;
@@ -340,15 +377,20 @@ class SSOManager {
     updateSSOButtonStates() {
         Object.keys(this.ssoConfigs).forEach(provider => {
             const config = this.ssoConfigs[provider];
-            const button = document.querySelector(`[onclick="initiateSSO('${provider}')"]`);
-            
-            if (button) {
-                if (!config.enabled) {
-                    button.disabled = true;
-                    button.classList.add('opacity-50', 'cursor-not-allowed');
-                    button.title = `${config.name} SSO is not configured`;
-                } else {
-                    button.title = `Sign in with ${config.name}`;
+            const button = document.querySelector(`button[data-sso="${provider}"]`);
+            if (!button) return;
+            if (!config.enabled) {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+                button.title = `${config.name} SSO is not configured`;
+                button.style.display = 'none';
+            } else {
+                button.style.display = '';
+                button.title = `Sign in with ${config.name}`;
+                // Attach click handler if not already
+                if (!button._wqxSsoBound) {
+                    button.addEventListener('click', () => this.initiateSSO(provider));
+                    button._wqxSsoBound = true;
                 }
             }
         });
@@ -357,7 +399,7 @@ class SSOManager {
     updateSSOButtonTooltips() {
         Object.keys(this.ssoConfigs).forEach(provider => {
             const config = this.ssoConfigs[provider];
-            const button = document.querySelector(`[onclick="initiateSSO('${provider}')"]`);
+            const button = document.querySelector(`button[data-sso="${provider}"]`);
             
             if (button) {
                 if (!config.enabled) {

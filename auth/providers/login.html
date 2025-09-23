@@ -297,20 +297,30 @@
         
         .sso-buttons {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 12px;
+        }
+        @media (min-width: 480px) {
+            .sso-buttons { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (min-width: 768px) {
+            .sso-buttons { grid-template-columns: repeat(4, 1fr); }
         }
         
         .sso-button {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 8px;
             padding: 12px;
+            min-height: 92px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
             color: white;
             text-decoration: none;
+            text-align: center;
             transition: all 0.3s ease;
         }
         
@@ -322,6 +332,8 @@
             width: 20px;
             height: 20px;
         }
+        .sso-main { font-weight: 600; font-size: 14px; }
+        .sso-sub { font-size: 12px; opacity: 0.85; }
         
         .session-notice {
             text-align: center;
@@ -613,28 +625,33 @@
                     </div>
 
                     <div class="sso-buttons">
-                        <!-- Keycloak SSO -->
-                        <button type="button" class="sso-button" data-sso="keycloak">
-                            <span class="sr-only">Sign in with Keycloak</span>
-                            <svg class="sso-icon" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2L2 7v10c0 5.55 3.84 9.95 9 11 5.16-1.05 9-5.45 9-11V7l-10-5z"/>
-                            </svg>
-                        </button>
-
-                        <!-- Microsoft SSO -->
-                        <button type="button" class="sso-button" data-sso="microsoft">
-                            <span class="sr-only">Sign in with Microsoft</span>
-                            <svg class="sso-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <!-- Microsoft (Work or School) -->
+                        <button type="button" class="sso-button" data-sso="microsoft" aria-label="Sign in with Microsoft (work or school)" title="Use your Microsoft 365 work or school account">
+                            <svg class="sso-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
                             </svg>
+                            <span class="sso-main">Sign in with Microsoft</span>
+                            <span class="sso-sub">Work or school account (Microsoft 365)</span>
                         </button>
 
-                        <!-- SMART on FHIR SSO -->
-                        <button type="button" class="sso-button" data-sso="smart-fhir">
-                            <span class="sr-only">Sign in with SMART on FHIR</span>
-                            <svg class="sso-icon" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        <!-- Google -->
+                        <button type="button" class="sso-button" data-sso="google" aria-label="Sign in with Google" title="Use your Google account">
+                            <svg class="sso-icon" viewBox="0 0 533.5 544.3" aria-hidden="true">
+                                <path fill="#4285F4" d="M533.5 278.4c0-18.6-1.5-37.7-4.7-55.8H272v105.5h146.9c-6.4 34.5-25.7 63.7-54.9 83.3v68h88.7c52-47.9 81.8-118.4 81.8-201z"/>
+                                <path fill="#34A853" d="M272 544.3c74.2 0 136.5-24.5 182-66.3l-88.7-68c-24.6 16.5-56.1 26-93.3 26-71.5 0-132-48.2-153.7-113.1H27.2v70.9c45.2 89.7 137.9 150.5 244.8 150.5z"/>
+                                <path fill="#FBBC04" d="M118.3 322.9c-10.6-31.9-10.6-66.2 0-98.1v-70.9H27.2c-40.3 80.5-40.3 176.5 0 257z"/>
+                                <path fill="#EA4335" d="M272 107.7c38.3-.6 74.9 13.8 102.8 40.9l77-77C404.4 24.8 339.9-1.1 272 0 165.1 0 72.4 60.8 27.2 150.5l91.1 70.9C140 155.9 200.5 107.7 272 107.7z"/>
                             </svg>
+                            <span class="sso-main">Sign in with Google</span>
+                            <span class="sso-sub">Use your Google account</span>
+                        </button>
+                        <!-- Apple -->
+                        <button type="button" class="sso-button" data-sso="apple" aria-label="Sign in with Apple" title="Use your Apple ID">
+                            <svg class="sso-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="currentColor" d="M16.365 1.43c0 1.14-.463 2.2-1.248 2.993-.713.72-1.88 1.275-3.026 1.152-.123-1.148.47-2.31 1.186-3.032.76-.756 2.047-1.3 3.088-1.113zm3.512 17.556c-.64 1.457-.94 2.116-1.759 3.415-1.14 1.742-2.748 3.927-4.729 3.945-1.782.017-2.25-1.148-4.697-1.137-2.447.01-2.962 1.157-4.744 1.14-1.98-.018-3.5-1.981-4.64-3.723-3.18-4.85-3.518-10.56-1.558-13.57 1.39-2.15 3.595-3.415 5.668-3.415 2.123 0 3.46 1.163 5.22 1.163 1.71 0 2.75-1.164 5.23-1.164 1.933 0 3.978 1.05 5.37 2.855-4.72 2.586-3.96 9.33.64 10.491z"/>
+                            </svg>
+                            <span class="sso-main">Sign in with Apple</span>
+                            <span class="sso-sub">Use your Apple ID</span>
                         </button>
                     </div>
                 </div>
@@ -691,6 +708,7 @@
     </div>
 
     <!-- JavaScript -->
+    <script src="/auth/js/post-login-router.js"></script>
     <script>
         // Production mode only
         const isGitHubPages = false;
@@ -727,7 +745,8 @@
                         name: 'Administrator',
                         description: 'Administrative access to system management and reporting',
                         modules: ['users', 'reporting', 'billing', 'system-config', 'audit-logs'],
-                        redirect: '/provider/dashboard/'
+                        // Default to admin console for administrators
+                        redirect: '/admin-console/'
                     }
                 };
                 this.init();
@@ -860,21 +879,22 @@
             redirectToRoleDashboard(role) {
                 const roleConfig = this.providerRoles[role];
                 if (roleConfig) {
-                    // Honor explicit return URL when provided (demo/testing only)
-                    if (returnParam && /^\/?[\w\-\/\.?#=&%]+$/.test(returnParam)) {
-                        window.location.href = returnParam;
-                        return;
-                    }
-                    // Propagate deep-link params to provider dashboard when present
+                    // Use shared post-login router for consistent behavior
                     try {
-                        let target = roleConfig.redirect;
-                        const qp = new URLSearchParams();
-                        if (launchParam) qp.set('launch', launchParam);
-                        if (actionParam) qp.set('action', actionParam);
-                        const qs = qp.toString();
-                        if (qs) target += (target.includes('?') ? '&' : '?') + qs;
+                        const dest = (window.WebQXPostLoginRouter && typeof window.WebQXPostLoginRouter.computeRedirect === 'function')
+                          ? window.WebQXPostLoginRouter.computeRedirect(role, { defaultProvider: roleConfig.redirect })
+                          : roleConfig.redirect;
+                        // Preserve any deep-link params for provider dashboard only
+                        let target = dest;
+                        if (dest.startsWith('/provider')) {
+                          const qp = new URLSearchParams();
+                          if (launchParam) qp.set('launch', launchParam);
+                          if (actionParam) qp.set('action', actionParam);
+                          const qs = qp.toString();
+                          if (qs) target += (target.includes('?') ? '&' : '?') + qs;
+                        }
                         window.location.href = target;
-                    } catch {
+                    } catch (_) {
                         window.location.href = roleConfig.redirect;
                     }
                 } else {
@@ -1002,8 +1022,10 @@
         }
 
         function initiateSSO(provider) {
-            // Real SSO flow requires server/provider configuration.
-            // Redirect placeholder; update when SSO auth endpoints are finalized.
+            if (window.ssoManager && typeof window.ssoManager.initiateSSO === 'function') {
+                return window.ssoManager.initiateSSO(provider);
+            }
+            // Fallback
             window.location.href = `/auth/providers/login.html?sso=${encodeURIComponent(provider)}`;
         }
 
@@ -1068,6 +1090,7 @@
             });
         });
     </script>
+    <script src="/auth/providers/js/sso.js"></script>
     
     <!-- Production: no demo hints -->
 </body>

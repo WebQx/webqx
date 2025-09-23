@@ -165,6 +165,17 @@ Do NOT expose publicly without auth. Future: secure with JWT scope + IP allowlis
 | `OPENEMR_CIRCUIT_COOLDOWN_MS` | 15000 | Circuit open duration before probe re-checks |
 | `TRANSCRIPTION_BASE_URL` | (empty) | Base URL of the Whisper microservice; when unset, gateway returns 503 for transcription API |
 
+Imaging & PACS (DICOMweb) variables:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `DCM4CHEE_BASE` | (empty) | Base URL of dcm4chee archive, e.g. `https://pacs.example.com/dcm4chee-arc` |
+| `DCM4CHEE_AET` | DCM4CHEE | AE Title used by dcm4chee (builds final DICOMweb root `${DCM4CHEE_BASE}/aets/${DCM4CHEE_AET}/rs`) |
+| `DCM4CHEE_USERNAME` | (empty) | Optional basic auth username forwarded by the proxy |
+| `DCM4CHEE_PASSWORD` | (empty) | Optional basic auth password forwarded by the proxy |
+
+OHIF Viewer runtime can be customized via `WEBQX_CONFIG` (see provider portal); defaults to `https://ohif.org/viewer` when not set.
+
 Full list: see `.env.example`.
 
 ---
@@ -592,6 +603,35 @@ If unset it falls back to the legacy path.
 * System-to-system client credentials grant (separate key set)
 
 ---
+
+## 🩻 Imaging & PACS (DICOMweb + OHIF)
+
+The platform includes a DICOMweb proxy and OHIF viewer integration to enable secure, zero‑CORS access to imaging studies.
+
+Gateway proxy (enabled when `DCM4CHEE_BASE` is set):
+- Mount point: `/dicomweb`
+- Target: `${DCM4CHEE_BASE}/aets/${DCM4CHEE_AET}/rs`
+- Optional Basic Auth forwarded from `DCM4CHEE_USERNAME`/`DCM4CHEE_PASSWORD`
+
+Quick check:
+- 200 OK indicates connectivity: GET `/dicomweb/studies?limit=1`
+- 503 with `{ error: 'DICOMWEB_UNCONFIGURED' }` means env vars are missing
+
+Viewer launch:
+- Provider portal includes an “Open Imaging Viewer” button that opens OHIF pointing at our `/dicomweb/studies` endpoint.
+- You can override the viewer base with `WEBQX_CONFIG.ohif_viewer` (runtime config).
+
+Programmatic access:
+- `services/pacsService.ts` provides typed helpers for DICOMweb:
+	- `getStudies(patientId)` → QIDO‑RS search
+	- `getStudyDetails(studyUID)` / `getSeriesDetails(seriesUID)` / `getImageDetails(sopUID)`
+	- `uploadDICOM(buffer, filename)` via STOW‑RS
+	- `getViewerUrl(studyUID)` generates an OHIF URL for a study
+- Built‑in caching and audit logging are enabled by default; Basic Auth is supported when credentials are provided.
+
+Notes:
+- For Orthanc DICOMweb, point clients directly at its `/dicom-web` root (e.g., via `pacsService` `dicomwebBaseUrl`). The built‑in proxy path targets dcm4chee’s `aets/<AET>/rs` layout.
+- See also: `modules/postdicom/README.md` for a PostDICOM module option.
 
 ## �🚀 CI / CD & Deployment
 

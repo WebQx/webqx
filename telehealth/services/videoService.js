@@ -41,7 +41,7 @@ class SecureVideoService extends EventEmitter {
             
             // Audio configuration
             audioCodec: options.audioCodec || 'opus',
-            videoCoded: options.videoCodec || 'VP8',
+            videoCodec: options.videoCodec || 'VP8',
             echoCancellation: options.echoCancellation !== false,
             noiseSuppression: options.noiseSuppression !== false,
             autoGainControl: options.autoGainControl !== false,
@@ -338,10 +338,15 @@ class SecureVideoService extends EventEmitter {
         }
 
         return new Promise((resolve, reject) => {
-            const wsUrl = `wss://localhost:3000/telehealth/signaling?session=${this.sessionId}`;
-            
+            // Allow override via env; default to ws in test/dev and wss in prod
+            const host = process.env.TELEHEALTH_SIGNALING_HOST || 'localhost';
+            const port = process.env.TELEHEALTH_SIGNALING_PORT || '3000';
+            const proto = process.env.TELEHEALTH_SIGNALING_PROTO || (process.env.NODE_ENV === 'production' ? 'wss' : 'ws');
+            const basePath = process.env.TELEHEALTH_SIGNALING_PATH || '/telehealth/signaling';
+            const wsUrl = process.env.TELEHEALTH_SIGNALING_URL || `${proto}://${host}:${port}${basePath}?session=${this.sessionId}`;
+
             this.signalingSocket = new WebSocket(wsUrl, {
-                // Use TLS configuration for secure signaling
+                // In production, validate certs; in dev/test, allow self-signed
                 rejectUnauthorized: process.env.NODE_ENV === 'production'
             });
 

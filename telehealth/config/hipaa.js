@@ -33,9 +33,9 @@ class HIPAAConfig {
      * Load HIPAA configuration from environment
      */
     loadConfiguration() {
-        // Provide a safe default encryption key in test environment so tests don't fail due to missing env var
-        if (process.env.NODE_ENV === 'test' && !process.env.HIPAA_ENCRYPTION_KEY) {
-            process.env.HIPAA_ENCRYPTION_KEY = 'TEST_MODE_HIPAA_ENCRYPTION_KEY_32_CHARS_MIN__';
+        // Validate that production encryption key is properly configured
+        if (!process.env.HIPAA_ENCRYPTION_KEY) {
+            throw new Error('HIPAA_ENCRYPTION_KEY environment variable is required in production. Generate a secure 64-character hex key.');
         }
 
         this.config = {
@@ -118,8 +118,16 @@ class HIPAAConfig {
         // Check encryption key
         if (!this.config.encryptionKey) {
             errors.push('HIPAA encryption key is required (HIPAA_ENCRYPTION_KEY)');
-        } else if (this.config.encryptionKey.length < 32) {
-            errors.push('HIPAA encryption key must be at least 256 bits (32 characters)');
+        } else {
+            // For AES-256, we need 32 bytes = 64 hex characters
+            const keyLength = this.config.encryptionKey.length;
+            if (keyLength !== 64) {
+                errors.push(`HIPAA encryption key must be exactly 64 hex characters (32 bytes) for AES-256, got ${keyLength} characters`);
+            }
+            // Validate it's valid hex
+            if (!/^[0-9a-fA-F]+$/.test(this.config.encryptionKey)) {
+                errors.push('HIPAA encryption key must be valid hexadecimal');
+            }
         }
 
         // Check retention periods
@@ -315,15 +323,18 @@ class HIPAAConfig {
         }
 
         try {
-            const decipher = crypto.createDecipher(encryptedData.algorithm, this.config.encryptionKey);
-            
+            // Use AES-GCM with IV and auth tag to mirror encryptData
+            const key = Buffer.from(this.config.encryptionKey, 'hex');
+            const iv = Buffer.from(encryptedData.iv, 'hex');
+            const decipher = crypto.createDecipheriv(encryptedData.algorithm, key, iv);
+
             if (encryptedData.authTag) {
                 decipher.setAuthTag(Buffer.from(encryptedData.authTag, 'hex'));
             }
-            
+
             let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8');
             decrypted += decipher.final('utf8');
-            
+
             return JSON.parse(decrypted);
         } catch (error) {
             throw new Error(`Decryption failed: ${error.message}`);

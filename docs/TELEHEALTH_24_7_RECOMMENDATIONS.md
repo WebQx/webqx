@@ -333,16 +333,19 @@ services:
       
   regional_backends:
     americas:
-      provider: aws_lambda
-      regions: [us-east-1, us-west-2, ca-central-1]
+      provider: container_runtime
+      platform: railway
+      regions: [us-east, us-west]
       
     europe: 
-      provider: aws_lambda
-      regions: [eu-west-1, eu-central-1, eu-north-1]
+      provider: container_runtime
+      platform: railway
+      regions: [eu-west, eu-central]
       
     asia_pacific:
-      provider: aws_lambda  
-      regions: [ap-southeast-1, ap-northeast-1, ap-south-1]
+      provider: container_runtime  
+      platform: railway
+      regions: [ap-southeast, ap-northeast]
       
   database:
     provider: mongodb_atlas  # Global clusters

@@ -1,0 +1,61 @@
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to rollback (staging or production)"
+        required: true
+        type: choice
+        options: [staging, production]
+      version:
+        description: "Version tag to rollback to (e.g., v1.2.3)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Normalize Railway secrets
+        env:
+          RWY_T_1: ${{ secrets.RAILWAY_TOKEN }}
+          RWY_T_2: ${{ secrets.RWY_TOKEN }}
+          RWY_T_3: ${{ secrets.RAILWAY_API_TOKEN }}
+          RWY_P_1: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RWY_P_2: ${{ secrets.RWY_PROJECT_ID }}
+          RWY_P_3: ${{ secrets.RAILWAY_PROJECT }}
+        run: |
+          RAILWAY_TOKEN="${RWY_T_1:-${RWY_T_2:-${RWY_T_3}}}"
+          RAILWAY_PROJECT_ID="${RWY_P_1:-${RWY_P_2:-${RWY_P_3}}}"
+          if [ -z "$RAILWAY_TOKEN" ]; then echo "::error::Railway token is not set (RAILWAY_TOKEN/RWY_TOKEN/RAILWAY_API_TOKEN)."; exit 1; fi
+          echo "RAILWAY_TOKEN=$RAILWAY_TOKEN" >> $GITHUB_ENV
+          if [ -n "$RAILWAY_PROJECT_ID" ]; then echo "RAILWAY_PROJECT_ID=$RAILWAY_PROJECT_ID" >> $GITHUB_ENV; fi
+
+      - name: Redeploy API & EMR (pinned images)
+        run: |
+          if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
+          VERSION="${{ inputs.version }}"
+          OWNER="${{ github.repository_owner }}"
+          API_IMG="ghcr.io/${OWNER}/webqx-api:${VERSION}"
+          EMR_IMG="ghcr.io/${OWNER}/webqx-emr:${VERSION}"
+          echo "Rolling back API to ${API_IMG}"
+          railway deploy --service webqx-api --image "${API_IMG}" --detach || true
+          echo "Rolling back EMR to ${EMR_IMG}"
+          railway deploy --service webqx-emr --image "${EMR_IMG}" --detach || true
+
+      - name: Re-deploy Pages from the tagged release artifact
+        run: |
+          echo "Rebuilding Pages from tag is optional; typically you deploy the previous Pages artifact if stored."
+          echo "If needed, manually run the Deploy workflow on the tag to republish Pages."

@@ -1,5 +1,33 @@
 import React, { useState, useCallback } from 'react';
-import { FHIRAppointment, FHIRAppointmentStatus } from '../../ehr-integrations/types/fhir-r4';
+
+// Minimal FHIR types used locally (decoupled from removed ehr-integrations)
+export type FHIRAppointmentStatus =
+  | 'proposed'
+  | 'pending'
+  | 'booked'
+  | 'arrived'
+  | 'fulfilled'
+  | 'cancelled'
+  | 'noshow'
+  | 'entered-in-error'
+  | 'checked-in'
+  | 'waitlist';
+
+export interface FHIRAppointment {
+  id?: string;
+  status?: FHIRAppointmentStatus;
+  start?: string;
+  end?: string;
+  comment?: string;
+  description?: string;
+  serviceType?: Array<{ text?: string }>;
+  reasonCode?: Array<{ text?: string }>;
+  participant?: Array<{
+    actor?: { reference?: string; display?: string };
+    type?: Array<{ coding?: Array<{ code?: string; display?: string }> }>;
+    status?: string;
+  }>;
+}
 
 /**
  * Enhanced AppointmentCard component with FHIR R4 integration
