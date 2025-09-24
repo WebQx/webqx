@@ -256,8 +256,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GH || secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.GHCR_USERNAME || github.actor }}
+          password: ${{ secrets.GHCR_PAT || secrets.GH_PAT || secrets.GH || secrets.GITHUB_TOKEN }}
 
       - name: Ensure API image exists (fallback build if missing)
         env:
