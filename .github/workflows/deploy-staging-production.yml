@@ -174,6 +174,16 @@ jobs:
             if [ -z "$RAILWAY_PUBLIC_API_BASE" ]; then export RAILWAY_PUBLIC_API_BASE="http://localhost:3000"; fi
           fi
           
+          # Fix URL formats by adding protocols if missing
+          if [ -n "$RAILWAY_PUBLIC_API_BASE" ] && ! echo "$RAILWAY_PUBLIC_API_BASE" | grep -q '^https\?://'; then
+            export RAILWAY_PUBLIC_API_BASE="https://$RAILWAY_PUBLIC_API_BASE"
+            echo "::notice::Added https:// protocol to RAILWAY_PUBLIC_API_BASE"
+          fi
+          if [ -n "$ALLOWED_ORIGINS" ] && ! echo "$ALLOWED_ORIGINS" | grep -q '^https\?://'; then
+            export ALLOWED_ORIGINS="https://$ALLOWED_ORIGINS"
+            echo "::notice::Added https:// protocol to ALLOWED_ORIGINS"
+          fi
+          
           # Derive ALLOWED_ORIGINS from API base if unset
           if [ -z "$ALLOWED_ORIGINS" ] && [ -n "$RAILWAY_PUBLIC_API_BASE" ]; then export ALLOWED_ORIGINS="$RAILWAY_PUBLIC_API_BASE"; fi
           # Derive PUBLIC_FHIR_BASE from FHIR_BASE_URL if unset
