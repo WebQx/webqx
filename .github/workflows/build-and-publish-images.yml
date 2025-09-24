@@ -49,11 +49,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GH || secrets.GH_PAT || secrets.GITHUB_TOKEN }}
 
+      - name: Lowercase image namespace
+        id: ns
+        run: |
+          NS_RAW='${{ env.IMAGE_NAMESPACE }}'
+          NS_LC=$(echo "$NS_RAW" | tr '[:upper:]' '[:lower:]')
+          echo "ns=$NS_LC" >> $GITHUB_OUTPUT
+
       - name: Extract metadata (EMR)
         id: meta_emr
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ env.IMAGE_NAMESPACE }}/webqx-emr
+          images: ghcr.io/${{ steps.ns.outputs.ns }}/webqx-emr
           tags: |
             type=raw,value=${{ steps.ver.outputs.version }}
             type=sha
@@ -62,7 +69,7 @@ jobs:
         id: meta_api
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ env.IMAGE_NAMESPACE }}/webqx-api
+          images: ghcr.io/${{ steps.ns.outputs.ns }}/webqx-api
           tags: |
             type=raw,value=${{ steps.ver.outputs.version }}
             type=sha
@@ -71,7 +78,7 @@ jobs:
         id: meta_auth
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ env.IMAGE_NAMESPACE }}/webqx-auth
+          images: ghcr.io/${{ steps.ns.outputs.ns }}/webqx-auth
           tags: |
             type=raw,value=${{ steps.ver.outputs.version }}
             type=sha

@@ -47,7 +47,8 @@ jobs:
         run: |
           if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
           VERSION="${{ inputs.version }}"
-          OWNER="${{ github.repository_owner }}"
+          OWNER_RAW="${{ github.repository_owner }}"
+          OWNER=$(echo "$OWNER_RAW" | tr '[:upper:]' '[:lower:]')
           API_IMG="ghcr.io/${OWNER}/webqx-api:${VERSION}"
           EMR_IMG="ghcr.io/${OWNER}/webqx-emr:${VERSION}"
           echo "Rolling back API to ${API_IMG}"

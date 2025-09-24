@@ -247,7 +247,8 @@ jobs:
         id: img
         run: |
           VERSION="${{ needs.context.outputs.version }}"
-          OWNER="${{ github.repository_owner }}"
+          OWNER_RAW="${{ github.repository_owner }}"
+          OWNER=$(echo "$OWNER_RAW" | tr '[:upper:]' '[:lower:]')
           echo "api=ghcr.io/${OWNER}/webqx-api:${VERSION}" >> $GITHUB_OUTPUT
           echo "emr=ghcr.io/${OWNER}/webqx-emr:${VERSION}" >> $GITHUB_OUTPUT
 
