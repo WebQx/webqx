@@ -100,6 +100,18 @@ jobs:
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           RAILWAY_PUBLIC_API_BASE: ${{ secrets.RAILWAY_PUBLIC_API_BASE }}
         run: |
+          # Auto-populate recommended defaults if missing (non-blocking fields)
+          if [ -z "$RABBITMQ_HEARTBEAT" ]; then export RABBITMQ_HEARTBEAT=30; fi
+          if [ -z "$RABBITMQ_CONNECTION_TIMEOUT" ]; then export RABBITMQ_CONNECTION_TIMEOUT=30000; fi
+          if [ -n "$REDIS_URL" ] && echo "$REDIS_URL" | grep -q '^rediss://'; then
+            if [ -z "$REDIS_SSL" ]; then export REDIS_SSL=true; fi
+          fi
+          # Derive ALLOWED_ORIGINS from API base if unset
+          if [ -z "$ALLOWED_ORIGINS" ] && [ -n "$RAILWAY_PUBLIC_API_BASE" ]; then export ALLOWED_ORIGINS="$RAILWAY_PUBLIC_API_BASE"; fi
+          # Derive PUBLIC_FHIR_BASE from FHIR_BASE_URL if unset
+            if [ -z "$PUBLIC_FHIR_BASE" ] && [ -n "$FHIR_BASE_URL" ]; then export PUBLIC_FHIR_BASE="$FHIR_BASE_URL"; fi
+          # Provide a dummy public API base if none set (used only for ALLOWED_ORIGINS derivation) - warn
+          if [ -z "$RAILWAY_PUBLIC_API_BASE" ] && [ -n "$ALLOWED_ORIGINS" ]; then echo "::warning::ALLOWED_ORIGINS set without RAILWAY_PUBLIC_API_BASE"; fi
           node scripts/required-secrets-check.js || { echo '❌ Secrets validation failed'; exit 1; }
       - name: Summary note
         run: echo "Secrets preflight passed. Proceeding to deployment jobs."
