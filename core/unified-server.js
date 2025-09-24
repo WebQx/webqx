@@ -48,6 +48,8 @@ class UnifiedHealthcareServer {
         this.config = {
             // Prefer platform-provided PORT (e.g., Railway/Heroku), fallback to MAIN_PORT or 3000
             mainPort: process.env.PORT || process.env.MAIN_PORT || 3000,
+            // OAuth2/SSO configuration
+            disableOAuth: process.env.DISABLE_OAUTH === 'true',
             djangoPort: process.env.DJANGO_PORT || 3001,
             openEMRPort: process.env.OPENEMR_PORT || 3002,
             telehealthPort: process.env.TELEHEALTH_PORT || 3003,
@@ -1197,6 +1199,31 @@ class UnifiedHealthcareServer {
             console.log(`   • Transcription   : UNCONFIGURED (503)`);
         }
     console.log('\n🎯 All services are proxied through the main gateway for unified access');
+
+        // Clarify environment: localhost URLs are internal container ports.
+        console.log('\nℹ️  Note: "http://localhost:PORT" entries above are internal addresses inside the container.');
+        console.log('    Behind Railway, requests are served via the service URL and domain you configured.');
+        const externalApiBase = process.env.PUBLIC_BASE_URL
+          || process.env.RAILWAY_PUBLIC_API_BASE
+          || process.env.PUBLIC_API_BASE
+          || '';
+        const externalEmrBase = process.env.RAILWAY_PUBLIC_EMR_BASE
+          || process.env.PUBLIC_EMR_BASE
+          || '';
+        if (externalApiBase || externalEmrBase) {
+            console.log('🌍 External/Public Endpoints:');
+            if (externalApiBase) {
+                const base = externalApiBase.replace(/\/$/, '');
+                const wsProto = base.startsWith('https://') ? 'wss://' : 'ws://';
+                console.log(`   • API Base        : ${base}`);
+                console.log(`   • Health Check    : ${base}/health`);
+                console.log(`   • FHIR Proxy      : ${base}/fhir/*`);
+                console.log(`   • WebSocket       : ${wsProto}${base.replace(/^https?:\/\//, '')}/ws`);
+            }
+            if (externalEmrBase) {
+                console.log(`   • EMR Base        : ${externalEmrBase.replace(/\/$/, '')}`);
+            }
+        }
     }
 
     // ---- Circuit Breaker Helpers ----
