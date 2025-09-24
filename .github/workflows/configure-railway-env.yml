@@ -1,0 +1,137 @@
+name: Configure Railway Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [staging, production]
+        default: staging
+      configureEmr:
+        description: "Also configure EMR service variables"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  configure:
+    name: Set Railway variables (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node & Railway CLI
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm i -g @railway/cli@latest
+
+      - name: Prepare token and link project
+        env:
+          RWY_T_1: ${{ secrets.RAILWAY_TOKEN }}
+          RWY_T_2: ${{ secrets.RWY_TOKEN }}
+          RWY_T_3: ${{ secrets.RAILWAY_API_TOKEN }}
+          RWY_P_1: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RWY_P_2: ${{ secrets.RWY_PROJECT_ID }}
+          RWY_P_3: ${{ secrets.RAILWAY_PROJECT }}
+        run: |
+          set -e
+          RAILWAY_TOKEN="${RWY_T_1:-${RWY_T_2:-${RWY_T_3}}}"
+          if [ -z "$RAILWAY_TOKEN" ]; then echo "::error::Missing RAILWAY_TOKEN secret"; exit 1; fi
+          echo "RAILWAY_TOKEN=$RAILWAY_TOKEN" >> $GITHUB_ENV
+          RAILWAY_PROJECT_ID="${RWY_P_1:-${RWY_P_2:-${RWY_P_3}}}"
+          if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
+
+      - name: Configure variables for webqx-api (from environment secrets)
+        env:
+          # Core
+          NODE_ENV: ${{ vars.NODE_ENV }}
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+          HEALTH_CHECK_ENABLED: ${{ secrets.HEALTH_CHECK_ENABLED }}
+          HEALTH_CHECK_TIMEOUT: ${{ secrets.HEALTH_CHECK_TIMEOUT }}
+          STRUCTURED_LOGGING: ${{ secrets.STRUCTURED_LOGGING }}
+          METRICS_ENABLED: ${{ secrets.METRICS_ENABLED }}
+          # OAuth2 / Keycloak
+          OAUTH2_ISSUER: ${{ secrets.OAUTH2_ISSUER }}
+          OAUTH2_CLIENT_ID: ${{ secrets.OAUTH2_CLIENT_ID }}
+          OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH2_CLIENT_SECRET }}
+          OAUTH2_JWKS_URI: ${{ secrets.OAUTH2_JWKS_URI }}
+          # EMR / FHIR
+          USE_REMOTE_OPENEMR: ${{ secrets.USE_REMOTE_OPENEMR }}
+          OPENEMR_REMOTE_URL: ${{ secrets.OPENEMR_REMOTE_URL }}
+          OPENEMR_CLIENT_ID: ${{ secrets.OPENEMR_CLIENT_ID }}
+          OPENEMR_CLIENT_SECRET: ${{ secrets.OPENEMR_CLIENT_SECRET }}
+          FHIR_BASE_URL: ${{ secrets.FHIR_BASE_URL }}
+          PUBLIC_FHIR_BASE: ${{ secrets.PUBLIC_FHIR_BASE }}
+          # HIPAA / Compliance
+          HIPAA_ENCRYPTION_KEY: ${{ secrets.HIPAA_ENCRYPTION_KEY }}
+          AUDIT_LOG_PATH: ${{ secrets.AUDIT_LOG_PATH }}
+          # Messaging / Cache
+          RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
+          RABBITMQ_HEARTBEAT: ${{ secrets.RABBITMQ_HEARTBEAT }}
+          RABBITMQ_CONNECTION_TIMEOUT: ${{ secrets.RABBITMQ_CONNECTION_TIMEOUT }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          REDIS_SSL: ${{ secrets.REDIS_SSL }}
+          # Public bases for logs/Pages runtime
+          RAILWAY_PUBLIC_API_BASE: ${{ secrets.RAILWAY_PUBLIC_API_BASE }}
+          RAILWAY_PUBLIC_EMR_BASE: ${{ secrets.RAILWAY_PUBLIC_EMR_BASE }}
+        run: |
+          set -e
+          to_pair() { [ -n "$2" ] && printf "%s=%s" "$1" "$2"; }
+          VARS=()
+          while IFS='=' read -r k v; do [ -n "$v" ] && VARS+=("$k=$v"); done << 'ENVVARS'
+NODE_ENV=${NODE_ENV}
+ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+HEALTH_CHECK_ENABLED=${HEALTH_CHECK_ENABLED}
+HEALTH_CHECK_TIMEOUT=${HEALTH_CHECK_TIMEOUT}
+STRUCTURED_LOGGING=${STRUCTURED_LOGGING}
+METRICS_ENABLED=${METRICS_ENABLED}
+OAUTH2_ISSUER=${OAUTH2_ISSUER}
+OAUTH2_CLIENT_ID=${OAUTH2_CLIENT_ID}
+OAUTH2_CLIENT_SECRET=${OAUTH2_CLIENT_SECRET}
+OAUTH2_JWKS_URI=${OAUTH2_JWKS_URI}
+USE_REMOTE_OPENEMR=${USE_REMOTE_OPENEMR}
+OPENEMR_REMOTE_URL=${OPENEMR_REMOTE_URL}
+OPENEMR_CLIENT_ID=${OPENEMR_CLIENT_ID}
+OPENEMR_CLIENT_SECRET=${OPENEMR_CLIENT_SECRET}
+FHIR_BASE_URL=${FHIR_BASE_URL}
+PUBLIC_FHIR_BASE=${PUBLIC_FHIR_BASE}
+HIPAA_ENCRYPTION_KEY=${HIPAA_ENCRYPTION_KEY}
+AUDIT_LOG_PATH=${AUDIT_LOG_PATH}
+RABBITMQ_URL=${RABBITMQ_URL}
+RABBITMQ_HEARTBEAT=${RABBITMQ_HEARTBEAT}
+RABBITMQ_CONNECTION_TIMEOUT=${RABBITMQ_CONNECTION_TIMEOUT}
+REDIS_URL=${REDIS_URL}
+REDIS_SSL=${REDIS_SSL}
+RAILWAY_PUBLIC_API_BASE=${RAILWAY_PUBLIC_API_BASE}
+RAILWAY_PUBLIC_EMR_BASE=${RAILWAY_PUBLIC_EMR_BASE}
+ENVVARS
+          if [ ${#VARS[@]} -eq 0 ]; then echo "No variables to set for webqx-api"; else
+            echo "Setting ${#VARS[@]} variables on service webqx-api";
+            railway variables set --service webqx-api "${VARS[@]}"
+          fi
+
+      - name: Configure variables for webqx-emr (optional)
+        if: inputs.configureEmr == true
+        env:
+          # If you have EMR-side variables, define matching secrets and add here as needed
+          EMR_BASE_URL: ${{ secrets.EMR_BASE_URL }}
+        run: |
+          set -e
+          VARS=()
+          [ -n "$EMR_BASE_URL" ] && VARS+=("EMR_BASE_URL=$EMR_BASE_URL")
+          if [ ${#VARS[@]} -eq 0 ]; then echo "No variables to set for webqx-emr"; else
+            echo "Setting ${#VARS[@]} variables on service webqx-emr";
+            railway variables set --service webqx-emr "${VARS[@]}"
+          fi
+
+      - name: Show status
+        run: |
+          railway status || true

@@ -13,6 +13,10 @@ permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: build-images-${{ github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   build-push:
     runs-on: ubuntu-latest
@@ -43,7 +47,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GH || secrets.GH_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (EMR)
         id: meta_emr
@@ -54,7 +58,6 @@ jobs:
             type=raw,value=${{ steps.ver.outputs.version }}
             type=sha
 
-      - name: Extract metadata (Auth)
       - name: Extract metadata (API Gateway)
         id: meta_api
         uses: docker/metadata-action@v5
@@ -64,6 +67,7 @@ jobs:
             type=raw,value=${{ steps.ver.outputs.version }}
             type=sha
 
+      - name: Extract metadata (Auth)
         id: meta_auth
         uses: docker/metadata-action@v5
         with:
@@ -81,7 +85,6 @@ jobs:
           tags: ${{ steps.meta_emr.outputs.tags }}
           labels: ${{ steps.meta_emr.outputs.labels }}
 
-      - name: Build & push Django Auth
       - name: Build & push API Gateway
         uses: docker/build-push-action@v6
         with:
@@ -90,6 +93,8 @@ jobs:
           push: true
           tags: ${{ steps.meta_api.outputs.tags }}
           labels: ${{ steps.meta_api.outputs.labels }}
+
+      - name: Build & push Django Auth
         uses: docker/build-push-action@v6
         with:
           context: django-auth-backend

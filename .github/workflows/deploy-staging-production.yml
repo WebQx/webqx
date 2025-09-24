@@ -3,6 +3,9 @@ name: Deploy (Staging & Production)
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       environment:
@@ -12,17 +15,22 @@ on:
         options: [staging, production]
         default: staging
       version:
-        description: "Version tag to deploy (e.g., v1.2.3). Defaults to release tag when triggered by release."
+        description: "Version tag to deploy (e.g., v1.2.3). Defaults to release tag when triggered by release or current tag on tag push."
         required: false
       deployEmr:
         description: "Also deploy EMR service (webqx-emr)"
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
   deployments: write
+  packages: write   # Needed for fallback image build/push when GHCR tag does not yet exist
+
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: false
 
 env:
   NODE_VERSION: '20'
@@ -40,11 +48,17 @@ jobs:
         run: |
           if [ -n "${{ github.event.release.tag_name }}" ]; then
             echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
-          elif [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "::error::Version tag required when not triggered by a release"; exit 1
+            exit 0
           fi
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ -n "${GITHUB_REF_NAME}" ]; then
+            echo "version=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "::error::Version tag could not be determined (need release tag, push tag, or version input)"; exit 1
       - name: Select environment
         id: envsel
         run: |
@@ -54,9 +68,45 @@ jobs:
           fi
           echo "envName=$ENV_INPUT" >> $GITHUB_OUTPUT
 
+  preflight:
+    name: Secrets preflight validation
+    needs: context
+    runs-on: ubuntu-latest
+    environment: ${{ needs.context.outputs.envName }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Run required secrets check
+        env:
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+          OAUTH2_ISSUER: ${{ secrets.OAUTH2_ISSUER }}
+          OAUTH2_JWKS_URI: ${{ secrets.OAUTH2_JWKS_URI }}
+          OAUTH2_CLIENT_ID: ${{ secrets.OAUTH2_CLIENT_ID }}
+          OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH2_CLIENT_SECRET }}
+          FHIR_BASE_URL: ${{ secrets.FHIR_BASE_URL }}
+          PUBLIC_FHIR_BASE: ${{ secrets.PUBLIC_FHIR_BASE }}
+          HIPAA_ENCRYPTION_KEY: ${{ secrets.HIPAA_ENCRYPTION_KEY }}
+          RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
+          RABBITMQ_HEARTBEAT: ${{ secrets.RABBITMQ_HEARTBEAT }}
+          RABBITMQ_CONNECTION_TIMEOUT: ${{ secrets.RABBITMQ_CONNECTION_TIMEOUT }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          REDIS_SSL: ${{ secrets.REDIS_SSL }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_PUBLIC_API_BASE: ${{ secrets.RAILWAY_PUBLIC_API_BASE }}
+        run: |
+          node scripts/required-secrets-check.js || { echo '❌ Secrets validation failed'; exit 1; }
+      - name: Summary note
+        run: echo "Secrets preflight passed. Proceeding to deployment jobs."
+
   deploy-backend:
     name: Deploy backend services to Railway
-    needs: context
+    needs: [context, preflight]
     runs-on: ubuntu-latest
     environment: ${{ needs.context.outputs.envName }}
     steps:
@@ -96,48 +146,196 @@ jobs:
           echo "api=ghcr.io/${OWNER}/webqx-api:${VERSION}" >> $GITHUB_OUTPUT
           echo "emr=ghcr.io/${OWNER}/webqx-emr:${VERSION}" >> $GITHUB_OUTPUT
 
+      - name: Login to GHCR (for fallback build)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH || secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Ensure API image exists (fallback build if missing)
+        env:
+          IMAGE: ${{ steps.img.outputs.api }}
+        run: |
+          set -e
+          if docker pull "$IMAGE" >/dev/null 2>&1; then
+            echo "API image already exists: $IMAGE"
+          else
+            echo "API image missing. Building and pushing $IMAGE"
+            docker build -f Dockerfile -t "$IMAGE" .
+            docker push "$IMAGE"
+          fi
+
+      - name: Ensure EMR image exists (fallback build if missing)
+        if: steps.flags.outputs.deploy_emr == 'true'
+        env:
+          IMAGE: ${{ steps.img.outputs.emr }}
+        run: |
+          set -e
+            if docker pull "$IMAGE" >/dev/null 2>&1; then
+              echo "EMR image already exists: $IMAGE"
+            else
+              echo "EMR image missing. Building and pushing $IMAGE"
+              docker build -f webqx-emr-system/Dockerfile -t "$IMAGE" webqx-emr-system
+              docker push "$IMAGE"
+            fi
+
       - name: Resolve deploy flags
         id: flags
         env:
           EMR_FLAG_INPUT: ${{ inputs.deployEmr }}
-          EMR_FLAG_SECRET_1: ${{ secrets.DEPLOY_EMR }}
-          EMR_FLAG_SECRET_2: ${{ secrets.EMR_ENABLED }}
+          # Enable signals (legacy compatibility)
+          EMR_FLAG_SECRET_ENABLE_1: ${{ secrets.DEPLOY_EMR }}
+          EMR_FLAG_SECRET_ENABLE_2: ${{ secrets.EMR_ENABLED }}
+          # Disable signals (preferred)
+          EMR_FLAG_SECRET_DISABLE_1: ${{ secrets.DISABLE_EMR }}
+          EMR_FLAG_SECRET_DISABLE_2: ${{ secrets.EMR_DISABLED }}
         run: |
           set -e
-          FLAG="${EMR_FLAG_INPUT}"
-          if [ -z "$FLAG" ]; then FLAG="${EMR_FLAG_SECRET_1}"; fi
-          if [ -z "$FLAG" ]; then FLAG="${EMR_FLAG_SECRET_2}"; fi
-          FLAG_LC="$(echo "${FLAG}" | tr '[:upper:]' '[:lower:]')"
-          if [ "$FLAG_LC" = "true" ] || [ "$FLAG_LC" = "yes" ] || [ "$FLAG" = "1" ]; then
-            echo "deploy_emr=true" >> $GITHUB_OUTPUT
-            echo "EMR deployment enabled"
+          # Normalize helpers
+          to_bool() { case "$(echo "$1" | tr '[:upper:]' '[:lower:]')" in true|yes|1) echo true;; false|no|0) echo false;; *) echo "";; esac; }
+
+          # Default is enabled
+          DEPLOY_EMR=true
+
+          # If disable secrets are set to true, override to false
+          DISABLE1=$(to_bool "$EMR_FLAG_SECRET_DISABLE_1")
+          DISABLE2=$(to_bool "$EMR_FLAG_SECRET_DISABLE_2")
+          if [ "$DISABLE1" = true ] || [ "$DISABLE2" = true ]; then
+            DEPLOY_EMR=false
+          fi
+
+          # Input can explicitly turn off/on
+          INP=$(to_bool "$EMR_FLAG_INPUT")
+          if [ -n "$INP" ]; then DEPLOY_EMR=$INP; fi
+
+          # Legacy enable secrets can force on if not already disabled by explicit false
+          if [ "$DEPLOY_EMR" != false ]; then
+            EN1=$(to_bool "$EMR_FLAG_SECRET_ENABLE_1")
+            EN2=$(to_bool "$EMR_FLAG_SECRET_ENABLE_2")
+            if [ "$EN1" = true ] || [ "$EN2" = true ]; then DEPLOY_EMR=true; fi
+          fi
+
+          echo "deploy_emr=$DEPLOY_EMR" >> $GITHUB_OUTPUT
+          echo "EMR deployment: $DEPLOY_EMR"
+
+      - name: Configure Railway variables (webqx-api)
+        env:
+          # Core/CORS
+          NODE_ENV: ${{ vars.NODE_ENV }}
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+          # Public bases for logs/Pages runtime
+          API_BASE_1: ${{ secrets.RAILWAY_PUBLIC_API_BASE }}
+          API_BASE_2: ${{ secrets.PUBLIC_API_BASE }}
+          API_BASE_3: ${{ secrets.PAGES_API_BASE }}
+          EMR_BASE_1: ${{ secrets.RAILWAY_PUBLIC_EMR_BASE }}
+          EMR_BASE_2: ${{ secrets.PUBLIC_EMR_BASE }}
+          EMR_BASE_3: ${{ secrets.PAGES_EMR_BASE }}
+          # OAuth2 / Keycloak
+          OAUTH2_ISSUER: ${{ secrets.OAUTH2_ISSUER }}
+          OAUTH2_CLIENT_ID: ${{ secrets.OAUTH2_CLIENT_ID }}
+          OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH2_CLIENT_SECRET }}
+          OAUTH2_JWKS_URI: ${{ secrets.OAUTH2_JWKS_URI }}
+          # EMR / FHIR
+          USE_REMOTE_OPENEMR: ${{ secrets.USE_REMOTE_OPENEMR }}
+          OPENEMR_REMOTE_URL: ${{ secrets.OPENEMR_REMOTE_URL }}
+          FHIR_BASE_URL: ${{ secrets.FHIR_BASE_URL }}
+          PUBLIC_FHIR_BASE: ${{ secrets.PUBLIC_FHIR_BASE }}
+          # Compliance
+          HIPAA_ENCRYPTION_KEY: ${{ secrets.HIPAA_ENCRYPTION_KEY }}
+          AUDIT_LOG_PATH: ${{ secrets.AUDIT_LOG_PATH }}
+          # Messaging / Cache
+          RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
+          RABBITMQ_HEARTBEAT: ${{ secrets.RABBITMQ_HEARTBEAT }}
+          RABBITMQ_CONNECTION_TIMEOUT: ${{ secrets.RABBITMQ_CONNECTION_TIMEOUT }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          REDIS_SSL: ${{ secrets.REDIS_SSL }}
+          # Railway auth/link
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        run: |
+          set -e
+          if [ -z "$RAILWAY_TOKEN" ]; then echo "Missing RAILWAY_TOKEN" >&2; exit 1; fi
+          if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
+          # Derive public bases with fallback chain
+          RAILWAY_PUBLIC_API_BASE="${API_BASE_1:-${API_BASE_2:-${API_BASE_3}}}"
+          RAILWAY_PUBLIC_EMR_BASE="${EMR_BASE_1:-${EMR_BASE_2:-${EMR_BASE_3}}}"
+          # If ALLOWED_ORIGINS not set, default to API base
+          if [ -z "$ALLOWED_ORIGINS" ] && [ -n "$RAILWAY_PUBLIC_API_BASE" ]; then ALLOWED_ORIGINS="$RAILWAY_PUBLIC_API_BASE"; fi
+
+          VARS=()
+          append() { [ -n "$2" ] && VARS+=("$1=$2"); }
+          append NODE_ENV "$NODE_ENV"
+          append ALLOWED_ORIGINS "$ALLOWED_ORIGINS"
+          append RAILWAY_PUBLIC_API_BASE "$RAILWAY_PUBLIC_API_BASE"
+          append RAILWAY_PUBLIC_EMR_BASE "$RAILWAY_PUBLIC_EMR_BASE"
+          append OAUTH2_ISSUER "$OAUTH2_ISSUER"
+          append OAUTH2_CLIENT_ID "$OAUTH2_CLIENT_ID"
+          append OAUTH2_CLIENT_SECRET "$OAUTH2_CLIENT_SECRET"
+          append OAUTH2_JWKS_URI "$OAUTH2_JWKS_URI"
+          append USE_REMOTE_OPENEMR "$USE_REMOTE_OPENEMR"
+          append OPENEMR_REMOTE_URL "$OPENEMR_REMOTE_URL"
+          append FHIR_BASE_URL "$FHIR_BASE_URL"
+          append PUBLIC_FHIR_BASE "$PUBLIC_FHIR_BASE"
+          append HIPAA_ENCRYPTION_KEY "$HIPAA_ENCRYPTION_KEY"
+          append AUDIT_LOG_PATH "$AUDIT_LOG_PATH"
+          append RABBITMQ_URL "$RABBITMQ_URL"
+          append RABBITMQ_HEARTBEAT "$RABBITMQ_HEARTBEAT"
+          append RABBITMQ_CONNECTION_TIMEOUT "$RABBITMQ_CONNECTION_TIMEOUT"
+          append REDIS_URL "$REDIS_URL"
+          append REDIS_SSL "$REDIS_SSL"
+
+          if [ ${#VARS[@]} -eq 0 ]; then
+            echo "No variables to set for webqx-api"
           else
-            echo "deploy_emr=false" >> $GITHUB_OUTPUT
-            echo "EMR deployment disabled"
+            echo "Setting ${#VARS[@]} variables on service webqx-api"
+            railway variables set --service webqx-api "${VARS[@]}"
           fi
 
       - name: Deploy API Gateway (pinned image)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          IMAGE: ${{ steps.img.outputs.api }}
+          RAILWAY_API_SERVICE: ${{ secrets.RAILWAY_API_SERVICE }}
         run: |
+          set -e
           if [ -z "$RAILWAY_TOKEN" ]; then echo "Missing RAILWAY_TOKEN" >&2; exit 1; fi
           if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
-          echo "Deploying API using image: ${{ steps.img.outputs.api }}"
-          railway deploy --service webqx-api --image "${{ steps.img.outputs.api }}" --detach \
-            || railway up --service webqx-api --detach || railway up --detach
+          SERVICE="$RAILWAY_API_SERVICE"
+          if [ -z "$SERVICE" ]; then
+            echo "::error::Set secret RAILWAY_API_SERVICE to the exact Railway service name for the API.";
+            echo "Available services (for debugging):"; railway status || true; exit 1;
+          fi
+          echo "Deploying API service '$SERVICE' with image: $IMAGE"
+          if railway up --help 2>/dev/null | grep -q -- '--image'; then
+            railway up --service "$SERVICE" --image "$IMAGE" --detach || {
+              echo "Pin-with-image failed; retrying without image flag"; railway up --service "$SERVICE" --detach; }
+          else
+            railway up --service "$SERVICE" --detach
+          fi
 
       - name: Deploy OpenEMR service (pinned image)
         if: steps.flags.outputs.deploy_emr == 'true'
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          IMAGE: ${{ steps.img.outputs.emr }}
+          RAILWAY_EMR_SERVICE: ${{ secrets.RAILWAY_EMR_SERVICE }}
         run: |
+          set -e
           if [ -z "$RAILWAY_TOKEN" ]; then echo "Missing RAILWAY_TOKEN" >&2; exit 1; fi
           if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
-          echo "Deploying EMR using image: ${{ steps.img.outputs.emr }}"
-          railway deploy --service webqx-emr --image "${{ steps.img.outputs.emr }}" --detach \
-            || (cd webqx-emr-system && railway up --service webqx-emr --detach || railway up --detach)
+          SERVICE="$RAILWAY_EMR_SERVICE"
+          if [ -z "$SERVICE" ]; then
+            echo "::error::Set secret RAILWAY_EMR_SERVICE to the exact Railway service name for EMR."; railway status || true; exit 1;
+          fi
+          echo "Deploying EMR service '$SERVICE' with image: $IMAGE"
+          if railway up --help 2>/dev/null | grep -q -- '--image'; then
+            railway up --service "$SERVICE" --image "$IMAGE" --detach || railway up --service "$SERVICE" --detach
+          else
+            railway up --service "$SERVICE" --detach
+          fi
 
       - name: Health checks
         env:
@@ -159,7 +357,7 @@ jobs:
 
   deploy-pages:
     name: Deploy GitHub Pages
-    needs: [context, deploy-backend]
+    needs: [context, preflight, deploy-backend]
     runs-on: ubuntu-latest
     environment: ${{ needs.context.outputs.envName }}
     steps:
