@@ -219,7 +219,7 @@ jobs:
           echo "deploy_emr=$DEPLOY_EMR" >> $GITHUB_OUTPUT
           echo "EMR deployment: $DEPLOY_EMR"
 
-      - name: Configure Railway variables (webqx-api)
+      - name: Configure Railway variables (API service)
         env:
           # Core/CORS
           NODE_ENV: ${{ vars.NODE_ENV }}
@@ -253,6 +253,7 @@ jobs:
           # Railway auth/link
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_API_SERVICE: ${{ secrets.RAILWAY_API_SERVICE }}
         run: |
           set -e
           if [ -z "$RAILWAY_TOKEN" ]; then echo "Missing RAILWAY_TOKEN" >&2; exit 1; fi
@@ -262,6 +263,10 @@ jobs:
           RAILWAY_PUBLIC_EMR_BASE="${EMR_BASE_1:-${EMR_BASE_2:-${EMR_BASE_3}}}"
           # If ALLOWED_ORIGINS not set, default to API base
           if [ -z "$ALLOWED_ORIGINS" ] && [ -n "$RAILWAY_PUBLIC_API_BASE" ]; then ALLOWED_ORIGINS="$RAILWAY_PUBLIC_API_BASE"; fi
+          SERVICE="${RAILWAY_API_SERVICE:-webqx-api}"
+          if [ -z "$RAILWAY_API_SERVICE" ]; then
+            echo "::warning::RAILWAY_API_SERVICE not set; falling back to 'webqx-api'. Set the secret to remove this warning.";
+          fi
 
           VARS=()
           append() { [ -n "$2" ] && VARS+=("$1=$2"); }
@@ -286,10 +291,10 @@ jobs:
           append REDIS_SSL "$REDIS_SSL"
 
           if [ ${#VARS[@]} -eq 0 ]; then
-            echo "No variables to set for webqx-api"
+            echo "No variables to set for $SERVICE"
           else
-            echo "Setting ${#VARS[@]} variables on service webqx-api"
-            railway variables set --service webqx-api "${VARS[@]}"
+            echo "Setting ${#VARS[@]} variables on service $SERVICE"
+            railway variables set --service "$SERVICE" "${VARS[@]}"
           fi
 
       - name: Deploy API Gateway (pinned image)
