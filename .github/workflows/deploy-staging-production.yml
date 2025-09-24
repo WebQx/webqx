@@ -106,12 +106,58 @@ jobs:
           if [ -n "$REDIS_URL" ] && echo "$REDIS_URL" | grep -q '^rediss://'; then
             if [ -z "$REDIS_SSL" ]; then export REDIS_SSL=true; fi
           fi
+          
+          # Staging fallback: generate missing core secrets for non-production deployment
+          ENV_NAME="${{ needs.context.outputs.envName }}"
+          if [ "$ENV_NAME" = "staging" ]; then
+            echo "::notice::Staging mode: auto-generating missing core secrets for testing"
+            
+            # Generate HIPAA encryption key if missing (64 hex chars)
+            if [ -z "$HIPAA_ENCRYPTION_KEY" ]; then
+              export HIPAA_ENCRYPTION_KEY=$(openssl rand -hex 32)
+              echo "::warning::Generated temporary HIPAA_ENCRYPTION_KEY for staging"
+            fi
+            
+            # OAuth2 placeholders (disable OAuth in staging by setting dummy issuer)
+            if [ -z "$OAUTH2_ISSUER" ]; then
+              export OAUTH2_ISSUER="https://staging-disabled.local/auth/realms/webqx"
+              export OAUTH2_JWKS_URI="https://staging-disabled.local/auth/realms/webqx/protocol/openid-connect/certs"
+              export OAUTH2_CLIENT_ID="webqx-staging-disabled"
+              export OAUTH2_CLIENT_SECRET="staging-placeholder-secret"
+              export DISABLE_OAUTH="true"
+              echo "::warning::Using placeholder OAuth2 config - SSO disabled in staging"
+            fi
+            
+            # FHIR placeholder
+            if [ -z "$FHIR_BASE_URL" ]; then
+              export FHIR_BASE_URL="https://staging-fhir.local/fhir"
+              echo "::warning::Using placeholder FHIR_BASE_URL for staging"
+            fi
+            
+            # Messaging placeholders
+            if [ -z "$RABBITMQ_URL" ]; then
+              export RABBITMQ_URL="amqps://staging:placeholder@staging-rabbitmq.local:5671/webqx"
+              echo "::warning::Using placeholder RABBITMQ_URL - messaging may not work"
+            fi
+            
+            if [ -z "$REDIS_URL" ]; then
+              export REDIS_URL="rediss://:staging-redis@staging-redis.local:6380/0"
+              export REDIS_SSL="true"
+              echo "::warning::Using placeholder REDIS_URL - caching may not work"
+            fi
+            
+            # Public API base fallback
+            if [ -z "$RAILWAY_PUBLIC_API_BASE" ]; then
+              export RAILWAY_PUBLIC_API_BASE="https://staging-api.webqx.dev"
+              echo "::warning::Using placeholder RAILWAY_PUBLIC_API_BASE"
+            fi
+          fi
+          
           # Derive ALLOWED_ORIGINS from API base if unset
           if [ -z "$ALLOWED_ORIGINS" ] && [ -n "$RAILWAY_PUBLIC_API_BASE" ]; then export ALLOWED_ORIGINS="$RAILWAY_PUBLIC_API_BASE"; fi
           # Derive PUBLIC_FHIR_BASE from FHIR_BASE_URL if unset
-            if [ -z "$PUBLIC_FHIR_BASE" ] && [ -n "$FHIR_BASE_URL" ]; then export PUBLIC_FHIR_BASE="$FHIR_BASE_URL"; fi
-          # Provide a dummy public API base if none set (used only for ALLOWED_ORIGINS derivation) - warn
-          if [ -z "$RAILWAY_PUBLIC_API_BASE" ] && [ -n "$ALLOWED_ORIGINS" ]; then echo "::warning::ALLOWED_ORIGINS set without RAILWAY_PUBLIC_API_BASE"; fi
+          if [ -z "$PUBLIC_FHIR_BASE" ] && [ -n "$FHIR_BASE_URL" ]; then export PUBLIC_FHIR_BASE="$FHIR_BASE_URL"; fi
+          
           node scripts/required-secrets-check.js || { echo '❌ Secrets validation failed'; exit 1; }
       - name: Summary note
         run: echo "Secrets preflight passed. Proceeding to deployment jobs."
