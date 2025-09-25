@@ -44,6 +44,13 @@ const config = {
   SYNC_LIMIT: parseInt(process.env.MATRIX_SYNC_LIMIT) || 10,
   MESSAGE_BATCH_SIZE: parseInt(process.env.MESSAGE_BATCH_SIZE) || 50,
   CONNECTION_TIMEOUT_MS: parseInt(process.env.CONNECTION_TIMEOUT_MS) || 30000,
+  
+  // Dynamic Batch Size Configuration
+  ENABLE_DYNAMIC_BATCH_SIZE: process.env.ENABLE_DYNAMIC_BATCH_SIZE === 'true',
+  DYNAMIC_BATCH_MIN_SIZE: parseInt(process.env.DYNAMIC_BATCH_MIN_SIZE) || 5,
+  DYNAMIC_BATCH_MAX_SIZE: parseInt(process.env.DYNAMIC_BATCH_MAX_SIZE) || 100,
+  DYNAMIC_BATCH_LOW_LOAD_THRESHOLD: parseInt(process.env.DYNAMIC_BATCH_LOW_LOAD_THRESHOLD) || 50,
+  DYNAMIC_BATCH_HIGH_LOAD_THRESHOLD: parseInt(process.env.DYNAMIC_BATCH_HIGH_LOAD_THRESHOLD) || 80,
 
   // Specialty Channel Configurations
   SPECIALTY_CHANNELS: {
