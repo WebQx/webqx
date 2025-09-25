@@ -252,31 +252,41 @@ jobs:
           if [ -z "$RAILWAY_TOKEN" ]; then
             echo "::error::No Railway token available (set one of RAILWAY_TOKEN, RWY_TOKEN, RAILWAY_API_TOKEN)."; exit 1;
           fi
-          echo "Attempting Railway authentication"
-          # If already authenticated, short-circuit
+          # Sanitize token (remove stray newlines/CR)
+          RAILWAY_TOKEN_SANITIZED=$(printf "%s" "$RAILWAY_TOKEN" | tr -d '\r\n')
+          if [ "$RAILWAY_TOKEN" != "$RAILWAY_TOKEN_SANITIZED" ]; then
+            echo "::notice::Stripped newline/CR characters from Railway token"
+          fi
+          # Basic non-secret diagnostics
+          echo "Token length: ${#RAILWAY_TOKEN_SANITIZED} characters"
+          if [ ${#RAILWAY_TOKEN_SANITIZED} -lt 20 ]; then
+            echo "::warning::Railway token seems unusually short; double-check you used an API token, not a project ID."
+          fi
+          echo "Attempting Railway authentication via multiple strategies"
           if railway whoami >/dev/null 2>&1; then
-            echo "Already authenticated (whoami succeeded)"; railway whoami || true; exit 0;
+            echo "Already authenticated (whoami succeeded pre-login)"; railway whoami || true; exit 0;
           fi
-          # Strategy list: environment variable implicit, then various login flag syntaxes
-          attempts=(
-            "RAILWAY_TOKEN=$RAILWAY_TOKEN railway whoami"
-            "railway login --token $RAILWAY_TOKEN"
-            "railway login --apiKey $RAILWAY_TOKEN"
-            "railway login --key $RAILWAY_TOKEN"
-          )
           success=false
-          for cmd in "${attempts[@]}"; do
-            echo "Trying auth method: $cmd"
-            if sh -c "$cmd" >/dev/null 2>&1; then
-              echo "Auth succeeded via: $cmd"
-              railway whoami || true
-              success=true
-              break
-            fi
-          done
+          attempt_cmd() {
+            label="$1"; shift
+            echo "Trying: $label"
+            if "$@" >/dev/null 2>&1; then
+              echo "Success: $label"; success=true; return 0; fi
+            echo "Failed: $label"; return 1
+          }
+          # Attempt patterns (some CLI versions accept different flags or env-driven auth)
+          attempt_cmd 'whoami with env var' sh -c "RAILWAY_TOKEN=$RAILWAY_TOKEN_SANITIZED railway whoami"
+          [ "$success" = true ] || attempt_cmd 'login --token' railway login --token "$RAILWAY_TOKEN_SANITIZED"
+          [ "$success" = true ] || attempt_cmd 'login --apiKey' railway login --apiKey "$RAILWAY_TOKEN_SANITIZED"
+          [ "$success" = true ] || attempt_cmd 'login --key' railway login --key "$RAILWAY_TOKEN_SANITIZED"
+          # Some older variants may require stdin
           if [ "$success" != true ]; then
-            echo "::error::Failed to authenticate to Railway with provided token using known methods."; exit 1;
+            printf "%s" "$RAILWAY_TOKEN_SANITIZED" | railway login --token  >/dev/null 2>&1 && success=true && echo "Success: piped login --token" || echo "Failed: piped login --token"
           fi
+          if [ "$success" != true ]; then
+            echo "::error::All Railway authentication strategies failed. Common causes: invalid/expired token, org SSO not approved, or token lacks required scopes. Regenerate a new API token from Railway dashboard and update the secret (RAILWAY_API_TOKEN)."; exit 1;
+          fi
+          railway whoami || true
 
       - name: Determine image tags
         id: img
