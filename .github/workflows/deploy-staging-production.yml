@@ -214,6 +214,9 @@ jobs:
     needs: [context, preflight]
     runs-on: ubuntu-latest
     environment: ${{ needs.context.outputs.envName }}
+    env:
+      # Expose a unified Railway token env resolved from multiple possible secret names
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN || secrets.RWY_TOKEN || secrets.RAILWAY_API_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -243,12 +246,37 @@ jobs:
           echo "RAILWAY_TOKEN=$RAILWAY_TOKEN" >> $GITHUB_ENV
           if [ -n "$RAILWAY_PROJECT_ID" ]; then echo "RAILWAY_PROJECT_ID=$RAILWAY_PROJECT_ID" >> $GITHUB_ENV; fi
 
-      - name: Authenticate with Railway
+      - name: Authenticate with Railway (multi-strategy)
         run: |
           set -e
-          if [ -z "$RAILWAY_TOKEN" ]; then echo "::error::Missing RAILWAY_TOKEN in environment for login"; exit 1; fi
-          echo "Logging into Railway CLI"
-          railway login --token "$RAILWAY_TOKEN" || { echo "::error::Railway authentication failed"; exit 1; }
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::No Railway token available (set one of RAILWAY_TOKEN, RWY_TOKEN, RAILWAY_API_TOKEN)."; exit 1;
+          fi
+          echo "Attempting Railway authentication"
+          # If already authenticated, short-circuit
+          if railway whoami >/dev/null 2>&1; then
+            echo "Already authenticated (whoami succeeded)"; railway whoami || true; exit 0;
+          fi
+          # Strategy list: environment variable implicit, then various login flag syntaxes
+          attempts=(
+            "RAILWAY_TOKEN=$RAILWAY_TOKEN railway whoami"
+            "railway login --token $RAILWAY_TOKEN"
+            "railway login --apiKey $RAILWAY_TOKEN"
+            "railway login --key $RAILWAY_TOKEN"
+          )
+          success=false
+          for cmd in "${attempts[@]}"; do
+            echo "Trying auth method: $cmd"
+            if sh -c "$cmd" >/dev/null 2>&1; then
+              echo "Auth succeeded via: $cmd"
+              railway whoami || true
+              success=true
+              break
+            fi
+          done
+          if [ "$success" != true ]; then
+            echo "::error::Failed to authenticate to Railway with provided token using known methods."; exit 1;
+          fi
 
       - name: Determine image tags
         id: img
