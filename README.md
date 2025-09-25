@@ -192,7 +192,43 @@ node server.js
 
 ---
 
-## 🧑‍⚕️ MUP Access Program
+## � Staging Deploy (Token-Light Mode)
+
+The GitHub Actions workflow now supports a frictionless staging path that does **not** require Railway credentials unless you actually want to deploy to Railway.
+
+### Minimal Staging (No Infra Deploy)
+If you push a tag or dispatch the deploy workflow with environment `staging` and you do **not** set a Railway token secret, the pipeline will:
+
+* Run secrets preflight with relaxed requirements (only core runtime values; many synthesized).
+* Skip all Railway authentication, variable sync, and service deploy steps (they are conditionally gated).
+* Still build / pull container images (using `GITHUB_TOKEN` for GHCR where possible) and deploy GitHub Pages front-end.
+
+### When You Want Real Railway Deployment
+Provide these secrets (recommended canonical names):
+| Secret | Purpose |
+|--------|---------|
+| `RAILWAY_API_TOKEN` | API token for Railway (account settings → API tokens) |
+| `RAILWAY_PROJECT_ID` | Target project (optional if auto-linked via prior context) |
+| `RAILWAY_API_SERVICE` | Exact service name for API container (defaults to `webqx-api` if unset) |
+| `RAILWAY_EMR_SERVICE` | (Optional) Service name for EMR image |
+
+If the token is present, the workflow performs multi‑strategy auth and deploys services with pinned images.
+
+### Diagnostics & Masking
+The workflow prints masked token info (length + first/last 4 chars) at debug level and tries multiple login forms (`--token`, `--apiKey`, `--key`, stdin, env whoami). Failure in *staging* only downgrades to a warning; in *production* it fails the job.
+
+### GHCR Behavior
+* Staging prefers `GITHUB_TOKEN` for pulls/pushes.
+* PAT fallbacks only attempted if you supplied a PAT.
+
+### Zero-Secrets Dry Run Option
+If you also omit `FHIR_BASE_URL`, you can extend the validator to synthesize a placeholder (future enhancement—open an issue if needed). Current requirement: provide a real or placeholder FHIR base.
+
+---
+
+---
+
+## �🧑‍⚕️ MUP Access Program
 
 Free/sponsored access for clinics serving Medically Underserved Populations.
 
