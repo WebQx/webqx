@@ -243,6 +243,13 @@ jobs:
           echo "RAILWAY_TOKEN=$RAILWAY_TOKEN" >> $GITHUB_ENV
           if [ -n "$RAILWAY_PROJECT_ID" ]; then echo "RAILWAY_PROJECT_ID=$RAILWAY_PROJECT_ID" >> $GITHUB_ENV; fi
 
+      - name: Authenticate with Railway
+        run: |
+          set -e
+          if [ -z "$RAILWAY_TOKEN" ]; then echo "::error::Missing RAILWAY_TOKEN in environment for login"; exit 1; fi
+          echo "Logging into Railway CLI"
+          railway login --token "$RAILWAY_TOKEN" || { echo "::error::Railway authentication failed"; exit 1; }
+
       - name: Determine image tags
         id: img
         run: |
@@ -252,12 +259,57 @@ jobs:
           echo "api=ghcr.io/${OWNER}/webqx-api:${VERSION}" >> $GITHUB_OUTPUT
           echo "emr=ghcr.io/${OWNER}/webqx-emr:${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Login to GHCR (for fallback build)
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate GHCR credentials
+        run: |
+          set -e
+          USERNAME='${{ secrets.GHCR_USERNAME }}'
+          PAT_SET='${{ secrets.GHCR_PAT != '' || secrets.GH_PAT != '' || secrets.GH != '' }}'
+          if [ -n "$USERNAME" ] && echo "$USERNAME" | grep -q '@'; then
+            echo "::error::GHCR_USERNAME must be your GitHub handle (e.g., 'octocat'), not an email address."; exit 1;
+          fi
+          if [ -n "$USERNAME" ] && [ "$PAT_SET" != 'true' ]; then
+            echo "::error::GHCR_USERNAME is set but no GHCR_PAT was provided. Add a PAT with write:packages scope as GHCR_PAT."; exit 1;
+          fi
+          echo "GHCR credential shape looks OK"
+      - name: Multi-strategy GHCR login
+        env:
+          GHCR_PAT_1: ${{ secrets.GHCR_PAT }}
+          GHCR_PAT_2: ${{ secrets.GH_PAT }}
+          GHCR_PAT_3: ${{ secrets.GH }}
+          GHCR_PAT_4: ${{ secrets.CR_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -e
+          pat_tokens=("$GHCR_PAT_1" "$GHCR_PAT_2" "$GHCR_PAT_3" "$GHCR_PAT_4")
+          candidates=()
+          [ -n "$GHCR_USERNAME" ] && candidates+=("$GHCR_USERNAME")
+          [ -n "$GITHUB_ACTOR" ] && candidates+=("$GITHUB_ACTOR")
+          [ -n "$REPO_OWNER" ] && candidates+=("$REPO_OWNER")
+          echo "Attempting GHCR login with PAT tokens (if any) and candidate usernames: ${candidates[*]}"
+          logged_in=false
+          for t in "${pat_tokens[@]}"; do
+            [ -z "$t" ] && continue
+            for u in "${candidates[@]}"; do
+              echo "Trying PAT login user '$u'"
+              if echo "$t" | docker login ghcr.io -u "$u" --password-stdin 2>/dev/null; then
+                echo "Logged in to GHCR as '$u' using PAT secret"
+                logged_in=true
+                break 2
+              fi
+            done
+          done
+          if [ "$logged_in" != true ]; then
+            echo "No PAT login succeeded; falling back to GITHUB_TOKEN with actor '$GITHUB_ACTOR'"
+            if echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin 2>/dev/null; then
+              echo "Logged in to GHCR with GITHUB_TOKEN as $GITHUB_ACTOR"
+              logged_in=true
+            else
+              echo "::warning::All GHCR login attempts failed; image pushes will likely fail but workflow will continue."
+            fi
+          fi
 
       - name: Ensure API image exists (fallback build if missing)
         env:
@@ -277,13 +329,19 @@ jobs:
               echo "Push succeeded with GITHUB_TOKEN"
             else
               echo "First push attempt failed; trying GHCR_PAT if available"
-              if [ -n "$GHCR_PAT" ] && [ -n "$GHCR_USERNAME" ]; then
-                echo "Re-authenticating to GHCR with GHCR_USERNAME"
-                echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
-                docker push "$IMAGE"
+              if [ -n "$GHCR_PAT" ]; then
+                USERNAME_TO_USE="$GHCR_USERNAME"
+                if [ -z "$USERNAME_TO_USE" ]; then
+                  echo "::warning::GHCR_USERNAME not set; attempting PAT login with GITHUB_ACTOR '$GITHUB_ACTOR'"
+                  USERNAME_TO_USE="$GITHUB_ACTOR"
+                fi
+                echo "$GHCR_PAT" | docker login ghcr.io -u "$USERNAME_TO_USE" --password-stdin || {
+                  echo "::warning::Re-authentication to GHCR failed with provided credentials"; }
+                if ! docker push "$IMAGE"; then
+                  echo "::warning::Could not push $IMAGE to GHCR. Continuing without publishing the image. Railway deploy will proceed without pinned image."
+                fi
               else
-                echo "No GHCR_PAT/GHCR_USERNAME available for fallback push" >&2
-                exit 1
+                echo "::warning::No GHCR_PAT available for fallback push. Continuing without publishing the image."
               fi
             fi
           fi
@@ -307,13 +365,19 @@ jobs:
                 echo "Push succeeded with GITHUB_TOKEN"
               else
                 echo "First push attempt failed; trying GHCR_PAT if available"
-                if [ -n "$GHCR_PAT" ] && [ -n "$GHCR_USERNAME" ]; then
-                  echo "Re-authenticating to GHCR with GHCR_USERNAME"
-                  echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
-                  docker push "$IMAGE"
+                if [ -n "$GHCR_PAT" ]; then
+                  USERNAME_TO_USE="$GHCR_USERNAME"
+                  if [ -z "$USERNAME_TO_USE" ]; then
+                    echo "::warning::GHCR_USERNAME not set; attempting PAT login with GITHUB_ACTOR '$GITHUB_ACTOR'"
+                    USERNAME_TO_USE="$GITHUB_ACTOR"
+                  fi
+                  echo "$GHCR_PAT" | docker login ghcr.io -u "$USERNAME_TO_USE" --password-stdin || {
+                    echo "::warning::Re-authentication to GHCR failed with provided credentials"; }
+                  if ! docker push "$IMAGE"; then
+                    echo "::warning::Could not push $IMAGE to GHCR. Continuing without publishing the image. Railway deploy will proceed without pinned image."
+                  fi
                 else
-                  echo "No GHCR_PAT/GHCR_USERNAME available for fallback push" >&2
-                  exit 1
+                  echo "::warning::No GHCR_PAT available for fallback push. Continuing without publishing the image."
                 fi
               fi
             fi
