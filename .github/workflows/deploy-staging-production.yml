@@ -34,6 +34,8 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
+  # Unified Railway token (prefer RAILWAY_API_TOKEN secret, fallback older names). Only one secret needs to be set.
+  RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN || secrets.RWY_TOKEN }}
 
 jobs:
   context:
@@ -222,8 +224,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ needs.context.outputs.envName }}
     env:
-      # Expose a unified Railway token env resolved from multiple possible secret names
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN || secrets.RWY_TOKEN || secrets.RAILWAY_API_TOKEN }}
+      # Unified Railway token (single secret preferred: RAILWAY_API_TOKEN)
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN || secrets.RWY_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -237,38 +239,42 @@ jobs:
       - name: Install Railway CLI
         run: npm i -g @railway/cli
 
-      - name: Normalize Railway secrets
-        env:
-          RWY_T_1: ${{ secrets.RAILWAY_TOKEN }}
-          RWY_T_2: ${{ secrets.RWY_TOKEN }}
-          RWY_T_3: ${{ secrets.RAILWAY_API_TOKEN }}
-          RWY_P_1: ${{ secrets.RAILWAY_PROJECT_ID }}
-          RWY_P_2: ${{ secrets.RWY_PROJECT_ID }}
-          RWY_P_3: ${{ secrets.RAILWAY_PROJECT }}
-        run: |
-          set -e
-          RAILWAY_TOKEN="${RWY_T_1:-${RWY_T_2:-${RWY_T_3}}}"
-          RAILWAY_PROJECT_ID="${RWY_P_1:-${RWY_P_2:-${RWY_P_3}}}"
-          if [ -z "$RAILWAY_TOKEN" ]; then echo "::error::Railway token is not set (RAILWAY_TOKEN/RWY_TOKEN/RAILWAY_API_TOKEN)."; exit 1; fi
-          echo "RAILWAY_TOKEN=$RAILWAY_TOKEN" >> $GITHUB_ENV
-          if [ -n "$RAILWAY_PROJECT_ID" ]; then echo "RAILWAY_PROJECT_ID=$RAILWAY_PROJECT_ID" >> $GITHUB_ENV; fi
+      # Removed normalization; rely directly on environment-level RAILWAY_TOKEN + secrets.RAILWAY_PROJECT_ID
 
-      - name: Authenticate with Railway (simplified)
+      - name: Authenticate with Railway (diagnostic multi-strategy)
+        if: ${{ needs.context.outputs.envName != 'staging' || env.RAILWAY_TOKEN != '' }}
         run: |
           set -e
+          ENV_NAME='${{ needs.context.outputs.envName }}'
           if [ -z "$RAILWAY_TOKEN" ]; then
-            if [ "${{ needs.context.outputs.envName }}" = "staging" ] && [ "${{ secrets.MINIMAL_STAGING || vars.MINIMAL_STAGING }}" = "true" ]; then
-              echo "::notice::Skipping Railway auth in minimal staging (no token)."
-              exit 0
+            if [ "$ENV_NAME" = "staging" ]; then
+              echo "::notice::No Railway token provided – skipping Railway authentication for staging."; exit 0
             fi
-            echo "::error::Railway token missing (set RAILWAY_TOKEN or enable minimal staging)."; exit 1
+            echo "::error::Railway token missing (set secret RAILWAY_API_TOKEN)."; exit 1
           fi
-          if railway whoami >/dev/null 2>&1; then
-            echo "Already authenticated"; railway whoami || true; exit 0
+          RAW="$RAILWAY_TOKEN"
+          TOKEN=$(printf "%s" "$RAW" | tr -d '\r\n')
+          if [ "$RAW" != "$TOKEN" ]; then echo "::notice::Stripped CR/LF from token"; fi
+          LEN=${#TOKEN}
+          echo "Railway token length: $LEN" | sed 's/.*/::debug::&/' || true
+          if [ $LEN -lt 20 ]; then echo "::warning::Token appears too short; ensure you copied the full API token."; fi
+          MASKED="${TOKEN:0:4}***${TOKEN: -4}"
+          echo "Using token (masked): $MASKED" | sed 's/.*/::debug::&/' || true
+          if railway whoami >/dev/null 2>&1; then echo "Already authenticated"; railway whoami || true; exit 0; fi
+          success=false
+          try() { label=$1; shift; echo "Attempt: $label"; if "$@" >/dev/null 2>&1; then echo "Success: $label"; success=true; return 0; else echo "Failed: $label"; return 1; fi }
+          # Attempts (ordered)
+          try 'login --token (stdin)' sh -c "printf '%s' '$TOKEN' | railway login --token"
+          [ "$success" = true ] || try 'login --token (arg)' railway login --token "$TOKEN"
+          [ "$success" = true ] || try 'login --apiKey' railway login --apiKey "$TOKEN"
+          [ "$success" = true ] || try 'login --key' railway login --key "$TOKEN"
+          [ "$success" = true ] || try 'env whoami' sh -c "RAILWAY_TOKEN=$TOKEN railway whoami"
+          if [ "$success" != true ]; then
+            if [ "$ENV_NAME" = "staging" ]; then
+              echo "::warning::Railway auth failed; continuing (staging)."; exit 0
+            fi
+            echo "::error::All Railway authentication attempts failed. Regenerate token (Dashboard > Account > API Tokens)."; exit 1
           fi
-          echo "$RAILWAY_TOKEN" | railway login --token || {
-            echo "::error::Railway login failed (single-attempt). Provide a valid API token or enable minimal staging."; exit 1;
-          }
           railway whoami || true
 
       - name: Determine image tags
@@ -434,6 +440,7 @@ jobs:
           echo "EMR deployment: $DEPLOY_EMR"
 
       - name: Configure Railway variables (API service)
+        if: ${{ needs.context.outputs.envName != 'staging' || env.RAILWAY_TOKEN != '' }}
         env:
           # Core/CORS
           NODE_ENV: ${{ vars.NODE_ENV }}
@@ -465,12 +472,12 @@ jobs:
           REDIS_URL: ${{ secrets.REDIS_URL }}
           REDIS_SSL: ${{ secrets.REDIS_SSL }}
           # Railway auth/link
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ env.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           RAILWAY_API_SERVICE: ${{ secrets.RAILWAY_API_SERVICE }}
         run: |
           set -e
-          if [ -z "$RAILWAY_TOKEN" ]; then echo "Missing RAILWAY_TOKEN" >&2; exit 1; fi
+          if [ -z "$RAILWAY_TOKEN" ]; then echo "Missing RAILWAY_TOKEN (skipping variable sync)"; exit 0; fi
           if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
           # Derive public bases with fallback chain
           RAILWAY_PUBLIC_API_BASE="${API_BASE_1:-${API_BASE_2:-${API_BASE_3}}}"
@@ -512,14 +519,15 @@ jobs:
           fi
 
       - name: Deploy API Gateway (pinned image)
+        if: ${{ needs.context.outputs.envName != 'staging' || env.RAILWAY_TOKEN != '' }}
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ env.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           IMAGE: ${{ steps.img.outputs.api }}
           RAILWAY_API_SERVICE: ${{ secrets.RAILWAY_API_SERVICE }}
         run: |
           set -e
-          if [ -z "$RAILWAY_TOKEN" ]; then echo "Missing RAILWAY_TOKEN" >&2; exit 1; fi
+          if [ -z "$RAILWAY_TOKEN" ]; then echo "No Railway token – skipping API deploy (staging)."; exit 0; fi
           if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
           SERVICE="$RAILWAY_API_SERVICE"
           if [ -z "$SERVICE" ]; then
@@ -536,14 +544,15 @@ jobs:
 
       - name: Deploy OpenEMR service (pinned image)
         if: steps.flags.outputs.deploy_emr == 'true'
+          && (needs.context.outputs.envName != 'staging' || env.RAILWAY_TOKEN != '')
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ env.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           IMAGE: ${{ steps.img.outputs.emr }}
           RAILWAY_EMR_SERVICE: ${{ secrets.RAILWAY_EMR_SERVICE }}
         run: |
           set -e
-          if [ -z "$RAILWAY_TOKEN" ]; then echo "Missing RAILWAY_TOKEN" >&2; exit 1; fi
+          if [ -z "$RAILWAY_TOKEN" ]; then echo "No Railway token – skipping EMR deploy (staging)."; exit 0; fi
           if [ -n "$RAILWAY_PROJECT_ID" ]; then railway link --project "$RAILWAY_PROJECT_ID" || true; fi
           SERVICE="$RAILWAY_EMR_SERVICE"
           if [ -z "$SERVICE" ]; then
