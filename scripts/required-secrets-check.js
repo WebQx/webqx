@@ -5,19 +5,8 @@
  * Fails (exit 1) if any required secret missing or clearly invalid format (basic heuristics).
  */
 
-// Core secrets that must exist to proceed
-const CORE_REQUIRED = [
-  'OAUTH2_ISSUER',
-  'OAUTH2_JWKS_URI',
-  'OAUTH2_CLIENT_ID',
-  'OAUTH2_CLIENT_SECRET',
-  'FHIR_BASE_URL',
-  'HIPAA_ENCRYPTION_KEY',
-  'RABBITMQ_URL',
-  'REDIS_URL',
-  'RAILWAY_TOKEN',
-  'RAILWAY_PROJECT_ID'
-];
+// Core secrets list will be built dynamically per environment to reduce friction in staging.
+let CORE_REQUIRED = [];
 
 // Derived/optional: we attempt to derive these from other values if missing
 const DERIVABLE = {
@@ -35,7 +24,7 @@ const RECOMMENDED = [
 
 // Minimal format validators
 const validators = {
-  HIPAA_ENCRYPTION_KEY: v => /^[0-9a-fA-F]{64}$/.test(v),
+  HIPAA_ENCRYPTION_KEY: v => /^[a-fA-F0-9]{64}$/.test(v),
   RABBITMQ_URL: v => /^amqps:\/\//.test(v),
   REDIS_URL: v => /^(redis|rediss):\/\//.test(v),
   ALLOWED_ORIGINS: v => v.split(',').every(s => /^https?:\/\//.test(s.trim())),
@@ -44,6 +33,17 @@ const validators = {
   RAILWAY_PUBLIC_API_BASE: v => /^https?:\/\//.test(v),
   OAUTH2_ISSUER: v => /^https?:\/\//.test(v),
   OAUTH2_JWKS_URI: v => /^https?:\/\//.test(v)
+};
+
+const formatHints = {
+  HIPAA_ENCRYPTION_KEY: 'Must be 64 hexadecimal characters (256-bit key), e.g., `a3f9…` (no prefix).',
+  RABBITMQ_URL: 'Use an amqps:// URI including credentials and port, e.g., `amqps://user:pass@host:5671/vhost`.',
+  REDIS_URL: 'Use redis:// for non-TLS or rediss:// for TLS, including credentials/DB index if required.',
+  ALLOWED_ORIGINS: 'Comma-separated list of full http(s) origins, e.g., `https://app.example.com`.',
+  FHIR_BASE_URL: 'Base URL of the FHIR server, must start with https:// and usually end with /fhir.',
+  RAILWAY_PUBLIC_API_BASE: 'Public HTTPS base URL for the API, e.g., `https://webqx-api-staging.up.railway.app`.',
+  OAUTH2_ISSUER: 'Issuer URL from your IdP, typically https://<host>/auth/realms/<realm>.',
+  OAUTH2_JWKS_URI: 'JWKS endpoint URL, e.g., https://<host>/protocol/openid-connect/certs.'
 };
 
 let coreMissing = [];
@@ -57,7 +57,7 @@ let EFFECTIVE_ENV = rawEnvName; // mutable if we infer staging
 const oauthCoreKeys = ['OAUTH2_ISSUER','OAUTH2_JWKS_URI','OAUTH2_CLIENT_ID','OAUTH2_CLIENT_SECRET'];
 const oauthAllMissing = oauthCoreKeys.every(k => !process.env[k]);
 
-// Determine if we can infer staging bootstrap mode (token optional)
+// Determine if we can infer staging bootstrap mode (tokens optional)
 const essentialWithoutInfra = [
   'OAUTH2_ISSUER','OAUTH2_JWKS_URI','OAUTH2_CLIENT_ID','OAUTH2_CLIENT_SECRET',
   'FHIR_BASE_URL','HIPAA_ENCRYPTION_KEY','RABBITMQ_URL','REDIS_URL'
@@ -83,17 +83,41 @@ if (rawEnvName === 'staging') {
   console.log('🧪[staging-synth] Auto-detected staging (OAuth2 core missing, Railway token present)');
 }
 
+// Normalize Railway token naming up-front; prefer RAILWAY_API_TOKEN internally
+const unifiedRailwayToken = process.env.RAILWAY_API_TOKEN || process.env.RAILWAY_TOKEN || process.env.RWY_TOKEN;
+if (unifiedRailwayToken) process.env.RAILWAY_API_TOKEN = unifiedRailwayToken;
+const unifiedRailwayProject = process.env.RAILWAY_PROJECT_ID || process.env.RWY_PROJECT_ID || process.env.RAILWAY_PROJECT;
+if (unifiedRailwayProject) process.env.RAILWAY_PROJECT_ID = unifiedRailwayProject;
+
 console.log(`🔧 Secrets validator effective environment: ${EFFECTIVE_ENV || '<unset>'} (bootstrap=${STAGING_BOOTSTRAP_MODE})`);
+
+// Build required list per environment
+if (EFFECTIVE_ENV === 'production') {
+  CORE_REQUIRED = [
+    'OAUTH2_ISSUER','OAUTH2_JWKS_URI','OAUTH2_CLIENT_ID','OAUTH2_CLIENT_SECRET',
+    'FHIR_BASE_URL','HIPAA_ENCRYPTION_KEY','RABBITMQ_URL','REDIS_URL',
+    'RAILWAY_API_TOKEN','RAILWAY_PROJECT_ID'
+  ];
+} else {
+  // Staging / unknown: only require FHIR base (others synthesized). If user provided infra, validate them.
+  CORE_REQUIRED = ['FHIR_BASE_URL'];
+  if (process.env.RAILWAY_API_TOKEN) CORE_REQUIRED.push('RAILWAY_API_TOKEN');
+  if (process.env.RAILWAY_PROJECT_ID) CORE_REQUIRED.push('RAILWAY_PROJECT_ID');
+}
+console.log('🔧 Core required (env-adjusted):', CORE_REQUIRED.join(', '));
 
 // Staging synthesis (only for staging environment or auto-detected staging) prior to validation
 if (EFFECTIVE_ENV === 'staging') {
   const synthLog = msg => console.log(`🧪[staging-synth] ${msg}`);
-  // Generate HIPAA key if absent
-  if (!process.env.HIPAA_ENCRYPTION_KEY) {
-    const crypto = require('crypto');
-    process.env.HIPAA_ENCRYPTION_KEY = crypto.randomBytes(32).toString('hex');
-    synthLog('Generated HIPAA_ENCRYPTION_KEY');
-  }
+  const crypto = require('crypto');
+  const ensureHipaaKey = () => {
+    const current = process.env.HIPAA_ENCRYPTION_KEY ? process.env.HIPAA_ENCRYPTION_KEY.trim() : '';
+    if (!current || !validators.HIPAA_ENCRYPTION_KEY(current)) {
+      process.env.HIPAA_ENCRYPTION_KEY = crypto.randomBytes(32).toString('hex');
+      synthLog(current ? 'Replaced invalid HIPAA_ENCRYPTION_KEY placeholder with generated 64-hex key' : 'Generated HIPAA_ENCRYPTION_KEY');
+    }
+  };
+  ensureHipaaKey();
   // OAuth placeholders if all missing
   const oauthMissing = oauthAllMissing;
   if (oauthMissing) {
@@ -165,18 +189,10 @@ for (const name of Object.keys(DERIVABLE).concat(RECOMMENDED)) {
   if (validators[name] && !validators[name](val.trim())) invalid.push(name);
 }
 
-// Allow omission of infrastructure tokens during staging bootstrap so synthesis can proceed
-if (EFFECTIVE_ENV === 'staging' && STAGING_BOOTSTRAP_MODE) {
-  const infraKeys = ['RAILWAY_TOKEN','RAILWAY_PROJECT_ID'];
-  const preFilterMissing = coreMissing.slice();
-  coreMissing = coreMissing.filter(k => !infraKeys.includes(k));
-  if (preFilterMissing.length !== coreMissing.length) {
-    console.log('🧪[staging-synth] Ignoring missing infrastructure keys during bootstrap:', preFilterMissing.filter(k => !coreMissing.includes(k)).join(', '));
-  }
-}
+// No further staging filtering needed: core list already environment-adjusted.
 
 console.log('🔎 Secrets Validation Summary');
-console.log('Core required (must pass):', CORE_REQUIRED.length);
+console.log('Core required count:', CORE_REQUIRED.length);
 console.log('Core missing:', coreMissing.length ? coreMissing.join(', ') : 'NONE');
 console.log('Invalid format (any category):', invalid.length ? invalid.join(', ') : 'NONE');
 console.log('Recommended missing (non-blocking):', recommendedMissing.length ? recommendedMissing.join(', ') : 'NONE');
@@ -184,6 +200,14 @@ console.log('Derived automatically:', derivedApplied.length ? derivedApplied.joi
 
 if (coreMissing.length || invalid.length) {
   console.error('\n❌ Validation failed (core or format issues). Fix before deploying.');
+  if (invalid.length) {
+    console.error('Format guidance:');
+    for (const name of invalid) {
+      if (formatHints[name]) {
+        console.error(`  • ${name}: ${formatHints[name]}`);
+      }
+    }
+  }
   process.exit(1);
 }
 

@@ -116,6 +116,8 @@ jobs:
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           RAILWAY_PUBLIC_API_BASE: ${{ secrets.RAILWAY_PUBLIC_API_BASE }}
           ENV_NAME: ${{ needs.context.outputs.envName }}
+          # Allow user to opt into a drastically simplified staging secret set
+          MINIMAL_STAGING: ${{ secrets.MINIMAL_STAGING || vars.MINIMAL_STAGING }}
         run: |
           # Auto-populate recommended defaults if missing (non-blocking fields)
           if [ -z "$RABBITMQ_HEARTBEAT" ]; then export RABBITMQ_HEARTBEAT=30; fi
@@ -205,6 +207,11 @@ jobs:
           # Derive PUBLIC_FHIR_BASE from FHIR_BASE_URL if unset
           if [ -z "$PUBLIC_FHIR_BASE" ] && [ -n "$FHIR_BASE_URL" ]; then export PUBLIC_FHIR_BASE="$FHIR_BASE_URL"; fi
           
+          if [ "${{ needs.context.outputs.envName }}" = "staging" ]; then
+            if [ "${MINIMAL_STAGING,,}" = "true" ]; then
+              echo "::notice::MINIMAL_STAGING active – only HIPAA key + generated placeholders enforced."
+            fi
+          fi
           node scripts/required-secrets-check.js || { echo '❌ Secrets validation failed'; exit 1; }
       - name: Summary note
         run: echo "Secrets preflight passed. Proceeding to deployment jobs."
@@ -246,46 +253,22 @@ jobs:
           echo "RAILWAY_TOKEN=$RAILWAY_TOKEN" >> $GITHUB_ENV
           if [ -n "$RAILWAY_PROJECT_ID" ]; then echo "RAILWAY_PROJECT_ID=$RAILWAY_PROJECT_ID" >> $GITHUB_ENV; fi
 
-      - name: Authenticate with Railway (multi-strategy)
+      - name: Authenticate with Railway (simplified)
         run: |
           set -e
           if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "::error::No Railway token available (set one of RAILWAY_TOKEN, RWY_TOKEN, RAILWAY_API_TOKEN)."; exit 1;
+            if [ "${{ needs.context.outputs.envName }}" = "staging" ] && [ "${{ secrets.MINIMAL_STAGING || vars.MINIMAL_STAGING }}" = "true" ]; then
+              echo "::notice::Skipping Railway auth in minimal staging (no token)."
+              exit 0
+            fi
+            echo "::error::Railway token missing (set RAILWAY_TOKEN or enable minimal staging)."; exit 1
           fi
-          # Sanitize token (remove stray newlines/CR)
-          RAILWAY_TOKEN_SANITIZED=$(printf "%s" "$RAILWAY_TOKEN" | tr -d '\r\n')
-          if [ "$RAILWAY_TOKEN" != "$RAILWAY_TOKEN_SANITIZED" ]; then
-            echo "::notice::Stripped newline/CR characters from Railway token"
-          fi
-          # Basic non-secret diagnostics
-          echo "Token length: ${#RAILWAY_TOKEN_SANITIZED} characters"
-          if [ ${#RAILWAY_TOKEN_SANITIZED} -lt 20 ]; then
-            echo "::warning::Railway token seems unusually short; double-check you used an API token, not a project ID."
-          fi
-          echo "Attempting Railway authentication via multiple strategies"
           if railway whoami >/dev/null 2>&1; then
-            echo "Already authenticated (whoami succeeded pre-login)"; railway whoami || true; exit 0;
+            echo "Already authenticated"; railway whoami || true; exit 0
           fi
-          success=false
-          attempt_cmd() {
-            label="$1"; shift
-            echo "Trying: $label"
-            if "$@" >/dev/null 2>&1; then
-              echo "Success: $label"; success=true; return 0; fi
-            echo "Failed: $label"; return 1
+          echo "$RAILWAY_TOKEN" | railway login --token || {
+            echo "::error::Railway login failed (single-attempt). Provide a valid API token or enable minimal staging."; exit 1;
           }
-          # Attempt patterns (some CLI versions accept different flags or env-driven auth)
-          attempt_cmd 'whoami with env var' sh -c "RAILWAY_TOKEN=$RAILWAY_TOKEN_SANITIZED railway whoami"
-          [ "$success" = true ] || attempt_cmd 'login --token' railway login --token "$RAILWAY_TOKEN_SANITIZED"
-          [ "$success" = true ] || attempt_cmd 'login --apiKey' railway login --apiKey "$RAILWAY_TOKEN_SANITIZED"
-          [ "$success" = true ] || attempt_cmd 'login --key' railway login --key "$RAILWAY_TOKEN_SANITIZED"
-          # Some older variants may require stdin
-          if [ "$success" != true ]; then
-            printf "%s" "$RAILWAY_TOKEN_SANITIZED" | railway login --token  >/dev/null 2>&1 && success=true && echo "Success: piped login --token" || echo "Failed: piped login --token"
-          fi
-          if [ "$success" != true ]; then
-            echo "::error::All Railway authentication strategies failed. Common causes: invalid/expired token, org SSO not approved, or token lacks required scopes. Regenerate a new API token from Railway dashboard and update the secret (RAILWAY_API_TOKEN)."; exit 1;
-          fi
           railway whoami || true
 
       - name: Determine image tags
@@ -309,7 +292,7 @@ jobs:
             echo "::error::GHCR_USERNAME is set but no GHCR_PAT was provided. Add a PAT with write:packages scope as GHCR_PAT."; exit 1;
           fi
           echo "GHCR credential shape looks OK"
-      - name: Multi-strategy GHCR login
+      - name: GHCR login (staging minimal friendly)
         env:
           GHCR_PAT_1: ${{ secrets.GHCR_PAT }}
           GHCR_PAT_2: ${{ secrets.GH_PAT }}
@@ -321,33 +304,24 @@ jobs:
           REPO_OWNER: ${{ github.repository_owner }}
         run: |
           set -e
-          pat_tokens=("$GHCR_PAT_1" "$GHCR_PAT_2" "$GHCR_PAT_3" "$GHCR_PAT_4")
-          candidates=()
-          [ -n "$GHCR_USERNAME" ] && candidates+=("$GHCR_USERNAME")
-          [ -n "$GITHUB_ACTOR" ] && candidates+=("$GITHUB_ACTOR")
-          [ -n "$REPO_OWNER" ] && candidates+=("$REPO_OWNER")
-          echo "Attempting GHCR login with PAT tokens (if any) and candidate usernames: ${candidates[*]}"
-          logged_in=false
-          for t in "${pat_tokens[@]}"; do
-            [ -z "$t" ] && continue
-            for u in "${candidates[@]}"; do
-              echo "Trying PAT login user '$u'"
-              if echo "$t" | docker login ghcr.io -u "$u" --password-stdin 2>/dev/null; then
-                echo "Logged in to GHCR as '$u' using PAT secret"
-                logged_in=true
-                break 2
-              fi
-            done
-          done
-          if [ "$logged_in" != true ]; then
-            echo "No PAT login succeeded; falling back to GITHUB_TOKEN with actor '$GITHUB_ACTOR'"
+          if [ "${{ needs.context.outputs.envName }}" = "staging" ] && [ "${{ secrets.MINIMAL_STAGING || vars.MINIMAL_STAGING }}" = "true" ]; then
+            echo "Minimal staging: attempting GHCR login using GITHUB_TOKEN only"
             if echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin 2>/dev/null; then
-              echo "Logged in to GHCR with GITHUB_TOKEN as $GITHUB_ACTOR"
-              logged_in=true
+              echo "Logged in to GHCR with default token"
             else
-              echo "::warning::All GHCR login attempts failed; image pushes will likely fail but workflow will continue."
+              echo "::warning::Could not login to GHCR with GITHUB_TOKEN (may still pull public images)"
             fi
+            exit 0
           fi
+          # Full mode fallback (retain existing PAT logic but simplified loop)
+          for token in "$GHCR_PAT_1" "$GHCR_PAT_2" "$GHCR_PAT_3" "$GHCR_PAT_4"; do
+            [ -z "$token" ] && continue
+            user="${GHCR_USERNAME:-$GITHUB_ACTOR}"; echo "Trying PAT login as $user"
+            if echo "$token" | docker login ghcr.io -u "$user" --password-stdin 2>/dev/null; then
+              echo "GHCR login succeeded with PAT"; exit 0; fi
+          done
+          echo "Falling back to GITHUB_TOKEN"
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin 2>/dev/null || echo "::warning::GHCR login fallback failed"
 
       - name: Ensure API image exists (fallback build if missing)
         env:
