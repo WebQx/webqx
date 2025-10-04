@@ -14,7 +14,7 @@
  * - HIPAA audit logging
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const jwt = require('jsonwebtoken');

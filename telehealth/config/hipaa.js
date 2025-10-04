@@ -13,11 +13,13 @@
  * - Breach notification procedures
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const crypto = require('crypto');
 const path = require('path');
+
+const DEFAULT_TEST_HIPAA_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
 /**
  * HIPAA Compliance Configuration
@@ -33,9 +35,19 @@ class HIPAAConfig {
      * Load HIPAA configuration from environment
      */
     loadConfiguration() {
-        // Validate that production encryption key is properly configured
+        const environment = process.env.NODE_ENV || 'development';
+
         if (!process.env.HIPAA_ENCRYPTION_KEY) {
-            throw new Error('HIPAA_ENCRYPTION_KEY environment variable is required in production. Generate a secure 64-character hex key.');
+            if (environment === 'production') {
+                throw new Error('HIPAA_ENCRYPTION_KEY environment variable is required in production. Generate a secure 64-character hex key.');
+            }
+
+            // Provide deterministic defaults for development/test to keep tests hermetic
+            if (environment === 'test') {
+                process.env.HIPAA_ENCRYPTION_KEY = DEFAULT_TEST_HIPAA_KEY;
+            } else {
+                process.env.HIPAA_ENCRYPTION_KEY = crypto.randomBytes(32).toString('hex');
+            }
         }
 
         this.config = {
@@ -114,6 +126,8 @@ class HIPAAConfig {
      */
     validateConfiguration() {
         const errors = [];
+        const environment = process.env.NODE_ENV || 'development';
+        const isTestEnv = environment === 'test';
 
         // Check encryption key
         if (!this.config.encryptionKey) {
@@ -132,7 +146,9 @@ class HIPAAConfig {
 
         // Check retention periods
         if (this.config.retentionDays < 2555) {
-            console.warn('⚠️ HIPAA data retention period should be at least 7 years (2555 days)');
+            if (!isTestEnv) {
+                console.warn('⚠️ HIPAA data retention period should be at least 7 years (2555 days)');
+            }
         }
 
         // Check audit configuration
@@ -142,7 +158,9 @@ class HIPAAConfig {
 
         // Check breach notification
         if (this.config.breachNotificationEnabled && !this.config.breachNotificationEmail) {
-            console.warn('⚠️ Breach notification email not configured');
+            if (!isTestEnv) {
+                console.warn('⚠️ Breach notification email not configured');
+            }
         }
 
         if (errors.length > 0) {
@@ -354,7 +372,7 @@ class HIPAAConfig {
             granted: true,
             grantedAt: new Date().toISOString(),
             expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year
-            version: '1.0'
+            version: 'v0.1.0'
         };
 
         // Log consent validation

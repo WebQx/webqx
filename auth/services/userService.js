@@ -134,6 +134,14 @@ class SecureUserService {
       // Increment failed attempts
       user.failedAttempts += 1;
       
+      let errorResponse = {
+        success: false,
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid email or password'
+        }
+      };
+
       // Lock account if too many failures
       if (user.failedAttempts >= MAX_FAILED_ATTEMPTS) {
         user.lockoutUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
@@ -150,6 +158,15 @@ class SecureUserService {
             lockoutUntil: user.lockoutUntil
           }
         });
+
+        errorResponse = {
+          success: false,
+          error: {
+            code: 'ACCOUNT_LOCKED',
+            message: 'Account is temporarily locked due to too many failed attempts',
+            lockoutUntil: user.lockoutUntil
+          }
+        };
       } else {
         await this.logAuditEvent({
           eventType: 'LOGIN_FAILURE',
@@ -167,13 +184,7 @@ class SecureUserService {
 
       users.set(user.id, user);
 
-      return {
-        success: false,
-        error: {
-          code: 'INVALID_CREDENTIALS',
-          message: 'Invalid email or password'
-        }
-      };
+      return errorResponse;
     }
 
     // Reset failed attempts on successful login

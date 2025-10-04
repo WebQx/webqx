@@ -77,6 +77,59 @@ body {
     line-height: 1.6;
 }
 
+/* --- Touch & Mobile Optimizations --- */
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Remove tap highlight on mobile */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Minimum tap target sizes */
+button,
+.webqx-btn,
+.webqx-nav-item,
+button.btn,
+.btn,
+[role="button"],
+label[for],
+.navbar a {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Prevent iOS zoom on input focus */
+input,
+select,
+textarea {
+    font-size: 16px;
+}
+
+/* Larger controls on coarse pointers */
+@media (pointer: coarse) {
+    input[type="checkbox"],
+    input[type="radio"],
+    input[type="range"] {
+        transform: scale(1.2);
+        transform-origin: center left;
+    }
+}
+
+/* De-emphasize hover-only effects on touch */
+@media (hover: none) {
+    .webqx-card:hover,
+    .webqx-btn-primary:hover,
+    .webqx-btn-secondary:hover,
+    .webqx-dashboard-widget:hover,
+    .webqx-patient-card:hover {
+        transform: none;
+        box-shadow: var(--webqx-shadow-base);
+    }
+}
+
 /* Header Customization */
 .webqx-header {
     background: linear-gradient(135deg, var(--webqx-primary-dark) 0%, var(--webqx-primary) 50%, var(--webqx-primary-light) 100%);
@@ -274,6 +327,19 @@ body {
     background: var(--webqx-gray-50);
 }
 
+/* Responsive tables */
+@media (max-width: 640px) {
+    .webqx-table,
+    table.table,
+    .table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 /* Alert Styles */
 .webqx-alert {
     padding: var(--webqx-spacing-4) var(--webqx-spacing-6);
@@ -320,7 +386,21 @@ body {
         padding: var(--webqx-spacing-2) var(--webqx-spacing-4);
         font-size: var(--webqx-font-size-xs);
     }
+    .webqx-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--webqx-spacing-2);
+    }
+    .webqx-nav-item {
+        flex: 1 1 auto;
+        text-align: center;
+    }
 }
+
+/* Utility helpers used in EMR lists */
+.webqx-nowrap { white-space: nowrap; }
+.webqx-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.webqx-scroll-y { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 /* Custom WebQX Components */
 .webqx-dashboard-widget {

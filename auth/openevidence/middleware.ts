@@ -5,11 +5,13 @@
  * session management, and audit logging.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { openEvidenceAuth, OpenEvidenceSession, ResearchPermission, EvidenceAccessLevel } from './index';
+import { openEvidenceAuth, OpenEvidenceSession, ResearchPermission, EvidenceAccessLevel, OpenEvidenceAuthUtils, CURRENT_CONSENT_VERSION } from './index';
+
+const REQUIRED_CONSENT_VERSION = CURRENT_CONSENT_VERSION;
 
 // ============================================================================
 // Extended Request Interface
@@ -286,7 +288,7 @@ export function rateLimitBySession(maxRequests: number = 100, windowMs: number =
 /**
  * Middleware to validate consent agreement
  */
-export function requireConsentAgreement(requiredVersion: string = '1.0') {
+export function requireConsentAgreement(requiredVersion: string = REQUIRED_CONSENT_VERSION) {
   return (req: OpenEvidenceRequest, res: Response, next: NextFunction): void => {
     if (!req.openEvidenceSession) {
       res.status(401).json({
@@ -297,8 +299,8 @@ export function requireConsentAgreement(requiredVersion: string = '1.0') {
       return;
     }
 
-    const userConsentVersion = req.openEvidenceSession.consentVersion;
-    if (userConsentVersion < requiredVersion) {
+  const userConsentVersion = req.openEvidenceSession.consentVersion;
+  if (!OpenEvidenceAuthUtils.isConsentVersionValid(userConsentVersion, requiredVersion)) {
       auditAccessDenied(req, 'CONSENT_OUTDATED', { 
         userVersion: userConsentVersion, 
         requiredVersion 
@@ -434,7 +436,7 @@ export const researchAuth = composeMiddleware(
   openEvidenceCORS,
   requireOpenEvidenceAuth,
   requireAccessLevel('RESEARCH'),
-  requireConsentAgreement('1.0'),
+  requireConsentAgreement(),
   auditRequest,
   rateLimitBySession(50, 60000)
 );
@@ -459,7 +461,7 @@ export const institutionalAuth = composeMiddleware(
   requireOpenEvidenceAuth,
   requireInstitutionalAccess,
   requireAccessLevel('INSTITUTIONAL'),
-  requireConsentAgreement('1.0'),
+  requireConsentAgreement(),
   auditRequest,
   rateLimitBySession(100, 60000)
 );

@@ -24,6 +24,154 @@ const providers = new Map();
 const sessions = new Map();
 const lockedAccounts = new Map();
 
+const OPENEMR_SCOPE_FALLBACK = 'openid fhirUser patient/Patient.read patient/Appointment.read patient/Appointment.write patient/Encounter.read user/Practitioner.read';
+const OPENEMR_TOKEN_TTL_FALLBACK = 3600; // seconds
+
+function loadOpenEMRConfig() {
+    const baseUrlRaw = (process.env.OPENEMR_BASE_URL || '').trim();
+    const clientId = (process.env.OPENEMR_CLIENT_ID || '').trim();
+    const clientSecret = (process.env.OPENEMR_CLIENT_SECRET || '').trim();
+    const scope = (process.env.OPENEMR_SSO_SCOPES || process.env.OPENEMR_SCOPE || OPENEMR_SCOPE_FALLBACK).trim();
+
+    const issuer = (process.env.CENTRAL_IDP_ISSUER || process.env.KEYCLOAK_ISSUER || '').trim();
+    const explicitUserInfo = (process.env.CENTRAL_IDP_USERINFO_URL || process.env.KEYCLOAK_USERINFO_URL || '').trim();
+    const userInfoUrl = explicitUserInfo || (issuer ? `${issuer.replace(/\/$/, '')}/protocol/openid-connect/userinfo` : '');
+
+    return {
+        enabled: Boolean(baseUrlRaw && clientId && clientSecret),
+        baseUrl: baseUrlRaw ? baseUrlRaw.replace(/\/$/, '') : '',
+        clientId,
+        clientSecret,
+        scope,
+        userInfoUrl
+    };
+}
+
+async function validateCentralToken(accessToken, userInfoUrl) {
+    if (!accessToken) {
+        return { valid: false, reason: 'MISSING_TOKEN' };
+    }
+    if (!userInfoUrl) {
+        // Without a userinfo endpoint we optimistically trust the token
+        return { valid: true, claims: null, reason: 'USERINFO_UNAVAILABLE' };
+    }
+
+    try {
+        const response = await fetch(userInfoUrl, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+
+        if (!response.ok) {
+            return {
+                valid: false,
+                reason: `USERINFO_${response.status}`,
+                payload: await safeJson(response)
+            };
+        }
+
+        const claims = await response.json().catch(() => null);
+        return { valid: true, claims };
+    } catch (error) {
+        return {
+            valid: false,
+            reason: 'USERINFO_ERROR',
+            error: error instanceof Error ? error.message : String(error)
+        };
+    }
+}
+
+async function safeJson(response) {
+    try {
+        return await response.json();
+    } catch (_) {
+        return null;
+    }
+}
+
+async function requestOpenEMRTokens(config, scopeOverride) {
+    const tokenUrl = `${config.baseUrl}/oauth2/default/token`;
+    const scope = (scopeOverride && scopeOverride.trim()) || config.scope || OPENEMR_SCOPE_FALLBACK;
+
+    const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64')}`
+        },
+        body: new URLSearchParams({
+            grant_type: 'client_credentials',
+            scope
+        })
+    });
+
+    if (!response.ok) {
+        const payload = await safeJson(response);
+        const message = payload?.error_description || response.statusText;
+        throw new Error(message || 'OpenEMR token request failed');
+    }
+
+    const data = await response.json();
+    return {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        tokenType: data.token_type || 'Bearer',
+        expiresIn: typeof data.expires_in === 'number' ? data.expires_in : OPENEMR_TOKEN_TTL_FALLBACK,
+        scope: data.scope || scope,
+        idToken: data.id_token
+    };
+}
+
+function maskToken(token) {
+    if (!token || token.length <= 8) return token;
+    return `${token.slice(0, 4)}…${token.slice(-4)}`;
+}
+
+async function bridgeOpenEMRSession({ account, tokenData }) {
+    const config = loadOpenEMRConfig();
+    if (!config.enabled) {
+        return {
+            enabled: false,
+            reason: 'NOT_CONFIGURED'
+        };
+    }
+
+    const accessToken = tokenData?.access_token;
+    const validation = await validateCentralToken(accessToken, config.userInfoUrl);
+    if (!validation.valid && validation.reason !== 'USERINFO_UNAVAILABLE') {
+        return {
+            enabled: false,
+            reason: validation.reason || 'TOKEN_INVALID',
+            details: validation.error || validation.payload || null
+        };
+    }
+
+    try {
+        const tokens = await requestOpenEMRTokens(config, tokenData?.scope);
+        const obtainedAt = new Date();
+        const expiresAt = new Date(obtainedAt.getTime() + (tokens.expiresIn || OPENEMR_TOKEN_TTL_FALLBACK) * 1000);
+
+        return {
+            enabled: true,
+            baseUrl: config.baseUrl,
+            tokens,
+            obtainedAt: obtainedAt.toISOString(),
+            expiresAt: expiresAt.toISOString(),
+            user: {
+                openemrUserId: account.id,
+                email: account.email,
+                name: account.name
+            },
+            validation
+        };
+    } catch (error) {
+        return {
+            enabled: false,
+            reason: 'OPENEMR_TOKEN_EXCHANGE_FAILED',
+            details: error instanceof Error ? error.message : String(error)
+        };
+    }
+}
+
 // Initialize sample providers
 providers.set('dr.smith@hospital.com', {
     id: uuidv4(),
@@ -503,10 +651,12 @@ router.post('/sso-login', async (req, res) => {
             account.lastLogin = new Date();
         }
 
+        const openemrBridge = await bridgeOpenEMRSession({ account, tokenData });
+
         // Generate token and set cookie
         const token = generateToken(account);
+        const isProd = (process.env.NODE_ENV === 'production');
         try {
-            const isProd = (process.env.NODE_ENV === 'production');
             res.cookie('provider_token', token, {
                 httpOnly: true,
                 secure: isProd,
@@ -515,6 +665,63 @@ router.post('/sso-login', async (req, res) => {
                 path: '/'
             });
         } catch {}
+
+        if (openemrBridge.enabled && openemrBridge.tokens?.accessToken) {
+            const openemrMaxAge = (openemrBridge.tokens.expiresIn || OPENEMR_TOKEN_TTL_FALLBACK) * 1000;
+            try {
+                res.cookie('openemr_access_token', openemrBridge.tokens.accessToken, {
+                    httpOnly: true,
+                    secure: isProd,
+                    sameSite: 'lax',
+                    maxAge: openemrMaxAge,
+                    path: '/'
+                });
+                if (openemrBridge.tokens.refreshToken) {
+                    res.cookie('openemr_refresh_token', openemrBridge.tokens.refreshToken, {
+                        httpOnly: true,
+                        secure: isProd,
+                        sameSite: 'lax',
+                        maxAge: 7 * 24 * 60 * 60 * 1000,
+                        path: '/'
+                    });
+                }
+            } catch {}
+
+            console.log('[OpenEMR][SSO] Tokens issued for provider', {
+                provider: account.email || account.username,
+                scope: openemrBridge.tokens.scope,
+                expiresAt: openemrBridge.expiresAt,
+                maskedAccessToken: maskToken(openemrBridge.tokens.accessToken)
+            });
+        } else if (!openemrBridge.enabled) {
+            console.warn('[OpenEMR][SSO] Bridge unavailable', {
+                provider: account.email || account.username,
+                reason: openemrBridge.reason,
+                details: openemrBridge.details
+            });
+        }
+
+        const sessionId = uuidv4();
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+        const expiresAtIso = expiresAt.toISOString();
+
+        sessions.set(sessionId, {
+            providerId: account.id,
+            token,
+            createdAt: now,
+            lastActivity: now,
+             expiresAt,
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent'),
+            ssoProvider: provider,
+            openemr: openemrBridge.enabled ? {
+                baseUrl: openemrBridge.baseUrl,
+                tokens: openemrBridge.tokens,
+                obtainedAt: openemrBridge.obtainedAt,
+                expiresAt: openemrBridge.expiresAt
+            } : null
+        });
 
         return res.json({
             success: true,
@@ -530,7 +737,23 @@ router.post('/sso-login', async (req, res) => {
                 licenseNumber: account.licenseNumber,
                 licenseState: account.licenseState,
                 ssoProvider: account.ssoProvider
-            }
+            },
+            session: {
+                id: sessionId,
+                expiresAt: expiresAtIso,
+                ssoProvider: provider,
+                openemr: openemrBridge.enabled ? {
+                    enabled: true,
+                    baseUrl: openemrBridge.baseUrl,
+                    scope: openemrBridge.tokens?.scope,
+                    expiresAt: openemrBridge.expiresAt,
+                    obtainedAt: openemrBridge.obtainedAt
+                } : {
+                    enabled: false,
+                    reason: openemrBridge.reason
+                }
+            },
+            openemr: openemrBridge
         });
 
     } catch (error) {

@@ -58,6 +58,11 @@ const isHex = v => /^[0-9a-fA-F]+$/.test(String(v || ''));
 const isURL = v => {
   try { new URL(String(v)); return true; } catch { return false; }
 };
+const isPlaceholder = v => {
+  const value = String(v || '').trim();
+  if (!value) return true;
+  return /^your[-_]/i.test(value) || /^changeme$/i.test(value) || /^placeholder/i.test(value) || /^example/i.test(value);
+};
 
 // Record findings
 const findings = [];
@@ -120,6 +125,25 @@ if (onlineChecks && isURL(process.env.OAUTH2_JWKS_URI)) {
   });
 }
 
+// 4b) Provider SSO (Keycloak, Microsoft, Google, Apple)
+check('KEYCLOAK_CLIENT_ID configured', !isPlaceholder(process.env.KEYCLOAK_CLIENT_ID), 'Set KEYCLOAK_CLIENT_ID');
+check('KEYCLOAK_CLIENT_SECRET configured', !isPlaceholder(process.env.KEYCLOAK_CLIENT_SECRET), 'Set KEYCLOAK_CLIENT_SECRET');
+if (process.env.KEYCLOAK_TOKEN_URL) {
+  check('KEYCLOAK_TOKEN_URL https', isURL(process.env.KEYCLOAK_TOKEN_URL) && /^https:\/\//.test(process.env.KEYCLOAK_TOKEN_URL), 'KEYCLOAK_TOKEN_URL must be https');
+}
+if (process.env.KEYCLOAK_USERINFO_URL) {
+  check('KEYCLOAK_USERINFO_URL https', isURL(process.env.KEYCLOAK_USERINFO_URL) && /^https:\/\//.test(process.env.KEYCLOAK_USERINFO_URL), 'KEYCLOAK_USERINFO_URL must be https');
+}
+
+check('AZURE_CLIENT_ID configured', !isPlaceholder(process.env.AZURE_CLIENT_ID), 'Set AZURE_CLIENT_ID from Entra ID app');
+check('AZURE_CLIENT_SECRET configured', !isPlaceholder(process.env.AZURE_CLIENT_SECRET), 'Set AZURE_CLIENT_SECRET from Entra ID app');
+
+check('GOOGLE_CLIENT_ID configured', !isPlaceholder(process.env.GOOGLE_CLIENT_ID), 'Set GOOGLE_CLIENT_ID from Google Cloud console');
+check('GOOGLE_CLIENT_SECRET configured', !isPlaceholder(process.env.GOOGLE_CLIENT_SECRET), 'Set GOOGLE_CLIENT_SECRET from Google Cloud console');
+
+check('APPLE_CLIENT_ID configured', !isPlaceholder(process.env.APPLE_CLIENT_ID), 'Set APPLE_CLIENT_ID (Services ID)');
+check('APPLE_CLIENT_SECRET configured', !isPlaceholder(process.env.APPLE_CLIENT_SECRET), 'Set APPLE_CLIENT_SECRET (JWT from Apple)');
+
 // 5) OpenEMR & FHIR
 if (isTrue(process.env.USE_REMOTE_OPENEMR || 'true')) {
   check('OPENEMR_REMOTE_URL https', isURL(process.env.OPENEMR_REMOTE_URL) && /^https:\/\//.test(process.env.OPENEMR_REMOTE_URL), 'Set https OPENEMR_REMOTE_URL');
@@ -171,6 +195,36 @@ if (process.env.DICOMWEB_PROXY_TARGET) {
 // 11) Observability
 check('STRUCTURED_LOGGING true', isTrue(process.env.STRUCTURED_LOGGING || 'true'), 'Set STRUCTURED_LOGGING=true');
 check('METRICS_ENABLED true', isTrue(process.env.METRICS_ENABLED || 'true'), 'Set METRICS_ENABLED=true');
+
+// 12) Light EMR Adapter
+check('LIGHT_EMR_ADAPTER_ENABLED', isTrue(process.env.LIGHT_EMR_ADAPTER_ENABLED || 'true'), 'Set LIGHT_EMR_ADAPTER_ENABLED=true');
+check('LIGHT_EMR_ADAPTER_PORT valid', isPositiveInt(process.env.LIGHT_EMR_ADAPTER_PORT || '3100'), 'Set LIGHT_EMR_ADAPTER_PORT');
+if (process.env.MEDPLUM_API_URL) {
+  check('MEDPLUM_API_URL https', isURL(process.env.MEDPLUM_API_URL) && /^https:/.test(process.env.MEDPLUM_API_URL), 'Set MEDPLUM_API_URL with https');
+}
+if (process.env.NEXTCLOUD_WEBDAV_URL) {
+  check('NEXTCLOUD_WEBDAV_URL https', isURL(process.env.NEXTCLOUD_WEBDAV_URL) && /^https:/.test(process.env.NEXTCLOUD_WEBDAV_URL), 'Set NEXTCLOUD_WEBDAV_URL with https');
+}
+
+// Optional online adapter status check (Railway domain if provided)
+if (onlineChecks && process.env.RAILWAY_PUBLIC_DOMAIN) {
+  const adapterUrl = `https://${process.env.RAILWAY_PUBLIC_DOMAIN.replace(/\/$/, '')}/emr/status`;
+  findings.push({ name: 'Adapter /emr/status reachability', ok: false, advice: 'pending' });
+  const https = require('https');
+  const req = https.request(adapterUrl, { method: 'GET', timeout: 4000 }, res => {
+    const ok = res.statusCode === 200;
+    const idx = findings.findIndex(f => f.name === 'Adapter /emr/status reachability');
+    findings[idx] = { name: 'Adapter /emr/status reachability', ok, advice: ok ? undefined : 'Non-200 status' };
+    if (ok) logSuccess('Adapter /emr/status reachability'); else logError('Adapter /emr/status reachability – Non-200 status');
+  });
+  req.on('error', () => {
+    const idx = findings.findIndex(f => f.name === 'Adapter /emr/status reachability');
+    findings[idx] = { name: 'Adapter /emr/status reachability', ok: false, advice: 'Network error' };
+    logError('Adapter /emr/status reachability – Network error');
+  });
+  req.on('timeout', () => { req.destroy(new Error('timeout')); });
+  req.end();
+}
 
 // Summarize and exit appropriately
 async function finalize() {

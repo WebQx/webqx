@@ -24,6 +24,10 @@ const WebSocket = require('ws');
 const http = require('http');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const pino = require('pino');
+const pinoHttp = require('pino-http');
+const client = require('prom-client');
+const { randomUUID } = require('crypto');
 require('dotenv').config();
 
 class WebQXAPIProxy {
@@ -114,40 +118,71 @@ class WebQXAPIProxy {
     setupMiddleware() {
         // Security middleware
         this.app.use(helmet({
-            contentSecurityPolicy: false, // Disable for API proxy
+            contentSecurityPolicy: {
+                useDefaults: true,
+                directives: {
+                    "default-src": ["'none'"],
+                    "connect-src": ["'self'", '*'],
+                    "frame-ancestors": ["'none'"],
+                    "base-uri": ["'none'"],
+                }
+            },
             crossOriginEmbedderPolicy: false
         }));
         
         // CORS middleware
         this.app.use(cors(this.config.cors));
         
-        // Rate limiting
-        this.app.use(rateLimit(this.config.rateLimit));
-        
-        // Body parsing
-        this.app.use(express.json({ limit: '10mb' }));
-        this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-        
-        // Logging
+        // Layered rate limiting
+        const genericLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000, standardHeaders: true, legacyHeaders: false });
+        const healthLimiter = rateLimit({ windowMs: 60 * 1000, max: 120, standardHeaders: true, legacyHeaders: false });
+        const proxyLimiter = rateLimit({ windowMs: 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false });
+        this.limiters = { genericLimiter, healthLimiter, proxyLimiter };
+        this.app.use(genericLimiter);
+
+        // Tightened body size
+        this.app.use(express.json({ limit: '512kb' }));
+        this.app.use(express.urlencoded({ extended: true, limit: '256kb' }));
+
+        // Structured logging & request id
+        this.logger = pino({ level: process.env.PROXY_LOG_LEVEL || 'info' });
+        this.app.use((req, _res, next) => { req.id = req.headers['x-request-id'] || randomUUID(); next(); });
+        this.app.use(pinoHttp({ logger: this.logger, customProps: (req) => ({ requestId: req.id }) }));
+
+        // Audit logging
         this.app.use((req, res, next) => {
-            console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - ${req.ip}`);
+            const start = Date.now();
+            res.on('finish', () => {
+                this.logger.info({ type: 'audit', requestId: req.id, method: req.method, path: req.originalUrl, status: res.statusCode, duration_ms: Date.now() - start, ip: req.ip, ua: req.headers['user-agent'] });
+            });
+            next();
+        });
+
+        // Metrics
+        client.collectDefaultMetrics({ prefix: 'webqx_proxy_' });
+        this.requestHistogram = new client.Histogram({ name: 'webqx_proxy_http_request_duration_seconds', help: 'Request duration seconds', labelNames: ['method','route','status'] });
+        this.app.use((req, res, next) => {
+            const t0 = process.hrtime.bigint();
+            res.on('finish', () => {
+                const s = Number(process.hrtime.bigint() - t0) / 1e9;
+                this.requestHistogram.labels(req.method, req.route?.path || req.path, String(res.statusCode)).observe(s);
+            });
             next();
         });
     }
 
     setupRoutes() {
-        // Health check endpoint
-        this.app.get('/health', (req, res) => {
+        // Unified health schema
+        this.app.get('/health', this.limiters.healthLimiter, async (req, res) => {
             res.json({
-                status: 'healthy',
-                service: 'WebQX API Proxy',
-                timestamp: new Date().toISOString(),
+                status: 'ok',
+                service: 'webqx-api-proxy',
                 version: '2.0.0',
-                uptime: process.uptime(),
-                services: {
-                    emr: 'http://localhost:3000',
-                    telehealth: 'http://localhost:3003',
-                    proxy: 'http://localhost:3001'
+                timestamp: new Date().toISOString(),
+                uptime_s: process.uptime().toFixed(1),
+                dependencies: {
+                    emr: { target: this.config.emr.openemr.target, status: 'unknown' },
+                    telehealth: { target: this.config.telehealth.target, status: 'unknown' }
                 }
             });
         });
@@ -158,7 +193,7 @@ class WebQXAPIProxy {
         });
 
         // Runtime environment metadata (safe public info)
-        this.app.get('/api/env', (req, res) => {
+        this.app.get('/api/env', this.limiters.healthLimiter, (req, res) => {
             res.json({
                 name: process.env.SERVICE_NAME || 'webqx-proxy',
                 environment: process.env.NODE_ENV || 'development',
@@ -271,7 +306,7 @@ class WebQXAPIProxy {
         });
         
         // EMR API proxies
-        this.app.use('/api/emr/openemr', createProxyMiddleware({
+    this.app.use('/api/emr/openemr', this.limiters.proxyLimiter, createProxyMiddleware({
             target: this.config.emr.openemr.target,
             changeOrigin: true,
             pathRewrite: this.config.emr.openemr.pathRewrite,
@@ -279,7 +314,7 @@ class WebQXAPIProxy {
             onProxyReq: this.logProxyRequest.bind(this)
         }));
         
-        this.app.use('/api/emr/webqx', createProxyMiddleware({
+    this.app.use('/api/emr/webqx', this.limiters.proxyLimiter, createProxyMiddleware({
             target: this.config.emr.webqx.target,
             changeOrigin: true,
             pathRewrite: this.config.emr.webqx.pathRewrite,
@@ -288,7 +323,7 @@ class WebQXAPIProxy {
         }));
         
         // Telehealth API proxy
-        this.app.use('/api/telehealth', createProxyMiddleware({
+    this.app.use('/api/telehealth', this.limiters.proxyLimiter, createProxyMiddleware({
             target: this.config.telehealth.target,
             changeOrigin: true,
             pathRewrite: this.config.telehealth.pathRewrite,
@@ -298,7 +333,7 @@ class WebQXAPIProxy {
         }));
         
         // Default EMR endpoint (fallback to OpenEMR demo)
-        this.app.use('/api/emr', createProxyMiddleware({
+    this.app.use('/api/emr', this.limiters.proxyLimiter, createProxyMiddleware({
             target: 'https://demo.openemr.io',
             changeOrigin: true,
             pathRewrite: { '^/api/emr': '' },
@@ -306,7 +341,7 @@ class WebQXAPIProxy {
         }));
         
         // API documentation endpoint
-        this.app.get('/api', (req, res) => {
+        this.app.get('/api', this.limiters.healthLimiter, (req, res) => {
             res.json({
                 service: 'WebQX API Proxy',
                 version: '1.0.0',
@@ -340,28 +375,26 @@ class WebQXAPIProxy {
         });
         
         this.wss.on('connection', (ws, req) => {
-            console.log('WebSocket connection established:', req.url);
+            // Optional token check
+            try {
+                const u = new URL(req.url, 'http://localhost');
+                const token = u.searchParams.get('token');
+                if (process.env.TELEHEALTH_WS_TOKEN && token !== process.env.TELEHEALTH_WS_TOKEN) {
+                    ws.send(JSON.stringify({ type: 'error', error: 'unauthorized' }));
+                    return ws.close();
+                }
+            } catch {}
+            this.logger?.info({ msg: 'WebSocket connection', path: req.url });
             
             ws.on('message', (message) => {
-                console.log('WebSocket message received:', message.toString());
-                // Echo message back (placeholder for telehealth logic)
-                ws.send(JSON.stringify({
-                    type: 'echo',
-                    data: message.toString(),
-                    timestamp: new Date().toISOString()
-                }));
+                const text = message.toString();
+                if (text.length > 5000) { ws.send(JSON.stringify({ type: 'error', error: 'message_too_large' })); return; }
+                ws.send(JSON.stringify({ type: 'echo', data: text, timestamp: new Date().toISOString() }));
             });
-            
-            ws.on('close', () => {
-                console.log('WebSocket connection closed');
-            });
+            ws.on('close', () => { this.logger?.info({ msg: 'WebSocket closed' }); });
             
             // Send welcome message
-            ws.send(JSON.stringify({
-                type: 'welcome',
-                message: 'Connected to WebQX Telehealth WebSocket',
-                timestamp: new Date().toISOString()
-            }));
+            ws.send(JSON.stringify({ type: 'welcome', message: 'Connected to WebQX Telehealth WebSocket', timestamp: new Date().toISOString() }));
         });
     }
 
@@ -388,7 +421,7 @@ class WebQXAPIProxy {
     }
 
     handleProxyError(err, req, res) {
-        console.error('Proxy error:', err.message);
+        this.logger?.error({ msg: 'Proxy error', err: err.message });
         res.status(502).json({
             error: 'Proxy error',
             message: 'Unable to connect to backend service',
@@ -398,35 +431,17 @@ class WebQXAPIProxy {
     }
 
     logProxyRequest(proxyReq, req, res) {
-        console.log(`Proxying ${req.method} ${req.path} to ${proxyReq.getHeader('host')}`);
+        this.logger?.info({ msg: 'Proxying', method: req.method, path: req.path, host: proxyReq.getHeader('host') });
     }
 
     start() {
         this.server.listen(this.port, () => {
-            console.log('🚀 WebQX API Proxy Server Started');
-            console.log('=====================================');
-            console.log(`🌐 Server running on port ${this.port}`);
-            console.log(`📡 Health check: http://localhost:${this.port}/health`);
-            console.log(`📋 API docs: http://localhost:${this.port}/api`);
-            console.log(`🏥 EMR health: http://localhost:${this.port}/api/emr/health`);
-            console.log(`📹 Telehealth health: http://localhost:${this.port}/api/telehealth/health`);
-            console.log(`🔌 WebSocket: ws://localhost:${this.port}/api/telehealth/ws`);
-            console.log('=====================================');
-            
-            // Display configuration
-            console.log('Configuration:');
-            console.log('- CORS Origins:', this.config.cors.origin);
-            console.log('- OpenEMR Target:', this.config.emr.openemr.target);
-            console.log('- WebQX EMR Target:', this.config.emr.webqx.target);
-            console.log('- Telehealth Target:', this.config.telehealth.target);
-            console.log('=====================================\n');
+            this.logger.info({ msg: 'Proxy started', port: this.port, origins: this.config.cors.origin, openemr: this.config.emr.openemr.target, webqx: this.config.emr.webqx.target, telehealth: this.config.telehealth.target });
         });
     }
 
     stop() {
-        this.server.close(() => {
-            console.log('WebQX API Proxy Server stopped');
-        });
+        this.server.close(() => { this.logger?.warn({ msg: 'Proxy stopped' }); });
     }
 }
 
@@ -436,16 +451,13 @@ if (require.main === module) {
     proxy.start();
     
     // Graceful shutdown
-    process.on('SIGTERM', () => {
-        console.log('Received SIGTERM, shutting down gracefully');
+    const shutdown = (sig) => {
+        proxy.logger?.warn({ msg: 'Shutdown signal', signal: sig });
         proxy.stop();
-    });
-    
-    process.on('SIGINT', () => {
-        console.log('Received SIGINT, shutting down gracefully');
-        proxy.stop();
-        process.exit(0);
-    });
+        setTimeout(() => process.exit(0), 5000).unref();
+    };
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 module.exports = WebQXAPIProxy;

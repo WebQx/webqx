@@ -15,7 +15,7 @@
  * - Speaker identification
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const EventEmitter = require('events');
@@ -82,8 +82,43 @@ class RealtimeWhisperService extends EventEmitter {
         this.audioChunks = [];
         this.transcriptionHistory = [];
         this.speakerProfiles = new Map();
+        this.environment = process.env.NODE_ENV || 'development';
+        this.activeTimeouts = new Set();
+        this.reconnectTimeout = null;
         
         this.initializeService();
+    }
+
+    /**
+     * Register a timeout for later cleanup
+     */
+    registerTimeout(callback, delay) {
+        const handle = setTimeout(() => {
+            this.activeTimeouts.delete(handle);
+            callback();
+        }, delay);
+        this.activeTimeouts.add(handle);
+        return handle;
+    }
+
+    /**
+     * Clear timeout handle and unregister it
+     */
+    clearTimeoutHandle(handle) {
+        if (handle) {
+            clearTimeout(handle);
+            this.activeTimeouts.delete(handle);
+        }
+    }
+
+    /**
+     * Clear all timeouts registered by the service
+     */
+    clearAllTimers() {
+        for (const timeout of this.activeTimeouts) {
+            clearTimeout(timeout);
+        }
+        this.activeTimeouts.clear();
     }
 
     /**
@@ -202,7 +237,7 @@ class RealtimeWhisperService extends EventEmitter {
             this.websocket = new WebSocket(wsUrl, {
                 headers: {
                     'Authorization': `Bearer ${this.config.apiKey}`,
-                    'User-Agent': 'WebQX-Telehealth/1.0.0',
+                    'User-Agent': 'WebQX-Telehealth/v0.1.0',
                     'X-Session-ID': this.sessionId
                 }
             });
@@ -637,17 +672,17 @@ class RealtimeWhisperService extends EventEmitter {
      */
     waitForConnection() {
         return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
+            const timeout = this.registerTimeout(() => {
                 reject(new Error('Connection timeout'));
             }, 10000);
 
             this.websocket.on('open', () => {
-                clearTimeout(timeout);
+                this.clearTimeoutHandle(timeout);
                 resolve();
             });
 
             this.websocket.on('error', (error) => {
-                clearTimeout(timeout);
+                this.clearTimeoutHandle(timeout);
                 reject(error);
             });
         });
@@ -660,6 +695,11 @@ class RealtimeWhisperService extends EventEmitter {
         if (this.websocket) {
             this.websocket.close();
             this.websocket = null;
+        }
+
+        if (this.reconnectTimeout) {
+            this.clearTimeoutHandle(this.reconnectTimeout);
+            this.reconnectTimeout = null;
         }
 
         this.state.connected = false;
@@ -691,9 +731,15 @@ class RealtimeWhisperService extends EventEmitter {
         console.log(`📡 WebSocket closed: ${code} - ${reason}`);
         
         // Attempt reconnection if unexpected close
-        if (code !== 1000 && code !== 1001) {
+        if (code !== 1000 && code !== 1001 && this.environment !== 'test') {
             console.log('🔄 Attempting to reconnect...');
-            setTimeout(() => this.connect().catch(console.error), 5000);
+            if (this.reconnectTimeout) {
+                this.clearTimeoutHandle(this.reconnectTimeout);
+            }
+            this.reconnectTimeout = this.registerTimeout(() => {
+                this.reconnectTimeout = null;
+                this.connect().catch(console.error);
+            }, 5000);
         }
     }
 
@@ -774,6 +820,8 @@ class RealtimeWhisperService extends EventEmitter {
         this.transcriptionHistory = [];
         this.speakerProfiles.clear();
         this.state.audioBuffer = Buffer.alloc(0);
+        this.clearAllTimers();
+        this.reconnectTimeout = null;
     }
 }
 

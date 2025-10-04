@@ -5,13 +5,13 @@
  * without requiring complex environment setup.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 describe('Telehealth Module Basic Tests', () => {
     beforeAll(() => {
         // Set required environment variables for tests
-        process.env.HIPAA_ENCRYPTION_KEY = 'test-key-12345678901234567890123456789012';
+        process.env.HIPAA_ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
         process.env.WHISPER_API_KEY = 'test-whisper-api-key';
         process.env.NODE_ENV = 'test';
     });
@@ -85,6 +85,27 @@ describe('Telehealth Module Basic Tests', () => {
     });
 
     describe('Configuration Loading', () => {
+        test('should not emit warnings when loading configuration in test environment', () => {
+            const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+            const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+            jest.resetModules();
+
+            expect(() => {
+                const tlsConfig = require('../config/tls');
+                const hipaaConfig = require('../config/hipaa');
+                expect(tlsConfig).toBeDefined();
+                expect(hipaaConfig).toBeDefined();
+            }).not.toThrow();
+
+            expect(warnSpy).not.toHaveBeenCalled();
+
+            jest.resetModules();
+
+            logSpy.mockRestore();
+            warnSpy.mockRestore();
+        });
+
         test('should load TLS configuration without errors', () => {
             // Mock environment to avoid file system dependencies
             const originalEnv = process.env.NODE_ENV;

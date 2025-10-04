@@ -5,11 +5,11 @@
  * login, logout, session management, and consent handling.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import express, { Request, Response } from 'express';
-import { openEvidenceAuth, OpenEvidenceAuthUtils } from './index';
+import { openEvidenceAuth, OpenEvidenceAuthUtils, CURRENT_CONSENT_VERSION } from './index';
 import { 
   requireOpenEvidenceAuth, 
   requirePermissions,
@@ -294,8 +294,11 @@ router.get('/consent', requireOpenEvidenceAuth, (req: OpenEvidenceRequest, res: 
     consent: {
       version: session.consentVersion,
       agreedAt: session.createdAt,
-      currentVersion: '1.0',
-      requiresUpdate: session.consentVersion < '1.0'
+      currentVersion: CURRENT_CONSENT_VERSION,
+      requiresUpdate: !OpenEvidenceAuthUtils.isConsentVersionValid(
+        session.consentVersion,
+        CURRENT_CONSENT_VERSION
+      )
     },
     platform: 'OpenEvidence'
   });
@@ -328,7 +331,7 @@ router.post('/consent', requireOpenEvidenceAuth, (req: OpenEvidenceRequest, res:
   }
 
   // Update consent version in session
-  session.consentVersion = version || '1.0';
+  session.consentVersion = version || CURRENT_CONSENT_VERSION;
   
   console.log(`[OpenEvidence Auth] Consent updated for user ${session.userId}: ${session.consentVersion}`);
   
@@ -474,7 +477,7 @@ router.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     platform: 'OpenEvidence',
-    version: '1.0.0',
+    version: CURRENT_CONSENT_VERSION,
     timestamp: new Date().toISOString(),
     activeSessions: stats.totalActiveSessions,
     uptime: process.uptime()

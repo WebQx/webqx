@@ -5,7 +5,7 @@
  * including session management, role-based access control, and security features.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import { EventEmitter } from 'events';
@@ -13,7 +13,8 @@ import {
   OpenEvidenceAuthManager, 
   OpenEvidenceUser, 
   OpenEvidenceSession,
-  OpenEvidenceAuthUtils 
+  OpenEvidenceAuthUtils,
+  CURRENT_CONSENT_VERSION
 } from '../index';
 import { User, UserRole, MedicalSpecialty } from '../../types';
 
@@ -202,7 +203,7 @@ describe('OpenEvidence Authentication Manager', () => {
       expect(testSession.evidenceRole).toBe('PHYSICIAN');
       expect(testSession.accessLevel).toBe('ADVANCED');
       expect(testSession.isActive).toBe(true);
-      expect(testSession.consentVersion).toBe('1.0');
+      expect(testSession.consentVersion).toBe(CURRENT_CONSENT_VERSION);
     });
 
     it('should retrieve sessions by ID', () => {
@@ -384,9 +385,12 @@ describe('OpenEvidence Authentication Utils', () => {
 
   describe('Consent Version Validation', () => {
     it('should validate consent versions correctly', () => {
-      expect(OpenEvidenceAuthUtils.isConsentVersionValid('1.0', '1.0')).toBe(true);
-      expect(OpenEvidenceAuthUtils.isConsentVersionValid('1.1', '1.0')).toBe(true);
-      expect(OpenEvidenceAuthUtils.isConsentVersionValid('0.9', '1.0')).toBe(false);
+      expect(OpenEvidenceAuthUtils.isConsentVersionValid('v0.1.0', CURRENT_CONSENT_VERSION)).toBe(true);
+      expect(OpenEvidenceAuthUtils.isConsentVersionValid('v0.1.1', CURRENT_CONSENT_VERSION)).toBe(true);
+      expect(OpenEvidenceAuthUtils.isConsentVersionValid('0.0.9', CURRENT_CONSENT_VERSION)).toBe(false);
+      expect(OpenEvidenceAuthUtils.isConsentVersionValid('V0.1.0', CURRENT_CONSENT_VERSION)).toBe(true);
+      expect(OpenEvidenceAuthUtils.isConsentVersionValid('V0.0.9', CURRENT_CONSENT_VERSION)).toBe(false);
+      expect(OpenEvidenceAuthUtils.isConsentVersionValid('1.0.0', CURRENT_CONSENT_VERSION)).toBe(true);
     });
   });
 });

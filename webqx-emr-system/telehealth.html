@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebQX EMR - Telehealth Services</title>
     <link rel="stylesheet" href="themes/webqx-modern.css">
+    <link rel="stylesheet" href="themes/webqx-mobile.css">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -144,13 +145,12 @@
     <div class="webqx-header">
         <div class="container-fluid" style="max-width: 1200px; margin: 0 auto; padding: 1rem 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="webqx-logo">
-                    📹 WebQX EMR - Telehealth Services
-                </div>
-                <div style="display: flex; gap: 1rem; align-items: center;">
+                <div class="webqx-logo">📹 WebQX EMR - Telehealth Services</div>
+                <button class="webqx-nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="teleNav">☰ Menu</button>
+                <nav id="teleNav" class="webqx-nav-links" aria-label="Telehealth navigation">
                     <a href="index.html" style="color: white; text-decoration: none;">← Back to Home</a>
                     <a href="provider/" style="color: white; text-decoration: none;">Provider Portal</a>
-                </div>
+                </nav>
             </div>
             <div class="webqx-tagline">
                 Comprehensive telemedicine and virtual care solutions
@@ -292,6 +292,7 @@
         </div>
     </div>
 
+    <script src="js/webqx-mobile-nav.js"></script>
     <script>
         function startConsultation() {
             alert('🎥 Starting Video Consultation...\n\nConnecting to WebQX Telehealth Platform\n• Camera: Checking\n• Microphone: Checking\n• Connection: Secure\n\nYou will be connected shortly.');
@@ -356,7 +357,7 @@
         }
         
         // Check WebQX EMR connectivity
-    fetch('https://yourdomain.com/webqx-api.php?action=status')
+    fetch('https://webqx-production.up.railway.app/webqx-api.php?action=status')
             .then(response => response.json())
             .then(data => {
                 console.log('WebQX EMR Status:', data);

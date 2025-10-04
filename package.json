@@ -1,6 +1,6 @@
 {
   "name": "webqx-healthcare-platform",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "WebQX™: Modular Healthcare Platform - A multilingual, specialty-aware, and privacy-first blueprint for global clinical care",
   "main": "server.js",
   "scripts": {
@@ -104,7 +104,7 @@
     "zod": "^3.23.8"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",

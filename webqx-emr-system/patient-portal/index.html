@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebQX EMR - Patient Portal</title>
     <link rel="stylesheet" href="../themes/webqx-modern.css">
+    <link rel="stylesheet" href="../themes/webqx-mobile.css">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -121,13 +122,12 @@
     <div class="webqx-header">
         <div class="container-fluid" style="max-width: 1200px; margin: 0 auto; padding: 1rem 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="webqx-logo">
-                    🏥 WebQX EMR - Patient Portal
-                </div>
-                <div style="display: flex; gap: 1rem; align-items: center;">
+                <div class="webqx-logo">🏥 WebQX EMR - Patient Portal</div>
+                <button class="webqx-nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="patientNav">☰ Menu</button>
+                <nav id="patientNav" class="webqx-nav-links" aria-label="Patient portal navigation">
                     <a href="../" style="color: white; text-decoration: none;">← Back to Main</a>
                     <a href="#" onclick="showLoginModal()" style="color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 4px;">Login</a>
-                </div>
+                </nav>
             </div>
             <div class="webqx-tagline">
                 Empowering patients with easy access to their healthcare information
@@ -257,7 +257,23 @@
         </div>
     </div>
 
-    <script>
+        <script src="../js/webqx-mobile-nav.js"></script>
+        <script>
+        // Adapter status badge injection
+        (function(){
+            const header = document.querySelector('.webqx-header .webqx-logo');
+            if(!header) return;
+            const badge = document.createElement('span');
+            badge.style.cssText='margin-left:.75rem;padding:.25rem .55rem;border-radius:12px;font-size:.65rem;background:#6b7280;color:#fff;letter-spacing:.5px;text-transform:uppercase;';
+            badge.textContent='ADAPTER: CHECKING';
+            header.appendChild(badge);
+            fetch('https://webqx-production.up.railway.app/emr/status').then(r=>r.json()).then(st=>{
+                const s=st.status||'unknown';
+                const color = s==='online'?'#10b981':(s==='degraded'?'#f59e0b':'#ef4444');
+                badge.style.background=color;
+                badge.textContent='ADAPTER: '+s.toUpperCase();
+            }).catch(()=>{ badge.style.background='#ef4444'; badge.textContent='ADAPTER: OFFLINE'; });
+        })();
         function showLoginModal() {
             document.getElementById('loginModal').style.display = 'block';
         }
@@ -279,7 +295,7 @@
         });
         
         // Check if EMR is accessible
-    fetch('https://yourdomain.com/webqx-api.php?action=status')
+    fetch('https://webqx-production.up.railway.app/webqx-api.php?action=status')
             .then(response => response.json())
             .then(data => {
                 console.log('WebQX EMR Status:', data);

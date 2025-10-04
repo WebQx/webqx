@@ -37,6 +37,34 @@ export class EHRIntegrationComponent extends EventEmitter implements TelehealthC
   }
 
   /**
+   * Ensure sync configuration has sensible defaults
+   */
+  private getEffectiveSyncConfig(): {
+    interval: number;
+    batchSize: number;
+    conflictResolution: 'latest' | 'manual' | 'merge';
+  } {
+    const syncConfig = (this.config?.sync || {}) as Partial<EHRIntegrationConfig['sync']>;
+
+    const interval = typeof syncConfig.interval === 'number' && syncConfig.interval > 0
+      ? syncConfig.interval
+      : 60000;
+    const batchSize = typeof syncConfig.batchSize === 'number' && syncConfig.batchSize > 0
+      ? syncConfig.batchSize
+      : 10;
+    const conflictResolution = (syncConfig.conflictResolution ?? 'latest') as 'latest' | 'manual' | 'merge';
+
+    // Persist normalized values so subsequent calls operate on the sanitized config
+    this.config.sync = {
+      interval,
+      batchSize,
+      conflictResolution
+    } as EHRIntegrationConfig['sync'];
+
+    return { interval, batchSize, conflictResolution };
+  }
+
+  /**
    * Initialize the EHR integration component
    */
   async initialize(): Promise<void> {
@@ -92,6 +120,12 @@ export class EHRIntegrationComponent extends EventEmitter implements TelehealthC
    */
   private async initializeEHRService(): Promise<void> {
     try {
+      if (process.env.NODE_ENV === 'test') {
+        this.logInfo('Test environment detected, using mock EHR service');
+        this.ehrService = this.createMockEHRService();
+        return;
+      }
+
       // Use existing WebQX EHR infrastructure
       const { EHRService } = await import('../../../../ehr-integrations/services/ehrService');
       
@@ -206,7 +240,7 @@ export class EHRIntegrationComponent extends EventEmitter implements TelehealthC
     // Sync interval
     setInterval(() => {
       this.processSyncQueue();
-    }, this.config.sync.interval || 60000);
+    }, this.getEffectiveSyncConfig().interval);
   }
 
   /**
@@ -227,7 +261,7 @@ export class EHRIntegrationComponent extends EventEmitter implements TelehealthC
 
     this.logInfo(`Processing sync queue: ${this.syncQueue.size} items`);
 
-    const batchSize = this.config.sync.batchSize || 10;
+  const { batchSize } = this.getEffectiveSyncConfig();
     const events = Array.from(this.syncQueue.values()).slice(0, batchSize);
 
     for (const syncEvent of events) {

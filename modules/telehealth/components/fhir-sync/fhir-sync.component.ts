@@ -23,7 +23,12 @@ export class FHIRSyncComponent extends EventEmitter implements TelehealthCompone
 
   constructor(config: FHIRSyncConfig) {
     super();
-    this.config = config;
+    this.config = {
+      ...config,
+      healthCheckInterval: this.normalizeHealthInterval(config.healthCheckInterval),
+      synchronization: this.normalizeSynchronization(config.synchronization),
+      resources: this.normalizeResources(config.resources)
+    };
     this.status = {
       healthy: false,
       status: 'initializing',
@@ -34,6 +39,48 @@ export class FHIRSyncComponent extends EventEmitter implements TelehealthCompone
         errorCount: 0,
         successRate: 100
       }
+    };
+  }
+
+  /**
+   * Normalize health check interval to a safe default
+   */
+  private normalizeHealthInterval(value?: number): number {
+    return typeof value === 'number' && value > 0 ? value : 30000;
+  }
+
+  /**
+   * Normalize synchronization configuration with safe defaults
+   */
+  private normalizeSynchronization(
+    synchronization?: Partial<FHIRSyncConfig['synchronization']>
+  ): FHIRSyncConfig['synchronization'] {
+    const syncConfig = synchronization ?? {};
+
+    const mode = (syncConfig.mode ?? 'real-time') as 'real-time' | 'batch' | 'scheduled';
+    const batchSize = typeof syncConfig.batchSize === 'number' && syncConfig.batchSize > 0
+      ? syncConfig.batchSize
+      : 100;
+
+    return {
+      mode,
+      batchSize,
+      ...(syncConfig.scheduleExpression ? { scheduleExpression: syncConfig.scheduleExpression } : {})
+    };
+  }
+
+  /**
+   * Normalize resources configuration with safe defaults
+   */
+  private normalizeResources(
+    resources?: Partial<FHIRSyncConfig['resources']>
+  ): FHIRSyncConfig['resources'] {
+    const resourceConfig = resources ?? {};
+
+    return {
+      enabledTypes: Array.isArray(resourceConfig.enabledTypes) ? resourceConfig.enabledTypes : [],
+      syncDirection: (resourceConfig.syncDirection ?? 'bidirectional') as 'bidirectional' | 'to-fhir' | 'from-fhir',
+      validateResources: resourceConfig.validateResources ?? false
     };
   }
 
@@ -680,7 +727,14 @@ export class FHIRSyncComponent extends EventEmitter implements TelehealthCompone
    * Update component configuration
    */
   async updateConfig(config: Partial<FHIRSyncConfig>): Promise<void> {
-    this.config = { ...this.config, ...config };
+    this.config = {
+      ...this.config,
+      ...config
+    };
+
+    this.config.healthCheckInterval = this.normalizeHealthInterval(this.config.healthCheckInterval);
+    this.config.synchronization = this.normalizeSynchronization(this.config.synchronization);
+    this.config.resources = this.normalizeResources(this.config.resources);
     this.logInfo('FHIR sync configuration updated');
   }
 

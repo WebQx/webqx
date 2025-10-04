@@ -2,43 +2,12 @@ const express = require('express');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
+const { getSSOConfigs } = require('./sso-config');
 
 const router = express.Router();
 
-// SSO configuration (should be in environment variables)
-const ssoConfigs = {
-    keycloak: {
-        tokenUrl: process.env.KEYCLOAK_TOKEN_URL || 'https://keycloak.webqx.health/auth/realms/webqx-healthcare/protocol/openid-connect/token',
-        userInfoUrl: process.env.KEYCLOAK_USERINFO_URL || 'https://keycloak.webqx.health/auth/realms/webqx-healthcare/protocol/openid-connect/userinfo',
-        clientId: process.env.KEYCLOAK_CLIENT_ID || 'webqx-provider-portal',
-        clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || 'your-keycloak-secret'
-    },
-    microsoft: {
-        tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-        userInfoUrl: 'https://graph.microsoft.com/v1.0/me',
-        clientId: process.env.AZURE_CLIENT_ID || 'your-azure-client-id',
-        clientSecret: process.env.AZURE_CLIENT_SECRET || 'your-azure-secret'
-    },
-    google: {
-        tokenUrl: 'https://oauth2.googleapis.com/token',
-        userInfoUrl: 'https://openidconnect.googleapis.com/v1/userinfo',
-        clientId: process.env.GOOGLE_CLIENT_ID || 'your-google-client-id',
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'your-google-secret'
-    },
-    apple: {
-        tokenUrl: 'https://appleid.apple.com/auth/token',
-        // Apple does not provide a separate userinfo endpoint; use id_token claims
-        userInfoUrl: null,
-        clientId: process.env.APPLE_CLIENT_ID || 'your-apple-service-id',
-        clientSecret: process.env.APPLE_CLIENT_SECRET || 'your-apple-client-secret'
-    },
-    'smart-fhir': {
-        tokenUrl: process.env.FHIR_TOKEN_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token',
-        userInfoUrl: process.env.FHIR_USERINFO_URL || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Practitioner',
-        clientId: process.env.FHIR_CLIENT_ID || 'your-fhir-client-id',
-        clientSecret: process.env.FHIR_CLIENT_SECRET || 'your-fhir-secret'
-    }
-};
+// Load SSO configuration once so we can fail fast if production secrets are missing
+const ssoConfigs = getSSOConfigs();
 
 // Exchange authorization code for access token
 router.post('/exchange', async (req, res) => {

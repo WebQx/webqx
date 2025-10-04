@@ -23,7 +23,7 @@ class ChatEHRService {
             timeout: this.timeout,
             headers: {
                 'Content-Type': 'application/json',
-                'User-Agent': 'WebQx-ChatEHR-Integration/1.0.0',
+                'User-Agent': 'WebQx-ChatEHR-Integration/v0.1.0',
                 ...(this.apiKey && { 'Authorization': `Bearer ${this.apiKey}` })
             }
         });
@@ -113,6 +113,7 @@ class ChatEHRService {
             };
 
             const response = await this.client.post('/consultations', payload);
+            const requestId = response.config?.metadata?.requestId || uuidv4();
 
             this.logAudit('CONSULTATION_CREATED', {
                 consultationId: response.data.id,
@@ -126,7 +127,7 @@ class ChatEHRService {
                 success: true,
                 data: response.data,
                 metadata: {
-                    requestId: response.config.metadata.requestId,
+                    requestId,
                     timestamp: new Date().toISOString()
                 }
             };
@@ -530,8 +531,11 @@ class ChatEHRService {
      */
     async healthCheck() {
         try {
-            // For test environment, always return healthy if mock server is expected
-            if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
+            const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID;
+            const isMockServer = typeof this.baseUrl === 'string' && this.baseUrl.includes('localhost:4001');
+
+            // For test environment with mock server, always return healthy
+            if (isTestEnv && isMockServer) {
                 return {
                     success: true,
                     status: 'healthy',

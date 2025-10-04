@@ -176,6 +176,27 @@ export function getDefaultRoleMappings() {
  * Gets full provider configuration with defaults
  */
 export function getKeycloakProviderConfig(): KeycloakProviderConfig {
+  const identityProviders = {
+    microsoft: {
+      enabled: process.env.KEYCLOAK_IDP_MICROSOFT_ENABLED !== 'false',
+      idpHint: process.env.KEYCLOAK_IDP_MICROSOFT_HINT || process.env.KEYCLOAK_MICROSOFT_IDP_HINT || 'microsoft',
+      displayName: process.env.KEYCLOAK_IDP_MICROSOFT_NAME || 'Microsoft',
+      clientId: process.env.AZURE_CLIENT_ID
+    },
+    google: {
+      enabled: process.env.KEYCLOAK_IDP_GOOGLE_ENABLED !== 'false',
+      idpHint: process.env.KEYCLOAK_IDP_GOOGLE_HINT || process.env.KEYCLOAK_GOOGLE_IDP_HINT || 'google',
+      displayName: process.env.KEYCLOAK_IDP_GOOGLE_NAME || 'Google',
+      clientId: process.env.GOOGLE_CLIENT_ID
+    },
+    apple: {
+      enabled: process.env.KEYCLOAK_IDP_APPLE_ENABLED !== 'false',
+      idpHint: process.env.KEYCLOAK_IDP_APPLE_HINT || process.env.KEYCLOAK_APPLE_IDP_HINT || 'apple',
+      displayName: process.env.KEYCLOAK_IDP_APPLE_NAME || 'Apple',
+      clientId: process.env.APPLE_CLIENT_ID
+    }
+  };
+
   return {
     keycloak: getKeycloakConfig(),
     roleMappings: getDefaultRoleMappings(),
@@ -188,5 +209,6 @@ export function getKeycloakProviderConfig(): KeycloakProviderConfig {
       minimumTokenAge: parseInt(process.env.KEYCLOAK_MIN_TOKEN_AGE || '0'),
       maximumTokenAge: parseInt(process.env.KEYCLOAK_MAX_TOKEN_AGE || '3600'),
     },
+    identityProviders,
   };
 }

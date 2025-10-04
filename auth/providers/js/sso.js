@@ -7,34 +7,48 @@ class SSOManager {
     constructor() {
         // Allow per-page overrides before instantiation
         const override = (window.WEBQX_SSO_OVERRIDE || {});
-    this.finalizeEndpoint = override.finalizeEndpoint || '/api/auth/provider/sso-login';
-    // Use a concrete callback HTML file so static hosting returns same-origin content
-    this.callbackPathPrefix = override.callbackPathPrefix || '/auth/providers/callback';
+        this.finalizeEndpoint = override.finalizeEndpoint || '/api/auth/provider/sso-login';
+        this.finalizeEndpointMap = override.finalizeEndpointMap || {};
+        // Use a concrete callback HTML file so static hosting returns same-origin content
+        this.callbackPathPrefix = override.callbackPathPrefix || '/auth/providers/callback';
+        this.callbackPathMap = override.callbackPathMap || {};
         this.redirectAfterLogin = override.redirectAfterLogin || null;
+        this.redirectAfterLoginMap = override.redirectAfterLoginMap || {};
+        this.redirectUriMap = override.redirectUriMap || {};
+        this.currentFlow = null;
 
-        // Base Keycloak config (acts as broker)
-        const keycloakBase = {
+        const keycloakDefaults = {
             name: 'Keycloak',
             enabled: true,
-            authUrl: 'https://keycloak.webqx.health/auth',
-            realm: 'webqx-healthcare',
-            clientId: 'webqx-provider-portal',
-            scope: 'openid profile email',
-            redirectUri: `${window.location.origin}${this.callbackPathPrefix}.html`
+            authUrl: window.WEBQX_KEYCLOAK_URL || 'https://keycloak.webqx.health/auth',
+            realm: window.WEBQX_KEYCLOAK_REALM || 'webqx-healthcare',
+            clientId: window.WEBQX_KEYCLOAK_CLIENT_ID || 'webqx-provider-portal',
+            scope: 'openid profile email'
         };
+
+        const keycloakOverride = override.keycloak || {};
+        const keycloakBase = Object.assign({}, keycloakDefaults, keycloakOverride);
+        if (keycloakBase.redirectUri) {
+            keycloakBase.redirectUri = this.normalizeRedirectUri(keycloakBase.redirectUri);
+        } else {
+            keycloakBase.redirectUri = this.buildRedirectUri(this.callbackPathPrefix);
+        }
+        this.keycloakConfig = keycloakBase;
 
         // Map friendly providers to Keycloak with kc_idp_hint
         this.idpHints = Object.assign({
             microsoft: 'microsoft',
             google: 'google',
             apple: 'apple'
-        }, (window.WEBQX_SSO_IDP_HINTS || {}));
+        }, (override.idpHints || {}), (window.WEBQX_SSO_IDP_HINTS || {}));
+
+        const providerOverrides = override.providers || {};
 
         this.ssoConfigs = {
-            keycloak: keycloakBase,
-            microsoft: { name: 'Microsoft', enabled: true },
-            google: { name: 'Google', enabled: true },
-            apple: { name: 'Apple', enabled: true }
+            keycloak: this.keycloakConfig,
+            microsoft: Object.assign({ name: 'Microsoft', enabled: true }, providerOverrides.microsoft || {}),
+            google: Object.assign({ name: 'Google', enabled: true }, providerOverrides.google || {}),
+            apple: Object.assign({ name: 'Apple', enabled: true }, providerOverrides.apple || {})
         };
 
         this.currentProvider = null;
@@ -62,6 +76,89 @@ class SSOManager {
         });
     }
 
+    resolveCallbackPath(provider) {
+        if (this.currentFlow && this.currentFlow.provider === provider && this.currentFlow.callbackPath) {
+            return this.currentFlow.callbackPath;
+        }
+        if (this.callbackPathMap && this.callbackPathMap[provider]) {
+            return this.callbackPathMap[provider];
+        }
+        return this.callbackPathPrefix;
+    }
+
+    normalizeRedirectUri(value) {
+        if (!value) return null;
+        if (/^https?:\/\//.test(value)) {
+            return value;
+        }
+        const trimmed = value.trim();
+        const hasHtml = /\.html(\?|$)/.test(trimmed);
+        const withoutTrailingSlash = trimmed.endsWith('/') && !hasHtml ? trimmed.slice(0, -1) : trimmed;
+        const withHtml = hasHtml ? withoutTrailingSlash : `${withoutTrailingSlash}.html`;
+        const prefixed = withHtml.startsWith('/') ? withHtml : `/${withHtml}`;
+        return `${window.location.origin}${prefixed}`;
+    }
+
+    buildRedirectUri(path) {
+        if (!path) {
+            return this.normalizeRedirectUri(`${this.callbackPathPrefix}.html`);
+        }
+        return this.normalizeRedirectUri(path);
+    }
+
+    getRedirectUriForProvider(provider) {
+        if (this.currentFlow && this.currentFlow.provider === provider) {
+            if (this.currentFlow.redirectUri) {
+                return this.currentFlow.redirectUri;
+            }
+            if (this.currentFlow.callbackPath) {
+                return this.buildRedirectUri(this.currentFlow.callbackPath);
+            }
+        }
+        if (this.redirectUriMap && this.redirectUriMap[provider]) {
+            return this.normalizeRedirectUri(this.redirectUriMap[provider]);
+        }
+        const callbackPath = this.resolveCallbackPath(provider);
+        if (provider === 'keycloak' && this.keycloakConfig && this.keycloakConfig.redirectUri) {
+            return this.keycloakConfig.redirectUri;
+        }
+        return this.buildRedirectUri(callbackPath);
+    }
+
+    getRedirectAfterLogin(provider) {
+        if (this.currentFlow && this.currentFlow.provider === provider && this.currentFlow.redirectAfterLogin) {
+            return this.currentFlow.redirectAfterLogin;
+        }
+        if (this.redirectAfterLoginMap && this.redirectAfterLoginMap[provider]) {
+            return this.redirectAfterLoginMap[provider];
+        }
+        return this.redirectAfterLogin;
+    }
+
+    getFinalizeEndpoint(provider) {
+        if (this.currentFlow && this.currentFlow.provider === provider && this.currentFlow.finalizeEndpoint) {
+            return this.currentFlow.finalizeEndpoint;
+        }
+        if (this.finalizeEndpointMap && this.finalizeEndpointMap[provider]) {
+            return this.finalizeEndpointMap[provider];
+        }
+        return this.finalizeEndpoint;
+    }
+
+    resetFlowContext() {
+        this.currentFlow = null;
+        this.currentProvider = null;
+    }
+
+    sanitizeDatasetValue(value) {
+        if (typeof value !== 'string') return undefined;
+        const trimmed = value.trim();
+        if (!trimmed || trimmed === 'null' || trimmed === 'undefined') {
+            return undefined;
+        }
+        return trimmed;
+    }
+
     handleOAuthCallback() {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
@@ -87,22 +184,43 @@ class SSOManager {
         }
     }
 
-    async initiateSSO(provider) {
+    async initiateSSO(provider, options = {}) {
         if (!this.ssoConfigs[provider] || !this.ssoConfigs[provider].enabled) {
             this.showSSOError(`${provider} SSO is not configured or enabled`);
             return;
         }
 
         this.currentProvider = provider;
+        const flowContext = {
+            provider,
+            redirectAfterLogin: options.redirectAfterLogin || this.redirectAfterLoginMap[provider] || null,
+            finalizeEndpoint: options.finalizeEndpoint || this.finalizeEndpointMap[provider] || null,
+            callbackPath: options.callbackPathPrefix || this.callbackPathMap[provider] || null,
+            redirectUri: options.redirectUri ? this.normalizeRedirectUri(options.redirectUri) : null
+        };
+        this.currentFlow = flowContext;
         const config = this.ssoConfigs[provider];
         
         try {
             // Generate state parameter for security
-            const state = btoa(JSON.stringify({
+            const statePayload = {
                 provider,
                 timestamp: Date.now(),
                 nonce: this.generateNonce()
-            }));
+            };
+            if (flowContext.redirectAfterLogin) {
+                statePayload.redirectAfterLogin = flowContext.redirectAfterLogin;
+            }
+            if (flowContext.finalizeEndpoint) {
+                statePayload.finalizeEndpoint = flowContext.finalizeEndpoint;
+            }
+            if (flowContext.callbackPath) {
+                statePayload.callbackPath = flowContext.callbackPath;
+            }
+            if (flowContext.redirectUri) {
+                statePayload.redirectUri = flowContext.redirectUri;
+            }
+            const state = btoa(JSON.stringify(statePayload));
             
             // Build authorization URL
             const authUrl = this.buildAuthUrl(provider, state);
@@ -126,8 +244,9 @@ class SSOManager {
         // Always broker through Keycloak; use kc_idp_hint for social providers
         const kc = this.ssoConfigs.keycloak;
         const base = `${kc.authUrl}/realms/${kc.realm}/protocol/openid-connect/auth`;
+        const redirectUri = this.getRedirectUriForProvider(provider);
         const common = `client_id=${encodeURIComponent(kc.clientId)}&` +
-                       `redirect_uri=${encodeURIComponent(kc.redirectUri)}&` +
+                       `redirect_uri=${encodeURIComponent(redirectUri)}&` +
                        `response_type=code&` +
                        `scope=${encodeURIComponent(kc.scope)}&` +
                        `state=${encodeURIComponent(state)}`;
@@ -219,6 +338,27 @@ class SSOManager {
             if (Date.now() - stateData.timestamp > 600000) { // 10 minutes
                 throw new Error('Authentication state expired');
             }
+            if (!this.currentFlow || this.currentFlow.provider !== provider) {
+                this.currentFlow = {
+                    provider,
+                    redirectAfterLogin: stateData.redirectAfterLogin || null,
+                    finalizeEndpoint: stateData.finalizeEndpoint || null,
+                    callbackPath: stateData.callbackPath || null,
+                    redirectUri: stateData.redirectUri ? this.normalizeRedirectUri(stateData.redirectUri) : null
+                };
+                this.currentProvider = provider;
+            } else if (stateData.redirectAfterLogin && !this.currentFlow.redirectAfterLogin) {
+                this.currentFlow.redirectAfterLogin = stateData.redirectAfterLogin;
+            }
+            if (stateData.finalizeEndpoint && !this.currentFlow.finalizeEndpoint) {
+                this.currentFlow.finalizeEndpoint = stateData.finalizeEndpoint;
+            }
+            if (stateData.callbackPath && !this.currentFlow.callbackPath) {
+                this.currentFlow.callbackPath = stateData.callbackPath;
+            }
+            if (stateData.redirectUri && !this.currentFlow.redirectUri) {
+                this.currentFlow.redirectUri = this.normalizeRedirectUri(stateData.redirectUri);
+            }
             
             // Exchange code for tokens
             const tokenData = await this.exchangeCodeForTokens(provider, code);
@@ -233,10 +373,14 @@ class SSOManager {
         } catch (error) {
             console.error('SSO callback error:', error);
             this.showSSOError(`Authentication failed: ${error.message}`);
+            this.storeOpenEMRSession(null, provider);
+            this.setSSOButtonLoading(provider, false);
+            this.resetFlowContext();
         }
     }
 
     async exchangeCodeForTokens(provider, code) {
+        const redirectUri = this.getRedirectUriForProvider(provider);
         const response = await fetch('/api/auth/sso/exchange', {
             method: 'POST',
             headers: {
@@ -246,7 +390,7 @@ class SSOManager {
                 // Use Keycloak as the broker for token exchange
                 provider: 'keycloak',
                 code,
-                redirectUri: this.ssoConfigs.keycloak.redirectUri
+                redirectUri
             })
         });
         
@@ -278,7 +422,8 @@ class SSOManager {
     }
 
     async authenticateWithBackend(provider, tokenData, userInfo) {
-        const response = await fetch(this.finalizeEndpoint, {
+        const finalizeEndpoint = this.getFinalizeEndpoint(provider);
+        const response = await fetch(finalizeEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -291,6 +436,11 @@ class SSOManager {
         });
         
         const result = await response.json();
+
+        const cleanup = () => {
+            this.setSSOButtonLoading(provider, false);
+            this.resetFlowContext();
+        };
         
         if (result.success) {
             // If provider auth UI exists, delegate to it
@@ -299,6 +449,8 @@ class SSOManager {
                 if (typeof window.providerAuth.showRoleConfirmation === 'function') {
                     window.providerAuth.showRoleConfirmation(result.user.roles);
                 }
+                this.storeOpenEMRSession(result.openemr, provider);
+                cleanup();
                 return;
             }
 
@@ -308,12 +460,78 @@ class SSOManager {
                 if (result.token) storage.setItem('webqx_token', result.token);
                 if (result.user) storage.setItem('webqx_user', JSON.stringify(result.user));
                 storage.setItem('webqx_auth_provider', provider);
+                this.storeOpenEMRSession(result.openemr, provider);
             } catch {}
 
-            const dest = this.redirectAfterLogin || '/';
+            const dest = this.getRedirectAfterLogin(provider) || '/';
+            cleanup();
             window.location.assign(dest);
         } else {
+            this.storeOpenEMRSession(null, provider);
+            cleanup();
             throw new Error(result.error || 'SSO authentication failed');
+        }
+    }
+
+    storeOpenEMRSession(openemrResult, provider) {
+        try {
+            const storage = window.localStorage;
+            if (!storage) return;
+
+            if (openemrResult && openemrResult.enabled && openemrResult.tokens && openemrResult.tokens.accessToken) {
+                const tokens = openemrResult.tokens;
+                const sessionPayload = {
+                    provider,
+                    baseUrl: openemrResult.baseUrl,
+                    obtainedAt: openemrResult.obtainedAt,
+                    expiresAt: openemrResult.expiresAt,
+                    scope: tokens.scope,
+                    tokenType: tokens.tokenType,
+                    accessToken: tokens.accessToken,
+                    refreshToken: tokens.refreshToken,
+                    idToken: tokens.idToken,
+                    // Duplicate in snake_case for legacy helpers
+                    access_token: tokens.accessToken,
+                    refresh_token: tokens.refreshToken,
+                    token_type: tokens.tokenType,
+                    expires_in: tokens.expiresIn,
+                    enabled: true
+                };
+
+                storage.setItem('webqx_openemr_tokens', JSON.stringify(sessionPayload));
+
+                if (window.sessionStorage) {
+                    window.sessionStorage.setItem('webqx_openemr_tokens', JSON.stringify(sessionPayload));
+                }
+
+                if (window.providerAuth && typeof window.providerAuth.onOpenEMRSession === 'function') {
+                    window.providerAuth.onOpenEMRSession(sessionPayload);
+                }
+
+                window.dispatchEvent(new CustomEvent('webqx:openemr-session', {
+                    detail: {
+                        status: 'ready',
+                        provider,
+                        session: sessionPayload
+                    }
+                }));
+            } else {
+                storage.removeItem('webqx_openemr_tokens');
+                if (window.sessionStorage) {
+                    window.sessionStorage.removeItem('webqx_openemr_tokens');
+                }
+
+                window.dispatchEvent(new CustomEvent('webqx:openemr-session', {
+                    detail: {
+                        status: 'unavailable',
+                        provider,
+                        reason: openemrResult?.reason || 'integration_unavailable'
+                    }
+                }));
+            }
+        } catch (error) {
+            this.storeOpenEMRSession(null, provider);
+            console.warn('Failed to persist OpenEMR session details', error);
         }
     }
 
@@ -389,7 +607,15 @@ class SSOManager {
                 button.title = `Sign in with ${config.name}`;
                 // Attach click handler if not already
                 if (!button._wqxSsoBound) {
-                    button.addEventListener('click', () => this.initiateSSO(provider));
+                    button.addEventListener('click', () => {
+                        const options = {
+                            redirectAfterLogin: this.sanitizeDatasetValue(button.dataset.redirect),
+                            finalizeEndpoint: this.sanitizeDatasetValue(button.dataset.finalizeEndpoint),
+                            callbackPathPrefix: this.sanitizeDatasetValue(button.dataset.callbackPrefix),
+                            redirectUri: this.sanitizeDatasetValue(button.dataset.redirectUri)
+                        };
+                        this.initiateSSO(provider, options);
+                    });
                     button._wqxSsoBound = true;
                 }
             }
@@ -440,9 +666,9 @@ class SSOManager {
 }
 
 // Global functions for HTML onclick handlers
-function initiateSSO(provider) {
+function initiateSSO(provider, options) {
     if (window.ssoManager) {
-        ssoManager.initiateSSO(provider);
+        ssoManager.initiateSSO(provider, options || {});
     } else {
         console.error('SSO Manager not initialized');
     }

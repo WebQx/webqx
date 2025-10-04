@@ -13,7 +13,7 @@
  * - Audit logging for HIPAA compliance
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const express = require('express');
@@ -116,7 +116,7 @@ class OpenEMRServer {
             res.json({
                 status: 'healthy',
                 service: 'WebQX OpenEMR Integration Server',
-                version: '1.0.0',
+                version: 'v0.1.0',
                 timestamp: new Date().toISOString(),
                 openemr: {
                     configured: !!this.config.openemr.baseUrl,
@@ -212,7 +212,7 @@ class OpenEMRServer {
                 resourceType: 'CapabilityStatement',
                 id: 'webqx-openemr-capability',
                 url: 'http://localhost:3002/fhir/metadata',
-                version: '1.0.0',
+                version: 'v0.1.0',
                 name: 'WebQX OpenEMR FHIR Server',
                 status: 'active',
                 date: new Date().toISOString(),
@@ -220,7 +220,7 @@ class OpenEMRServer {
                 kind: 'instance',
                 software: {
                     name: 'WebQX OpenEMR Integration',
-                    version: '1.0.0'
+                    version: 'v0.1.0'
                 },
                 implementation: {
                     description: 'WebQX OpenEMR FHIR Integration Server'

@@ -77,15 +77,11 @@ if (rawEnvName === 'staging') {
   EFFECTIVE_ENV = 'staging';
   STAGING_BOOTSTRAP_MODE = true;
   console.log('🧪[staging-synth] Auto-bootstrap staging: majority of essential secrets missing');
-} else if ((!rawEnvName || rawEnvName === '') && oauthAllMissing && !!process.env.RAILWAY_TOKEN) {
-  EFFECTIVE_ENV = 'staging';
-  STAGING_BOOTSTRAP_MODE = true;
-  console.log('🧪[staging-synth] Auto-detected staging (OAuth2 core missing, Railway token present)');
 }
 
-// Normalize Railway token naming up-front; prefer RAILWAY_API_TOKEN internally
-const unifiedRailwayToken = process.env.RAILWAY_API_TOKEN || process.env.RAILWAY_TOKEN || process.env.RWY_TOKEN;
-if (unifiedRailwayToken) process.env.RAILWAY_API_TOKEN = unifiedRailwayToken;
+// Normalize legacy Railway token/project envs to canonical names (RAILWAY_TOKEN / RAILWAY_PROJECT_ID)
+const unifiedRailwayToken = process.env.RAILWAY_TOKEN || process.env.RAILWAY_API_TOKEN || process.env.RWY_TOKEN;
+if (unifiedRailwayToken) process.env.RAILWAY_TOKEN = unifiedRailwayToken;
 const unifiedRailwayProject = process.env.RAILWAY_PROJECT_ID || process.env.RWY_PROJECT_ID || process.env.RAILWAY_PROJECT;
 if (unifiedRailwayProject) process.env.RAILWAY_PROJECT_ID = unifiedRailwayProject;
 
@@ -95,14 +91,11 @@ console.log(`🔧 Secrets validator effective environment: ${EFFECTIVE_ENV || '<
 if (EFFECTIVE_ENV === 'production') {
   CORE_REQUIRED = [
     'OAUTH2_ISSUER','OAUTH2_JWKS_URI','OAUTH2_CLIENT_ID','OAUTH2_CLIENT_SECRET',
-    'FHIR_BASE_URL','HIPAA_ENCRYPTION_KEY','RABBITMQ_URL','REDIS_URL',
-    'RAILWAY_API_TOKEN','RAILWAY_PROJECT_ID'
+    'FHIR_BASE_URL','HIPAA_ENCRYPTION_KEY','RABBITMQ_URL','REDIS_URL'
   ];
 } else {
-  // Staging / unknown: only require FHIR base (others synthesized). If user provided infra, validate them.
+  // Staging / unknown: only require FHIR base (others synthesized).
   CORE_REQUIRED = ['FHIR_BASE_URL'];
-  if (process.env.RAILWAY_API_TOKEN) CORE_REQUIRED.push('RAILWAY_API_TOKEN');
-  if (process.env.RAILWAY_PROJECT_ID) CORE_REQUIRED.push('RAILWAY_PROJECT_ID');
 }
 console.log('🔧 Core required (env-adjusted):', CORE_REQUIRED.join(', '));
 

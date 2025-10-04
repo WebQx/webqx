@@ -5,7 +5,7 @@
  * Maps telehealth session metadata to FHIR resources for interoperability.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import { FHIREncounter, TelehealthEncounterContext, EncounterStatus } from '../resources/Encounter';

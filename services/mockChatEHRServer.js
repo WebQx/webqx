@@ -55,7 +55,7 @@ class MockChatEHRServer {
             res.json({
                 status: 'healthy',
                 service: 'Mock ChatEHR',
-                version: '1.0.0',
+                version: 'v0.1.0',
                 timestamp: new Date().toISOString()
             });
         });

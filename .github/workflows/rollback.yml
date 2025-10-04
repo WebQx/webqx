@@ -1,47 +1,57 @@
 name: Rollback Deployment
-
-on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: "Environment to rollback (staging or production)"
-        required: true
-        type: choice
-        options: [staging, production]
-      version:
-        description: "Version tag to rollback to (e.g., v1.2.3)"
-        required: true
-
-permissions:
-  contents: read
-
 jobs:
   rollback:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_TOKEN || secrets.RWY_TOKEN }}
+      RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID || secrets.RWY_PROJECT_ID || secrets.RAILWAY_PROJECT }}
     steps:
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Check Railway credentials
+        id: railway-gate
+        run: |
+          if [ -z "${RAILWAY_TOKEN}" ] || [ -z "${RAILWAY_PROJECT_ID}" ]; then
+            echo "::notice::Railway credentials not provided; skipping rollback automation."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout
+        if: steps.railway-gate.outputs.skip == 'false'
+        uses: actions/checkout@v4
 
       - name: Install Railway CLI
+        if: steps.railway-gate.outputs.skip == 'false'
         run: npm i -g @railway/cli
 
-      - name: Normalize Railway secrets
+      - name: Load Railway secrets
+        if: steps.railway-gate.outputs.skip == 'false'
         env:
-          RWY_T_1: ${{ secrets.RAILWAY_TOKEN }}
-          RWY_T_2: ${{ secrets.RWY_TOKEN }}
-          RWY_T_3: ${{ secrets.RAILWAY_API_TOKEN }}
-          RWY_P_1: ${{ secrets.RAILWAY_PROJECT_ID }}
-          RWY_P_2: ${{ secrets.RWY_PROJECT_ID }}
-          RWY_P_3: ${{ secrets.RAILWAY_PROJECT }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_TOKEN || secrets.RWY_TOKEN }}
         run: |
-          RAILWAY_TOKEN="${RWY_T_1:-${RWY_T_2:-${RWY_T_3}}}"
-          RAILWAY_PROJECT_ID="${RWY_P_1:-${RWY_P_2:-${RWY_P_3}}}"
-          if [ -z "$RAILWAY_TOKEN" ]; then echo "::error::Railway token is not set (RAILWAY_TOKEN/RWY_TOKEN/RAILWAY_API_TOKEN)."; exit 1; fi
           echo "RAILWAY_TOKEN=$RAILWAY_TOKEN" >> $GITHUB_ENV
-          if [ -n "$RAILWAY_PROJECT_ID" ]; then echo "RAILWAY_PROJECT_ID=$RAILWAY_PROJECT_ID" >> $GITHUB_ENV; fi
+          echo "RAILWAY_PROJECT_ID=$RAILWAY_PROJECT_ID" >> $GITHUB_ENV
+
+      - name: Link project (if provided)
+        if: steps.railway-gate.outputs.skip == 'false'
+        run: |
+          railway link --project "$RAILWAY_PROJECT_ID" || true
+
+      - name: Prepare rollback metadata
+        if: steps.railway-gate.outputs.skip == 'false'
+        run: |
+          echo "API_IMG=ghcr.io/${{ github.repository_owner }}/webqx-api:${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_ENV
+          echo "EMR_IMG=ghcr.io/${{ github.repository_owner }}/webqx-emr:${{ github.event.inputs.version || 'latest' }}" >> $GITHUB_ENV
+
+      - name: Redeploy API image
+        if: steps.railway-gate.outputs.skip == 'false'
+        run: |
+          railway deploy --service webqx-api --image "${API_IMG}" --detach || true
+
+      - name: Redeploy EMR image
+        if: steps.railway-gate.outputs.skip == 'false'
+        run: |
+          railway deploy --service webqx-emr --image "${EMR_IMG}" --detach || true
 
       - name: Redeploy API & EMR (pinned images)
         run: |

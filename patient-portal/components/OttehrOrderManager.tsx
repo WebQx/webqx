@@ -5,7 +5,7 @@
  * in the WebQX patient portal.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import React, { useState, useEffect } from 'react';

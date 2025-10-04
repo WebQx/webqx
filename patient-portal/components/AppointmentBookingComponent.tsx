@@ -5,7 +5,7 @@
  * FHIR R4 integration, and comprehensive accessibility support.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';

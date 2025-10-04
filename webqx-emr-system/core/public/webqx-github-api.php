@@ -82,7 +82,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'community-stats') {
 if (isset($_GET['action']) && $_GET['action'] === 'sync') {
     echo json_encode([
         'message' => 'Sync request received',
-    'github_pages_url' => 'https://webqx.github.io/EMR/',
+        'github_pages_url' => 'https://webqx.github.io/webqx/',
         'local_emr_url' => 'http://localhost:8085',
         'api_endpoints' => [
             'status' => '/public/webqx-github-api.php?action=status',
@@ -105,7 +105,7 @@ echo json_encode([
         'community-stats' => '/public/webqx-github-api.php?action=community-stats',
         'sync' => '/public/webqx-github-api.php?action=sync'
     ],
-    'github_pages' => 'https://webqx.github.io/EMR/',
+    'github_pages' => 'https://webqx.github.io/webqx/',
     'timestamp' => date('c')
 ]);
 ?>

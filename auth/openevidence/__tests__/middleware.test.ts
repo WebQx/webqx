@@ -5,7 +5,7 @@
  * including authorization, rate limiting, and audit logging.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -21,18 +21,55 @@ import {
   openEvidenceCORS,
   OpenEvidenceRequest
 } from '../middleware';
-import { openEvidenceAuth, OpenEvidenceSession } from '../index';
+import { openEvidenceAuth, OpenEvidenceSession, CURRENT_CONSENT_VERSION } from '../index';
 
 // Mock the openEvidenceAuth instance
-jest.mock('../index', () => ({
-  openEvidenceAuth: {
-    getSession: jest.fn(),
-    updateSessionActivity: jest.fn(),
-    terminateSession: jest.fn(),
-    hasPermission: jest.fn(),
-    hasAccessLevel: jest.fn()
-  }
-}));
+jest.mock('../index', () => {
+  const CURRENT_CONSENT_VERSION = 'v0.1.0';
+
+  const isConsentVersionValid = (userConsentVersion: string, requiredVersion: string): boolean => {
+    const parseVersion = (value: string) => {
+      const sanitized = (value || '').toLowerCase().replace(/^v/, '');
+      const segments = sanitized.split('.').map((part) => {
+        const parsed = parseInt(part, 10);
+        return Number.isFinite(parsed) ? parsed : 0;
+      });
+
+      while (segments.length < 3) {
+        segments.push(0);
+      }
+
+      return segments.slice(0, 3) as [number, number, number];
+    };
+
+    const [userMajor, userMinor, userPatch] = parseVersion(userConsentVersion);
+    const [requiredMajor, requiredMinor, requiredPatch] = parseVersion(requiredVersion);
+
+    if (userMajor !== requiredMajor) {
+      return userMajor > requiredMajor;
+    }
+
+    if (userMinor !== requiredMinor) {
+      return userMinor > requiredMinor;
+    }
+
+    return userPatch >= requiredPatch;
+  };
+
+  return {
+    openEvidenceAuth: {
+      getSession: jest.fn(),
+      updateSessionActivity: jest.fn(),
+      terminateSession: jest.fn(),
+      hasPermission: jest.fn(),
+      hasAccessLevel: jest.fn()
+    },
+    CURRENT_CONSENT_VERSION,
+    OpenEvidenceAuthUtils: {
+      isConsentVersionValid
+    }
+  };
+});
 
 describe('OpenEvidence Middleware', () => {
   let mockRequest: Partial<OpenEvidenceRequest>;
@@ -74,7 +111,7 @@ describe('OpenEvidence Middleware', () => {
       evidenceRole: 'PHYSICIAN',
       accessLevel: 'ADVANCED',
       researchPermissions: ['VIEW_EVIDENCE', 'EXPORT_SUMMARIES'],
-      consentVersion: '1.0',
+      consentVersion: CURRENT_CONSENT_VERSION,
       institutionalId: 'hospital.edu'
     };
 
@@ -417,7 +454,20 @@ describe('OpenEvidence Middleware', () => {
     });
 
     it('should allow access with valid consent version', () => {
-      const middleware = requireConsentAgreement('1.0');
+      const middleware = requireConsentAgreement();
+
+      middleware(mockRequest as OpenEvidenceRequest, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalled();
+    });
+
+    it('should allow access with uppercase consent version', () => {
+      mockRequest.openEvidenceSession = {
+        ...mockSession,
+        consentVersion: CURRENT_CONSENT_VERSION.toUpperCase()
+      };
+
+      const middleware = requireConsentAgreement();
 
       middleware(mockRequest as OpenEvidenceRequest, mockResponse as Response, mockNext);
 
@@ -427,10 +477,10 @@ describe('OpenEvidence Middleware', () => {
     it('should deny access with outdated consent', () => {
       mockRequest.openEvidenceSession = {
         ...mockSession,
-        consentVersion: '0.9'
+        consentVersion: 'V0.0.9'
       };
 
-      const middleware = requireConsentAgreement('1.0');
+      const middleware = requireConsentAgreement();
 
       middleware(mockRequest as OpenEvidenceRequest, mockResponse as Response, mockNext);
 
@@ -438,8 +488,8 @@ describe('OpenEvidence Middleware', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         error: 'CONSENT_AGREEMENT_REQUIRED',
         message: 'Updated consent agreement required',
-        userConsentVersion: '0.9',
-        requiredVersion: '1.0',
+        userConsentVersion: 'V0.0.9',
+        requiredVersion: CURRENT_CONSENT_VERSION,
         consentUrl: '/auth/openevidence/consent',
         platform: 'OpenEvidence'
       });

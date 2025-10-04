@@ -5,7 +5,7 @@
  * Comlink and Jitsi support, and comprehensive accessibility features.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - WebQx Healthcare Platform</title>
+    <link rel="stylesheet" href="webqx-emr-system/themes/webqx-mobile.css">
     <style>
         * {
             margin: 0;
@@ -118,6 +119,7 @@
             transition: background 0.3s;
             margin-bottom: 1rem;
         }
+        .login-btn:focus-visible { outline: none; box-shadow: var(--focus-ring, 0 0 0 3px rgba(72,187,120,0.4)); }
 
         .login-btn:hover {
             background: #38a169;
@@ -161,6 +163,7 @@
             transition: all 0.3s;
             font-size: 0.9rem;
         }
+        .social-btn:focus-visible { outline:none; box-shadow: 0 0 0 3px rgba(66,153,225,0.4); }
 
         .social-btn:hover {
             background: #f7fafc;
@@ -213,6 +216,13 @@
             border-radius: 50%;
             margin-right: 0.5rem;
         }
+        @media (max-width: 520px) {
+            body { padding: 1rem; }
+            .login-container { padding: 2rem 1.25rem; }
+            .role-selector { flex-direction: column; }
+            .role-btn { border-right: none; border-bottom: 1px solid #e2e8f0; }
+            .role-btn:last-child { border-bottom: none; }
+        }
     </style>
 </head>
 <body>
@@ -225,15 +235,14 @@
         <div style="margin-bottom: 1.5rem;">
             <a href="patient-portal/" style="color: #4299e1; text-decoration: none; margin-right: 1rem;">Patient Portal</a>
             <a href="provider/" style="color: #4299e1; text-decoration: none; margin-right: 1rem;">Provider Portal</a>
-            <a href="admin-console/" style="color: #4299e1; text-decoration: none; margin-right: 1rem;">Admin Console</a>
-            <!-- EMR login entry removed for production stability -->
+            <a href="admin-console/" style="color: #4299e1; text-decoration: none;">Admin Console</a>
         </div>
 
         <!-- Role Selector -->
-        <div class="role-selector" id="roleSelector">
-            <button class="role-btn active" data-role="patient">Patient</button>
-            <button class="role-btn" data-role="provider">Provider</button>
-            <button class="role-btn" data-role="admin">Admin</button>
+        <div class="role-selector">
+            <button class="role-btn active" onclick="selectRole('patient')">Patient</button>
+            <button class="role-btn" onclick="selectRole('provider')">Provider</button>
+            <button class="role-btn" onclick="selectRole('admin')">Admin</button>
         </div>
 
         <!-- Login Form -->
@@ -266,10 +275,10 @@
             <span>or try social login (requires setup)</span>
         </div>
 
-        <div class="social-login" id="socialButtons">
-            <button class="social-btn" data-provider="google" disabled style="opacity: 0.5; cursor: not-allowed;">Google (Setup Required)</button>
-            <button class="social-btn" data-provider="microsoft" disabled style="opacity: 0.5; cursor: not-allowed;">Microsoft (Setup Required)</button>
-            <button class="social-btn" data-provider="apple" disabled style="opacity: 0.5; cursor: not-allowed;">Apple (Coming Soon)</button>
+        <div class="social-login">
+            <button class="social-btn" onclick="socialLogin('google')" disabled style="opacity: 0.5; cursor: not-allowed;">Google (Setup Required)</button>
+            <button class="social-btn" onclick="socialLogin('microsoft')" disabled style="opacity: 0.5; cursor: not-allowed;">Microsoft (Setup Required)</button>
+            <button class="social-btn" onclick="socialLogin('apple')" disabled style="opacity: 0.5; cursor: not-allowed;">Apple (Coming Soon)</button>
         </div>
 
         <!-- Demo Accounts -->
@@ -293,13 +302,6 @@
                     <code>admin@webqx.com / admin123</code>
                 </div>
             </div>
-            <div style="background: #e6fffa; border: 1px solid #38b2ac; border-radius: 5px; padding: 1rem; margin-top: 1rem;">
-                <h5 style="color: #2c7a7b; margin-bottom: 0.5rem;">🏥 WebQx EMR Database Access</h5>
-                <p style="color: #2c7a7b; font-size: 0.8rem; margin: 0;">
-                    For direct EMR system access, use the <strong>WebQx EMR Login</strong> link above.<br>
-                    Demo credentials: admin/pass, physician/physician, clinician/clinician
-                </p>
-            </div>
             <p style="font-size: 0.8rem; color: #4a5568; margin-top: 1rem; text-align: center;">
                 💡 Social login requires OAuth2 credentials. Use demo accounts above for immediate access.
             </p>
@@ -309,24 +311,11 @@
     </div>
 
     <script>
-        function setDemoSession(role, email) {
-            const profiles = {
-                patient: { id: 'demo-patient', name: 'Demo Patient', email: email || 'demo@patient.com', role: 'patient' },
-                provider: { id: 'demo-provider', name: 'Demo Provider', email: email || 'physician@webqx.com', role: 'provider' },
-                admin: { id: 'demo-admin', name: 'Demo Admin', email: email || 'admin@webqx.com', role: 'admin' }
-            };
-            const u = profiles[role] || profiles.patient;
-            try {
-                localStorage.setItem('webqx_demo', 'true');
-                localStorage.setItem('webqx_auth_provider', 'demo');
-                localStorage.setItem('webqx_token', `demo-token-${u.role}`);
-                localStorage.setItem('webqx_user', JSON.stringify(u));
-                // Keep SPA session panel in sync if opened later
-                localStorage.setItem('portalUser', JSON.stringify(u));
-            } catch {}
-        }
-
         function selectRole(role) {
+            // Update active button
+            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
             // Show/hide facility selector for providers
             const facilityGroup = document.getElementById('facilityGroup');
             if (role === 'provider' || role === 'admin') {
@@ -412,12 +401,6 @@
                                 Token stored securely. Your session will remain active.
                             </p>
                         </div>
-                        <button class="login-btn" style="margin-bottom: 1rem;" data-action="goToDashboard">
-                            Go to Dashboard Now
-                        </button>
-                        <button class="social-btn" style="width: 100%; background: #fed7d7; color: #c53030;" data-action="logout">
-                            Logout
-                        </button>
                     </div>
                 `;
 
@@ -434,8 +417,8 @@
 
         // Traditional login with backend integration
         async function performTraditionalLogin(email, password, role) {
-            // Resolve backend base (same-origin by default)
-            const publicEmrUrl = (window.WEBQX_PROD_API || '').trim() || window.location.origin;
+            const publicEmrUrl = 'https://webqx-production.up.railway.app'; // Railway public domain
+            const proxyUrl = 'https://webqx-production.up.railway.app';
             
             try {
                 // Always use public backend
@@ -483,14 +466,14 @@
         
         function getDashboardUrl(role) {
             const dashboardMap = {
-                patient: '/patient-portal/',
-                provider: '/provider/',
-                doctor: '/provider/',
-                nurse: '/provider/',
-                admin: '/admin-console/'
+                patient: 'http://localhost:3000/patient-portal/',
+                provider: 'http://localhost:3000/provider/',
+                doctor: 'http://localhost:3000/provider/',
+                nurse: 'http://localhost:3000/provider/',
+                admin: 'http://localhost:3000/admin-console/'
             };
             
-            return dashboardMap[role] || '/patient-portal/';
+            return dashboardMap[role] || 'http://localhost:3000/patient-portal/';
         }
 
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -509,37 +492,20 @@
             try {
                 // Demo login logic (fallback for demo accounts)
                 if (username === 'demo@patient.com' && password === 'patient123') {
-                    setDemoSession('patient', username);
                     window.location.href = 'patient-portal/';
                 } else if (username === 'doctor@webqx.com' && password === 'provider123') {
-                    setDemoSession('provider', username);
                     window.location.href = 'provider/';
                 } else if (username === 'physician@webqx.com' && password === 'demo123') {
-                    setDemoSession('provider', username);
                     window.location.href = 'provider/';
                 } else if (username === 'admin@webqx.com' && password === 'admin123') {
-                    setDemoSession('admin', username);
-                    window.location.href = 'admin-console/';
-                } else if (username === 'physician' && password === 'physician') { // EMR demo
-                    setDemoSession('provider', 'physician@webqx.com');
-                    window.location.href = 'provider/';
-                } else if (username === 'clinician' && password === 'clinician') { // EMR demo
-                    setDemoSession('provider', 'clinician@webqx.com');
-                    window.location.href = 'provider/';
-                } else if (username === 'admin' && password === 'pass') { // EMR demo
-                    setDemoSession('admin', 'admin@webqx.com');
                     window.location.href = 'admin-console/';
                 } else if (username === 'demo' && password === 'patient123') {
-                    setDemoSession('patient', 'demo@patient.com');
                     window.location.href = 'patient-portal/';
                 } else if (username === 'doctor' && password === 'provider123') {
-                    setDemoSession('provider', 'doctor@webqx.com');
                     window.location.href = 'provider/';
                 } else if (username === 'physician' && password === 'demo123') {
-                    setDemoSession('provider', 'physician@webqx.com');
                     window.location.href = 'provider/';
                 } else if (username === 'admin' && password === 'admin123') {
-                    setDemoSession('admin', 'admin@webqx.com');
                     window.location.href = 'admin-console/';
                 } else {
                     // Try backend authentication with local server
@@ -569,57 +535,14 @@
                         <p style="color: #4a5568; margin-bottom: 2rem;">
                             You're already logged in via ${provider}
                         </p>
-                        <button class="login-btn" style="margin-bottom: 1rem;" data-action="goToDashboard">
+                        <button onclick="goToDashboard()" class="login-btn" style="margin-bottom: 1rem;">
                             Continue to Dashboard
                         </button>
-                        <button class="social-btn" style="width: 100%; background: #fed7d7; color: #c53030;" data-action="logout">
+                        <button onclick="logout()" class="social-btn" style="width: 100%; background: #fed7d7; color: #c53030;">
                             Sign Out
                         </button>
                     </div>
                 `;
-            }
-        }
-
-        // CSP-safe event wiring (no inline event attributes)
-        function initCspSafeHandlers() {
-            // Role selector delegation
-            const roleSelector = document.getElementById('roleSelector');
-            if (roleSelector) {
-                roleSelector.addEventListener('click', (e) => {
-                    const btn = e.target.closest('button.role-btn');
-                    if (!btn) return;
-                    const role = btn.getAttribute('data-role');
-                    if (!role) return;
-                    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    selectRole(role);
-                });
-            }
-
-            // Social login delegation
-            const social = document.getElementById('socialButtons');
-            if (social) {
-                social.addEventListener('click', (e) => {
-                    const btn = e.target.closest('button[data-provider]');
-                    if (!btn || btn.disabled) return;
-                    const provider = btn.getAttribute('data-provider');
-                    if (provider) socialLogin(provider);
-                });
-            }
-
-            // Actions inside dynamically replaced container
-            const container = document.querySelector('.login-container');
-            if (container) {
-                container.addEventListener('click', (e) => {
-                    const el = e.target.closest('[data-action]');
-                    if (!el) return;
-                    const action = el.getAttribute('data-action');
-                    if (action === 'goToDashboard') {
-                        goToDashboard();
-                    } else if (action === 'logout') {
-                        logout();
-                    }
-                });
             }
         }
 
@@ -649,9 +572,6 @@
             
             // Initialize demo accounts
             updateDemoAccounts('patient');
-
-            // Wire CSP-safe handlers
-            initCspSafeHandlers();
         });
     </script>
 </body>

@@ -272,6 +272,7 @@ describe('HIPAA-Compliant Authentication System', () => {
         requests.push(
           request(app)
             .post('/auth/login')
+            .set('x-enable-rate-limit', 'true')
             .send(credentials)
         );
       }

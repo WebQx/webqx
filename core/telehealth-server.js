@@ -13,7 +13,7 @@
  * - WebSocket support
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const express = require('express');
@@ -120,7 +120,7 @@ class TelehealthServer {
             res.json({
                 status: 'healthy',
                 service: 'WebQX Telehealth Services Server',
-                version: '1.0.0',
+                version: 'v0.1.0',
                 timestamp: new Date().toISOString(),
                 activeConnections: this.connections.size,
                 activeSessions: this.activeSessions.size,

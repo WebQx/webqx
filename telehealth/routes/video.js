@@ -5,7 +5,7 @@
  * including session management, participant controls, and WebRTC signaling.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const express = require('express');

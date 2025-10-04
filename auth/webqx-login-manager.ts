@@ -5,7 +5,7 @@
  * with the WebQX Unified Login System for seamless SSO experience.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import type { KeycloakUser, KeycloakTokenInfo } from './keycloak/types';
@@ -15,15 +15,31 @@ import { getKeycloakProviderConfig } from './keycloak/client';
 // In a real browser app, these would be implemented via keycloak-js or backend endpoints.
 type TokenInfo = Partial<KeycloakTokenInfo> & { roles?: string[]; metadata?: Record<string, any> };
 type KeycloakUserInfo = KeycloakUser;
+type IdentityProviderName = 'keycloak' | 'microsoft' | 'google' | 'apple';
 
 class MinimalAuthShim {
   private listeners: Record<string, Function[]> = {};
-  generateKeycloakAuthUrl(): { url: string; codeVerifier: string; state: string; nonce: string } {
-    const cfg = getKeycloakProviderConfig().keycloak;
+  generateKeycloakAuthUrl(identityProvider: string = 'keycloak'): { url: string; codeVerifier: string; state: string; nonce: string } {
+    const providerConfig = getKeycloakProviderConfig();
+    const cfg = providerConfig.keycloak;
     const state = Math.random().toString(36).slice(2);
     const nonce = Math.random().toString(36).slice(2);
     const codeVerifier = Math.random().toString(36).slice(2);
-    const url = `${cfg.url}/realms/${cfg.realm}/protocol/openid-connect/auth?client_id=${encodeURIComponent(cfg.clientId)}&response_type=code&redirect_uri=${encodeURIComponent(cfg.logoutRedirectUri || window.location.origin)}&state=${state}&nonce=${nonce}`;
+    const base = `${cfg.url}/realms/${cfg.realm}/protocol/openid-connect/auth`;
+    const params = new URLSearchParams({
+      client_id: cfg.clientId,
+      response_type: 'code',
+      redirect_uri: cfg.logoutRedirectUri || window.location.origin,
+      state,
+      nonce
+    });
+    if (identityProvider && identityProvider !== 'keycloak') {
+      const idpHint = providerConfig.identityProviders?.[identityProvider]?.idpHint || identityProvider;
+      if (idpHint) {
+        params.append('kc_idp_hint', idpHint);
+      }
+    }
+    const url = `${base}?${params.toString()}`;
     return { url, codeVerifier, state, nonce };
   }
   async exchangeKeycloakCode(_code: string, _verifier: string, _state: string, _nonce?: string): Promise<{ success: boolean; error?: { message: string } }> {
@@ -49,6 +65,7 @@ export class WebQXLoginManager {
   private authManager = new MinimalAuthShim();
   private currentUser: KeycloakUserInfo | null = null;
   private userRoles: string[] = [];
+  private activeIdentityProvider: string = 'keycloak';
 
   constructor() {
     this.setupEventListeners();
@@ -70,16 +87,17 @@ export class WebQXLoginManager {
   private handleKeycloakAuth({ tokenInfo, userInfo }: { tokenInfo: TokenInfo; userInfo: KeycloakUserInfo }): void {
     this.currentUser = userInfo;
     this.userRoles = tokenInfo.roles || [];
+    const provider = this.activeIdentityProvider || 'keycloak';
     
     // Emit custom event for WebQX application
     this.emit('userAuthenticated', {
       user: userInfo,
       roles: this.userRoles,
-      provider: 'keycloak',
+      provider,
       tokenInfo
     });
 
-  console.log('[WebQX Login] User authenticated via Keycloak:', userInfo.username);
+  console.log(`[WebQX Login] User authenticated via ${provider}:`, userInfo.username);
   }
 
   /**
@@ -109,6 +127,7 @@ export class WebQXLoginManager {
   private handleLogout(): void {
     this.currentUser = null;
     this.userRoles = [];
+    this.activeIdentityProvider = 'keycloak';
     this.emit('userLoggedOut');
     console.log('[WebQX Login] User logged out');
   }
@@ -117,11 +136,32 @@ export class WebQXLoginManager {
    * Initiate Keycloak SSO login
    */
   async loginWithKeycloak(redirectAfterLogin?: string): Promise<void> {
+    return this.loginWithIdentityProvider('keycloak', redirectAfterLogin);
+  }
+
+  async loginWithIdentityProvider(provider: IdentityProviderName, redirectAfterLogin?: string): Promise<void> {
+    await this.initiateKeycloakLogin(provider, redirectAfterLogin);
+  }
+
+  async loginWithMicrosoft(redirectAfterLogin?: string): Promise<void> {
+    return this.loginWithIdentityProvider('microsoft', redirectAfterLogin);
+  }
+
+  async loginWithGoogle(redirectAfterLogin?: string): Promise<void> {
+    return this.loginWithIdentityProvider('google', redirectAfterLogin);
+  }
+
+  async loginWithApple(redirectAfterLogin?: string): Promise<void> {
+    return this.loginWithIdentityProvider('apple', redirectAfterLogin);
+  }
+
+  private async initiateKeycloakLogin(provider: IdentityProviderName, redirectAfterLogin?: string): Promise<void> {
     try {
-      const { url, codeVerifier, state, nonce } = this.authManager.generateKeycloakAuthUrl();
-      
-      // Store PKCE parameters securely
+      const { url, codeVerifier, state, nonce } = this.authManager.generateKeycloakAuthUrl(provider);
+      this.activeIdentityProvider = provider || 'keycloak';
+
       if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('webqx_keycloak_provider', this.activeIdentityProvider);
         sessionStorage.setItem('webqx_keycloak_verifier', codeVerifier);
         sessionStorage.setItem('webqx_keycloak_state', state);
         sessionStorage.setItem('webqx_keycloak_nonce', nonce);
@@ -130,10 +170,9 @@ export class WebQXLoginManager {
         }
       }
 
-      // Redirect to Keycloak
       window.location.href = url;
     } catch (error) {
-      console.error('[WebQX Login] Failed to initiate Keycloak login:', error);
+      console.error(`[WebQX Login] Failed to initiate ${provider} login:`, error);
       throw error;
     }
   }
@@ -165,6 +204,12 @@ export class WebQXLoginManager {
         codeVerifier = sessionStorage.getItem('webqx_keycloak_verifier');
         expectedState = sessionStorage.getItem('webqx_keycloak_state');
         expectedNonce = sessionStorage.getItem('webqx_keycloak_nonce');
+        const storedProvider = sessionStorage.getItem('webqx_keycloak_provider');
+        if (storedProvider) {
+          this.activeIdentityProvider = storedProvider as IdentityProviderName;
+        } else {
+          this.activeIdentityProvider = 'keycloak';
+        }
       }
 
       if (!codeVerifier || !expectedState) {
@@ -193,6 +238,7 @@ export class WebQXLoginManager {
         sessionStorage.removeItem('webqx_keycloak_verifier');
         sessionStorage.removeItem('webqx_keycloak_state');
         sessionStorage.removeItem('webqx_keycloak_nonce');
+        sessionStorage.removeItem('webqx_keycloak_provider');
         
         // Handle redirect after login
         const redirectUrl = sessionStorage.getItem('webqx_redirect_after_login');
@@ -209,6 +255,7 @@ export class WebQXLoginManager {
     } catch (error) {
       console.error('[WebQX Login] Keycloak callback handling failed:', error);
       this.emit('authenticationError', error);
+      this.activeIdentityProvider = 'keycloak';
       return false;
     }
   }
@@ -344,6 +391,7 @@ export class WebQXLoginManager {
     this.eventListeners = {};
     this.currentUser = null;
     this.userRoles = [];
+    this.activeIdentityProvider = 'keycloak';
   }
 }
 

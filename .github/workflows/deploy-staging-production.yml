@@ -34,8 +34,8 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
-  # Unified Railway token (prefer RAILWAY_API_TOKEN secret, fallback older names). Only one secret needs to be set.
-  RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN || secrets.RWY_TOKEN }}
+  # Canonical Railway token secret (set RAILWAY_TOKEN in repo/environment secrets). Legacy names still accepted in specific steps.
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_TOKEN || secrets.RWY_TOKEN }}
 
 jobs:
   context:
@@ -224,8 +224,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ needs.context.outputs.envName }}
     env:
-      # Unified Railway token (single secret preferred: RAILWAY_API_TOKEN)
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN || secrets.RWY_TOKEN }}
+      # Canonical Railway token (prefer RAILWAY_TOKEN secret)
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN || secrets.RAILWAY_API_TOKEN || secrets.RWY_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -250,7 +250,7 @@ jobs:
             if [ "$ENV_NAME" = "staging" ]; then
               echo "::notice::No Railway token provided – skipping Railway authentication for staging."; exit 0
             fi
-            echo "::error::Railway token missing (set secret RAILWAY_API_TOKEN)."; exit 1
+            echo "::error::Railway token missing (set secret RAILWAY_TOKEN)."; exit 1
           fi
           RAW="$RAILWAY_TOKEN"
           TOKEN=$(printf "%s" "$RAW" | tr -d '\r\n')

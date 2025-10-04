@@ -8,12 +8,14 @@
  * providing OpenEvidence-specific features and compliance requirements.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import { EventEmitter } from 'events';
 import { User, AuthResult, AuthCredentials, AuthSession, UserRole, MedicalSpecialty } from '../types';
 import { webqxLogin } from '../webqx-login-manager';
+
+export const CURRENT_CONSENT_VERSION = 'v0.1.0';
 
 // ============================================================================
 // OpenEvidence-Specific Types
@@ -202,7 +204,7 @@ export class OpenEvidenceAuthManager extends EventEmitter {
         evidenceRole,
         accessLevel,
         researchPermissions,
-        consentVersion: '1.0', // Current consent version
+        consentVersion: CURRENT_CONSENT_VERSION,
         institutionalId: this.extractInstitutionalId(user.email)
       };
 
@@ -503,8 +505,32 @@ export const OpenEvidenceAuthUtils = {
    * Validate consent version compatibility
    */
   isConsentVersionValid(userConsentVersion: string, requiredVersion: string): boolean {
-    // Simple version check - in production, use semantic versioning
-    return userConsentVersion >= requiredVersion;
+    const parseVersion = (value: string) => {
+      const sanitized = (value || '').toLowerCase().replace(/^v/, '');
+      const segments = sanitized.split('.').map((part) => {
+        const parsed = parseInt(part, 10);
+        return Number.isFinite(parsed) ? parsed : 0;
+      });
+
+      while (segments.length < 3) {
+        segments.push(0);
+      }
+
+      return segments.slice(0, 3) as [number, number, number];
+    };
+
+    const [userMajor, userMinor, userPatch] = parseVersion(userConsentVersion);
+    const [requiredMajor, requiredMinor, requiredPatch] = parseVersion(requiredVersion);
+
+    if (userMajor !== requiredMajor) {
+      return userMajor > requiredMajor;
+    }
+
+    if (userMinor !== requiredMinor) {
+      return userMinor > requiredMinor;
+    }
+
+    return userPatch >= requiredPatch;
   }
 };
 

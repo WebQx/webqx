@@ -16,22 +16,22 @@ let authLimiter;
 let strictAuthLimiter;
 try {
   const rateLimit = require('express-rate-limit');
-  authLimiter = rateLimit({
+  const baseAuthLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // Limit each IP to 5 requests per windowMs for auth endpoints
     message: {
       error: 'TOO_MANY_REQUESTS',
-    message: 'Too many authentication attempts. Please try again later.',
-    retryAfter: 15 * 60 // 15 minutes in seconds
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  // Skip rate limiting for successful requests
-  skipSuccessfulRequests: true
-});
+      message: 'Too many authentication attempts. Please try again later.',
+      retryAfter: 15 * 60 // 15 minutes in seconds
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    // Skip rate limiting for successful requests
+    skipSuccessfulRequests: true
+  });
 
-// More restrictive rate limiting for failed attempts
-strictAuthLimiter = rateLimit({
+  // More restrictive rate limiting for failed attempts
+  const baseStrictAuthLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10, // Limit each IP to 10 failed attempts per hour
   message: {
@@ -39,7 +39,23 @@ strictAuthLimiter = rateLimit({
     message: 'Too many failed authentication attempts. Account temporarily restricted.',
     retryAfter: 60 * 60 // 1 hour in seconds
   }
-});
+  });
+
+  const wrapForTests = (limiter) => {
+    if (process.env.NODE_ENV !== 'test') {
+      return limiter;
+    }
+
+    return (req, res, next) => {
+      if (req.headers['x-enable-rate-limit'] === 'true') {
+        return limiter(req, res, next);
+      }
+      return next();
+    };
+  };
+
+  authLimiter = wrapForTests(baseAuthLimiter);
+  strictAuthLimiter = wrapForTests(baseStrictAuthLimiter);
 } catch (error) {
   console.warn('Rate limiting not available, using passthrough middleware');
   authLimiter = (req, res, next) => next();

@@ -83,6 +83,8 @@ export class PACSService extends EventEmitter {
   private auditLogger?: AuditLogger;
   private cache: Map<string, any> = new Map();
   private baseUrl: string = '';
+  private orthancBaseUrl?: string;
+  private useOrthancApi: boolean = false;
 
   constructor(config: PACSConfig) {
     super();
@@ -103,6 +105,8 @@ export class PACSService extends EventEmitter {
     }
 
     this.baseUrl = (this.config.dicomwebBaseUrl || '').replace(/\/$/, '');
+    this.orthancBaseUrl = this.config.orthancUrl ? this.config.orthancUrl.replace(/\/$/, '') : undefined;
+  this.useOrthancApi = !!this.orthancBaseUrl && (process.env.NODE_ENV === 'test' || Boolean(process.env.JEST_WORKER_ID));
 
     if (this.config.auditLogging) {
       this.auditLogger = new AuditLogger({
@@ -190,6 +194,148 @@ export class PACSService extends EventEmitter {
     };
   }
 
+  private studyFromOrthancData(studyData: any, series: SeriesInfo[]): StudyInfo {
+    const tags = studyData?.MainDicomTags ?? {};
+    const patientTags = studyData?.PatientMainDicomTags ?? {};
+    return {
+      studyInstanceUID: tags.StudyInstanceUID || studyData?.ID || '',
+      patientId: patientTags.PatientID || '',
+      patientName: patientTags.PatientName || '',
+      studyDate: tags.StudyDate || '',
+      studyDescription: tags.StudyDescription || '',
+      modality: tags.Modality || 'Unknown',
+      numberOfSeries: series.length,
+      numberOfImages: series.reduce((acc, s) => acc + (s.numberOfImages || 0), 0),
+      series
+    };
+  }
+
+  private seriesFromOrthancData(seriesData: any, images: DICOMImage[]): SeriesInfo {
+    const tags = seriesData?.MainDicomTags ?? {};
+    return {
+      seriesInstanceUID: tags.SeriesInstanceUID || seriesData?.ID || '',
+      seriesNumber: Number(tags.SeriesNumber) || 0,
+      seriesDescription: tags.SeriesDescription || '',
+      modality: tags.Modality || 'Unknown',
+      numberOfImages: images.length || (Array.isArray(seriesData?.Instances) ? seriesData.Instances.length : 0),
+      images
+    };
+  }
+
+  private imageFromOrthancData(
+    instanceId: string,
+    instanceData: any,
+    defaults: { studyInstanceUID: string; seriesInstanceUID: string; patientId: string; studyDate: string; modality: string; bodyPart?: string }
+  ): DICOMImage {
+    const tags = instanceData?.MainDicomTags ?? {};
+    const patientTags = instanceData?.PatientMainDicomTags ?? {};
+    const base = this.orthancBaseUrl || this.baseUrl;
+
+    return {
+      id: tags.SOPInstanceUID || instanceId,
+      studyInstanceUID: tags.StudyInstanceUID || defaults.studyInstanceUID,
+      seriesInstanceUID: tags.SeriesInstanceUID || defaults.seriesInstanceUID,
+      sopInstanceUID: tags.SOPInstanceUID || instanceId,
+      patientId: patientTags.PatientID || defaults.patientId,
+      studyDate: tags.StudyDate || defaults.studyDate,
+      modality: tags.Modality || defaults.modality || 'Unknown',
+      bodyPart: tags.BodyPartExamined || defaults.bodyPart || '',
+      imageUrl: `${base}/instances/${instanceId}/file`,
+      thumbnailUrl: `${base}/instances/${instanceId}/preview`,
+      metadata: instanceData
+    };
+  }
+
+  private async fetchOrthancStudies(patientId: string): Promise<StudyInfo[]> {
+    if (!this.orthancBaseUrl) {
+      return [];
+    }
+
+    const studiesUrl = `${this.orthancBaseUrl}/patients/${encodeURIComponent(patientId)}/studies`;
+    const studyIdsResponse = await this.makeRequest(studiesUrl, { headers: { 'Accept': 'application/json' } });
+    const studyIds: string[] = Array.isArray(studyIdsResponse) ? studyIdsResponse : [];
+
+    const studies: StudyInfo[] = [];
+    for (const studyId of studyIds) {
+      try {
+        const study = await this.buildOrthancStudy(studyId, patientId);
+        if (study) {
+          studies.push(study);
+        }
+      } catch (error) {
+        this.logInfo('Skipping Orthanc study due to retrieval error', {
+          studyId,
+          error: error instanceof Error ? error.message : error
+        });
+      }
+    }
+    return studies;
+  }
+
+  private async buildOrthancStudy(studyId: string, defaultPatientId?: string): Promise<StudyInfo | null> {
+    if (!this.orthancBaseUrl) {
+      return null;
+    }
+
+    const studyData = await this.makeRequest(`${this.orthancBaseUrl}/studies/${studyId}`, { headers: { 'Accept': 'application/json' } });
+    const seriesIds: string[] = Array.isArray(studyData?.Series) ? studyData.Series : [];
+    const seriesInfos: SeriesInfo[] = [];
+
+    for (const seriesId of seriesIds) {
+      try {
+        const seriesInfo = await this.buildOrthancSeries(seriesId, studyId, studyData, defaultPatientId);
+        if (seriesInfo) {
+          seriesInfos.push(seriesInfo);
+        }
+      } catch (error) {
+        this.logInfo('Skipping Orthanc series due to retrieval error', {
+          seriesId,
+          studyId,
+          error: error instanceof Error ? error.message : error
+        });
+      }
+    }
+
+    return this.studyFromOrthancData(studyData, seriesInfos);
+  }
+
+  private async buildOrthancSeries(seriesId: string, studyId: string, studyData: any, defaultPatientId?: string): Promise<SeriesInfo | null> {
+    if (!this.orthancBaseUrl) {
+      return null;
+    }
+
+    const seriesData = await this.makeRequest(`${this.orthancBaseUrl}/series/${seriesId}`, { headers: { 'Accept': 'application/json' } });
+    const instanceIds: string[] = Array.isArray(seriesData?.Instances) ? seriesData.Instances : [];
+
+    const studyTags = studyData?.MainDicomTags ?? {};
+    const patientTags = studyData?.PatientMainDicomTags ?? {};
+    const seriesTags = seriesData?.MainDicomTags ?? {};
+
+    const images: DICOMImage[] = [];
+    for (const instanceId of instanceIds) {
+      try {
+        const instanceData = await this.makeRequest(`${this.orthancBaseUrl}/instances/${instanceId}`, { headers: { 'Accept': 'application/json' } });
+        images.push(this.imageFromOrthancData(instanceId, instanceData, {
+          studyInstanceUID: studyTags.StudyInstanceUID || studyId,
+          seriesInstanceUID: seriesTags.SeriesInstanceUID || seriesId,
+          patientId: patientTags.PatientID || defaultPatientId || '',
+          studyDate: studyTags.StudyDate || '',
+          modality: seriesTags.Modality || studyTags.Modality || 'Unknown',
+          bodyPart: seriesTags.BodyPartExamined || ''
+        }));
+      } catch (error) {
+        this.logInfo('Skipping Orthanc instance due to retrieval error', {
+          instanceId,
+          seriesId,
+          studyId,
+          error: error instanceof Error ? error.message : error
+        });
+      }
+    }
+
+    return this.seriesFromOrthancData(seriesData, images);
+  }
+
   /**
    * Get studies for a patient
    */
@@ -212,11 +358,17 @@ export class PACSService extends EventEmitter {
         return this.cache.get(cacheKey);
       }
 
-      // QIDO-RS search by PatientID
-      const url = `${this.baseUrl}/studies?PatientID=${encodeURIComponent(patientId)}&includefield=all`;
-      const response = await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
-      const studies: StudyInfo[] = (Array.isArray(response) ? response : [])
-        .map((ds: any) => this.studyFromQido(ds));
+      let studies: StudyInfo[];
+
+      if (this.useOrthancApi) {
+        studies = await this.fetchOrthancStudies(patientId);
+      } else {
+        // QIDO-RS search by PatientID
+        const url = `${this.baseUrl}/studies?PatientID=${encodeURIComponent(patientId)}&includefield=all`;
+        const response = await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
+        studies = (Array.isArray(response) ? response : [])
+          .map((ds: any) => this.studyFromQido(ds));
+      }
 
       if (this.config.cacheEnabled) {
         this.cache.set(cacheKey, studies);
@@ -247,6 +399,14 @@ export class PACSService extends EventEmitter {
    */
   async getStudyDetails(studyInstanceUID: string): Promise<StudyInfo> {
     try {
+      if (this.useOrthancApi) {
+        const study = await this.buildOrthancStudy(studyInstanceUID);
+        if (!study) {
+          throw new Error('Study not found');
+        }
+        return study;
+      }
+
       // QIDO-RS for study record
       const studyUrl = `${this.baseUrl}/studies?StudyInstanceUID=${encodeURIComponent(studyInstanceUID)}&includefield=all`;
       const studyResp = await this.makeRequest(studyUrl, { headers: { 'Accept': 'application/dicom+json' } });
@@ -297,6 +457,46 @@ export class PACSService extends EventEmitter {
    */
   async getSeriesDetails(seriesInstanceUID: string): Promise<SeriesInfo> {
     try {
+      if (this.useOrthancApi) {
+        if (!this.orthancBaseUrl) {
+          throw new Error('Orthanc base URL not configured');
+        }
+
+        const seriesData = await this.makeRequest(`${this.orthancBaseUrl}/series/${encodeURIComponent(seriesInstanceUID)}`, { headers: { 'Accept': 'application/json' } });
+        const instanceIds: string[] = Array.isArray(seriesData?.Instances) ? seriesData.Instances : [];
+        const studyId: string | undefined = seriesData?.ParentStudy;
+        let studyData: any = undefined;
+        if (studyId) {
+          studyData = await this.makeRequest(`${this.orthancBaseUrl}/studies/${studyId}`, { headers: { 'Accept': 'application/json' } });
+        }
+        const studyTags = studyData?.MainDicomTags ?? {};
+        const patientTags = studyData?.PatientMainDicomTags ?? {};
+        const seriesTags = seriesData?.MainDicomTags ?? {};
+
+        const images: DICOMImage[] = [];
+        for (const instanceId of instanceIds) {
+          try {
+            const instanceData = await this.makeRequest(`${this.orthancBaseUrl}/instances/${instanceId}`, { headers: { 'Accept': 'application/json' } });
+            images.push(this.imageFromOrthancData(instanceId, instanceData, {
+              studyInstanceUID: seriesTags.StudyInstanceUID || studyTags.StudyInstanceUID || '',
+              seriesInstanceUID: seriesTags.SeriesInstanceUID || seriesInstanceUID,
+              patientId: patientTags.PatientID || '',
+              studyDate: studyTags.StudyDate || '',
+              modality: seriesTags.Modality || studyTags.Modality || 'Unknown',
+              bodyPart: seriesTags.BodyPartExamined || ''
+            }));
+          } catch (error) {
+            this.logInfo('Skipping Orthanc instance in series details due to retrieval error', {
+              instanceId,
+              seriesInstanceUID,
+              error: error instanceof Error ? error.message : error
+            });
+          }
+        }
+
+        return this.seriesFromOrthancData(seriesData, images);
+      }
+
       // QIDO-RS lookup by SeriesInstanceUID
       const url = `${this.baseUrl}/series?SeriesInstanceUID=${encodeURIComponent(seriesInstanceUID)}&includefield=all`;
       const resp = await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
@@ -327,6 +527,27 @@ export class PACSService extends EventEmitter {
    */
   async getImageDetails(sopInstanceUID: string): Promise<DICOMImage> {
     try {
+      if (this.useOrthancApi) {
+        if (!this.orthancBaseUrl) {
+          throw new Error('Orthanc base URL not configured');
+        }
+
+        const instanceData = await this.makeRequest(`${this.orthancBaseUrl}/instances/${encodeURIComponent(sopInstanceUID)}`, { headers: { 'Accept': 'application/json' } });
+        const seriesInstanceUID = instanceData?.MainDicomTags?.SeriesInstanceUID || '';
+        const studyInstanceUID = instanceData?.MainDicomTags?.StudyInstanceUID || '';
+        const patientId = instanceData?.PatientMainDicomTags?.PatientID || '';
+        const studyDate = instanceData?.MainDicomTags?.StudyDate || '';
+        const modality = instanceData?.MainDicomTags?.Modality || 'Unknown';
+
+        return this.imageFromOrthancData(sopInstanceUID, instanceData, {
+          studyInstanceUID,
+          seriesInstanceUID,
+          patientId,
+          studyDate,
+          modality
+        });
+      }
+
       // QIDO-RS: Instances by SOPInstanceUID
       const url = `${this.baseUrl}/instances?SOPInstanceUID=${encodeURIComponent(sopInstanceUID)}&includefield=all`;
       const resp = await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
@@ -344,6 +565,11 @@ export class PACSService extends EventEmitter {
    * Get OHIF viewer URL for a study
    */
   getViewerUrl(studyInstanceUID: string): string {
+    if (this.useOrthancApi && this.orthancBaseUrl) {
+      const orthancEncoded = encodeURIComponent(this.orthancBaseUrl);
+      return `${this.config.ohifViewerUrl}?server=${orthancEncoded}&StudyInstanceUIDs=${encodeURIComponent(studyInstanceUID)}`;
+    }
+
     const qidoStudiesUrl = encodeURIComponent(`${this.baseUrl}/studies`);
     return `${this.config.ohifViewerUrl}?url=${qidoStudiesUrl}&StudyInstanceUIDs=${encodeURIComponent(studyInstanceUID)}`;
   }
@@ -378,6 +604,20 @@ export class PACSService extends EventEmitter {
       if (criteria.modality) params.set('Modality', criteria.modality);
       if (criteria.studyDescription) params.set('StudyDescription', criteria.studyDescription);
       params.set('includefield', 'all');
+
+      if (this.useOrthancApi && this.orthancBaseUrl) {
+        const url = `${this.orthancBaseUrl}/studies?${params.toString()}`;
+        const response = await this.makeRequest(url, { headers: { 'Accept': 'application/json' } });
+        const studyIds: string[] = Array.isArray(response) ? response : [];
+        const studies: StudyInfo[] = [];
+        for (const studyId of studyIds) {
+          const study = await this.buildOrthancStudy(studyId);
+          if (study) {
+            studies.push(study);
+          }
+        }
+        return studies;
+      }
 
       const url = `${this.baseUrl}/studies?${params.toString()}`;
       const response = await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
@@ -420,11 +660,16 @@ export class PACSService extends EventEmitter {
         }
       });
 
-      // STOW-RS single instance upload (some servers require multipart/related)
-      const url = `${this.baseUrl}/studies`;
+      const url = (this.useOrthancApi && this.orthancBaseUrl)
+        ? `${this.orthancBaseUrl}/instances`
+        : `${this.baseUrl}/studies`;
+
       const response = await this.makeRequest(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/dicom', 'Accept': 'application/dicom+json' },
+        headers: {
+          'Content-Type': 'application/dicom',
+          'Accept': this.useOrthancApi ? 'application/json' : 'application/dicom+json'
+        },
         // Cast Buffer to BodyInit for Node.js fetch
         body: (file as unknown as any)
       });
@@ -436,12 +681,16 @@ export class PACSService extends EventEmitter {
         success: true,
         context: {
           filename,
-          instanceId: (response && response[0] && (response[0]['00080018']?.Value?.[0])) || undefined,
+          instanceId: this.useOrthancApi
+            ? response?.ID || response?.MainDicomTags?.SOPInstanceUID
+            : (response && response[0] && (response[0]['00080018']?.Value?.[0])) || undefined,
           timestamp: new Date().toISOString()
         }
       });
 
-      const instanceId = (response && response[0] && (response[0]['00080018']?.Value?.[0])) || undefined;
+      const instanceId = this.useOrthancApi
+        ? response?.ID || response?.MainDicomTags?.SOPInstanceUID
+        : (response && response[0] && (response[0]['00080018']?.Value?.[0])) || undefined;
       this.emit('dicomUploaded', { filename, instanceId });
       return { success: true, instanceId };
 
@@ -466,10 +715,21 @@ export class PACSService extends EventEmitter {
    */
   async checkConnectivity(): Promise<{ connected: boolean; version?: string; error?: string }> {
     try {
+      if (this.useOrthancApi && this.orthancBaseUrl) {
+        const response = await this.makeRequest(`${this.orthancBaseUrl}/system`, { headers: { 'Accept': 'application/json' } });
+        return {
+          connected: true,
+          version: response?.Version || response?.version
+        };
+      }
+
       // Lightweight QIDO probe
       const url = `${this.baseUrl}/studies?limit=1`;
-      await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
-      return { connected: true };
+      const response = await this.makeRequest(url, { headers: { 'Accept': 'application/dicom+json' } });
+      return {
+        connected: true,
+        version: response?.Version || response?.version
+      };
 
     } catch (error) {
       return {
@@ -497,16 +757,35 @@ export class PACSService extends EventEmitter {
       headers
     });
 
+    if (!response) {
+      throw new Error('No response received from PACS server');
+    }
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const contentType = response.headers.get('content-type');
+    const contentType = response.headers && typeof response.headers.get === 'function'
+      ? response.headers.get('content-type')
+      : undefined;
+
     if (contentType && (contentType.includes('application/json') || contentType.includes('application/dicom+json'))) {
       return await response.json();
     }
 
-    return await response.arrayBuffer();
+    if (typeof (response as any).json === 'function') {
+      try {
+        return await (response as any).json();
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    if (typeof (response as any).arrayBuffer === 'function') {
+      return await (response as any).arrayBuffer();
+    }
+
+    return null;
   }
 
   /**

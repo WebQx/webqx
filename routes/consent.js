@@ -122,7 +122,7 @@ router.post('/record', (req, res) => {
             witnessId,
             ipAddress: req.ip,
             userAgent: req.get('User-Agent'),
-            version: '1.0'
+            version: 'v0.1.0'
         };
 
         consentRecords.set(consentId, consentRecord);
@@ -414,7 +414,7 @@ function initializeSampleConsents() {
             consentId,
             ...consent,
             timestamp: new Date().toISOString(),
-            version: '1.0'
+            version: 'v0.1.0'
         };
         
         consentRecords.set(consentId, consentRecord);

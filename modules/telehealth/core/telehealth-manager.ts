@@ -8,6 +8,8 @@
 import { EventEmitter } from 'events';
 import { TelehealthConfig, ComponentStatus, DeploymentMode, TelehealthComponent } from './types/telehealth.types';
 
+const COMPONENT_EMIT_WRAPPED = Symbol('telehealth:component-emit-wrapped');
+
 export class TelehealthManager extends EventEmitter {
   private config: TelehealthConfig;
   private components: Map<string, TelehealthComponent> = new Map();
@@ -106,9 +108,14 @@ export class TelehealthManager extends EventEmitter {
           throw new Error(`Unknown component: ${componentName}`);
       }
 
-  const componentConfig = (this.config.components as any)[componentName] || {};
-  const component = new ComponentClass(componentConfig);
-      
+      const componentConfig = (this.config.components as any)[componentName];
+
+      if (!componentConfig || Object.keys(componentConfig).length === 0) {
+        throw new Error(`Missing configuration for component: ${componentName}`);
+      }
+
+      const component = new ComponentClass(componentConfig);
+
       await component.initialize();
       this.components.set(componentName, component);
 
@@ -129,12 +136,26 @@ export class TelehealthManager extends EventEmitter {
 
     // Setup event forwarding between components
     this.components.forEach((component, name) => {
-      component.on('*', (eventName: string, data: any) => {
-        this.emit(`component:${name}:${eventName}`, data);
-        
-        // Forward relevant events to other components
-        this.forwardEventToComponents(name, eventName, data);
-      });
+      const componentAny = component as any;
+      if (componentAny[COMPONENT_EMIT_WRAPPED]) {
+        return;
+      }
+
+      const originalEmit = component.emit.bind(component);
+
+      component.emit = ((eventName: string | symbol, ...args: any[]) => {
+        const result = originalEmit(eventName, ...args);
+        const payload = args.length > 1 ? args : args[0];
+
+        if (typeof eventName === 'string') {
+          this.emit(`component:${name}:${eventName}`, payload);
+          this.forwardEventToComponents(name, eventName, payload);
+        }
+
+        return result;
+      }) as any;
+
+      componentAny[COMPONENT_EMIT_WRAPPED] = true;
     });
 
     // Setup specific integrations
@@ -188,7 +209,8 @@ export class TelehealthManager extends EventEmitter {
   private forwardEventToComponents(sourceComponent: string, eventName: string, data: any): void {
     // Define event forwarding rules
     const forwardingRules = {
-      'patient:selected': ['video-consultation', 'messaging', 'ehr-integration'],
+      'patient:selected': ['video-consultation', 'messaging', 'ehr-integration', 'fhir-sync'],
+      'call:started': ['messaging'],
       'appointment:created': ['video-consultation', 'fhir-sync'],
       'consultation:notes': ['ehr-integration', 'fhir-sync']
     };
@@ -291,6 +313,21 @@ export class TelehealthManager extends EventEmitter {
    */
   isReady(): boolean {
     return this.isInitialized;
+  }
+
+  /**
+   * Emit events while supporting component forwarding rules
+   */
+  emit(eventName: string | symbol, ...args: any[]): boolean {
+    const shouldForward = typeof eventName === 'string' && !eventName.startsWith('component:');
+    const result = super.emit(eventName, ...args);
+
+    if (shouldForward) {
+      const payload = args.length > 1 ? args : args[0];
+      this.forwardEventToComponents('manager', eventName as string, payload);
+    }
+
+    return result;
   }
 
   /**

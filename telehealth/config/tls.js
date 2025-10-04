@@ -12,7 +12,7 @@
  * - Cipher suite restrictions
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const fs = require('fs');
@@ -80,19 +80,23 @@ class TLSConfig {
      */
     validateConfiguration() {
         const errors = [];
+        const environment = process.env.NODE_ENV || 'development';
+        const isTestEnv = environment === 'test';
 
         // Check if certificate files exist
         if (!fs.existsSync(this.config.certPath)) {
-            if (process.env.NODE_ENV === 'production') {
+            if (environment === 'production') {
                 errors.push(`TLS certificate not found at: ${this.config.certPath}`);
-            } else {
+            } else if (!isTestEnv) {
                 console.warn(`⚠️ TLS certificate not found, using self-signed for development`);
-                this.generateSelfSignedCertificate();
+                if (environment === 'development') {
+                    this.generateSelfSignedCertificate();
+                }
             }
         }
 
         if (!fs.existsSync(this.config.keyPath)) {
-            if (process.env.NODE_ENV === 'production') {
+            if (environment === 'production') {
                 errors.push(`TLS private key not found at: ${this.config.keyPath}`);
             }
         }

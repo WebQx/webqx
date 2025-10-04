@@ -11,7 +11,7 @@
  * - Port 3003: Telehealth Services (Video, Messaging, WebRTC)
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const express = require('express');
@@ -424,7 +424,7 @@ class UnifiedHealthcareServer {
                 status: 'healthy',
                 service: 'WebQX Healthcare Platform Gateway',
                 timestamp: new Date().toISOString(),
-                version: '1.0.0',
+                version: 'v0.1.0',
                 services: this.serviceHealth,
                 ports: {
                     main: this.config.mainPort,

@@ -429,15 +429,19 @@ class OAuth2Middleware {
      * @param {Object} additional - Additional error details
      */
     sendAuthError(res, message, errorCode, statusCode, additional = {}) {
+        const { req: additionalRequest, ...safeAdditional } = additional;
+
         const error = {
             error: errorCode,
             error_description: message,
             timestamp: new Date().toISOString(),
-            ...additional
+            ...safeAdditional
         };
 
         // For FHIR compatibility
-        if (req.path && req.path.startsWith('/fhir')) {
+        const request = additionalRequest || (res && res.req);
+
+        if (request && request.path && request.path.startsWith('/fhir')) {
             res.status(statusCode).json({
                 resourceType: 'OperationOutcome',
                 issue: [{

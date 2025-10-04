@@ -10,7 +10,7 @@ module.exports = {
   },
   // Transform ES modules in node_modules
   transformIgnorePatterns: [
-    'node_modules/(?!(jose|jwks-rsa|@azure/identity|@azure/core-|@azure/logger|@azure/msal-node|@azure/msal-common)/)'
+    'node_modules/(?!(jose|jwks-rsa|keycloak-js|@azure/identity|@azure/core-|@azure/logger|@azure/msal-node|@azure/msal-common)/)'
   ],
   // Force resolving dependencies (like react/react-dom) from the root only
   moduleDirectories: ['<rootDir>/node_modules'],

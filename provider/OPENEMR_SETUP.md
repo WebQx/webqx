@@ -19,6 +19,44 @@ This guide will help you configure and launch OpenEMR from the WebQX™ Provider
 
 ## Quick Setup
 
+### 0. Configure Provider SSO Bridge (Server)
+
+The provider SSO finalize route now exchanges Keycloak (or other central IdP) tokens for OpenEMR credentials before returning control to the browser. Make sure the backend process that serves `auth/providers/routes.js` is provisioned with the following environment variables:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENEMR_BASE_URL` | ✅ | Base URL of your OpenEMR deployment (e.g., `https://openemr.example.com`). Trailing slashes are trimmed automatically. |
+| `OPENEMR_CLIENT_ID` | ✅ | OAuth2 client ID registered inside OpenEMR. |
+| `OPENEMR_CLIENT_SECRET` | ✅ | OAuth2 client secret for the client above. |
+| `OPENEMR_SSO_SCOPES` | Optional | Space-delimited scope override sent to OpenEMR during the client-credential exchange. Defaults to a safe read/write bundle if omitted. |
+| `CENTRAL_IDP_ISSUER` | Optional (recommended) | Issuer URL for the central IdP (Keycloak, Azure AD, etc.). Used to derive the `/userinfo` endpoint for token validation. |
+| `CENTRAL_IDP_USERINFO_URL` | Optional | Explicit `userinfo` URL. If omitted the route attempts to derive it from the issuer. |
+
+When these are present the finalize handler will:
+
+1. Validate the Keycloak access token against the IdP `userinfo` endpoint (if configured).
+2. Request an OpenEMR access token using the client credentials.
+3. Persist the OpenEMR token bundle (access token, expiry, scopes) in the session payload and make it available to the frontend.
+4. Set `provider_token` and OpenEMR session cookies for subsequent API calls.
+
+On failure, the handler returns a descriptive status (e.g., `OPENEMR_TOKEN_EXCHANGE_FAILED`) and no OpenEMR tokens are cached.
+
+### 0.1 Frontend Session Handling
+
+The provider portal SSO manager (`auth/providers/js/sso.js`) now stores the OpenEMR token bundle in `localStorage` under `webqx_openemr_session` and dispatches a `webqx:openemr-session` event whenever the session changes. Launcher scripts can consume this event to react to new or cleared sessions:
+
+```javascript
+window.addEventListener('webqx:openemr-session', ({ detail }) => {
+    if (detail && detail.enabled) {
+        console.log('OpenEMR ready', detail.baseUrl);
+    } else {
+        console.warn('OpenEMR session cleared');
+    }
+});
+```
+
+Stale session data is automatically removed when the finalize flow errors or when the backend reports `enabled: false`.
+
 ### 1. Configure OpenEMR Instance
 
 #### Enable APIs in OpenEMR

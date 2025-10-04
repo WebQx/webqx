@@ -12,9 +12,15 @@ const ChatEHRAssistant = require('../services/chatEHRAssistant');
 
 const router = express.Router();
 
+const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID;
+
 // Initialize ChatEHR service
 const chatEHRService = new ChatEHRService({
-    enableAuditLogging: process.env.HIPAA_AUDIT_ENABLED === 'true'
+    baseUrl: process.env.CHATEHR_API_URL || (isTestEnvironment ? 'http://localhost:4001/v1' : undefined),
+    apiKey: process.env.CHATEHR_API_KEY || (isTestEnvironment ? 'test-api-key' : undefined),
+    clientId: process.env.CHATEHR_CLIENT_ID || (isTestEnvironment ? 'test-client-id' : undefined),
+    clientSecret: process.env.CHATEHR_CLIENT_SECRET || (isTestEnvironment ? 'test-client-secret' : undefined),
+    enableAuditLogging: !isTestEnvironment && process.env.HIPAA_AUDIT_ENABLED === 'true'
 });
 const assistant = new ChatEHRAssistant({ fhirBase: process.env.FHIR_BASE_URL || process.env.PUBLIC_FHIR_BASE || 'http://localhost:3000/fhir' });
 
@@ -27,7 +33,7 @@ const chatEHRRateLimit = rateLimit({
         code: 'RATE_LIMIT_EXCEEDED'
     },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: true
 });
 
 // Apply rate limiting to all ChatEHR routes
@@ -377,12 +383,13 @@ router.get('/health',
             const result = await chatEHRService.healthCheck();
             
             if (result.success) {
+                const { service: _serviceName, ...additionalData } = result.data || {};
                 res.json({
                     success: true,
                     status: 'healthy',
                     service: 'ChatEHR',
                     timestamp: new Date().toISOString(),
-                    ...result.data
+                    ...additionalData
                 });
             } else {
                 res.status(503).json({

@@ -4,13 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebQX EMR - Admin Console</title>
-    <script src="/auth/js/post-login-router.js"></script>
-        <script>
-            if (window.WebQXPostLoginRouter && typeof WebQXPostLoginRouter.trackRoute === 'function') {
-                WebQXPostLoginRouter.trackRoute('admin');
-            }
-        </script>
     <link rel="stylesheet" href="../themes/webqx-modern.css">
+    <link rel="stylesheet" href="../themes/webqx-mobile.css">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -151,14 +146,13 @@
     <div class="webqx-header">
         <div class="container-fluid" style="max-width: 1600px; margin: 0 auto; padding: 1rem 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="webqx-logo">
-                    ⚙️ WebQX EMR - Admin Console
-                </div>
-                <div style="display: flex; gap: 1rem; align-items: center;">
+                <div class="webqx-logo">⚙️ WebQX EMR - Admin Console</div>
+                <button class="webqx-nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="adminNav">☰ Menu</button>
+                <nav id="adminNav" class="webqx-nav-links" aria-label="Admin navigation">
                     <span style="color: rgba(255,255,255,0.9);">Admin User</span>
                     <a href="../" style="color: white; text-decoration: none;">← Dashboard</a>
                     <a href="#" onclick="logout()" style="color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 4px;">Logout</a>
-                </div>
+                </nav>
             </div>
             <div class="webqx-tagline">
                 System administration and configuration management
@@ -307,6 +301,7 @@
         </div>
     </div>
 
+    <script src="../js/webqx-mobile-nav.js"></script>
     <script>
         function openEMR(module) {
             const moduleUrls = {
@@ -337,7 +332,7 @@
         }
         
         function showDBStats() {
-            fetch('https://yourdomain.com/webqx-api.php?action=health')
+            fetch('https://webqx-production.up.railway.app/webqx-api.php?action=health')
                 .then(response => response.json())
                 .then(data => {
                     alert(`📊 Database Statistics:\n\nStatus: ${data.database || 'Connected'}\nTables: WebQX Community Health tables active\nStorage: Normal\nConnections: Active`);
@@ -443,7 +438,7 @@
         
         // Auto-refresh system status every 30 seconds
         setInterval(() => {
-            fetch('https://yourdomain.com/webqx-api.php?action=status')
+            fetch('https://webqx-production.up.railway.app/webqx-api.php?action=status')
                 .then(response => response.json())
                 .then(data => {
                     console.log('System status check:', data);

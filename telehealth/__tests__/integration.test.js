@@ -5,7 +5,7 @@
  * including video services, chat services, and security configurations.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const SecureVideoService = require('../services/videoService');

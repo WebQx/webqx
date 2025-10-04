@@ -21,7 +21,7 @@
  *   npm run start:unified
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const { spawn, fork } = require('child_process');

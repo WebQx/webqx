@@ -5,7 +5,7 @@
  * to improve patient health literacy and understanding.
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 import React, { useState, useEffect, useMemo } from 'react';

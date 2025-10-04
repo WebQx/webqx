@@ -99,6 +99,13 @@ export interface KeycloakRoleMapping {
   requiredAttributes?: string[];
 }
 
+export interface IdentityProviderSettings {
+  enabled: boolean;
+  idpHint: string;
+  displayName: string;
+  clientId?: string;
+}
+
 export interface KeycloakAuthResult {
   success: boolean;
   user?: KeycloakUser;
@@ -121,5 +128,11 @@ export interface KeycloakProviderConfig {
     allowedAudiences?: string[];
     minimumTokenAge?: number;
     maximumTokenAge?: number;
+  };
+  identityProviders?: {
+    microsoft?: IdentityProviderSettings;
+    google?: IdentityProviderSettings;
+    apple?: IdentityProviderSettings;
+    [provider: string]: IdentityProviderSettings | undefined;
   };
 }

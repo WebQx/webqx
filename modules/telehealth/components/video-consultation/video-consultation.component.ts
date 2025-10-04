@@ -46,20 +46,7 @@ export class VideoConsultationComponent extends EventEmitter implements Teleheal
         await this.loadJitsiAPI();
       } else {
         // Use mock implementation if no Jitsi config
-        this.jitsiApi = {
-          JitsiMeetExternalAPI: class MockJitsiAPI {
-            public domain: string;
-            public options: any;
-            constructor(domain: string, options: any) {
-              this.domain = domain;
-              this.options = options;
-            }
-            addEventListener(event: string, callback: Function) {}
-            removeEventListener(event: string, callback: Function) {}
-            executeCommand(command: string, ...args: any[]) {}
-            dispose() {}
-          }
-        };
+        this.useMockJitsiAPI();
       }
       
       // Setup event listeners
@@ -110,22 +97,9 @@ export class VideoConsultationComponent extends EventEmitter implements Teleheal
    */
   private async loadJitsiAPI(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (typeof window === 'undefined') {
-        // Server-side: Mock implementation for testing
-        this.jitsiApi = {
-          JitsiMeetExternalAPI: class MockJitsiAPI {
-            public domain: string;
-            public options: any;
-            constructor(domain: string, options: any) {
-              this.domain = domain;
-              this.options = options;
-            }
-            addEventListener(event: string, callback: Function) {}
-            removeEventListener(event: string, callback: Function) {}
-            executeCommand(command: string, ...args: any[]) {}
-            dispose() {}
-          }
-        };
+      if (process.env.NODE_ENV === 'test' || typeof window === 'undefined') {
+        // In test or server environments, use mock implementation immediately
+        this.useMockJitsiAPI();
         resolve();
         return;
       }
@@ -148,6 +122,26 @@ export class VideoConsultationComponent extends EventEmitter implements Teleheal
       };
       document.head.appendChild(script);
     });
+  }
+
+  /**
+   * Provide mock Jitsi API implementation for non-browser environments
+   */
+  private useMockJitsiAPI(): void {
+    this.jitsiApi = {
+      JitsiMeetExternalAPI: class MockJitsiAPI {
+        public domain: string;
+        public options: any;
+        constructor(domain: string, options: any) {
+          this.domain = domain;
+          this.options = options;
+        }
+        addEventListener(event: string, callback: Function) {}
+        removeEventListener(event: string, callback: Function) {}
+        executeCommand(command: string, ...args: any[]) {}
+        dispose() {}
+      }
+    };
   }
 
   /**

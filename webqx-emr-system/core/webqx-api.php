@@ -70,7 +70,7 @@ echo json_encode([
         'health' => '/webqx-api.php?action=health',
         'community-stats' => '/webqx-api.php?action=community-stats'
     ],
-    'github_pages' => 'https://webqx.github.io/EMR/',
+    'github_pages' => 'https://webqx.github.io/webqx/',
     'timestamp' => date('c')
 ]);
 ?>

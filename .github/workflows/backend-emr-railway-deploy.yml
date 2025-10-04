@@ -11,28 +11,39 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
     steps:
+      - name: Check Railway credentials
+        id: railway-gate
+        run: |
+          if [ -z "${RAILWAY_TOKEN}" ] || [ -z "${RAILWAY_PROJECT_ID}" ]; then
+            echo "::notice::Railway credentials not provided; skipping OpenEMR deploy."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout
+        if: steps.railway-gate.outputs.skip == 'false'
         uses: actions/checkout@v4
 
       - name: Install Railway CLI
+        if: steps.railway-gate.outputs.skip == 'false'
         run: npm i -g @railway/cli
 
       - name: Deploy OpenEMR service
+        if: steps.railway-gate.outputs.skip == 'false'
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           EMR_SERVICE_NAME: webqx-emr
         run: |
-          if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "RAILWAY_TOKEN secret missing" >&2
-            exit 1
-          fi
-          if [ -n "$RAILWAY_PROJECT_ID" ]; then
-            railway link --project "$RAILWAY_PROJECT_ID" || true
-          fi
+          railway link --project "$RAILWAY_PROJECT_ID" || true
           cd webqx-emr-system
           railway up --service "$EMR_SERVICE_NAME" --detach || railway up --detach
 
       - name: Post-deploy note
+        if: steps.railway-gate.outputs.skip == 'false'
         run: echo "OpenEMR deploy triggered; set RAILWAY_PUBLIC_EMR_BASE secret to EMR public URL for Pages integration."

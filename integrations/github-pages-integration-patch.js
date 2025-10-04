@@ -1,518 +1,384 @@
-/**
- * WebQX GitHub Pages Integration Patch
- * Connects homepage with all modules and placement cards via MariaDB
- */
+// WebQx GitHub Pages Integration - Enhanced with API Proxy Support
+console.log('🏥 WebQx Enhanced GitHub Pages Integration Loading...');
 
-class WebQXIntegration {
-    constructor() {
-        // Resolve API base from runtime config; on GitHub Pages, relative requests are rewritten by pages-spa-api-proxy.js
-        const cfg = (window.WEBQX_CONFIG && window.WEBQX_CONFIG.getConfig && window.WEBQX_CONFIG.getConfig()) || {};
-        this.apiBaseUrl = (cfg.api_base ? cfg.api_base.replace(/\/$/, '') : '') + '/api/v1';
-        this.localApiUrl = '';
-        this.modules = new Map();
-        this.placementCards = new Map();
-        this.authToken = null;
-        this.currentUser = null;
+(function() {
+    'use strict';
+    
+    // Environment detection
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    const isDev = window.location.hostname.includes('localhost');
+    
+    // Configuration
+    const PROXY_SERVER = 'http://localhost:8080';
+    const LOCAL_EMR_SERVER = 'http://localhost:8085';
+    const LOCAL_TELEHEALTH_SERVER = 'http://localhost:8085';
+    
+    console.log('Environment:', isGitHubPages ? 'GitHub Pages' : isDev ? 'Development' : 'Production');
+    console.log('Proxy Server:', PROXY_SERVER);
+    console.log('Local EMR Server:', LOCAL_EMR_SERVER);
+    console.log('Local Telehealth Server:', LOCAL_TELEHEALTH_SERVER);
+    
+    // Enhanced status check with multiple services
+    async function checkBackendStatus() {
+        const statusEl = document.getElementById('backendStatus');
+        const textEl = document.getElementById('statusText');
+        const btnEl = document.getElementById('startBackend');
         
-        this.init();
-    }
-
-    async init() {
-        console.log('🚀 WebQX Integration System initializing...');
-        
-        // Initialize module registry
-        this.registerModules();
-        
-        // Initialize placement cards
-        this.initializePlacementCards();
-        
-        // Setup event listeners
-        this.setupEventListeners();
-        
-        // Check backend connectivity
-        await this.checkBackendStatus();
-        
-        // Initialize user session
-        await this.initializeSession();
-        
-        console.log('✅ WebQX Integration System ready');
-    }
-
-    registerModules() {
-        // Patient Portal Modules
-        this.modules.set('patient-portal', {
-            name: 'Patient Portal',
-            url: './patient-portal/',
-            icon: '👤',
-            status: 'active',
-            database: 'webqx_patient_data',
-            tables: ['appointments', 'medical_records', 'prescriptions', 'messages']
-        });
-
-        // Provider Portal Modules
-        this.modules.set('provider-portal', {
-            name: 'Provider Portal',
-            url: './provider/',
-            icon: '👨⚕️',
-            status: 'active',
-            database: 'webqx_provider_data',
-            tables: ['patients', 'schedules', 'clinical_notes', 'prescriptions']
-        });
-
-        // Admin Console Modules
-        this.modules.set('admin-console', {
-            name: 'Admin Console',
-            url: './admin-console/',
-            icon: '⚙️',
-            status: 'active',
-            database: 'webqx_admin_data',
-            tables: ['users', 'system_logs', 'configurations', 'audit_trails']
-        });
-
-        // Telehealth Module
-        this.modules.set('telehealth', {
-            name: 'Telehealth',
-            url: './telehealth.html',
-            icon: '📹',
-            status: 'active',
-            database: 'webqx_telehealth_data',
-            tables: ['sessions', 'recordings', 'participants', 'chat_messages']
-        });
-
-        // EMR System Module
-        this.modules.set('emr-system', {
-            name: 'EMR System',
-            url: './webqx-emr-system/',
-            icon: '🏥',
-            status: 'active',
-            database: 'openemr',
-            tables: ['patients', 'encounters', 'forms', 'prescriptions']
-        });
-    }
-
-    initializePlacementCards() {
-        // Patient Portal Cards
-        this.placementCards.set('patient-appointments', {
-            title: 'Appointments',
-            icon: '📅',
-            module: 'patient-portal',
-            action: 'openAppointments',
-            data: { count: 2, next: 'Dr. Smith - Tomorrow 2:00 PM' }
-        });
-
-        this.placementCards.set('patient-records', {
-            title: 'Medical Records',
-            icon: '📋',
-            module: 'patient-portal',
-            action: 'openMedicalRecords',
-            data: { newResults: 2, totalRecords: 45 }
-        });
-
-        this.placementCards.set('patient-prescriptions', {
-            title: 'Prescriptions',
-            icon: '💊',
-            module: 'patient-portal',
-            action: 'openPrescriptions',
-            data: { active: 3, readyForPickup: 1 }
-        });
-
-        // Provider Portal Cards
-        this.placementCards.set('provider-patients', {
-            title: 'Patient Management',
-            icon: '👥',
-            module: 'provider-portal',
-            action: 'openPatients',
-            data: { totalPatients: 156, todayAppointments: 8 }
-        });
-
-        this.placementCards.set('provider-schedule', {
-            title: 'Schedule',
-            icon: '📅',
-            module: 'provider-portal',
-            action: 'openSchedule',
-            data: { todaySlots: 8, availableSlots: 3 }
-        });
-
-        // Admin Console Cards
-        this.placementCards.set('admin-users', {
-            title: 'User Management',
-            icon: '👤',
-            module: 'admin-console',
-            action: 'openUserManagement',
-            data: { totalUsers: 1247, activeUsers: 892 }
-        });
-
-        this.placementCards.set('admin-system', {
-            title: 'System Status',
-            icon: '⚙️',
-            module: 'admin-console',
-            action: 'openSystemStatus',
-            data: { uptime: '99.9%', activeServers: 4 }
-        });
-
-        // Telehealth Cards
-        this.placementCards.set('telehealth-sessions', {
-            title: 'Video Sessions',
-            icon: '📹',
-            module: 'telehealth',
-            action: 'openTelehealth',
-            data: { activeSessions: 12, scheduledToday: 25 }
-        });
-    }
-
-    setupEventListeners() {
-        // Module card click handlers
-        document.addEventListener('click', (e) => {
-            const moduleCard = e.target.closest('[data-module]');
-            if (moduleCard) {
-                const moduleId = moduleCard.dataset.module;
-                this.openModule(moduleId);
-            }
-        });
-
-        // Backend status check
-        document.getElementById('startBackend')?.addEventListener('click', () => {
-            this.startBackendServices();
-        });
-
-        // Auto-refresh status every 30 seconds
-        setInterval(() => {
-            this.checkBackendStatus();
-        }, 30000);
-    }
-
-    async checkBackendStatus() {
-        const statusIndicator = document.getElementById('backendStatus');
-        const statusText = document.getElementById('statusText');
-        const startButton = document.getElementById('startBackend');
-
-        try {
-            // Try relative /health first; on GitHub Pages this will be rewritten to the configured backend by pages-spa-api-proxy.js
-            const response = await fetch(`/health`, { method: 'GET' });
-            if (!response.ok) throw new Error('Server not responding');
-            const data = await response.json();
-            statusIndicator?.classList.remove('status-offline');
-            statusIndicator?.classList.add('status-online');
-            if (statusText) statusText.textContent = `WebQx Server: Online (${data.version || 'v1.0'})`;
-            if (startButton) startButton.style.display = 'none';
-            // Update module status
-            await this.updateModuleStatus();
-        } catch (error) {
-            // Mark offline; relative /health will be the single source of truth on Pages
-            statusIndicator?.classList.remove('status-online');
-            statusIndicator?.classList.add('status-offline');
-            if (statusText) statusText.textContent = 'WebQx Server: Offline';
-            if (startButton) startButton.style.display = 'inline-block';
+        if (!statusEl || !textEl || !btnEl) {
+            setTimeout(checkBackendStatus, 500);
+            return;
         }
-    }
-
-    async updateModuleStatus() {
-        // Always derive a baseline from /health to avoid noisy 404s
-        await this.updateModuleStatusFromHealth();
-        // Optionally refine using /api/v1/modules/status when explicitly enabled
-        const tryModulesStatus = (window && window.WEBQX_TRY_MODULE_STATUS === true);
-        if (!tryModulesStatus) return;
-        try {
-            const response = await fetch(`${this.getApiUrl()}/modules/status`, { method: 'GET' });
-            if (response.ok) {
-                const moduleStatuses = await response.json();
-                this.applyModuleStatuses(moduleStatuses);
-            }
-        } catch (_) {
-            // Silent: health-based status remains
-        }
-    }
-
-    applyModuleStatuses(moduleStatuses) {
-        if (!Array.isArray(moduleStatuses)) return;
-        moduleStatuses.forEach(module => {
-            const card = document.querySelector(`[data-module="${module.id}"]`);
-            if (card) {
-                const statusElement = card.querySelector('.module-status');
-                if (statusElement) {
-                    statusElement.textContent = module.status;
-                    statusElement.className = `module-status status-${module.status}`;
-                }
-            }
-        });
-    }
-
-    async updateModuleStatusFromHealth() {
-        try {
-            const r = await fetch(`/health`);
-            if (!r.ok) return;
-            const h = await r.json();
-            const statuses = [
-                { id: 'patient-portal', status: 'active' },
-                { id: 'provider-portal', status: 'active' },
-                { id: 'admin-console', status: 'active' },
-                { id: 'telehealth', status: h?.services?.telehealth ? 'active' : 'degraded' },
-                { id: 'emr-system', status: h?.services?.openemr ? 'active' : 'degraded' }
-            ];
-            this.applyModuleStatuses(statuses);
-        } catch (_) {
-            // noop
-        }
-    }
-
-    async initializeSession() {
-        // Check for existing session
-        const token = localStorage.getItem('webqx_token');
-        if (token) {
+        
+        statusEl.className = 'status-indicator status-connecting';
+        textEl.textContent = 'WebQX: Checking local servers...';
+        btnEl.style.display = 'none';
+        
+        const services = {
+            emr: { url: `${LOCAL_EMR_SERVER}/webqx-api.php?action=health`, name: 'EMR' },
+            proxy: { url: `${PROXY_SERVER}/api/server-status`, name: 'Proxy' }
+        };
+        
+        const results = {};
+        
+        // Check all services
+        for (const [key, service] of Object.entries(services)) {
             try {
-                const response = await fetch(`${this.getApiUrl()}/auth/verify`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const response = await fetch(service.url, { 
+                    signal: AbortSignal.timeout(5000) 
+                });
+                results[key] = response.ok;
+            } catch (error) {
+                results[key] = false;
+            }
+        }
+        
+        // Determine overall status
+        const allOnline = Object.values(results).every(status => status);
+        const anyOnline = Object.values(results).some(status => status);
+        
+        if (allOnline) {
+            statusEl.className = 'status-indicator status-online';
+            textEl.textContent = 'WebQx: All services online ✓';
+            return true;
+        } else if (anyOnline) {
+            statusEl.className = 'status-indicator status-partial';
+            const online = Object.entries(results)
+                .filter(([, status]) => status)
+                .map(([key,]) => key.toUpperCase())
+                .join(', ');
+            textEl.textContent = `WebQx: ${online} online ⚠️`;
+            btnEl.style.display = 'inline-block';
+            btnEl.textContent = 'Start Missing Services';
+            return false;
+        } else {
+            statusEl.className = 'status-indicator status-offline';
+            textEl.textContent = 'WebQx: Services offline ✗';
+            btnEl.style.display = 'inline-block';
+            btnEl.textContent = 'Start All Services';
+            return false;
+        }
+    }
+    
+    // Start backend services remotely
+    async function startBackend() {
+        const btnEl = document.getElementById('startBackend');
+        if (btnEl) {
+            btnEl.textContent = 'Starting Services...';
+            btnEl.disabled = true;
+        }
+        
+        try {
+            // Try to start services through remote trigger
+            const response = await fetch(`${PROXY_SERVER}/api/remote-start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'start_webqx_emr' })
+            });
+            
+            if (response.ok) {
+                setTimeout(checkBackendStatus, 3000);
+                return;
+            }
+        } catch (error) {
+            console.log('Remote start failed, opening EMR portal');
+        }
+        
+        // Fallback: open WebQX EMR directly
+        window.open(`${LOCAL_EMR_SERVER}/`, '_blank');
+        
+        setTimeout(checkBackendStatus, 5000);
+        
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.textContent = 'Start Services';
+        }
+    }
+    
+    // Setup module handlers for local servers
+    function setupModuleHandlers() {
+        const modules = {
+            'patient-portal': `${LOCAL_EMR_SERVER}/`,
+            'provider-portal': `${LOCAL_EMR_SERVER}/`,
+            'admin-console': `${LOCAL_EMR_SERVER}/`,
+            'telehealth': `${LOCAL_EMR_SERVER}/`,
+            'login': `${LOCAL_EMR_SERVER}/`
+        };
+        
+        // Handle placement cards
+        Object.keys(modules).forEach(module => {
+            const card = document.querySelector(`[data-module="${module}"]`);
+            if (card) {
+                card.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openModuleWithAuth(modules[module], module);
+                });
+            }
+        });
+        
+        // Handle navigation dropdown links
+        const navLinks = document.querySelectorAll('a[href*="patient-portal"], a[href*="provider"], a[href*="admin-console"], a[href*="telehealth"]');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                
+                if (href.includes('patient-portal')) {
+                    openModuleWithAuth(modules['patient-portal'], 'patient-portal');
+                } else if (href.includes('provider')) {
+                    openModuleWithAuth(modules['provider-portal'], 'provider-portal');
+                } else if (href.includes('admin-console')) {
+                    openModuleWithAuth(modules['admin-console'], 'admin-console');
+                } else if (href.includes('telehealth')) {
+                    openModuleWithAuth(modules['telehealth'], 'telehealth');
+                }
+            });
+        });
+        
+        // Handle login page link
+        const loginLinks = document.querySelectorAll('a[href*="login"]');
+        loginLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.open(modules['login'], '_blank');
+            });
+        });
+    }
+    
+    // Open module with authentication check
+    async function openModuleWithAuth(url, moduleName) {
+        try {
+            // Check if user is already authenticated
+            const authCheck = await fetch(`${LOCAL_EMR_SERVER}/api/auth/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('webqx_token') || ''}`
+                }
+            });
+            
+            if (authCheck.ok) {
+                // User is authenticated, open module directly
+                window.open(url, '_blank');
+            } else {
+                // User needs to login first
+                const loginUrl = `${LOCAL_EMR_SERVER}/login.html?redirect=${encodeURIComponent(url)}&module=${moduleName}`;
+                window.open(loginUrl, '_blank');
+            }
+        } catch (error) {
+            console.log('Authentication check failed, opening login:', error);
+            const loginUrl = `${LOCAL_EMR_SERVER}/login.html?redirect=${encodeURIComponent(url)}&module=${moduleName}`;
+            window.open(loginUrl, '_blank');
+        }
+    }
+    
+    // Add styles
+    function addStyles() {
+        if (document.getElementById('webqx-styles')) return;
+        
+        const style = document.createElement('style');
+        style.id = 'webqx-styles';
+        style.textContent = `
+            .status-indicator {
+                display: inline-block;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                margin-right: 8px;
+                animation: pulse 2s infinite;
+            }
+            .status-online { background-color: #10b981; }
+            .status-offline { background-color: #ef4444; }
+            .status-connecting { background-color: #f59e0b; }
+            .status-partial { background-color: #f97316; }
+            .status-demo { background-color: #8b5cf6; }
+            @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Initialize
+    function init() {
+        // Initialize with control panel option
+        addStyles();
+        checkBackendStatus();
+        setupModuleHandlers();
+        
+        const startBtn = document.getElementById('startBackend');
+        if (startBtn) {
+            startBtn.addEventListener('click', startBackend);
+        }
+        
+        // Add keyboard shortcut for control panel (Ctrl+Shift+C)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+                window.WebQXIntegration.createControlPanel();
+            }
+        });
+        
+        // Add control panel button to status bar
+        setTimeout(() => {
+            const statusBar = document.querySelector('.status-bar');
+            if (statusBar && !document.getElementById('control-panel-btn')) {
+                const controlBtn = document.createElement('button');
+                controlBtn.id = 'control-panel-btn';
+                controlBtn.textContent = '⚙️ Control Panel';
+                controlBtn.style.cssText = `
+                    margin-left: 1rem; 
+                    padding: 0.25rem 0.75rem; 
+                    background: #4299e1; 
+                    color: white; 
+                    border: none; 
+                    border-radius: 3px; 
+                    cursor: pointer; 
+                    font-size: 0.8rem;
+                `;
+                controlBtn.onclick = () => window.WebQXIntegration.createControlPanel();
+                statusBar.appendChild(controlBtn);
+            }
+        }, 1000);
+        
+        console.log('✅ WebQX Integration initialized');
+    }
+    
+    // Start when DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+    // Global access with enhanced functionality
+    window.WebQXIntegration = {
+        checkStatus: checkBackendStatus,
+        startBackend: startBackend,
+        proxy: PROXY_SERVER,
+        emr: LOCAL_EMR_SERVER,
+        telehealth: LOCAL_TELEHEALTH_SERVER,
+        version: '2.0.0',
+        
+        // Remote control functions
+        async startService(serviceName) {
+            try {
+                const response = await fetch(`${PROXY_SERVER}/api/system/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ services: [serviceName] })
                 });
                 
                 if (response.ok) {
-                    const userData = await response.json();
-                    this.authToken = token;
-                    this.currentUser = userData.user;
-                    this.updateUIForUser();
+                    console.log(`${serviceName} service started successfully`);
+                    setTimeout(checkBackendStatus, 2000);
+                    return true;
+                } else {
+                    console.error(`Failed to start ${serviceName} service`);
+                    return false;
                 }
             } catch (error) {
-                localStorage.removeItem('webqx_token');
+                console.error(`Error starting ${serviceName}:`, error);
+                return false;
             }
-        }
-    }
-
-    updateUIForUser() {
-        if (this.currentUser) {
-            // Update user-specific content
-            const userElements = document.querySelectorAll('[data-user-content]');
-            userElements.forEach(element => {
-                const contentType = element.dataset.userContent;
-                switch (contentType) {
-                    case 'name':
-                        element.textContent = this.currentUser.name || 'User';
-                        break;
-                    case 'role':
-                        element.textContent = this.currentUser.role || 'Patient';
-                        break;
-                }
-            });
-
-            // Show/hide modules based on user role
-            this.filterModulesByRole();
-        }
-    }
-
-    filterModulesByRole() {
-        const userRole = this.currentUser?.role || 'patient';
-        const moduleCards = document.querySelectorAll('[data-module]');
+        },
         
-        moduleCards.forEach(card => {
-            const moduleId = card.dataset.module;
-            const module = this.modules.get(moduleId);
-            
-            if (module) {
-                const hasAccess = this.checkModuleAccess(moduleId, userRole);
-                card.style.display = hasAccess ? 'block' : 'none';
-            }
-        });
-    }
-
-    checkModuleAccess(moduleId, userRole) {
-        const accessRules = {
-            'patient-portal': ['patient', 'admin'],
-            'provider-portal': ['provider', 'physician', 'nurse', 'admin'],
-            'admin-console': ['admin', 'administrator'],
-            'telehealth': ['patient', 'provider', 'physician', 'nurse', 'admin'],
-            'emr-system': ['provider', 'physician', 'nurse', 'admin']
-        };
-
-        return accessRules[moduleId]?.includes(userRole.toLowerCase()) || false;
-    }
-
-    async openModule(moduleId) {
-        const module = this.modules.get(moduleId);
-        if (!module) {
-            console.error(`Module ${moduleId} not found`);
-            return;
-        }
-
-        // Log module access
-        await this.logModuleAccess(moduleId);
-
-        // Check if user has access
-        if (this.currentUser && !this.checkModuleAccess(moduleId, this.currentUser.role)) {
-            alert('Access denied. You do not have permission to access this module.');
-            return;
-        }
-
-        // Open module
-        if (module.url.startsWith('http')) {
-            window.open(module.url, '_blank');
-        } else {
-            window.location.href = module.url;
-        }
-    }
-
-    async logModuleAccess(moduleId) {
-        try {
-            await fetch(`${this.getApiUrl()}/analytics/module-access`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': this.authToken ? `Bearer ${this.authToken}` : ''
-                },
-                body: JSON.stringify({
-                    module_id: moduleId,
-                    user_id: this.currentUser?.id,
-                    timestamp: new Date().toISOString(),
-                    source: 'github-pages'
-                })
-            });
-        } catch (error) {
-            console.warn('Could not log module access:', error);
-        }
-    }
-
-    async startBackendServices() {
-        const startButton = document.getElementById('startBackend');
-        const statusText = document.getElementById('statusText');
-        
-        if (startButton) startButton.textContent = 'Starting...';
-        if (statusText) statusText.textContent = 'WebQx Server: Starting services...';
-
-        try {
-            // Attempt to start local services
-            const response = await fetch(`${this.localApiUrl}/system/start`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ services: ['api', 'database', 'telehealth'] })
-            });
-
-            if (response.ok) {
-                if (statusText) statusText.textContent = 'WebQx Server: Services starting...';
-                
-                // Wait for services to be ready
-                setTimeout(() => {
-                    this.checkBackendStatus();
-                }, 5000);
-            } else {
-                throw new Error('Failed to start services');
-            }
-        } catch (error) {
-            if (statusText) statusText.textContent = 'WebQx Server: Failed to start';
-            if (startButton) {
-                startButton.textContent = 'Start WebQx Server';
-                startButton.style.display = 'inline-block';
-            }
-            console.error('Failed to start backend services:', error);
-        }
-    }
-
-    getApiUrl() {
-        return this.authToken ? this.localApiUrl : this.apiBaseUrl;
-    }
-
-    // Database Integration Methods
-    async queryDatabase(query, params = []) {
-        try {
-            const response = await fetch(`${this.getApiUrl()}/database/query`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': this.authToken ? `Bearer ${this.authToken}` : ''
-                },
-                body: JSON.stringify({ query, params })
-            });
-
-            if (response.ok) {
+        async getSystemStatus() {
+            try {
+                const response = await fetch(`${PROXY_SERVER}/api/system/status`);
                 return await response.json();
+            } catch (error) {
+                console.error('Failed to get system status:', error);
+                return null;
+            }
+        },
+        
+        // Create control panel
+        createControlPanel() {
+            if (document.getElementById('webqx-control-panel')) return;
+            
+            const panel = document.createElement('div');
+            panel.id = 'webqx-control-panel';
+            panel.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 15px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                z-index: 10000;
+                min-width: 300px;
+                font-family: system-ui, -apple-system, sans-serif;
+                font-size: 14px;
+            `;
+            
+            panel.innerHTML = `
+                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0; color: #333;">WebQX Control Panel</h4>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 18px; cursor: pointer;">&times;</button>
+                </div>
+                <div id="service-status"></div>
+                <div style="margin-top: 10px;">
+                    <button onclick="window.WebQXIntegration.refreshStatus()" style="padding: 5px 10px; margin-right: 5px; background: #4299e1; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Refresh Status
+                    </button>
+                    <button onclick="window.WebQXIntegration.startAllServices()" style="padding: 5px 10px; background: #48bb78; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Start All
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(panel);
+            this.refreshStatus();
+        },
+        
+        async refreshStatus() {
+            const statusDiv = document.getElementById('service-status');
+            if (!statusDiv) return;
+            
+            statusDiv.innerHTML = '<div>🔄 Checking services...</div>';
+            
+            const status = await this.getSystemStatus();
+            if (status && status.services) {
+                const html = Object.entries(status.services).map(([key, service]) => {
+                    const statusColor = service.status === 'online' ? '#48bb78' : '#ef4444';
+                    const statusIcon = service.status === 'online' ? '✓' : '✗';
+                    return `
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin: 5px 0;">
+                            <span>${service.name}</span>
+                            <span style="color: ${statusColor};">${statusIcon} ${service.status}</span>
+                        </div>
+                    `;
+                }).join('');
+                statusDiv.innerHTML = html;
             } else {
-                throw new Error(`Database query failed: ${response.status}`);
+                statusDiv.innerHTML = '<div style="color: #ef4444;">Failed to get status</div>';
             }
-        } catch (error) {
-            console.error('Database query error:', error);
-            return null;
-        }
-    }
-
-    async getPlacementCardData(cardId) {
-        const card = this.placementCards.get(cardId);
-        if (!card) return null;
-
-        try {
-            // Query database for real-time data
-            const response = await fetch(`${this.getApiUrl()}/placement-cards/${cardId}/data`, {
-                headers: {
-                    'Authorization': this.authToken ? `Bearer ${this.authToken}` : ''
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                return { ...card, data };
-            } else {
-                return card; // Return static data if API fails
+        },
+        
+        async startAllServices() {
+            const services = ['emr', 'telehealth'];
+            for (const service of services) {
+                await this.startService(service);
             }
-        } catch (error) {
-            console.warn(`Could not fetch data for card ${cardId}:`, error);
-            return card; // Return static data if API fails
+            setTimeout(() => this.refreshStatus(), 3000);
         }
-    }
-
-    async updatePlacementCard(cardId, element) {
-        const cardData = await this.getPlacementCardData(cardId);
-        if (!cardData || !element) return;
-
-        // Update card content with real-time data
-        const titleElement = element.querySelector('.card-title');
-        const dataElement = element.querySelector('.card-data');
-        const statusElement = element.querySelector('.card-status');
-
-        if (titleElement) titleElement.textContent = cardData.title;
-        if (dataElement && cardData.data) {
-            // Format data based on card type
-            let dataText = '';
-            switch (cardId) {
-                case 'patient-appointments':
-                    dataText = `${cardData.data.count} upcoming, Next: ${cardData.data.next}`;
-                    break;
-                case 'patient-records':
-                    dataText = `${cardData.data.newResults} new results, ${cardData.data.totalRecords} total`;
-                    break;
-                case 'patient-prescriptions':
-                    dataText = `${cardData.data.active} active, ${cardData.data.readyForPickup} ready`;
-                    break;
-                default:
-                    dataText = JSON.stringify(cardData.data);
-            }
-            dataElement.textContent = dataText;
-        }
-        if (statusElement) statusElement.textContent = '✓ Available';
-    }
-
-    // Public API for modules
-    getModuleAPI() {
-        return {
-            openModule: (moduleId) => this.openModule(moduleId),
-            getPlacementCardData: (cardId) => this.getPlacementCardData(cardId),
-            queryDatabase: (query, params) => this.queryDatabase(query, params),
-            getCurrentUser: () => this.currentUser,
-            isAuthenticated: () => !!this.authToken
-        };
-    }
-}
-
-// Initialize WebQX Integration System
-const webqxIntegration = new WebQXIntegration();
-
-// Expose API globally for modules
-window.webqxAPI = webqxIntegration.getModuleAPI();
-
-// Module-specific APIs
-window.moduleAPI = {
-    openAppointments: () => webqxIntegration.openModule('patient-portal'),
-    openMedicalRecords: () => webqxIntegration.openModule('patient-portal'),
-    openPrescriptions: () => webqxIntegration.openModule('patient-portal'),
-    openTelehealth: () => webqxIntegration.openModule('telehealth'),
-    openMessages: () => webqxIntegration.openModule('patient-portal'),
-    openProviderPortal: () => webqxIntegration.openModule('provider-portal'),
-    openAdminConsole: () => webqxIntegration.openModule('admin-console'),
-    openEMRSystem: () => webqxIntegration.openModule('emr-system')
-};
-
-console.log('🎯 WebQX GitHub Pages Integration loaded successfully');
+    };
+    
+})();

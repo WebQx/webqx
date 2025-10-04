@@ -14,7 +14,7 @@
  * - Message translation
  * 
  * @author WebQX Health
- * @version 1.0.0
+ * @version v0.1.0
  */
 
 const EventEmitter = require('events');
@@ -83,8 +83,69 @@ class SecureChatService extends EventEmitter {
         this.websocket = null;
         this.messageQueue = [];
         this.deliveryAcks = new Map();
+        this.environment = process.env.NODE_ENV || 'development';
+        this.activeIntervals = new Set();
+        this.activeTimeouts = new Set();
+        this.pendingKeyCleanupTimeouts = new Map();
+        this.reconnectTimeout = null;
         
         this.initializeService();
+    }
+
+    /**
+     * Register an interval for later cleanup
+     */
+    registerInterval(callback, delay) {
+        const handle = setInterval(callback, delay);
+        this.activeIntervals.add(handle);
+        return handle;
+    }
+
+    /**
+     * Register a timeout for later cleanup
+     */
+    registerTimeout(callback, delay) {
+        const handle = setTimeout(() => {
+            this.activeTimeouts.delete(handle);
+            callback();
+        }, delay);
+        this.activeTimeouts.add(handle);
+        return handle;
+    }
+
+    /**
+     * Clear timeout handle and unregister it
+     */
+    clearTimeoutHandle(handle) {
+        if (handle) {
+            clearTimeout(handle);
+            this.activeTimeouts.delete(handle);
+        }
+    }
+
+    /**
+     * Clear interval handle and unregister it
+     */
+    clearIntervalHandle(handle) {
+        if (handle) {
+            clearInterval(handle);
+            this.activeIntervals.delete(handle);
+        }
+    }
+
+    /**
+     * Clear all registered timers
+     */
+    clearAllTimers() {
+        for (const interval of this.activeIntervals) {
+            clearInterval(interval);
+        }
+        this.activeIntervals.clear();
+
+        for (const timeout of this.activeTimeouts) {
+            clearTimeout(timeout);
+        }
+        this.activeTimeouts.clear();
     }
 
     /**
@@ -160,7 +221,15 @@ class SecureChatService extends EventEmitter {
      * Schedule automatic key rotation
      */
     scheduleKeyRotation() {
-        setInterval(() => {
+        if (!this.config.encryptionEnabled) {
+            return;
+        }
+
+        if (this.environment === 'test') {
+            return;
+        }
+
+        this.registerInterval(() => {
             this.rotateEncryptionKey();
         }, this.config.keyRotationInterval);
     }
@@ -182,9 +251,17 @@ class SecureChatService extends EventEmitter {
         this.currentKeyId = newKeyId;
 
         // Keep old key for a while to decrypt old messages
-        setTimeout(() => {
+        if (this.pendingKeyCleanupTimeouts.has(oldKeyId)) {
+            this.clearTimeoutHandle(this.pendingKeyCleanupTimeouts.get(oldKeyId));
+            this.pendingKeyCleanupTimeouts.delete(oldKeyId);
+        }
+
+        const cleanupTimeout = this.registerTimeout(() => {
             this.state.encryptionKeys.delete(oldKeyId);
+            this.pendingKeyCleanupTimeouts.delete(oldKeyId);
         }, 60000); // Keep for 1 minute
+
+        this.pendingKeyCleanupTimeouts.set(oldKeyId, cleanupTimeout);
 
         // Log key rotation
         hipaaConfig.logAuditEvent('CHAT_KEY_ROTATION', {
@@ -202,7 +279,11 @@ class SecureChatService extends EventEmitter {
      */
     initializeRateLimiting() {
         // Reset rate limits periodically
-        setInterval(() => {
+        if (this.environment === 'test') {
+            return;
+        }
+
+        this.registerInterval(() => {
             this.state.rateLimits.clear();
         }, 60000); // Reset every minute
     }
@@ -880,17 +961,17 @@ class SecureChatService extends EventEmitter {
      */
     waitForConnection() {
         return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
+            const timeout = this.registerTimeout(() => {
                 reject(new Error('Connection timeout'));
             }, 10000);
 
             this.websocket.on('open', () => {
-                clearTimeout(timeout);
+                this.clearTimeoutHandle(timeout);
                 resolve();
             });
 
             this.websocket.on('error', (error) => {
-                clearTimeout(timeout);
+                this.clearTimeoutHandle(timeout);
                 reject(error);
             });
         });
@@ -903,6 +984,11 @@ class SecureChatService extends EventEmitter {
         if (this.websocket) {
             this.websocket.close();
             this.websocket = null;
+        }
+
+        if (this.reconnectTimeout) {
+            this.clearTimeoutHandle(this.reconnectTimeout);
+            this.reconnectTimeout = null;
         }
 
         this.state.connected = false;
@@ -930,9 +1016,15 @@ class SecureChatService extends EventEmitter {
         console.log(`💬 Chat WebSocket closed: ${code} - ${reason}`);
         
         // Attempt reconnection if unexpected close
-        if (code !== 1000 && code !== 1001) {
+        if (code !== 1000 && code !== 1001 && this.environment !== 'test') {
             console.log('🔄 Attempting to reconnect to chat...');
-            setTimeout(() => this.connect().catch(console.error), 5000);
+            if (this.reconnectTimeout) {
+                this.clearTimeoutHandle(this.reconnectTimeout);
+            }
+            this.reconnectTimeout = this.registerTimeout(() => {
+                this.reconnectTimeout = null;
+                this.connect().catch(console.error);
+            }, 5000);
         }
     }
 
@@ -985,6 +1077,10 @@ class SecureChatService extends EventEmitter {
         this.state.messages = [];
         this.state.encryptionKeys.clear();
         this.messageQueue = [];
+        this.deliveryAcks.clear();
+        this.clearAllTimers();
+        this.pendingKeyCleanupTimeouts.clear();
+        this.reconnectTimeout = null;
     }
 }
 

@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Redirecting to WebQx Role-based Login…</title>
-  <meta http-equiv="refresh" content="1;url=https://webqx-production.up.railway.app/" />
-  <link rel="canonical" href="https://webqx.railway.app/" />
+  <meta http-equiv="refresh" content="1;url=https://webqx.up.railway.app/" />
+  <link rel="canonical" href="https://webqx.up.railway.app/" />
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif; background:#0f172a; color:#e5e7eb; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:2rem; }
     .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:24px; max-width:740px; width:100%; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
@@ -19,9 +19,19 @@
   </style>
   <script>
     (function(){
-  var primary = 'https://webqx.railway.app/';
+  var primary = 'https://webqx.up.railway.app/';
   var fallback = 'https://webqx-production.up.railway.app/';
-      try { if (location.href !== primary) location.replace(primary); } catch (e) { location.href = fallback; }
+      try {
+        if (location.href !== primary) {
+          location.replace(primary);
+          return;
+        }
+      } catch (e) {
+        // ignore and fall through
+      }
+      if (fallback && location.href !== fallback) {
+        location.href = fallback;
+      }
     })();
   </script>
   <noscript>

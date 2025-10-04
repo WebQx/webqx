@@ -29,7 +29,7 @@ app.get('/health', (req, res) => {
         status: 'healthy',
         service: 'WebQX Local EMR Server',
         timestamp: new Date().toISOString(),
-        version: '1.0.0',
+    version: 'v0.1.0',
         uptime: process.uptime(),
         endpoints: {
             emr: 'http://localhost:3000',

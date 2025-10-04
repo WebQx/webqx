@@ -339,7 +339,7 @@ class OpenEHRService {
             meta: {
                 href: '/rest/v1/query/aql',
                 type: 'RESULTSET',
-                schema_version: '1.0.0',
+                schema_version: '0.1.0',
                 created: new Date().toISOString(),
                 generator: 'WebQX openEHR Mock Service',
                 executed_aql: query
