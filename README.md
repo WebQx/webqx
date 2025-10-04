@@ -8,24 +8,24 @@
 
 ---
 ## 🔗 Public Demo Hub
-A lightweight, read-only demonstration of live platform readiness served via GitHub Pages:
+A lightweight, read-only demonstration of live platform readiness served via GitHub Pages. Recent enhancements add meaningful interactivity even without the adapter fully deployed:
 
 | Page | URL | Purpose |
 |------|-----|---------|
 | Landing | https://webqx.github.io/EMR/ | Overview + live health & adapter status |
-| Patient Demo | https://webqx.github.io/EMR/patient.html | Adapter status + patient list fallback |
-| Provider Demo | https://webqx.github.io/EMR/provider.html | Provider-focused preview cards |
-| Metrics Snapshot | https://webqx.github.io/EMR/metrics.html | Truncated Prometheus metrics view |
+| Patient Demo | https://webqx.github.io/EMR/patient.html | Synthetic fallback patients + search/filter + stats |
+| Provider Demo | https://webqx.github.io/EMR/provider.html | Schedule mock + status panels |
+| Metrics Snapshot | https://webqx.github.io/EMR/metrics.html | Truncated metrics + parsed latency histogram |
 | System Status | https://webqx.github.io/EMR/system.html | Runtime/system snapshot (non-sensitive) |
 | Environment | https://webqx.github.io/EMR/env.html | Public-safe config & feature flags |
 | Security Headers | https://webqx.github.io/EMR/security.html | Live gateway headers + CSP notes |
 | FHIR Probe | https://webqx.github.io/EMR/fhir.html | CapabilityStatement / metadata fetch |
-| Telehealth | https://webqx.github.io/EMR/telehealth.html | WebSocket echo latency showcase |
+| Telehealth | https://webqx.github.io/EMR/telehealth.html | WebSocket echo + latency + auto‑ping |
 | Transcription | https://webqx.github.io/EMR/transcription.html | Placeholder transcript generator |
 | Rate Limit Test | https://webqx.github.io/EMR/rate-limit.html | Burst probe to visualize limiter |
 | Dependencies | https://webqx.github.io/EMR/dependencies.html | Service graph + deployment state |
 
-> NOTE: Patient list returns empty in fallback mode until the standalone adapter with real Medplum credentials is deployed.
+> Synthetic data is clearly flagged; no PHI or secrets are exposed.
 
 ---
 ## 🔄 Current Focus (v0.1.0)
@@ -33,18 +33,17 @@ Foundational production hardening completed:
 - Light EMR Adapter (Medplum + Nextcloud scaffolding) with `/emr/status`, `/emr/patients`, `/metrics`
 - Unified health schema across services
 - Structured logging (pino) + request correlation IDs
-- Prometheus metrics & latency histograms
+- Prometheus metrics & latency histograms (now parsed client-side in demo)
 - Layered rate limiting & WebSocket token guard
 - Hardened CORS, minimal CSP, reduced body limits
-- Frontend status badges surfacing live adapter state
+- Frontend status badges + interactive synthetic dataset fallback
 
 Upcoming (short-term roadmap): deeper FHIR operations, document sync, circuit breakers, authenticated patient data flows.
 
 ---
 ## ✨ Key Capabilities
-- Patient & Provider Portals (responsive + mobile nav)
-- Admin Console (role & integration visibility)
-- Telehealth WebSocket channel (secured with optional token)
+- Patient & Provider Portals (interactive demo surfaces)
+- Telehealth WebSocket channel (latency + auto‑ping demo)
 - Light EMR Adapter (extensible dependency abstraction layer)
 - Interoperability scaffolding (FHIR, HL7 bridging foundation)
 - Observability: metrics, structured logs, unified health endpoints
@@ -128,7 +127,7 @@ Planned:
 ## 📊 Observability
 Endpoints:
 - `/health` and `/emr/status` — unified JSON schema: per dependency status, latency ms, timestamp
-- `/metrics` — Prometheus exposition with HTTP latency histogram
+- `/metrics` — Prometheus exposition with HTTP latency histogram (client-side parsed in demo)
 Logging Fields (example):
 ```json
 {
