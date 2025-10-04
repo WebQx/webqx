@@ -88,8 +88,16 @@ function parseLatencyHistogram(lines){
   const histOut = sel('#histogramOut');
   if(histOut){
     // derive per-bucket increment
-    let prev=0; const rows = parsed.map(p=>{ const inc=p.count - prev; prev=p.count; return { le:p.le, inc }; });
-    histOut.textContent = JSON.stringify(rows,null,2);
+    let prev=0; const rows = parsed.map(p=>{ const inc=p.count - prev; prev=p.count; return { le:p.le, inc, total:p.count }; });
+    const maxInc = rows.reduce((m,r)=>r.inc>m?r.inc:m,0)||1;
+    // Build tiny text bars
+    const linesOut = rows.map(r=>{
+      const width = Math.max(1, Math.round((r.inc/maxInc)*24));
+      const bar = '█'.repeat(width);
+      const label = r.le==='inf'?'∞':r.le;
+      return `${label.padStart(6,' ')} | ${bar} ${r.inc}`;
+    });
+    histOut.textContent = linesOut.join('\n');
   }
 }
 
