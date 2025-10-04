@@ -1,193 +1,179 @@
 # WebQX™ Healthcare Platform
 
-> Cloud-based, FHIR-compliant, global healthcare ecosystem with OpenEMR integration
+> Production-aligned, modular healthcare and telehealth platform with FHIR-first design, secure adapter architecture, and global readiness.
 
-## 🌍 Live Demo
-**GitHub Pages:** https://webqx.github.io/webqx/  
-**OpenEMR Instance:** https://fuzzy-goldfish-7vx645x7wgvv3rjxg-8085.app.github.dev
-
----
-
-## ✨ Features
-
-### 🏥 **OpenEMR 7.0.3 Integration**
-- Fully branded WebQX EMR system
-- Complete patient management
-- Clinical workflows and documentation
-- HIPAA compliant with audit trails
-
-### 👤 **Patient Portal**
-- Secure patient access to medical records
-- Appointment scheduling and management
-- Prescription tracking and refills
-- Lab results and imaging access
-
-### 👨‍⚕️ **Provider Portal**
-- Complete clinical workflow management
-- EHR integration with OpenEMR
-- Clinical decision support tools
-- Documentation and billing integration
-
-### ⚙️ **Admin Console**
-- System administration and configuration
-- User management and role-based access
-- Integration monitoring and maintenance
-- Compliance reporting and audit logs
-
-### 🌐 **Global Telehealth**
-- 24/7 emergency consultations
-- Scheduled virtual appointments
-- Crisis intervention and support
-- Multi-language support
-- Care Navigation (D3.js/Neo4j)
-
-### Provider Panel
-- EHR Dashboard (React + GraphQL)
-- Prescription Management (RxNorm + SmartRx)
-- Secure Messaging (Matrix channels)
-- Clinical Alerts/Decision Support (OpenCDS/Drools)
-- CME Tracker (Open Badges)
-- Provider Assistant Bot (LLM + Whisper)
-- Transcription Suite (Whisper + Google Speech-to-Text)
-
-### Admin Console
-- Access Control (Keycloak/Firebase)
-- Localization (i18next + Whisper)
-- UI Theming (Tailwind/CSS-in-JS)
-- Analytics (Grafana/Metabase)
-- AI Tuning (YAML configs)
-- Integration Engine (HL7/FHIR + OHIF PACS)
-- Billing Logic (JSON rules)
-- Compliance Modules (PostgreSQL + Vault)
-
-### Telehealth
-- Video Consultations (HIPAA-compliant)
-- Real-Time Chat (encrypted)
-- Remote Monitoring (IoT)
-- Electronic Prescriptions
-- Appointment Scheduling
+**Homepage:** https://webqx.healthcare  
+**Primary Deployment (Railway):** https://webqx-production.up.railway.app  
+**GitHub Pages (Static Assets / Legacy Demo):** https://webqx.github.io/webqx/
 
 ---
+## 🔄 Current Focus (v0.1.0)
+Foundational production hardening completed:
+- Light EMR Adapter (Medplum + Nextcloud scaffolding) with `/emr/status`, `/emr/patients`, `/metrics`
+- Unified health schema across services
+- Structured logging (pino) + request correlation IDs
+- Prometheus metrics & latency histograms
+- Layered rate limiting & WebSocket token guard
+- Hardened CORS, minimal CSP, reduced body limits
+- Frontend status badges surfacing live adapter state
 
-## 🧑‍⚕️ MUP Access Program
-
-Free/sponsored access for clinics serving Medically Underserved Populations.
-
-**Eligibility:**
-- Rural/tribal health centers
-- Refugee/humanitarian clinics
-- Disability/elder care facilities
-- Low-income urban clinics
-
-📥 [Apply for Equity Access](https://webqx.healthcare/equity-access)
+Upcoming (short-term roadmap): deeper FHIR operations, document sync, circuit breakers, authenticated patient data flows.
 
 ---
+## ✨ Key Capabilities
+- Patient & Provider Portals (responsive + mobile nav)
+- Admin Console (role & integration visibility)
+- Telehealth WebSocket channel (secured with optional token)
+- Light EMR Adapter (extensible dependency abstraction layer)
+- Interoperability scaffolding (FHIR, HL7 bridging foundation)
+- Observability: metrics, structured logs, unified health endpoints
+- Security: CSP, rate limiting, audit-style request logging, tokenized WS
 
-## 🧱 Architecture Overview
-
+---
+## 🏗️ Architecture Overview
 ```plaintext
-[PWA Client] → [API Gateway] → [Microservices] → [PostgreSQL / FHIR DB]
+[Browser / Portals]
+      | (HTTPS)
+      v
+[API Proxy / Gateway]  <-- WebSocket (telehealth)
+      |        \
+      |         +--> [Light EMR Adapter] --(FHIR / WebDAV)-> Medplum / Nextcloud
+      |         +--> (Future) Other EHR adapters (OpenEMR, Epic, Cerner)
+      v
+  (Internal service endpoints / metrics / health)
 ```
-- Authentication: OAuth2/Keycloak
-- Adapter Plugins: OpenEMR, Epic, Cerner, etc.
-- API Gateway: FHIR endpoints
-- Session Control: Stateless tokens, audit trails
-- Frontend: React dashboard
-- Multilingual: i18n-ready UI
+Core Services:
+- api-proxy-server.js — security, CORS, metrics, WebSocket guard, unified health
+- light-emr-adapter — dependency abstraction & patient listing prototype
+- portals (patient, provider) — static HTML/JS with adapter status indicators
 
 ---
+## 📂 Repository Highlights
+```
+CHANGELOG.md                 Release notes
+light-emr-adapter/           Adapter microservice (Express + pino + prom-client)
+patient-portal/              Patient UI components
+portal/                      React/Vite experimental portal assets
+scripts/preflight-check.js   Environment + dependency validation
+webqx-emr-system/            Embedded EMR assets / legacy integration
+```
+Removed in 0.1.0: Large legacy demo & archival directories to reduce noise and attack surface.
 
-## 📁 Directory Structure
+---
+## 🚀 Quick Start (Local)
+```bash
+# 1. Clone
+git clone https://github.com/WebQx/EMR.git && cd EMR
 
-```plaintext
-webqx-ehr/
-├── modules/                  # Specialty modules & transcription
-├── sso/                     # SSO (OAuth2/SAML)
-├── ehr-integrations/        # EHR integrations
-├── auth/                    # Authentication & access control
-├── interoperability/        # HL7 FHIR, openEHR
-├── messaging/               # Matrix messaging
-└── docs/                    # Legal, contribution, IP
+# 2. Copy environment template
+cp .env.example .env.development
+# (Edit required Medplum / Nextcloud / adapter vars if using online mode)
+
+# 3. Run preflight validation
+node scripts/preflight-check.js --env-file .env.development
+
+# 4. Start proxy (example)
+node api-proxy-server.js
+
+# 5. Start adapter (separate terminal)
+cd light-emr-adapter && npm install && npm start
+
+# 6. Visit endpoints
+curl http://localhost:3000/health
+curl http://localhost:4001/emr/status
+curl http://localhost:4001/metrics
+```
+Optional online verification (requires publicly reachable domain & correct vars):
+```bash
+node scripts/preflight-check.js --env-file .env.production --online
 ```
 
 ---
+## 🔐 Security Hardening (Implemented)
+- Content Security Policy (strict minimal baseline)
+- Tight CORS: origin allowlist via environment
+- Layered rate limits (status vs patient vs default paths)
+- Request size limits to reduce abuse surface
+- WebSocket: token enforcement + message size cap
+- Audit-style structured logs (JSON) with requestId correlation
+- Graceful shutdown capturing SIGINT/SIGTERM
 
-## 🏥 Interoperability
-
-- Seamless EHR data exchange (OpenEMR, Epic, Cerner)
-- HL7/FHIR via Mirth Connect
-- Multilingual support
-
----
-
-## 🧬 Supported Specialties
-
-Primary Care, Radiology, Cardiology, Pediatrics, Oncology, Psychiatry, Endocrinology, Orthopedics, Neurology, Gastroenterology, Pulmonology, Dermatology, OBGYN
-
----
-
-## 🛡️ Security & Compliance
-
-- TLS encryption
-- Audit-ready backend
-- NDA & IP templates
-- BAA readiness (HIPAA)
-
-**Regulatory Coverage:**
-| Country          | Protocols                 |
-|------------------|--------------------------|
-| 🇺🇸 US            | HIPAA, HITECH            |
-| 🇪🇺 EU            | GDPR, ePrivacy           |
-| 🇨🇦 Canada        | PIPEDA, PHIPA            |
-| 🇮🇳 India         | DISHA, NDHM              |
-| 🇧🇷 Brazil        | LGPD                     |
-| 🇿🇦 South Africa  | POPIA                    |
-| 🇵🇰 Pakistan      | PHIM, HIPC               |
-| 🇦🇪 UAE           | DHA, DoH Data Law        |
-| 🇸🇦 Saudi Arabia  | NHIC, PDPL               |
+Planned:
+- JWT-based auth enforcement for adapter endpoints
+- mTLS / signed service-to-service calls (if multi-region)
+- Circuit breaker & retry policies (adapter dependencies)
 
 ---
-
-## 🧪 Lab Results Integration
-
-- HL7 v2 → FHIR R4 via Mirth Connect
-- Real-time lab results, filtering, sorting
-- Security: TLS, HIPAA, audit logging
-
----
-
-## 🩺 ChatEHR Integration
-
-- Real-time messaging, appointment sync, dashboards
-- Security: AES-256-GCM, audit logging, RBAC
-
----
-
-## 🚀 Deployment
-
-- AWS Lambda: Automated packaging, optimized dependencies
-- Railway: Zero-config deployment, health monitoring
-- Local: Mock FHIR/openEHR servers
+## 📊 Observability
+Endpoints:
+- `/health` and `/emr/status` — unified JSON schema: per dependency status, latency ms, timestamp
+- `/metrics` — Prometheus exposition with HTTP latency histogram
+Logging Fields (example):
+```json
+{
+  "time":"2025-10-04T10:21:54.123Z",
+  "level":30,
+  "requestId":"f5c7a5d9",
+  "method":"GET",
+  "path":"/emr/status",
+  "status":200,
+  "latency_ms":12
+}
+```
+Suggested dashboards: error rate, p95 latency (adapter & proxy), dependency health flaps, rate limit triggers.
 
 ---
+## 🔧 Environment Variables (Excerpt)
+| Variable | Purpose |
+|----------|---------|
+| `LIGHT_EMR_ADAPTER_ENABLED` | Toggle adapter integration in proxy layer |
+| `LIGHT_EMR_ADAPTER_PORT` | Port for adapter service (default 4001) |
+| `ALLOWED_ORIGINS` | Comma-separated CORS allowlist |
+| `MEDPLUM_API_URL` | Base URL for Medplum FHIR API (https required) |
+| `NEXTCLOUD_WEBDAV_URL` | Nextcloud WebDAV endpoint (https) |
+| `RAILWAY_PUBLIC_DOMAIN` | Public base domain for deployed environment |
+| `ADAPTER_CACHE_TTL_MS` | Milliseconds to cache patient listing |
+| `ADAPTER_LOG_LEVEL` | pino log level (info, debug, warn) |
 
-## 🤝 Contribution Guide
-
-- Fork, suggest specialty workflows
-- Sign IP Addendum/NDA before PR
-- Use feature branches, submit YAML logic + compliance notes
-
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`specialties.yaml`](./admin-console/ai-tuning/specialties.yaml)
-
----
-
-## 📜 License
-
-Apache 2.0 — Contributor IP addendums for legal clarity and scalability  
-See [`LICENSE.md`](./LICENSE.md), [`nda-template.md`](./legal/nda-template.md), [`ip-addendum.md`](./legal/ip-addendum.md)
+See `.env.example` for full list and comments.
 
 ---
+## 🧪 Health & Validation
+Preflight script checks:
+- Required env presence & format
+- HTTPS enforcement for external dependencies
+- Adapter enablement consistency
+- Optional network reachability (online mode): Medplum, Nextcloud, adapter
 
-Contact: [info@webqx.healthcare](https://github.com/webqx-health)  
-_“Care equity begins with code equity.”_
+---
+## 🛣️ Roadmap (High-Level)
+| Phase | Focus | Highlights |
+|-------|-------|-----------|
+| 1 | Foundation (DONE) | Adapter scaffold, logging, metrics, security, cleanup |
+| 2 | FHIR Depth | Authenticated Patient retrieval, error taxonomy, paging |
+| 3 | Documents Sync | Nextcloud file metadata, secure retrieval, integrity hashes |
+| 4 | Resilience | Circuit breakers, retry/backoff, dependency SLO alerts |
+| 5 | Auth Expansion | Fine-grained RBAC, audit stream shipping, JWT service mesh |
+| 6 | Scaling | Horizontal adapter pooling, cache invalidation, global POP strategy |
+
+---
+## 🤝 Contributing
+1. Fork & create feature branch
+2. Run preflight & add/update tests where applicable
+3. Follow structured commit messages (conventional commits recommended)
+4. Exclude personal PHI / sensitive data in fixtures
+
+Security reports: security@webqx.healthcare
+
+---
+## 📄 License
+Apache 2.0 — see `LICENSE.md`.
+
+---
+## 📬 Contact & Support
+- General: info@webqx.healthcare
+- Status Page (planned): https://status.webqx.healthcare
+- Equity Access Program: https://webqx.healthcare/equity-access
+
+_"Care equity begins with code equity."_
 
