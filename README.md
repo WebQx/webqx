@@ -4,7 +4,8 @@
 
 **Homepage:** https://webqx.healthcare  
 **Primary Deployment (Railway):** https://webqx-production.up.railway.app  
-**GitHub Pages (Static Assets / Demo Hub):** https://webqx.github.io/EMR/
+**GitHub Pages (Static Assets / Demo Hub):** https://webqx.github.io/EMR/  
+**Demo Script (v0.1.0):** ./DEMO_SCRIPT_v0.1.0.md
 
 ---
 ## 🔗 Public Demo Hub
