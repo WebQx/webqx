@@ -187,6 +187,27 @@ class WebQXAPIProxy {
             });
         });
 
+        // Fallback light adapter endpoints (only if real adapter not mounted upstream)
+        this.app.get('/emr/status', this.limiters.healthLimiter, (req, res) => {
+            res.json({
+                status: 'degraded',
+                adapter: 'embedded-fallback',
+                message: 'Standalone light-emr-adapter not detected; serving fallback status.',
+                timestamp: new Date().toISOString(),
+                dependencies: {
+                    medplum: { status: 'unknown' },
+                    nextcloud: { status: 'unknown' }
+                }
+            });
+        });
+        this.app.get('/emr/patients', this.limiters.healthLimiter, (req, res) => {
+            res.json({
+                patients: [],
+                fallback: true,
+                message: 'No adapter service active. Deploy light-emr-adapter for real data.'
+            });
+        });
+
         // Backwards compatibility alias (some infra tooling may call /healthz)
         this.app.get('/healthz', (req, res) => {
             res.redirect(307, '/health');
