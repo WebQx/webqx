@@ -44,7 +44,7 @@
     "verify:railway": "node scripts/railway-verify.js --api $API_BASE --emr $EMR_BASE --whisper $WHISPER_BASE --dicom $DICOMWEB_BASE --rmq $RABBITMQ_MANAGEMENT_URL",
     "test:e2e": "playwright test",
     "demo:verify": "node -e \"require('fs').accessSync('./docs/index.html'); console.log('Demo hub present.')\"",
-    "demo:open": "xdg-open https://webqx.github.io/webqx/ || open https://webqx.github.io/webqx/ || echo 'Open https://webqx.github.io/webqx/'"
+    "demo:open": "xdg-open https://webqx.github.io/EMR/ || open https://webqx.github.io/EMR/ || echo 'Open https://webqx.github.io/EMR/'"
   },
   "keywords": [
     "healthcare",

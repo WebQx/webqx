@@ -4,7 +4,7 @@
 
 **Homepage:** https://webqx.healthcare  
 **Primary Deployment (Railway):** https://webqx-production.up.railway.app  
-**GitHub Pages (Static Assets / Demo Hub):** https://webqx.github.io/webqx/
+**GitHub Pages (Static Assets / Demo Hub):** https://webqx.github.io/EMR/
 
 ---
 ## 🔗 Public Demo Hub
@@ -12,10 +12,10 @@ A lightweight, read-only demonstration of live platform readiness served via Git
 
 | Page | URL | Purpose |
 |------|-----|---------|
-| Landing | https://webqx.github.io/webqx/ | Overview + live health & adapter status |
-| Patient Demo | https://webqx.github.io/webqx/patient.html | Adapter status + patient list fallback |
-| Provider Demo | https://webqx.github.io/webqx/provider.html | Provider-focused preview cards |
-| Metrics Snapshot | https://webqx.github.io/webqx/metrics.html | Truncated Prometheus metrics view |
+| Landing | https://webqx.github.io/EMR/ | Overview + live health & adapter status |
+| Patient Demo | https://webqx.github.io/EMR/patient.html | Adapter status + patient list fallback |
+| Provider Demo | https://webqx.github.io/EMR/provider.html | Provider-focused preview cards |
+| Metrics Snapshot | https://webqx.github.io/EMR/metrics.html | Truncated Prometheus metrics view |
 
 > NOTE: Patient list returns empty in fallback mode until the standalone adapter with real Medplum credentials is deployed.
 
