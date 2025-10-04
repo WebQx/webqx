@@ -226,7 +226,10 @@ function generateSyntheticPatients(){
       gender: Math.random()>0.5?'female':'male',
       lastEncounterDaysAgo: Math.floor(Math.random()*180),
       risk: ['low','medium','high'][Math.floor(Math.random()*3)],
-      synthetic:true
+      synthetic:true,
+      // placeholders enriched later
+      conditions:[],
+      medications:[]
     });
   }
   return patients;
