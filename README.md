@@ -16,6 +16,14 @@ A lightweight, read-only demonstration of live platform readiness served via Git
 | Patient Demo | https://webqx.github.io/EMR/patient.html | Adapter status + patient list fallback |
 | Provider Demo | https://webqx.github.io/EMR/provider.html | Provider-focused preview cards |
 | Metrics Snapshot | https://webqx.github.io/EMR/metrics.html | Truncated Prometheus metrics view |
+| System Status | https://webqx.github.io/EMR/system.html | Runtime/system snapshot (non-sensitive) |
+| Environment | https://webqx.github.io/EMR/env.html | Public-safe config & feature flags |
+| Security Headers | https://webqx.github.io/EMR/security.html | Live gateway headers + CSP notes |
+| FHIR Probe | https://webqx.github.io/EMR/fhir.html | CapabilityStatement / metadata fetch |
+| Telehealth | https://webqx.github.io/EMR/telehealth.html | WebSocket echo latency showcase |
+| Transcription | https://webqx.github.io/EMR/transcription.html | Placeholder transcript generator |
+| Rate Limit Test | https://webqx.github.io/EMR/rate-limit.html | Burst probe to visualize limiter |
+| Dependencies | https://webqx.github.io/EMR/dependencies.html | Service graph + deployment state |
 
 > NOTE: Patient list returns empty in fallback mode until the standalone adapter with real Medplum credentials is deployed.
 
