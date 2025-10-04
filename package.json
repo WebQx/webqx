@@ -42,7 +42,9 @@
     "deploy:full": "npm run preflight && npm run deploy:pages && npm run deploy:quick",
     "verify:railway:dry": "node scripts/railway-verify.js --dry --api $API_BASE --emr $EMR_BASE --whisper $WHISPER_BASE --dicom $DICOMWEB_BASE --rmq $RABBITMQ_MANAGEMENT_URL",
     "verify:railway": "node scripts/railway-verify.js --api $API_BASE --emr $EMR_BASE --whisper $WHISPER_BASE --dicom $DICOMWEB_BASE --rmq $RABBITMQ_MANAGEMENT_URL",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "demo:verify": "node -e \"require('fs').accessSync('./docs/index.html'); console.log('Demo hub present.')\"",
+    "demo:open": "xdg-open https://webqx.github.io/webqx/ || open https://webqx.github.io/webqx/ || echo 'Open https://webqx.github.io/webqx/'"
   },
   "keywords": [
     "healthcare",
