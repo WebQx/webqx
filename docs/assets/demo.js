@@ -31,6 +31,8 @@ async function loadHealth(){
     out.textContent=fmt(r.data);
     const b=sel('#healthBadge'); if(b){ b.innerHTML=''; b.appendChild(badge(r.data.status|| (r.ok?'ok':'error')));}    
     const m=sel('#healthMeta'); if(m) m.textContent=r.ms+' ms • HTTP '+r.status;
+    window.__lastHealth = r.data;
+    computeHealthDiff();
   } catch(e){ out.textContent='Error: '+e.message; }
 }
 
@@ -42,6 +44,8 @@ async function loadAdapter(){
     out.textContent=fmt(r.data);
     const b=sel('#adapterBadge'); if(b){ b.innerHTML=''; let s = r.data.status || (r.ok?'ok':'error'); b.appendChild(badge(s)); }
     const m=sel('#adapterMeta'); if(m) m.textContent=r.ms+' ms • HTTP '+r.status + (r.data.adapter?' • '+r.data.adapter:'');
+    window.__lastAdapter = r.data;
+    computeHealthDiff();
   } catch(e){ out.textContent='Error: '+e.message; }
 }
 
@@ -259,3 +263,17 @@ function applyPatientFilter(){
 }
 
 export { loadHealth, loadAdapter, loadPatients, loadMetrics, loadSystemStatus, loadEnv, loadSecurityHeaders, loadFhirProbe, runRateLimitProbe, generateSyntheticPatients, filterPatients, applyPatientFilter };
+
+// --- Diff logic appended (kept out of export) ---
+function computeHealthDiff(){
+  const a = window.__lastHealth, b = window.__lastAdapter; if(!a || !b) return;
+  const diffEl = sel('#healthAdapterDiff'); if(!diffEl) return;
+  const keys = ['status','uptime','version','adapter','patients'];
+  const summary = {};
+  keys.forEach(k=>{
+    const av = a[k]; const bv = b[k];
+    if(av===undefined && bv===undefined) return;
+    summary[k] = av===bv ? { same: true, value: av ?? bv } : { same:false, health: av, adapter: bv };
+  });
+  diffEl.textContent = JSON.stringify(summary,null,2);
+}
