@@ -66,9 +66,15 @@ const isPlaceholder = v => {
 
 // Record findings
 const findings = [];
-function check(name, ok, advice) {
-  findings.push({ name, ok, advice });
-  if (ok) logSuccess(name); else logError(`${name}${advice ? ` – ${advice}` : ''}`);
+function check(name, ok, advice, { severity = 'error' } = {}) {
+  findings.push({ name, ok, advice, severity });
+  if (ok) {
+    logSuccess(name);
+  } else if (severity === 'warn') {
+    logWarn(`${name}${advice ? ` – ${advice}` : ''}`);
+  } else {
+    logError(`${name}${advice ? ` – ${advice}` : ''}`);
+  }
 }
 
 // Contract: Minimal required vars drawn from docs/railway-production-config.md
@@ -126,8 +132,8 @@ if (onlineChecks && isURL(process.env.OAUTH2_JWKS_URI)) {
 }
 
 // 4b) Provider SSO (Keycloak, Microsoft, Google, Apple)
-check('KEYCLOAK_CLIENT_ID configured', !isPlaceholder(process.env.KEYCLOAK_CLIENT_ID), 'Set KEYCLOAK_CLIENT_ID');
-check('KEYCLOAK_CLIENT_SECRET configured', !isPlaceholder(process.env.KEYCLOAK_CLIENT_SECRET), 'Set KEYCLOAK_CLIENT_SECRET');
+check('KEYCLOAK_CLIENT_ID configured', !isPlaceholder(process.env.KEYCLOAK_CLIENT_ID), 'Set KEYCLOAK_CLIENT_ID', { severity: 'warn' });
+check('KEYCLOAK_CLIENT_SECRET configured', !isPlaceholder(process.env.KEYCLOAK_CLIENT_SECRET), 'Set KEYCLOAK_CLIENT_SECRET', { severity: 'warn' });
 if (process.env.KEYCLOAK_TOKEN_URL) {
   check('KEYCLOAK_TOKEN_URL https', isURL(process.env.KEYCLOAK_TOKEN_URL) && /^https:\/\//.test(process.env.KEYCLOAK_TOKEN_URL), 'KEYCLOAK_TOKEN_URL must be https');
 }
@@ -135,14 +141,14 @@ if (process.env.KEYCLOAK_USERINFO_URL) {
   check('KEYCLOAK_USERINFO_URL https', isURL(process.env.KEYCLOAK_USERINFO_URL) && /^https:\/\//.test(process.env.KEYCLOAK_USERINFO_URL), 'KEYCLOAK_USERINFO_URL must be https');
 }
 
-check('AZURE_CLIENT_ID configured', !isPlaceholder(process.env.AZURE_CLIENT_ID), 'Set AZURE_CLIENT_ID from Entra ID app');
-check('AZURE_CLIENT_SECRET configured', !isPlaceholder(process.env.AZURE_CLIENT_SECRET), 'Set AZURE_CLIENT_SECRET from Entra ID app');
+check('AZURE_CLIENT_ID configured', !isPlaceholder(process.env.AZURE_CLIENT_ID), 'Set AZURE_CLIENT_ID from Entra ID app', { severity: 'warn' });
+check('AZURE_CLIENT_SECRET configured', !isPlaceholder(process.env.AZURE_CLIENT_SECRET), 'Set AZURE_CLIENT_SECRET from Entra ID app', { severity: 'warn' });
 
-check('GOOGLE_CLIENT_ID configured', !isPlaceholder(process.env.GOOGLE_CLIENT_ID), 'Set GOOGLE_CLIENT_ID from Google Cloud console');
-check('GOOGLE_CLIENT_SECRET configured', !isPlaceholder(process.env.GOOGLE_CLIENT_SECRET), 'Set GOOGLE_CLIENT_SECRET from Google Cloud console');
+check('GOOGLE_CLIENT_ID configured', !isPlaceholder(process.env.GOOGLE_CLIENT_ID), 'Set GOOGLE_CLIENT_ID from Google Cloud console', { severity: 'warn' });
+check('GOOGLE_CLIENT_SECRET configured', !isPlaceholder(process.env.GOOGLE_CLIENT_SECRET), 'Set GOOGLE_CLIENT_SECRET from Google Cloud console', { severity: 'warn' });
 
-check('APPLE_CLIENT_ID configured', !isPlaceholder(process.env.APPLE_CLIENT_ID), 'Set APPLE_CLIENT_ID (Services ID)');
-check('APPLE_CLIENT_SECRET configured', !isPlaceholder(process.env.APPLE_CLIENT_SECRET), 'Set APPLE_CLIENT_SECRET (JWT from Apple)');
+check('APPLE_CLIENT_ID configured', !isPlaceholder(process.env.APPLE_CLIENT_ID), 'Set APPLE_CLIENT_ID (Services ID)', { severity: 'warn' });
+check('APPLE_CLIENT_SECRET configured', !isPlaceholder(process.env.APPLE_CLIENT_SECRET), 'Set APPLE_CLIENT_SECRET (JWT from Apple)', { severity: 'warn' });
 
 // 5) OpenEMR & FHIR
 if (isTrue(process.env.USE_REMOTE_OPENEMR || 'true')) {
@@ -230,21 +236,31 @@ if (onlineChecks && process.env.RAILWAY_PUBLIC_DOMAIN) {
 async function finalize() {
   if (global.__jwksPromise) await global.__jwksPromise;
 
-  const failures = findings.filter(f => !f.ok);
+  const errors = findings.filter(f => !f.ok && f.severity !== 'warn');
+  const warnings = findings.filter(f => !f.ok && f.severity === 'warn');
   const passes = findings.filter(f => f.ok);
   console.log('\n' + C.bold + 'Preflight Summary' + C.reset);
-  console.log(`  ${C.green}${passes.length} PASS${C.reset}, ${C.red}${failures.length} FAIL${C.reset}`);
+  console.log(`  ${C.green}${passes.length} PASS${C.reset}, ${C.red}${errors.length} ERROR${C.reset}, ${C.yellow}${warnings.length} WARN${C.reset}`);
 
-  if (failures.length) {
+  if (errors.length) {
     console.log('\n' + C.red + 'Blocking issues:' + C.reset);
-    failures.forEach(f => console.log(`  - ${f.name}${f.advice ? `: ${f.advice}` : ''}`));
+    errors.forEach(f => console.log(`  - ${f.name}${f.advice ? `: ${f.advice}` : ''}`));
+    if (warnings.length) {
+      console.log('\n' + C.yellow + 'Warnings (non-blocking):' + C.reset);
+      warnings.forEach(f => console.log(`  - ${f.name}${f.advice ? `: ${f.advice}` : ''}`));
+    }
     console.log('\nTips:');
     console.log('  - Review docs/railway-production-config.md');
     console.log('  - Provide a 64-char hex HIPAA_ENCRYPTION_KEY (openssl rand -hex 32)');
     console.log('  - Ensure OAuth2 issuer/JWKS are correct and reachable');
     process.exitCode = 1;
   } else {
-    console.log('\n' + C.green + 'All critical production checks passed.' + C.reset);
+    if (warnings.length) {
+      console.log('\n' + C.yellow + 'Passed with warnings (optional providers not configured).' + C.reset);
+      warnings.forEach(f => console.log(`  - ${f.name}`));
+    } else {
+      console.log('\n' + C.green + 'All critical production checks passed.' + C.reset);
+    }
   }
 }
 
