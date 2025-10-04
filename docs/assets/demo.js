@@ -59,8 +59,10 @@ async function loadPatients(){
       patients = window.__syntheticPatients || generateSyntheticPatients();
       window.__syntheticPatients = patients;
       out.textContent = fmt({ source:'synthetic', patients });
+      const badgeEl=sel('#patientSourceBadge'); if(badgeEl){ badgeEl.className='pill warn'; badgeEl.textContent='synthetic'; }
     } else {
       out.textContent = fmt({ source:'api', patients });
+      const badgeEl=sel('#patientSourceBadge'); if(badgeEl){ badgeEl.className='pill ok'; badgeEl.textContent='api'; }
     }
     const count = patients.length;
     const m=sel('#patientsMeta'); if(m) m.textContent=r.ms+' ms • HTTP '+r.status+' • '+count+' patients';
