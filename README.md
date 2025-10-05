@@ -28,6 +28,46 @@ A lightweight, read-only demonstration of live platform readiness served via Git
 
 > Synthetic data is clearly flagged; no PHI or secrets are exposed.
 
+### 🔄 Demo Freshness & Build Hash
+Each standalone demo page footer appends:
+```
+WebQX Standalone <Page> Demo • v0.1.0 • No PHI • commit <hash> • 2025-10-05 00:00:00 UTC
+```
+Use this to confirm you are not viewing a stale cached version. The hash corresponds to `git rev-parse --short HEAD` at build injection time.
+
+Quick verification:
+```bash
+curl -s https://webqx.github.io/EMR/patient.html | grep -o 'commit [0-9a-f]\{7\}'
+```
+If empty: page not updated / caching issue.
+
+### 🏷 Patient Data Source Badge
+The Patient Demo header includes a pill badge:
+- `api` (green): Live adapter returned a patient list.
+- `synthetic` (amber): Fallback synthetic dataset generated (no PHI). 
+
+### 🧪 Adapter / Health Diff (Logic Present)
+The script now computes a JSON diff of select keys between `/health` and `/emr/status`. To visualize, add this to any demo page:
+```html
+<pre id="healthAdapterDiff"></pre>
+```
+
+### 📊 Latency Histogram Snapshot
+Metrics page parses `webqx_proxy_http_request_duration_seconds_bucket` into a textual bar chart. To embed elsewhere:
+```html
+<pre id="histogramOut"></pre>
+```
+Call `loadMetrics()` after DOM load.
+
+### ✅ Pages Configuration
+Configure GitHub Pages: Settings → Pages → Source: `main` + Folder: `/docs`.
+Files under `docs/` then appear at `https://webqx.github.io/EMR/<file>.html`.
+
+Verification after enablement:
+```bash
+curl -I https://webqx.github.io/EMR/patient.html | grep '200'
+```
+
 ---
 ## 🔄 Current Focus (v0.1.0)
 Foundational production hardening completed:
