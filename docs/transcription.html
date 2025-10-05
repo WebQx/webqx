@@ -1,1 +1,57 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><title>Transcription Demo • Standalone</title><meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="stylesheet" href="./assets/demo.css"/><style>body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:#0d1318;color:#d2dae2}header{padding:.85rem 1.1rem;border-bottom:1px solid #1f2a33;background:#121a21;display:flex;align-items:center;justify-content:space-between}header h1{margin:0;font-size:.95rem;letter-spacing:.5px;font-weight:600;color:#eef4f9}.user-tag{font-size:.55rem;background:#1d2b36;border:1px solid #263542;padding:.3rem .5rem;border-radius:6px;color:#9fb3c5}.logout-btn{background:#2b3b46;border:1px solid #374a56;color:#fff;font-size:.6rem;padding:.45rem .6rem;border-radius:6px;cursor:pointer;margin-left:.6rem}.mini-foot{font-size:.55rem;text-align:center;padding:1.2rem 0;color:#55616d}</style></head><body><script type="module">import { ensureSession,logoutInline } from './inline-auth.js';ensureSession(sess=>{document.getElementById('userTag').textContent=sess.user+' • '+sess.role;});window.logoutInline=logoutInline;</script><header><h1>Transcription Demo <span style="opacity:.55">v0.1.0</span></h1><div><span class="user-tag" id="userTag">(auth required)</span><button class="logout-btn" onclick="logoutInline()">Logout</button></div></header><div class="container"><div class="card"><h2>Simulated Transcript</h2><div class="links"><button id="btnTranscript">Generate Transcript</button><span id="transcriptMeta" class="pill">idle</span></div><pre id="transcriptOut">Click Generate Transcript</pre></div><div class="card" style="margin-top:1.2rem"><h2>Module Notes</h2><p style="font-size:.65rem;line-height:1rem">Placeholder: demonstrates structure for future real-time or batch audio transcription (timestamps, speaker tags, entity extraction) with strict de-identification. Future integration: Whisper or alternate inference backend with streaming partials and redact pipeline.</p></div></div><footer class="mini-foot">WebQX Standalone Transcription Demo • v0.1.0 • No PHI</footer><script src="./assets/demo.js" type="module"></script><script type="module">import { injectBuildFooter } from './assets/build-info.js'; injectBuildFooter();</script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Transcription Demo • Standalone</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="./assets/demo.css" />
+    <style>
+      body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto; background:#0d1318; color:#d2dae2; }
+      header { padding:.85rem 1.1rem; border-bottom:1px solid #1f2a33; background:#121a21; display:flex; align-items:center; justify-content:space-between; }
+      header h1 { margin:0; font-size:.95rem; letter-spacing:.5px; font-weight:600; color:#eef4f9; }
+      .user-tag { font-size:.55rem; background:#1d2b36; border:1px solid #263542; padding:.3rem .5rem; border-radius:6px; color:#9fb3c5; }
+      .logout-btn { background:#2b3b46; border:1px solid #374a56; color:#fff; font-size:.6rem; padding:.45rem .6rem; border-radius:6px; cursor:pointer; margin-left:.6rem; }
+      .mini-foot { font-size:.55rem; text-align:center; padding:1.2rem 0 2.2rem; color:#55616d; }
+      .mini-foot nav { display:flex; flex-wrap:wrap; gap:.8rem; justify-content:center; margin-bottom:.55rem; }
+      .mini-foot a { color:#7ea6ff; text-decoration:none; font-weight:500; }
+      .mini-foot a:hover { color:#bcd6ff; text-decoration:underline; }
+      #transcriptOut { min-height:120px; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import { ensureSession, logoutInline } from './inline-auth.js';
+      ensureSession(sess => { document.getElementById('userTag').textContent = sess.user + ' • ' + sess.role; });
+      window.logoutInline = logoutInline;
+    </script>
+    <header>
+      <h1>Transcription Demo <span style="opacity:.55">v0.1.0</span></h1>
+      <div>
+        <span class="user-tag" id="userTag">(auth required)</span>
+        <button class="logout-btn" onclick="logoutInline()">Logout</button>
+      </div>
+    </header>
+    <div class="container">
+      <div class="card">
+        <h2>Simulated Transcript</h2>
+        <div class="links"><button id="btnTranscript">Generate Transcript</button><span id="transcriptMeta" class="pill">idle</span></div>
+        <pre id="transcriptOut">Click Generate Transcript</pre>
+      </div>
+      <div class="card" style="margin-top:1.2rem">
+        <h2>Module Notes</h2>
+        <p style="font-size:.65rem;line-height:1rem">Placeholder: demonstrates structure for future real-time or batch audio transcription (timestamps, speaker tags, entity extraction) with strict de-identification. Future integration: Whisper or alternate inference backend with streaming partials and redact pipeline.</p>
+      </div>
+    </div>
+    <footer class="mini-foot" id="pageFooter">
+      <nav>
+        <a href="./patient.html">Patients</a>
+        <a href="./provider.html">Providers</a>
+        <a href="./telehealth.html">Telehealth</a>
+        <a href="./transcription.html">Transcription</a>
+      </nav>
+      <div>WebQX Demo Suite • Standalone Modules • No PHI</div>
+    </footer>
+    <script src="./assets/demo.js" type="module"></script>
+    <script type="module">import { injectBuildFooter } from './assets/build-info.js'; injectBuildFooter();</script>
+  </body>
+</html><!doctype html><html lang="en"><head><meta charset="utf-8"/><title>Transcription Demo • Standalone</title><meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="stylesheet" href="./assets/demo.css"/><style>body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:#0d1318;color:#d2dae2}header{padding:.85rem 1.1rem;border-bottom:1px solid #1f2a33;background:#121a21;display:flex;align-items:center;justify-content:space-between}header h1{margin:0;font-size:.95rem;letter-spacing:.5px;font-weight:600;color:#eef4f9}.user-tag{font-size:.55rem;background:#1d2b36;border:1px solid #263542;padding:.3rem .5rem;border-radius:6px;color:#9fb3c5}.logout-btn{background:#2b3b46;border:1px solid #374a56;color:#fff;font-size:.6rem;padding:.45rem .6rem;border-radius:6px;cursor:pointer;margin-left:.6rem}.mini-foot{font-size:.55rem;text-align:center;padding:1.2rem 0;color:#55616d}</style></head><body><script type="module">import { ensureSession,logoutInline } from './inline-auth.js';ensureSession(sess=>{document.getElementById('userTag').textContent=sess.user+' • '+sess.role;});window.logoutInline=logoutInline;</script><header><h1>Transcription Demo <span style="opacity:.55">v0.1.0</span></h1><div><span class="user-tag" id="userTag">(auth required)</span><button class="logout-btn" onclick="logoutInline()">Logout</button></div></header><div class="container"><div class="card"><h2>Simulated Transcript</h2><div class="links"><button id="btnTranscript">Generate Transcript</button><span id="transcriptMeta" class="pill">idle</span></div><pre id="transcriptOut">Click Generate Transcript</pre></div><div class="card" style="margin-top:1.2rem"><h2>Module Notes</h2><p style="font-size:.65rem;line-height:1rem">Placeholder: demonstrates structure for future real-time or batch audio transcription (timestamps, speaker tags, entity extraction) with strict de-identification. Future integration: Whisper or alternate inference backend with streaming partials and redact pipeline.</p></div></div><footer class="mini-foot">WebQX Standalone Transcription Demo • v0.1.0 • No PHI</footer><script src="./assets/demo.js" type="module"></script><script type="module">import { injectBuildFooter } from './assets/build-info.js'; injectBuildFooter();</script></body></html>
