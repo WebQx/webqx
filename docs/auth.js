@@ -16,12 +16,17 @@ export function loginDemo(username, password) {
   const match = DEMO_USERS.find(u => u.user.toLowerCase() === username.toLowerCase() && u.pass === password);
   if (!match) return null;
   const session = { user: match.user, role: match.role, ts: Date.now() };
-  localStorage.setItem('webqx_demo_session', JSON.stringify(session));
+  const sessionStr = JSON.stringify(session);
+  localStorage.setItem('webqx_demo_session', sessionStr);
+  localStorage.setItem('inline_demo_session', sessionStr);
   return session;
 }
 
 export function currentSession() {
-  try { return JSON.parse(localStorage.getItem('webqx_demo_session')||'null'); } catch { return null; }
+  try { 
+    const sess = localStorage.getItem('webqx_demo_session') || localStorage.getItem('inline_demo_session');
+    return JSON.parse(sess||'null'); 
+  } catch { return null; }
 }
 
 export function logout() {
