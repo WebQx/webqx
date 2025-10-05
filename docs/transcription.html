@@ -15,7 +15,15 @@
       .mini-foot nav { display:flex; flex-wrap:wrap; gap:.8rem; justify-content:center; margin-bottom:.55rem; }
       .mini-foot a { color:#7ea6ff; text-decoration:none; font-weight:500; }
       .mini-foot a:hover { color:#bcd6ff; text-decoration:underline; }
-      #transcriptOut { min-height:120px; }
+      #transcriptOut { min-height:140px; font-size:.7rem; line-height:1rem; }
+      #partialOut { min-height:50px; font-size:.65rem; line-height:.9rem; opacity:.85; }
+      .controls { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.4rem; }
+      .controls button, .controls select { font-size:.6rem; background:#20313d; color:#e6eef4; border:1px solid #31424d; padding:.45rem .6rem; border-radius:6px; cursor:pointer; }
+      .controls button:disabled { opacity:.45; cursor:not-allowed; }
+      .status-bar { display:flex; flex-wrap:wrap; gap:.5rem; font-size:.55rem; margin-top:.5rem; }
+      .tiny-label { font-size:.55rem; opacity:.65; margin-top:.5rem; }
+      textarea.notePad { width:100%; min-height:80px; background:#0f161c; border:1px solid #1e2a33; color:#d8e0e7; padding:.55rem .6rem; font-family:ui-monospace,monospace; font-size:.65rem; border-radius:6px; }
+      .split-grid { display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); margin-top:1.1rem; }
     </style>
   </head>
   <body>
@@ -32,27 +40,99 @@
       </div>
     </header>
     <div class="container">
-      <div class="card">
-        <h2>Simulated Transcript</h2>
-        <div class="links"><button id="btnTranscript">Generate Transcript</button><span id="transcriptMeta" class="pill">idle</span></div>
-        <pre id="transcriptOut">Click Generate Transcript</pre>
+      <div class="card" style="margin-bottom:1.1rem">
+        <h2>Interactive Transcription</h2>
+        <div class="controls">
+          <button id="btnStartMic">Start Mic</button>
+          <button id="btnStopMic" disabled>Stop Mic</button>
+          <button id="btnSimulate">Simulate Stream</button>
+          <button id="btnStopSim" disabled>Stop Sim</button>
+          <button id="btnGenerate">Batch Sample</button>
+          <button id="btnClear">Clear</button>
+          <select id="modelSelect">
+            <option value="tiny">tiny (demo)</option>
+            <option value="base" selected>base</option>
+            <option value="clinical">clinical</option>
+          </select>
+        </div>
+        <div class="status-bar">
+          <span id="recStatus" class="pill">mic: idle</span>
+          <span id="simStatus" class="pill">sim: idle</span>
+          <span id="wordsStat" class="pill">words: 0</span>
+          <span id="modelStat" class="pill">model: base</span>
+          <span id="durStat" class="pill">dur: 0s</span>
+        </div>
+        <div class="tiny-label">Partial (streaming)</div>
+        <pre id="partialOut">(none)</pre>
+        <div class="tiny-label">Final Transcript</div>
+        <pre id="transcriptOut">Use Start Mic or Simulate Stream.</pre>
+        <div class="tiny-label">Analyst Notes (editable)</div>
+        <textarea class="notePad" id="notePad" placeholder="Add quick notes, corrections, tags..."></textarea>
       </div>
-      <div class="card" style="margin-top:1.2rem">
-        <h2>Module Notes</h2>
-        <p style="font-size:.65rem;line-height:1rem">Placeholder: demonstrates structure for future real-time or batch audio transcription (timestamps, speaker tags, entity extraction) with strict de-identification. Future integration: Whisper or alternate inference backend with streaming partials and redact pipeline.</p>
+      <div class="split-grid">
+        <div class="card">
+          <h2>How It Works</h2>
+          <p style="font-size:.62rem;line-height:1rem">This page simulates two flows: (a) Microphone capture with local buffering (no upload) just to show timing; (b) Synthetic streaming transcript using a word emitter. Real systems would push audio chunks to a transcription service (e.g. Whisper / custom). Partial hypotheses arrive first, then final segments with timestamps.</p>
+          <ul style="font-size:.6rem;line-height:.95rem;margin-top:.5rem">
+            <li>MediaRecorder accumulates durations.</li>
+            <li>Emitter simulates partial + final words.</li>
+            <li>Word count + duration metrics update live.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Security & PHI</h2>
+          <p style="font-size:.62rem;line-height:1rem">Demo intentionally keeps audio local (not transmitted). Streaming simulation contains only synthetic safe text. Production: apply de-identification, secure transport (TLS), access tokens, audit logs, optional on-device models.</p>
+        </div>
       </div>
     </div>
     <footer class="mini-foot" id="pageFooter">
       <nav>
-        <a href="./patient.html">Patients</a>
-        <a href="./provider.html">Providers</a>
+        <a href="./patient-portal.html">Patient Portal</a>
+        <a href="./provider-panel.html">Provider Panel</a>
+        <a href="./admin-console.html">Admin Console</a>
+        <a href="./hub.html">Technical Hub</a>
         <a href="./telehealth.html">Telehealth</a>
-        <a href="./transcription.html">Transcription</a>
       </nav>
-      <div>WebQX Demo Suite • Standalone Modules • No PHI</div>
+      <div>WebQX Demo Suite • Streaming Transcript Interactive • No PHI</div>
     </footer>
     <script src="./assets/demo.js" type="module"></script>
-  <script src="./assets/demo-mode.js" type="module"></script>
+    <script src="./assets/demo-mode.js" type="module"></script>
     <script type="module">import { injectBuildFooter } from './assets/build-info.js'; injectBuildFooter();</script>
+    <script type="module">import { simulateStreaming, wordCount } from './assets/stream-utils.js';
+      let mediaStream=null; let recorder=null; let chunks=[]; let startedAt=0; let durTimer=null; let simCtrl=null; let accumFinal=''; let partial='';
+      const btnStartMic= document.getElementById('btnStartMic');
+      const btnStopMic= document.getElementById('btnStopMic');
+      const btnSimulate= document.getElementById('btnSimulate');
+      const btnStopSim= document.getElementById('btnStopSim');
+      const btnGenerate= document.getElementById('btnGenerate');
+      const btnClear= document.getElementById('btnClear');
+      const modelSelect= document.getElementById('modelSelect');
+      const recStatus= document.getElementById('recStatus');
+      const simStatus= document.getElementById('simStatus');
+      const wordsStat= document.getElementById('wordsStat');
+      const modelStat= document.getElementById('modelStat');
+      const durStat= document.getElementById('durStat');
+      const partialOut= document.getElementById('partialOut');
+      const transcriptOut= document.getElementById('transcriptOut');
+      const notePad= document.getElementById('notePad');
+      function setRecStatus(s){ recStatus.textContent='mic: '+s; }
+      function setSimStatus(s){ simStatus.textContent='sim: '+s; }
+      function updWords(){ wordsStat.textContent='words: '+wordCount(accumFinal); }
+      function updDur(){ if(!startedAt){ durStat.textContent='dur: 0s'; return;} const s=Math.floor((Date.now()-startedAt)/1000); durStat.textContent='dur: '+s+'s'; }
+      modelSelect.onchange=()=>{ modelStat.textContent='model: '+modelSelect.value; };
+      btnStartMic.onclick= async ()=>{
+        try { mediaStream = await navigator.mediaDevices.getUserMedia({audio:true}); recorder = new MediaRecorder(mediaStream); chunks=[]; startedAt=Date.now(); setRecStatus('recording'); btnStartMic.disabled=true; btnStopMic.disabled=false; recorder.ondataavailable=e=>{ if(e.data && e.data.size>0) chunks.push(e.data); }; recorder.onstop=()=>{ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }; recorder.start(1500); durTimer=setInterval(updDur,1000); }
+        catch(err){ setRecStatus('denied'); }
+      };
+      btnStopMic.onclick=()=>{ if(recorder && recorder.state!=='inactive'){ recorder.stop(); } recorder=null; btnStartMic.disabled=false; btnStopMic.disabled=true; clearInterval(durTimer); updDur(); setRecStatus('stopped'); };
+      btnSimulate.onclick=()=>{ if(simCtrl) return; accumFinal=''; partial=''; transcriptOut.textContent='(awaiting final segments)'; partialOut.textContent='(streaming...)'; updWords(); setSimStatus('streaming'); btnSimulate.disabled=true; btnStopSim.disabled=false; simCtrl = simulateStreaming({ onPartial(p){ partial=p; partialOut.textContent=p; }, onFinal(seg){ accumFinal += (accumFinal? ' ':'') + seg; transcriptOut.textContent=accumFinal; partialOut.textContent='(awaiting next...)'; updWords(); }, onDone(){ setSimStatus('done'); btnSimulate.disabled=false; btnStopSim.disabled=true; simCtrl=null; partialOut.textContent='(complete)'; } }); };
+      btnStopSim.onclick=()=>{ if(simCtrl){ simCtrl.stop(); simCtrl=null; } setSimStatus('stopped'); btnSimulate.disabled=false; btnStopSim.disabled=true; };
+      btnGenerate.onclick=()=>{ // quick batch sample
+        const sample = 'Patient reports moderate headache improving after hydration. Denies vision changes. Plan: continue fluids, reassess in two hours.';
+        accumFinal = sample; transcriptOut.textContent=sample; partialOut.textContent='(batch complete)'; updWords(); setSimStatus('batch'); };
+      btnClear.onclick=()=>{ accumFinal=''; partial=''; transcriptOut.textContent='(cleared)'; partialOut.textContent='(none)'; updWords(); notePad.value=''; };
+      // Fallback if no media
+      if(!('mediaDevices' in navigator)) { setRecStatus('unsupported'); btnStartMic.disabled=true; }
+    </script>
   </body>
 </html>

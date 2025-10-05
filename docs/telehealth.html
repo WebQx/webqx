@@ -15,8 +15,11 @@
       .mini-foot nav { display:flex; flex-wrap:wrap; gap:.8rem; justify-content:center; margin-bottom:.55rem; }
       .mini-foot a { color:#7ea6ff; text-decoration:none; font-weight:500; }
       .mini-foot a:hover { color:#bcd6ff; text-decoration:underline; }
-      #wsLog { font-size:.7rem; max-height:260px; overflow:auto; margin-top:.6rem; background:#101317; border:1px solid #1e252d; padding:.6rem .7rem; border-radius:8px; }
-      #wsInput { flex:1; min-width:120px; padding:.4rem .5rem; border:1px solid #2c3745; border-radius:6px; background:#101317; color:#cfd7df; }
+      #wsLog { font-size:.7rem; max-height:180px; overflow:auto; margin-top:.6rem; background:#101317; border:1px solid #1e252d; padding:.6rem .7rem; border-radius:8px; }
+      #wsInput { flex:1; min-width:160px; padding:.4rem .5rem; border:1px solid #2c3745; border-radius:6px; background:#101317; color:#cfd7df; }
+      .media-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.6rem;margin-top:.65rem}
+      video{background:#11161c;border:1px solid #1e252d;border-radius:8px;width:100%;max-height:160px;object-fit:cover}
+      .sectionTitle{font-size:.65rem;letter-spacing:.5px;text-transform:uppercase;opacity:.7;margin:.4rem 0 .2rem}
     </style>
   </head>
   <body>
@@ -34,45 +37,91 @@
     </header>
     <div class="container">
       <div class="grid cols-3">
-        <div class="card">
-          <h2>Connection <span id="wsStatus" class="badge warn">pending</span></h2>
-          <div class="links" style="gap:.4rem">
-            <input id="wsInput" placeholder="message" />
+        <div class="card" style="grid-column:1/span 2;display:flex;flex-direction:column;gap:.6rem">
+          <h2>Session Interaction <span id="wsStatus" class="badge warn">pending</span></h2>
+          <div class="links" style="gap:.4rem;flex-wrap:wrap">
+            <input id="wsInput" placeholder="chat message or 'ping'" />
             <button id="wsSend">Send</button>
+            <button id="btnStartMedia" class="mini">Start Media</button>
+            <button id="btnStopMedia" class="mini" disabled>Stop Media</button>
+            <button id="btnStartLoop" class="mini" disabled>Start Loopback</button>
+            <button id="btnStopLoop" class="mini" disabled>Stop Loopback</button>
+            <button id="btnClearChat" class="mini" style="margin-left:auto">Clear</button>
           </div>
-          <div style="margin-top:.5rem;display:flex;align-items:center;gap:.6rem;font-size:.75rem">
+          <div style="display:flex;align-items:center;gap:.6rem;font-size:.65rem;flex-wrap:wrap">
             <label style="display:flex;align-items:center;gap:.25rem"><input type="checkbox" id="autoPing" /> auto‑ping</label>
             <span id="latencyStat" class="pill">latency: n/a</span>
+            <span id="connState" class="pill">rtc: idle</span>
+            <span id="bitrateStat" class="pill">bitrate: n/a</span>
           </div>
-          <div id="wsLog"></div>
+          <div class="sectionTitle">Chat & Events</div>
+            <div id="wsLog"></div>
+          <div class="sectionTitle">Media Preview</div>
+          <div class="media-grid">
+            <div>
+              <div style="font-size:.55rem;opacity:.7;margin-bottom:.25rem">Local</div>
+              <video id="localVideo" playsinline muted></video>
+            </div>
+            <div>
+              <div style="font-size:.55rem;opacity:.7;margin-bottom:.25rem">Loopback Remote</div>
+              <video id="remoteVideo" playsinline></video>
+            </div>
+          </div>
+          <div id="mediaNote" style="font-size:.55rem;opacity:.7;margin-top:.4rem">Media not started.</div>
         </div>
         <div class="card">
           <h2>How It Works</h2>
-          <p>Opens a WebSocket to the gateway <code>/api/telehealth/ws</code> path and echoes messages. Measures round‑trip latency for pings (text frames).</p>
-          <ul>
-            <li>Auto‑ping sends "ping" every 3s</li>
-            <li>Latency = send→echo delta</li>
-            <li>Future: presence &amp; signaling</li>
+          <p style="font-size:.62rem;line-height:1rem">WebSocket echo + simulated single‑party WebRTC loopback (two peer connections wired locally). Demonstrates messaging + latency + basic media pipeline without a signaling server.</p>
+          <ul style="font-size:.6rem;line-height:.95rem">
+            <li>Start Media → getUserMedia()</li>
+            <li>Start Loopback → local tracks piped to remote</li>
+            <li>Bitrate sampled via getStats()</li>
           </ul>
         </div>
         <div class="card">
           <h2>Security Notes</h2>
-          <p>Gateway applies optional token validation + message size caps. Pair with OIDC &amp; rate limiting in production.</p>
+          <p style="font-size:.62rem;line-height:1rem">Demo only. No PHI, no external signaling. Production would enforce auth, TURN servers, E2E encryption policies, bandwidth adaptation.</p>
         </div>
       </div>
     </div>
     <footer class="mini-foot" id="pageFooter">
       <nav>
-        <a href="./patient.html">Patients</a>
-        <a href="./provider.html">Providers</a>
-        <a href="./telehealth.html">Telehealth</a>
+        <a href="./patient-portal.html">Patient Portal</a>
+        <a href="./provider-panel.html">Provider Panel</a>
+        <a href="./admin-console.html">Admin Console</a>
+        <a href="./hub.html">Technical Hub</a>
         <a href="./transcription.html">Transcription</a>
       </nav>
-      <div>WebQX Demo Suite • Standalone Modules • No PHI</div>
+      <div>WebQX Demo Suite • Telehealth Interactive • No PHI</div>
     </footer>
     <script src="./assets/demo.js" type="module"></script>
-  <script src="./assets/demo-mode.js" type="module"></script>
-    <script type="module">import { enhanceWebSocketDemo } from './assets/ws-enhance.js'; enhanceWebSocketDemo();</script>
+    <script src="./assets/demo-mode.js" type="module"></script>
+    <script type="module">import { enhanceWebSocketDemo } from './assets/ws-enhance.js';
+      import { createLoopback, collectBitrate } from './assets/webrtc-utils.js';
+      enhanceWebSocketDemo();
+      const btnStartMedia=document.getElementById('btnStartMedia');
+      const btnStopMedia=document.getElementById('btnStopMedia');
+      const btnStartLoop=document.getElementById('btnStartLoop');
+      const btnStopLoop=document.getElementById('btnStopLoop');
+      const btnClearChat=document.getElementById('btnClearChat');
+      const localVideo=document.getElementById('localVideo');
+      const remoteVideo=document.getElementById('remoteVideo');
+      const mediaNote=document.getElementById('mediaNote');
+      const connState=document.getElementById('connState');
+      const bitrateStat=document.getElementById('bitrateStat');
+      const log=document.getElementById('wsLog');
+      let stream=null; let loop=null; let bitrateKindSeen={};
+      function setNote(msg){ mediaNote.textContent=msg; }
+      btnStartMedia.onclick=async()=>{
+        try { stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true}); localVideo.srcObject=stream; await localVideo.play(); btnStartMedia.disabled=true; btnStopMedia.disabled=false; btnStartLoop.disabled=false; setNote('Media stream active. You can start loopback.'); }
+        catch(e){ setNote('Failed to get media: '+(e.name||e.message)); }
+      };
+      btnStopMedia.onclick=()=>{ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } localVideo.srcObject=null; remoteVideo.srcObject=null; if(loop){ loop.close(); loop=null; } btnStartMedia.disabled=false; btnStopMedia.disabled=true; btnStartLoop.disabled=true; btnStopLoop.disabled=true; setNote('Media stopped.'); connState.textContent='rtc: idle'; bitrateStat.textContent='bitrate: n/a'; };
+      btnStartLoop.onclick=async()=>{ if(!stream) return; btnStartLoop.disabled=true; btnStopLoop.disabled=false; setNote('Establishing loopback peer connection...'); loop = await createLoopback(stream, (remote)=>{ remoteVideo.srcObject=remote; remoteVideo.play().catch(()=>{}); }, (st)=>{ connState.textContent=`rtc: ${st.pc1}/${st.ice1}`; }); collectBitrate(loop.pc1, info=>{ bitrateKindSeen[info.kind]=info.bitrate; const parts=Object.entries(bitrateKindSeen).map(([k,v])=>`${k}:${v}bps`); bitrateStat.textContent='bitrate '+parts.join(' '); }); setNote('Loopback active. Local tracks mirrored to remote element.'); };
+      btnStopLoop.onclick=()=>{ if(loop){ loop.close(); loop=null; } remoteVideo.srcObject=null; btnStartLoop.disabled=false; btnStopLoop.disabled=true; connState.textContent='rtc: stopped'; setNote('Loopback stopped.'); bitrateStat.textContent='bitrate: n/a'; };
+      btnClearChat.onclick=()=>{ log.innerHTML=''; };
+      if(!('mediaDevices' in navigator)) setNote('Media APIs not supported in this browser.');
+    </script>
     <script type="module">import { injectBuildFooter } from './assets/build-info.js'; injectBuildFooter();</script>
   </body>
 </html>
