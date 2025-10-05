@@ -15,21 +15,33 @@ const SAMPLE_SENTENCES=[
   'Follow up in one week if symptoms persist'
 ];
 
-export function simulateStreaming(emitter, opts={}){
-  const delayBase = opts.delayBase||600;
+export function simulateStreaming(opts={}){
+  const { onPartial, onFinal, onDone, delayBase=600 } = opts;
   let i=0; let active=true;
   function push(){
     if(!active) return;
-    const raw = SAMPLE_SENTENCES[i % SAMPLE_SENTENCES.length];
+    if(i >= SAMPLE_SENTENCES.length) {
+      if(onDone) onDone();
+      return;
+    }
+    const raw = SAMPLE_SENTENCES[i];
     let partial='';
     const words = raw.split(' ');
     words.forEach((w,idx)=>{
-      setTimeout(()=>{ if(!active) return; partial += (partial?' ':'')+w; emitter.emit('partial', {text:partial, final:false}); if(idx===words.length-1){ emitter.emit('final',{text:raw, final:true}); } }, idx*120);
+      setTimeout(()=>{ 
+        if(!active) return; 
+        partial += (partial?' ':'')+w; 
+        if(onPartial) onPartial(partial); 
+        if(idx===words.length-1){ 
+          if(onFinal) onFinal(raw); 
+        } 
+      }, idx*120);
     });
-    i++; setTimeout(push, delayBase + Math.random()*500);
+    i++; 
+    setTimeout(push, delayBase + Math.random()*500);
   }
   push();
-  return { stop:()=>{ active=false; } };
+  return { stop:()=>{ active=false; if(onDone) onDone(); } };
 }
 
 export function wordCount(text){ return (text.trim().match(/\S+/g)||[]).length; }
