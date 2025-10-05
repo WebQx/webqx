@@ -24,8 +24,19 @@
   </style>
   <script type="module">
     import { ensureSessionRole, logoutInline } from './inline-auth.js';
-    ensureSessionRole('admin', sess => { document.getElementById('userTag').textContent = sess.user + ' • ' + sess.role; });
+    import { portalSnapshot, summarizeHealth, patientCount } from './assets/portal-data.js';
+    ensureSessionRole('admin', async sess => { document.getElementById('userTag').textContent = sess.user + ' • ' + sess.role; await loadLivePills(); });
     window.logoutInline = logoutInline;
+    async function loadLivePills(){
+      const row=document.getElementById('livePills');
+      if(!row) return;
+      row.textContent='Loading…';
+      const snap=await portalSnapshot();
+      const gw=summarizeHealth(snap.health);
+      const adp=summarizeHealth(snap.adapter);
+      const pc=patientCount(snap.patients);
+      row.innerHTML=`<span class="status-pill">Gateway: ${gw}</span><span class="status-pill">Adapter: ${adp}</span><span class="status-pill">Patients: ${pc}</span>`;
+    }
   </script>
 </head>
 <body>
@@ -38,6 +49,7 @@
     <div class="panel">
       <h2>Overview</h2>
       <p style="font-size:.62rem;line-height:1rem;max-width:720px">This lightweight admin entry page limits exposure of deep technical artifacts while still demonstrating high‑level operational readiness. Use the links below to explore integration test scaffolding, synthetic user management concepts, and telehealth / EMR interaction surfaces. No real PHI or production credentials are present.</p>
+      <div id="livePills" style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.6rem;font-size:.55rem"></div>
     </div>
     <div class="panel">
       <h2>Primary Areas</h2>

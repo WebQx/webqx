@@ -27,7 +27,8 @@
   </style>
   <script type="module">
     import { ensureSessionRole, logoutInline } from './inline-auth.js';
-    ensureSessionRole(['provider','admin'], sess => { document.getElementById('userTag').textContent = sess.user + ' • ' + sess.role; initPanel(); });
+  import { portalSnapshot, summarizeHealth, patientCount } from './assets/portal-data.js';
+  ensureSessionRole(['provider','admin'], async sess => { document.getElementById('userTag').textContent = sess.user + ' • ' + sess.role; initPanel(); await loadLiveBar(); });
     window.logoutInline = logoutInline;
 
     function initPanel(){
@@ -35,6 +36,16 @@
       synthTodayPatients();
       synthTasks();
       renderGreeting();
+    }
+    async function loadLiveBar(){
+      const bar=document.getElementById('liveBarProv');
+      bar.textContent='Loading system snapshot…';
+      const snap=await portalSnapshot();
+      const gw=summarizeHealth(snap.health);
+      const adp=summarizeHealth(snap.adapter);
+      const pc=patientCount(snap.patients);
+      bar.innerHTML=`Gateway <span class="pill">${gw}</span> • Adapter <span class="pill">${adp}</span> • Patients <span class="pill">${pc}</span> <button id="refreshProv" class="pill" style="margin-left:.4rem" title="Refresh">↻</button>`;
+      document.getElementById('refreshProv').onclick=loadLiveBar;
     }
     function renderGreeting(){
       const g=document.getElementById('greeting');
@@ -72,6 +83,7 @@
     <div class="banner">
       <div id="greeting" style="font-weight:600;margin-bottom:.35rem">Welcome</div>
       Focused clinical view: schedule occupancy, active patients, quick tasks. Synthetic data only.
+      <div id="liveBarProv" style="margin-top:.55rem;font-size:.55rem;opacity:.85"></div>
     </div>
     <div class="panel">
       <h2>Schedule</h2>

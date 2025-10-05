@@ -27,7 +27,12 @@
   </style>
   <script type="module">
     import { ensureSessionRole, logoutInline } from './inline-auth.js';
-    ensureSessionRole('patient', sess => { document.getElementById('userTag').textContent = sess.user + ' • ' + sess.role; initPortal(); });
+    import { portalSnapshot, summarizeHealth, patientCount } from './assets/portal-data.js';
+    ensureSessionRole('patient', async sess => { 
+      document.getElementById('userTag').textContent = sess.user + ' • ' + sess.role; 
+      initPortal(); 
+      await loadLiveBar();
+    });
     window.logoutInline = logoutInline;
 
     function initPortal(){
@@ -35,6 +40,16 @@
       synthMeds();
       synthLabs();
       renderWelcome();
+    }
+    async function loadLiveBar(){
+      const bar=document.getElementById('liveBar');
+      bar.textContent='Loading live system snapshot…';
+      const snap=await portalSnapshot();
+      const gw=summarizeHealth(snap.health);
+      const adp=summarizeHealth(snap.adapter);
+      const pc=patientCount(snap.patients);
+      bar.innerHTML=`Gateway: <span class="pill" style="background:#1d2b36">${gw}</span> Adapter: <span class="pill" style="background:#2a2236">${adp}</span> Patients: <span class="pill" style="background:#26361d">${pc}</span> <button id="refreshSnap" style="margin-left:.6rem" class="pill" title="Refresh" >↻</button>`;
+      document.getElementById('refreshSnap').onclick=loadLiveBar;
     }
     function synthAppointments(){
       const root=document.getElementById('appointments');
@@ -73,6 +88,7 @@
     <div class="banner">
       <div id="welcomeMsg" style="font-weight:600;margin-bottom:.35rem">Welcome</div>
       This patient-friendly view shows a simplified summary. No real PHI—synthetic sample data only.
+      <div id="liveBar" style="margin-top:.55rem;font-size:.55rem;opacity:.85"></div>
     </div>
     <div class="panel">
       <h2>Upcoming Appointments</h2>
