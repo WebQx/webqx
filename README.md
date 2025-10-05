@@ -26,6 +26,24 @@ A lightweight, read-only demonstration of live platform readiness served via Git
 | Rate Limit Test | https://webqx.github.io/EMR/rate-limit.html | Burst probe to visualize limiter |
 | Dependencies | https://webqx.github.io/EMR/dependencies.html | Service graph + deployment state |
 
+### 🧪 Role-Focused Experience Pages (New)
+Lightweight, role-aligned demo surfaces with simplified, non-technical views (all synthetic data; client-side role guard only):
+
+| Page | URL | Demo Roles | Summary |
+|------|-----|-----------|---------|
+| Patient Portal | https://webqx.github.io/EMR/patient-portal.html | patient | Appointments, medications, labs snapshot (synthetic) |
+| Provider Panel | https://webqx.github.io/EMR/provider-panel.html | provider / admin | Schedule density, today’s patients, task queue (synthetic) |
+| Admin Console Entry | https://webqx.github.io/EMR/admin-console.html | admin | Launch point linking to integration test harness & system surfaces |
+
+Demo Credentials (client-side only — no backend auth):
+```
+patient: demo@patient.com / patient123
+provider: doctor@webqx.com / provider123
+alt provider: physician@webqx.com / demo123
+admin: admin@webqx.com / admin123
+```
+These pages hide deep technical JSON, metrics, and diff panels by default; a Technical Details toggle remains on original raw demo pages for engineering validation.
+
 > Synthetic data is clearly flagged; no PHI or secrets are exposed.
 
 ### 🔄 Demo Freshness & Build Hash

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Patient Portal • WebQX Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="./assets/demo.css" />
+  <style>
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto; background:#0d1216; color:#e3edf5; }
+    header { padding:.85rem 1.1rem; border-bottom:1px solid #1f2a33; background:#121a21; display:flex; align-items:center; justify-content:space-between; }
+    h1 { margin:0; font-size:1rem; letter-spacing:.5px; font-weight:600; }
+    .user-tag { font-size:.6rem; background:#1d2b36; border:1px solid #263542; padding:.35rem .55rem; border-radius:6px; color:#9fb3c5; }
+    .logout-btn { background:#2b3b46; border:1px solid #374a56; color:#fff; font-size:.6rem; padding:.45rem .6rem; border-radius:6px; cursor:pointer; margin-left:.6rem; }
+    main { padding:1.1rem; display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+    .panel { background:#121a21; border:1px solid #1f2a33; border-radius:10px; padding:1rem 1rem 1.15rem; display:flex; flex-direction:column; gap:.6rem; }
+    .panel h2 { font-size:.8rem; margin:0; letter-spacing:.5px; }
+    .empty { opacity:.55; font-size:.6rem; }
+    .pill { font-size:.55rem; padding:.25rem .5rem; border-radius:14px; background:#1d2b36; border:1px solid #263542; }
+    footer { text-align:center; margin:2.2rem 0 2.8rem; font-size:.55rem; color:#56626d; }
+    .quick-actions button { background:#1e2d38; border:1px solid #2a3a46; color:#cfe2f2; font-size:.6rem; padding:.45rem .6rem; border-radius:6px; cursor:pointer; }
+    .quick-actions button:hover { background:#274050; }
+    .appt-item { font-size:.6rem; padding:.4rem .5rem; background:#16242e; border:1px solid #20323e; border-radius:6px; margin-bottom:.35rem; }
+    .lab-item { font-size:.6rem; padding:.4rem .5rem; background:#221b33; border:1px solid #34264b; border-radius:6px; margin-bottom:.35rem; }
+    .rx-item { font-size:.6rem; padding:.4rem .5rem; background:#2a1f24; border:1px solid #3d2b32; border-radius:6px; margin-bottom:.35rem; }
+    .banner { grid-column:1/-1; background:#16242e; border:1px solid #233747; padding:.9rem 1rem; border-radius:14px; font-size:.65rem; line-height:1.05rem; }
+    .section-actions { display:flex; gap:.4rem; flex-wrap:wrap; }
+  </style>
+  <script type="module">
+    import { ensureSessionRole, logoutInline } from './inline-auth.js';
+    ensureSessionRole('patient', sess => { document.getElementById('userTag').textContent = sess.user + ' • ' + sess.role; initPortal(); });
+    window.logoutInline = logoutInline;
+
+    function initPortal(){
+      synthAppointments();
+      synthMeds();
+      synthLabs();
+      renderWelcome();
+    }
+    function synthAppointments(){
+      const root=document.getElementById('appointments');
+      const now=new Date();
+      const appts=[1,7,14].map(days=>{ const d=new Date(now.getTime()+days*86400000); return { id:'APT'+days, date:d.toISOString().slice(0,10), type:['Follow-up','Consult','Wellness'][days%3], location:['Virtual','Clinic A','Clinic B'][days%3] }; });
+      root.innerHTML = appts.map(a=>`<div class="appt-item"><strong>${a.date}</strong> • ${a.type} <span class="pill" style="margin-left:.4rem">${a.location}</span></div>`).join('');
+    }
+    function synthMeds(){
+      const root=document.getElementById('meds');
+      const meds=[{n:'Atorvastatin',dose:'20mg nightly'},{n:'Metformin',dose:'500mg BID'},{n:'Lisinopril',dose:'10mg daily'}];
+      root.innerHTML=meds.map(m=>`<div class="rx-item"><strong>${m.n}</strong><div style="opacity:.65">${m.dose}</div></div>`).join('');
+    }
+    function synthLabs(){
+      const root=document.getElementById('labs');
+      const labs=[{n:'HbA1c',v:'6.8%',f:'4.0–5.6%'},{n:'LDL Chol',v:'92 mg/dL',f:'<100 mg/dL'},{n:'eGFR',v:'88 mL/min',f:'>60'}];
+      root.innerHTML=labs.map(l=>`<div class="lab-item"><strong>${l.n}</strong>: ${l.v} <span style="opacity:.55">(ref ${l.f})</span></div>`).join('');
+    }
+    function renderWelcome(){
+      const w=document.getElementById('welcomeMsg');
+      const hours=new Date().getHours();
+      const part=hours<12?'morning':hours<18?'afternoon':'evening';
+      w.textContent = 'Good '+part+' — here is a quick snapshot of your care.';
+    }
+    window.requestRefill=()=>alert('Refill request submitted (demo)');
+    window.startVisit=()=>alert('Starting virtual visit lobby (demo)');
+    window.downloadSummary=()=>alert('Generating visit summary PDF (demo)');
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Patient Portal <span style="opacity:.55">demo</span></h1>
+    <div><span class="user-tag" id="userTag">(auth)</span><button class="logout-btn" onclick="logoutInline()">Logout</button></div>
+  </header>
+  <main>
+    <div class="banner">
+      <div id="welcomeMsg" style="font-weight:600;margin-bottom:.35rem">Welcome</div>
+      This patient-friendly view shows a simplified summary. No real PHI—synthetic sample data only.
+    </div>
+    <div class="panel">
+      <h2>Upcoming Appointments</h2>
+      <div id="appointments" class="empty">Loading...</div>
+      <div class="section-actions">
+        <button onclick="startVisit()">Start Virtual Visit</button>
+        <button onclick="requestRefill()">Request Refill</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Medications</h2>
+      <div id="meds" class="empty">Loading...</div>
+      <div class="section-actions">
+        <button onclick="requestRefill()">Refill Selected</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Recent Labs</h2>
+      <div id="labs" class="empty">Loading...</div>
+      <div class="section-actions">
+        <button onclick="downloadSummary()">Download Summary</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Health Tips (Planned)</h2>
+      <div style="font-size:.6rem;opacity:.7">Personalized coaching, preventive reminders, care gaps.</div>
+    </div>
+    <div class="panel">
+      <h2>Messages (Planned)</h2>
+      <div style="font-size:.6rem;opacity:.7">Secure asynchronous messaging with care team.</div>
+    </div>
+  </main>
+  <footer>WebQX Patient Portal Demo • No PHI • v0.1.0</footer>
+  <script type="module">import { injectBuildFooter } from './assets/build-info.js'; injectBuildFooter();</script>
+</body>
+</html>

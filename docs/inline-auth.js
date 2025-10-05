@@ -9,8 +9,9 @@ const INLINE_DEMO_USERS=[
 function getSess(){try{return JSON.parse(localStorage.getItem('inline_demo_session')||'null');}catch{return null;}}
 function setSess(s){localStorage.setItem('inline_demo_session',JSON.stringify(s));}
 export function logoutInline(){localStorage.removeItem('inline_demo_session');location.reload();}
-export function ensureSession(onReady){const s=getSess();if(s){onReady(s);return;}renderLogin(onReady);} 
-function renderLogin(onReady){const wrap=document.createElement('div');wrap.innerHTML=`<div style="position:fixed;inset:0;background:#0b1116;display:flex;align-items:center;justify-content:center;font-family:system-ui,z-end:9999">
+export function ensureSession(onReady){const s=getSess();if(s){onReady(s);return;}if(document.getElementById('inlineAuthOverlay')){return;}renderLogin(onReady);} 
+export function ensureSessionRole(roles,onReady){roles=Array.isArray(roles)?roles:[roles];ensureSession(sess=>{if(!roles.includes(sess.role)){alert('Access restricted to: '+roles.join(', '));logoutInline();return;}onReady(sess);});}
+function renderLogin(onReady){if(document.getElementById('inlineAuthOverlay')) return;const wrap=document.createElement('div');wrap.id='inlineAuthOverlay';wrap.innerHTML=`<div style="position:fixed;inset:0;background:#0b1116;display:flex;align-items:center;justify-content:center;font-family:system-ui;z-index:9999">
   <div style="background:#121b23;border:1px solid #1f2c37;padding:1.8rem 2rem;border-radius:14px;color:#d4dde5;width:100%;max-width:420px;box-shadow:0 10px 40px -8px #000;font-size:14px;">
     <h1 style="margin:0 0 .25rem;font-size:1.2rem;letter-spacing:.5px;color:#eef5fa">WebQX Demo Login</h1>
     <p style="margin:0 0 1rem;font-size:.65rem;letter-spacing:.6px;text-transform:uppercase;color:#7d8d99">Standalone Page Access</p>

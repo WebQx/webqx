@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Console • WebQX Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="./assets/demo.css" />
+  <style>
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto; background:#0d1419; color:#e3edf5; }
+    header { padding:.85rem 1.1rem; border-bottom:1px solid #1f2d36; background:#121b23; display:flex; align-items:center; justify-content:space-between; }
+    h1 { margin:0; font-size:1rem; letter-spacing:.5px; font-weight:600; }
+    .user-tag { font-size:.6rem; background:#1d2b36; border:1px solid #263542; padding:.35rem .55rem; border-radius:6px; color:#9fb3c5; }
+    .logout-btn { background:#2b3b46; border:1px solid #374a56; color:#fff; font-size:.6rem; padding:.45rem .6rem; border-radius:6px; cursor:pointer; margin-left:.6rem; }
+    main { padding:1.2rem; max-width:960px; margin:0 auto; }
+    .panel { background:#121b23; border:1px solid #1f2d36; border-radius:12px; padding:1rem 1.1rem 1.25rem; margin-bottom:1rem; }
+    .panel h2 { margin:0 0 .6rem; font-size:.8rem; letter-spacing:.5px; }
+    .grid { display:grid; gap:.8rem; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+    .card { background:#16222b; border:1px solid #233442; border-radius:10px; padding:.75rem .8rem 1rem; font-size:.6rem; line-height:.95rem; display:flex; flex-direction:column; gap:.45rem; }
+    a.btn-link { background:#253541; border:1px solid #2f4756; color:#cfe2f2; padding:.5rem .65rem; font-size:.6rem; text-decoration:none; border-radius:6px; display:inline-block; }
+    a.btn-link:hover { background:#2f4756; }
+    .status-pill { font-size:.55rem; background:#143226; border:1px solid #1d4a36; padding:.25rem .5rem; border-radius:14px; color:#8ddfb4; }
+    .warn { background:#332614; border-color:#4a3a1d; color:#f7d797; }
+    footer { text-align:center; margin:2.2rem 0 2.8rem; font-size:.55rem; color:#56626d; }
+  </style>
+  <script type="module">
+    import { ensureSessionRole, logoutInline } from './inline-auth.js';
+    ensureSessionRole('admin', sess => { document.getElementById('userTag').textContent = sess.user + ' • ' + sess.role; });
+    window.logoutInline = logoutInline;
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Admin Console <span style="opacity:.55">demo</span></h1>
+    <div><span class="user-tag" id="userTag">(auth)</span><button class="logout-btn" onclick="logoutInline()">Logout</button></div>
+  </header>
+  <main>
+    <div class="panel">
+      <h2>Overview</h2>
+      <p style="font-size:.62rem;line-height:1rem;max-width:720px">This lightweight admin entry page limits exposure of deep technical artifacts while still demonstrating high‑level operational readiness. Use the links below to explore integration test scaffolding, synthetic user management concepts, and telehealth / EMR interaction surfaces. No real PHI or production credentials are present.</p>
+    </div>
+    <div class="panel">
+      <h2>Primary Areas</h2>
+      <div class="grid">
+        <div class="card">
+          <div style="font-weight:600;font-size:.7rem">Integration & Test Harness</div>
+          <div>Scripted mock pass/fail sequences to illustrate full‑stack readiness narrative.</div>
+          <a class="btn-link" href="./admin-console/index.html">Open Full Admin Console</a>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;font-size:.7rem">Patient Portal (Demo)</div>
+          <div>Patient‑friendly snapshot of appointments, meds, labs.</div>
+          <a class="btn-link" href="./patient-portal.html">View Patient Portal</a>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;font-size:.7rem">Provider Panel (Demo)</div>
+          <div>Schedule density, active patients, quick tasks preview.</div>
+          <a class="btn-link" href="./provider-panel.html">View Provider Panel</a>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;font-size:.7rem">Telehealth WebSocket</div>
+          <div>Latency + echo channel illustrating real‑time layer.</div>
+          <a class="btn-link" href="./telehealth.html">Open Telehealth Demo</a>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;font-size:.7rem">Transcription Placeholder</div>
+          <div>Simulated transcript & future streaming reference.</div>
+          <a class="btn-link" href="./transcription.html">Open Transcription Demo</a>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;font-size:.7rem">System Status Surfaces</div>
+          <div>Environment, metrics & diff pages (technical view).</div>
+          <a class="btn-link" href="./index.html">Demo Hub Root</a>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Runtime & Safety</h2>
+      <div class="grid">
+        <div class="card">
+          <div style="font-weight:600;font-size:.7rem">Data Safety</div>
+          <div>All datasets synthetic. No PHI. Local storage session only.</div>
+          <div class="status-pill">safe</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;font-size:.7rem">Access Model</div>
+          <div>Role demo via client guard (patient / provider / admin).</div>
+          <div class="status-pill">client‑side</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;font-size:.7rem">Security Hardening</div>
+          <div>Rate limiting, CSP, WS size caps in proxy layer.</div>
+          <div class="status-pill warn">illustrative</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;font-size:.7rem">Observability</div>
+          <div>Prom metrics + diff + histogram toggle (tech mode).</div>
+          <div class="status-pill">enabled</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Planned Enhancements</h2>
+      <ul style="margin:0;padding-left:1rem;font-size:.6rem;line-height:.95rem;opacity:.85">
+        <li>Real auth broker (OIDC) with role‑scoped API calls</li>
+        <li>Streaming transcription & encounter co‑pilot</li>
+        <li>FHIR bundle retrieval + document viewer</li>
+        <li>Task orchestration & escalation SLA timers</li>
+        <li>Predictive risk & proactive outreach queue</li>
+      </ul>
+    </div>
+  </main>
+  <footer>WebQX Admin Console Entry • No PHI • v0.1.0</footer>
+  <script type="module">import { injectBuildFooter } from './assets/build-info.js'; injectBuildFooter();</script>
+</body>
+</html>
