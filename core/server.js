@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 // Import secure authentication routes
-const authRoutes = require('./auth/routes/auth.js');
+const authRoutes = require('../auth/routes/auth.js');
 
 // FHIR imports
 const patientRoutes = require('./fhir/routes/patient');
@@ -50,11 +50,11 @@ const openEHRCompositionRoutes = require('./openehr/routes/composition');
 const openEHRQueryRoutes = require('./openehr/routes/query');
 
 // Patient Portal Authentication imports
-const patientPortalAuthRoutes = require('./patient-portal/auth/authRoutes');
+const patientPortalAuthRoutes = require('../patient-portal/auth/authRoutes');
 
 // Provider Portal Authentication imports
-const providerAuthRoutes = require('./auth/providers/routes');
-const providerSSORoutes = require('./auth/providers/sso-routes');
+const providerAuthRoutes = require('../auth/providers/routes');
+const providerSSORoutes = require('../auth/providers/sso-routes');
 
 // Ottehr Integration imports (removed)
 
