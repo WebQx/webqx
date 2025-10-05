@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><title>WebQX v0.1.0 Demo Hub</title><meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="stylesheet" href="./assets/demo.css"/><style>.preview{font-size:.6rem;max-height:90px;overflow:auto}.overlay-backdrop{position:fixed;inset:0;background:rgba(15,19,25,.82);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding:4rem 1.2rem;z-index:999}.overlay{background:#181b21;border:1px solid #2a3038;max-width:860px;width:100%;border-radius:14px;box-shadow:0 10px 40px -8px #000;padding:1.1rem 1.2rem;display:flex;flex-direction:column;max-height:80vh}.overlay header{display:flex;align-items:center;justify-content:space-between;margin:0 0 .75rem;padding:0;border:none;background:transparent}.overlay h3{margin:0;font-size:1rem;color:#9bb4d1;text-transform:uppercase;letter-spacing:.6px}.close-btn{background:#2d3a46;border:1px solid #3a4b59;border-radius:6px;color:#d6e2ef;font-size:.65rem;padding:.4rem .65rem;cursor:pointer}.close-btn:hover{background:#3a4956}pre.full{flex:1 1 auto;font-size:.7rem;max-height:100%;margin:0}</style></head><body><header><h1>WebQX Demo Hub <span class="badge ok">v0.1.0</span></h1><nav class="links"></nav></header><div class="container"><div class="grid cols-3" id="cardGrid"><div class="card" data-detail="health"><h2>Gateway Health <span id="healthBadge" class="badge">...</span></h2><div class="links"><button id="btnHealth">Refresh</button><button class="mini expand" data-open="health">Open</button><span id="healthMeta" class="pill">waiting</span></div><pre id="healthOut" class="preview">(loading)</pre></div><div class="card" data-detail="adapter"><h2>Adapter Status <span id="adapterBadge" class="badge">...</span></h2><div class="links"><button id="btnAdapter">Refresh</button><button class="mini expand" data-open="adapter">Open</button><span id="adapterMeta" class="pill">waiting</span></div><pre id="adapterOut" class="preview">(loading)</pre></div><div class="card" data-detail="patients"><h2>Patients (Fallback) <span class="badge warn">demo</span></h2><div class="links"><button id="btnPatients">Query</button><button class="mini expand" data-open="patients">Open</button><span id="patientsMeta" class="pill">idle</span></div><pre id="patientsOut" class="preview">Click Query</pre></div><div class="card"><h2>System</h2><p>Status & runtime details surfaced from /api/system/status (non-sensitive).</p><p><a class="pill" href="system.html">Open →</a></p></div><div class="card"><h2>Environment</h2><p>Public-safe feature + region flags (no secrets).</p><p><a class="pill" href="env.html">Open →</a></p></div><div class="card"><h2>Security</h2><p>Live header snapshot & CSP overview.</p><p><a class="pill" href="security.html">Open →</a></p></div><div class="card"><h2>FHIR Probe</h2><p>CapabilityStatement / metadata fetch with fallback.</p><p><a class="pill" href="fhir.html">Open →</a></p></div><div class="card"><h2>Telehealth</h2><p>WebSocket echo round‑trip latency showcase.</p><p><a class="pill" href="telehealth.html">Open →</a></p></div><div class="card"><h2>Transcription</h2><p>Placeholder generator for future Whisper integration.</p><p><a class="pill" href="transcription.html">Open →</a></p></div><div class="card"><h2>Rate Limit</h2><p>Burst probe of /health to visualize limiter impact.</p><p><a class="pill" href="rate-limit.html">Open →</a></p></div><div class="card"><h2>Dependencies</h2><p>Graph + planned enhancements of service stack.</p><p><a class="pill" href="dependencies.html">Open →</a></p></div></div><div class="card" style="margin-top:1.25rem"><h2>About This Demo</h2><p>This GitHub Pages space surfaces live data from the Railway deployment at <code>webqx-production.up.railway.app</code>. The light EMR adapter may be running standalone or served via proxy fallback.</p><ul><li><strong>Health</strong>: Gateway /health unified schema.</li><li><strong>Adapter</strong>: /emr/status (fallback returns degraded).</li><li><strong>Patients</strong>: Real patients if adapter active; mock fallback otherwise.</li><li><strong>Modules</strong>: Additional cards exercise headers, env, FHIR, WebSocket, rate limiting, and future transcription.</li><li><strong>Zero PHI</strong>: All content intentionally sanitized / synthetic.</li></ul><p>Source: <a href="https://github.com/WebQx/EMR" target="_blank">GitHub Repository</a></p></div></div><div class="overlay-backdrop" id="overlay"><div class="overlay" role="dialog" aria-modal="true"><header><h3 id="ovTitle">Detail</h3><button class="close-btn" id="ovClose">Close</button></header><pre id="ovBody" class="full">(empty)</pre></div></div><footer>WebQX Healthcare Platform • v0.1.0 • “Care equity begins with code equity.”</footer><script src="./assets/nav.js"></script><script src="./assets/demo.js" type="module"></script><script type="module">// Overlay logic
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><title>WebQX v0.1.0 Demo Hub</title><meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="stylesheet" href="./assets/demo.css"/><style>.preview{font-size:.6rem;max-height:90px;overflow:auto}.overlay-backdrop{position:fixed;inset:0;background:rgba(15,19,25,.82);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding:4rem 1.2rem;z-index:999}.overlay{background:#181b21;border:1px solid #2a3038;max-width:860px;width:100%;border-radius:14px;box-shadow:0 10px 40px -8px #000;padding:1.1rem 1.2rem;display:flex;flex-direction:column;max-height:80vh}.overlay header{display:flex;align-items:center;justify-content:space-between;margin:0 0 .75rem;padding:0;border:none;background:transparent}.overlay h3{margin:0;font-size:1rem;color:#9bb4d1;text-transform:uppercase;letter-spacing:.6px}.close-btn{background:#2d3a46;border:1px solid #3a4b59;border-radius:6px;color:#d6e2ef;font-size:.65rem;padding:.4rem .65rem;cursor:pointer}.close-btn:hover{background:#3a4956}pre.full{flex:1 1 auto;font-size:.7rem;max-height:100%;margin:0}.skip-link{position:absolute;top:-40px;left:0;background:#0d9488;color:#fff;padding:.5rem 1rem;z-index:1000;text-decoration:none;font-size:.75rem}.skip-link:focus{top:0}.demo-nav{position:sticky;top:0;background:#181b21;border-bottom:1px solid #262a31;padding:.75rem 1.25rem;z-index:100;display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}.demo-nav-brand{font-size:.85rem;font-weight:600;color:#9bb4d1;margin-right:auto}.demo-nav-filters{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}.demo-nav-filter{background:#253043;color:#c4d4e5;border:1px solid #334255;border-radius:6px;padding:.45rem .75rem;font-size:.7rem;font-weight:500;cursor:pointer;transition:all .2s}.demo-nav-filter:hover{background:#2d3b50}.demo-nav-filter.active{background:#0d9488;color:#fff;border-color:#0d9488}.demo-nav-cta{background:#0d9488;color:#fff;border:1px solid #0d9488;border-radius:6px;padding:.45rem .85rem;font-size:.7rem;font-weight:600;cursor:pointer;margin-left:.5rem}.demo-nav-cta:hover{background:#0c8379}.demo-nav-toggle{display:none;background:#253043;color:#c4d4e5;border:1px solid #334255;border-radius:6px;padding:.45rem .75rem;font-size:.7rem;cursor:pointer;margin-left:auto}.card[data-role-hidden="true"]{display:none}@media(max-width:768px){.demo-nav-filters{display:none;width:100%;flex-direction:column}.demo-nav-filters.mobile-open{display:flex}.demo-nav-toggle{display:block}}</style></head><body><a href="#cardGrid" class="skip-link">Skip to Cards</a><nav class="demo-nav"><div class="demo-nav-brand">WebQX Demo Hub V0.1.0</div><button class="demo-nav-toggle" id="navToggle">☰ Menu</button><div class="demo-nav-filters" id="navFilters"><button class="demo-nav-filter active" data-role="all">All</button><button class="demo-nav-filter" data-role="patient">Patient</button><button class="demo-nav-filter" data-role="provider">Provider</button><button class="demo-nav-filter" data-role="admin">Admin</button><button class="demo-nav-filter" data-role="telehealth">Telehealth</button><button class="demo-nav-filter" data-role="messaging">Messaging</button><button class="demo-nav-filter" data-role="insights">Insights</button></div><button class="demo-nav-cta" id="ctaBtn">Request Production Access</button></nav><header><h1>WebQX Demo Hub <span class="badge ok">v0.1.0</span></h1><nav class="links"></nav></header><div class="container"><div class="grid cols-3" id="cardGrid"><div class="card" data-detail="health" data-roles="admin,provider,insights" data-card-id="gateway-health"><h2>Gateway Health <span id="healthBadge" class="badge">...</span></h2><div class="links"><button id="btnHealth">Refresh</button><button class="mini expand" data-open="health">Open</button><span id="healthMeta" class="pill">waiting</span></div><pre id="healthOut" class="preview">(loading)</pre></div><div class="card" data-detail="adapter" data-roles="admin,provider,insights" data-card-id="adapter-status"><h2>Adapter Status <span id="adapterBadge" class="badge">...</span></h2><div class="links"><button id="btnAdapter">Refresh</button><button class="mini expand" data-open="adapter">Open</button><span id="adapterMeta" class="pill">waiting</span></div><pre id="adapterOut" class="preview">(loading)</pre></div><div class="card" data-detail="patients" data-roles="patient,provider,admin" data-card-id="patient-appointments"><h2>Patients (Fallback) <span class="badge warn">demo</span></h2><div class="links"><button id="btnPatients">Query</button><button class="mini expand" data-open="patients">Open</button><span id="patientsMeta" class="pill">idle</span></div><pre id="patientsOut" class="preview">Click Query</pre></div><div class="card" data-roles="admin,insights" data-card-id="system-status"><h2>System</h2><p>Status & runtime details surfaced from /api/system/status (non-sensitive).</p><p><a class="pill" href="system.html">Open →</a></p></div><div class="card" data-roles="admin,insights" data-card-id="environment"><h2>Environment</h2><p>Public-safe feature + region flags (no secrets).</p><p><a class="pill" href="env.html">Open →</a></p></div><div class="card" data-roles="admin,insights" data-card-id="security"><h2>Security</h2><p>Live header snapshot & CSP overview.</p><p><a class="pill" href="security.html">Open →</a></p></div><div class="card" data-roles="provider,admin,insights" data-card-id="fhir-probe"><h2>FHIR Probe</h2><p>CapabilityStatement / metadata fetch with fallback.</p><p><a class="pill" href="fhir.html">Open →</a></p></div><div class="card" data-roles="patient,provider,telehealth" data-card-id="telehealth-demo"><h2>Telehealth</h2><p>WebSocket echo round‑trip latency showcase.</p><p><a class="pill" href="telehealth.html">Open →</a></p></div><div class="card" data-roles="provider,telehealth" data-card-id="transcription"><h2>Transcription</h2><p>Placeholder generator for future Whisper integration.</p><p><a class="pill" href="transcription.html">Open →</a></p></div><div class="card" data-roles="admin,insights" data-card-id="rate-limit"><h2>Rate Limit</h2><p>Burst probe of /health to visualize limiter impact.</p><p><a class="pill" href="rate-limit.html">Open →</a></p></div><div class="card" data-roles="admin,insights" data-card-id="dependencies"><h2>Dependencies</h2><p>Graph + planned enhancements of service stack.</p><p><a class="pill" href="dependencies.html">Open →</a></p></div></div><div class="card" style="margin-top:1.25rem"><h2>About This Demo</h2><p>This GitHub Pages space surfaces live data from the Railway deployment at <code>webqx-production.up.railway.app</code>. The light EMR adapter may be running standalone or served via proxy fallback.</p><ul><li><strong>Health</strong>: Gateway /health unified schema.</li><li><strong>Adapter</strong>: /emr/status (fallback returns degraded).</li><li><strong>Patients</strong>: Real patients if adapter active; mock fallback otherwise.</li><li><strong>Modules</strong>: Additional cards exercise headers, env, FHIR, WebSocket, rate limiting, and future transcription.</li><li><strong>Zero PHI</strong>: All content intentionally sanitized / synthetic.</li></ul><p>Source: <a href="https://github.com/WebQx/EMR" target="_blank">GitHub Repository</a></p></div><div class="card" style="margin-top:1.25rem" id="signup"><h2>Request Production Access</h2><p>Interested in deploying WebQX for your organization? Fill out this form to get started:</p><form id="signupForm" style="display:flex;flex-direction:column;gap:.75rem;max-width:500px"><input type="text" placeholder="Full Name" required style="padding:.5rem;border:1px solid #2a323b;border-radius:6px;background:#14181d;color:#cfd7df;font-size:.75rem"/><input type="email" placeholder="Email Address" required style="padding:.5rem;border:1px solid #2a323b;border-radius:6px;background:#14181d;color:#cfd7df;font-size:.75rem"/><input type="text" placeholder="Organization" style="padding:.5rem;border:1px solid #2a323b;border-radius:6px;background:#14181d;color:#cfd7df;font-size:.75rem"/><textarea placeholder="Tell us about your use case..." rows="3" style="padding:.5rem;border:1px solid #2a323b;border-radius:6px;background:#14181d;color:#cfd7df;font-size:.75rem;resize:vertical"></textarea><button type="submit" style="background:#0d9488;color:#fff;border:none;border-radius:6px;padding:.65rem 1rem;font-size:.75rem;font-weight:600;cursor:pointer;width:fit-content">Submit Request</button></form><div id="signupMessage" style="margin-top:.5rem;font-size:.75rem;display:none"></div></div></div><div class="overlay-backdrop" id="overlay"><div class="overlay" role="dialog" aria-modal="true"><header><h3 id="ovTitle">Detail</h3><button class="close-btn" id="ovClose">Close</button></header><pre id="ovBody" class="full">(empty)</pre></div></div><footer>WebQX Healthcare Platform • v0.1.0 • “Care equity begins with code equity.”</footer><script src="./assets/nav.js"></script><script src="./assets/demo.js" type="module"></script><script type="module">// Overlay logic
 const overlay=document.getElementById('overlay');
 const ovBody=document.getElementById('ovBody');
 const ovTitle=document.getElementById('ovTitle');
@@ -14,4 +14,153 @@ function openDetail(kind){
 }
 
 document.querySelectorAll('.expand[data-open]').forEach(btn=>btn.addEventListener('click',e=>{ openDetail(e.currentTarget.getAttribute('data-open')); }));
+
+// Navigation and role filtering logic
+(function initDemoNav(){
+  const STORAGE_KEY = 'webqx_demo_role';
+  let currentRole = 'all';
+  
+  // Restore saved role from localStorage
+  function restoreRole() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved && ['all','patient','provider','admin','telehealth','messaging','insights'].includes(saved)) {
+        return saved;
+      }
+    } catch(e) {}
+    return 'all';
+  }
+  
+  // Save role to localStorage
+  function saveRole(role) {
+    try {
+      localStorage.setItem(STORAGE_KEY, role);
+    } catch(e) {}
+  }
+  
+  // Filter cards based on selected role
+  function filterCards(role) {
+    const cards = document.querySelectorAll('#cardGrid .card[data-roles]');
+    cards.forEach(card => {
+      const roles = card.getAttribute('data-roles') || '';
+      if (role === 'all' || roles.split(',').includes(role)) {
+        card.removeAttribute('data-role-hidden');
+      } else {
+        card.setAttribute('data-role-hidden', 'true');
+      }
+    });
+  }
+  
+  // Update active filter button
+  function updateActiveFilter(role) {
+    document.querySelectorAll('.demo-nav-filter').forEach(btn => {
+      if (btn.getAttribute('data-role') === role) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+  
+  // Set role and update UI
+  function setRole(role) {
+    currentRole = role;
+    saveRole(role);
+    filterCards(role);
+    updateActiveFilter(role);
+    // Update URL hash without triggering scroll
+    if (role !== 'all') {
+      history.replaceState(null, '', '#' + role);
+    } else {
+      history.replaceState(null, '', window.location.pathname);
+    }
+  }
+  
+  // Handle hash-based routing
+  function handleHashRouting() {
+    const hash = window.location.hash.slice(1);
+    
+    // Check for #card=cardId pattern
+    if (hash.startsWith('card=')) {
+      const cardId = hash.slice(5);
+      const card = document.querySelector(`[data-card-id="${cardId}"]`);
+      if (card) {
+        // Show all cards first if needed
+        if (currentRole !== 'all') {
+          const roles = card.getAttribute('data-roles') || '';
+          if (!roles.split(',').includes(currentRole)) {
+            setRole('all');
+          }
+        }
+        setTimeout(() => {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Add temporary highlight
+          card.style.boxShadow = '0 0 0 3px #0d9488';
+          setTimeout(() => { card.style.boxShadow = ''; }, 2000);
+        }, 100);
+      }
+      return;
+    }
+    
+    // Check for role hash (#provider, #patient, etc)
+    if (hash && ['patient','provider','admin','telehealth','messaging','insights'].includes(hash)) {
+      setRole(hash);
+      return;
+    }
+    
+    // No special hash, restore saved role
+    const savedRole = restoreRole();
+    setRole(savedRole);
+  }
+  
+  // Setup role filter buttons
+  document.querySelectorAll('.demo-nav-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const role = btn.getAttribute('data-role');
+      setRole(role);
+    });
+  });
+  
+  // Setup CTA button - scroll to signup
+  const ctaBtn = document.getElementById('ctaBtn');
+  if (ctaBtn) {
+    ctaBtn.addEventListener('click', () => {
+      const signup = document.getElementById('signup');
+      if (signup) {
+        signup.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+  
+  // Setup mobile menu toggle
+  const navToggle = document.getElementById('navToggle');
+  const navFilters = document.getElementById('navFilters');
+  if (navToggle && navFilters) {
+    navToggle.addEventListener('click', () => {
+      navFilters.classList.toggle('mobile-open');
+    });
+  }
+  
+  // Handle signup form
+  const signupForm = document.getElementById('signupForm');
+  const signupMessage = document.getElementById('signupMessage');
+  if (signupForm && signupMessage) {
+    signupForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      signupMessage.style.display = 'block';
+      signupMessage.style.color = '#6dd58c';
+      signupMessage.textContent = '✓ Thank you! Your request has been recorded. (Demo mode: no data sent)';
+      signupForm.reset();
+      setTimeout(() => {
+        signupMessage.style.display = 'none';
+      }, 5000);
+    });
+  }
+  
+  // Handle browser back/forward with hash changes
+  window.addEventListener('hashchange', handleHashRouting);
+  
+  // Initial setup on page load
+  handleHashRouting();
+})();
 </script></body></html>
