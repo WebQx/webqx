@@ -26,7 +26,8 @@ export function currentSession() {
 
 export function logout() {
   localStorage.removeItem('webqx_demo_session');
-  window.location.href = 'login.html';
+  localStorage.removeItem('inline_demo_session');
+  window.location.href = 'index.html';
 }
 
 export function requireAuth(opts={}) {

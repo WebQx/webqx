@@ -2,9 +2,13 @@
 // Provides: ensureSession(containerCb) which renders an overlay login if not authed.
 const INLINE_DEMO_USERS=[
   {u:'demo@patient.com',p:'patient123',r:'patient'},
+  {u:'patient',p:'patient123',r:'patient'},
   {u:'doctor@webqx.com',p:'provider123',r:'provider'},
+  {u:'doctor',p:'provider123',r:'provider'},
   {u:'physician@webqx.com',p:'demo123',r:'provider'},
-  {u:'admin@webqx.com',p:'admin123',r:'admin'}
+  {u:'physician',p:'demo123',r:'provider'},
+  {u:'admin@webqx.com',p:'admin123',r:'admin'},
+  {u:'admin',p:'admin123',r:'admin'}
 ];
 // Look for either inline or legacy main login session; normalize to inline key.
 function getSess(){
@@ -25,7 +29,11 @@ function setSess(s){
   try { localStorage.setItem('inline_demo_session',str); } catch {}
   try { localStorage.setItem('webqx_demo_session',str); } catch {}
 }
-export function logoutInline(){localStorage.removeItem('inline_demo_session');location.reload();}
+export function logoutInline(){
+  localStorage.removeItem('inline_demo_session');
+  localStorage.removeItem('webqx_demo_session');
+  window.location.href='index.html';
+}
 export function ensureSession(onReady){const s=getSess();if(s){onReady(s);return;}if(document.getElementById('inlineAuthOverlay')){return;}renderLogin(onReady);} 
 export function ensureSessionRole(roles,onReady){roles=Array.isArray(roles)?roles:[roles];ensureSession(sess=>{if(!roles.includes(sess.role)){alert('Access restricted to: '+roles.join(', '));logoutInline();return;}onReady(sess);});}
 function renderLogin(onReady){if(document.getElementById('inlineAuthOverlay')) return;const wrap=document.createElement('div');wrap.id='inlineAuthOverlay';wrap.innerHTML=`<div style="position:fixed;inset:0;background:#0b1116;display:flex;align-items:center;justify-content:center;font-family:system-ui;z-index:9999">
