@@ -53,6 +53,10 @@
             <div class="links"><button id="btnAdapter">Refresh</button><span id="adapterMeta" class="pill">waiting</span></div>
             <pre id="adapterOut">(loading)</pre>
         </div>
+        <div class="card">
+          <h2>Health Diff</h2>
+          <pre id="healthAdapterDiff">(waiting for health + adapter)</pre>
+        </div>
         <div class="card" style="display:flex;flex-direction:column">
           <h2>Patients <span class="badge warn">demo</span></h2>
           <div class="links" style="width:100%"><button id="btnPatients" style="flex:0 0 auto">Load</button><span id="patientsMeta" class="pill">idle</span></div>
@@ -83,6 +87,12 @@
           Synthetic demographics + mock risk/conditions/medications. No PHI. Designed for usability preview independent of backend.<br />
           Planned: timeline, docs, messaging.
         </p>
+      </div>
+      <div class="card" style="margin-top:1.25rem">
+        <h2>Latency Histogram</h2>
+        <div class="links"><button id="btnMetrics">Refresh</button><span id="metricsMeta" class="pill">idle</span></div>
+        <pre id="histogramOut">(load metrics)</pre>
+        <details style="margin-top:.5rem"><summary style="cursor:pointer">Raw Metrics (truncated)</summary><pre id="metricsOut" style="max-height:200px;overflow:auto">(hidden)</pre></details>
       </div>
     </main>
     <footer class="mini-foot" id="pageFooter">

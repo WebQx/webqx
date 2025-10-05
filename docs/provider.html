@@ -49,6 +49,10 @@
           <pre id="adapterOut">(loading)</pre>
         </div>
         <div class="card">
+          <h2>Health Diff</h2>
+          <pre id="healthAdapterDiff">(waiting for health + adapter)</pre>
+        </div>
+        <div class="card">
           <h2>Patients <span class="badge warn">demo</span></h2>
           <div class="links"><button id="btnPatients">Load</button><span id="patientsMeta" class="pill">idle</span></div>
           <pre id="patientsOut">Click Load</pre>
@@ -72,6 +76,12 @@
         <div class="card">
           <h2>Planned: Tasks</h2>
           <p>Task board with triage, SLA timers, assignment & status lanes arriving in next release.</p>
+        </div>
+        <div class="card" style="grid-column:span 3;margin-top:1.25rem">
+          <h2>Latency Histogram</h2>
+          <div class="links"><button id="btnMetrics">Refresh</button><span id="metricsMeta" class="pill">idle</span></div>
+          <pre id="histogramOut">(load metrics)</pre>
+          <details style="margin-top:.5rem"><summary style="cursor:pointer">Raw Metrics (truncated)</summary><pre id="metricsOut" style="max-height:200px;overflow:auto">(hidden)</pre></details>
         </div>
       </div>
     </main>
