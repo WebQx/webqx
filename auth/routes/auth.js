@@ -251,7 +251,7 @@ router.post('/register',
  */
 router.post('/logout', async (req, res) => {
   try {
-    const sessionId = req.cookies.sessionId || req.body.sessionId;
+    const sessionId = (req.cookies && req.cookies.sessionId) || req.body.sessionId;
 
     if (sessionId) {
       await userService.logout(sessionId);
@@ -283,7 +283,7 @@ router.post('/logout', async (req, res) => {
  */
 router.get('/verify', async (req, res) => {
   try {
-    const sessionId = req.cookies.sessionId || req.headers['x-session-id'];
+    const sessionId = (req.cookies && req.cookies.sessionId) || req.headers['x-session-id'];
 
     if (!sessionId) {
       return res.status(401).json({

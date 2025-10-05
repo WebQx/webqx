@@ -9,8 +9,9 @@ module.exports = {
     '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
   },
   // Transform ES modules in node_modules
+  // Ensure specific ESM packages are transformed (otherwise SyntaxError: Unexpected token 'export')
   transformIgnorePatterns: [
-    'node_modules/(?!(jose|jwks-rsa|keycloak-js|@azure/identity|@azure/core-|@azure/logger|@azure/msal-node|@azure/msal-common)/)'
+    'node_modules/(?!(jose|jwks-rsa|keycloak-js|@azure/identity|@azure/core-[^/]+|@azure/logger|@azure/msal-node|@azure/msal-common|@azure/core-auth|@azure/core-util)/)'
   ],
   // Force resolving dependencies (like react/react-dom) from the root only
   moduleDirectories: ['<rootDir>/node_modules'],
