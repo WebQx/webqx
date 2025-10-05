@@ -28,6 +28,8 @@ pids
 *.pid
 *.seed
 *.pid.lock
+.port-locks.json
+*/.port-locks.json
 
 # Coverage directory used by tools like istanbul
 coverage/
