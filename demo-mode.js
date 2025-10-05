@@ -346,7 +346,12 @@
     const entries = Object.entries(data).slice(0, 3);
     return entries.map(([key, value]) => {
       const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      return `<div><strong>${label}:</strong> ${value}</div>`;
+      // Format value - if it's an object, show a summary instead of [object Object]
+      let displayValue = value;
+      if (typeof value === 'object' && value !== null) {
+        displayValue = Object.keys(value).length + ' items';
+      }
+      return `<div><strong>${label}:</strong> ${displayValue}</div>`;
     }).join('');
   }
 

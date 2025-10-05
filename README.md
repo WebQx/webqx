@@ -222,6 +222,14 @@ const signups = JSON.parse(localStorage.getItem('webqx_demo_signups'));
 console.log(signups);
 ```
 
+To clear all demo data (analytics and signups):
+```javascript
+// In browser console
+localStorage.removeItem('webqx_demo_signups');
+localStorage.removeItem('webqx_demo_analytics');
+sessionStorage.removeItem('webqx_demo_session');
+```
+
 ### Accessibility Features
 - All cards are keyboard navigable (Tab, Enter, Space)
 - Modal dialogs include focus trapping and ESC key support
