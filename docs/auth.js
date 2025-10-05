@@ -37,8 +37,8 @@ export function requireAuth(opts={}) {
     return false;
   }
   if(opts.role && sess.role !== opts.role) {
-    // basic role check; redirect to dashboard for mismatch
-    window.location.href = 'dashboard.html';
+    // basic role check; redirect to user's home for mismatch
+    window.location.href = roleHome(sess.role);
     return false;
   }
   return true;
@@ -46,9 +46,9 @@ export function requireAuth(opts={}) {
 
 export function roleHome(role) {
   switch(role){
-    case 'patient': return 'patient.html';
-    case 'provider': return 'provider.html';
-    case 'admin': return 'dashboard.html';
-    default: return 'dashboard.html';
+    case 'patient': return 'patient-portal.html';
+    case 'provider': return 'provider-panel.html';
+    case 'admin': return 'admin-console.html';
+    default: return 'admin-console.html';
   }
 }

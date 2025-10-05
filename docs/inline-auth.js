@@ -6,9 +6,31 @@ const INLINE_DEMO_USERS=[
   {u:'physician@webqx.com',p:'demo123',r:'provider'},
   {u:'admin@webqx.com',p:'admin123',r:'admin'}
 ];
-function getSess(){try{return JSON.parse(localStorage.getItem('inline_demo_session')||'null');}catch{return null;}}
-function setSess(s){localStorage.setItem('inline_demo_session',JSON.stringify(s));}
-export function logoutInline(){localStorage.removeItem('inline_demo_session');location.reload();}
+function getSess(){
+  try{
+    // Check inline_demo_session first (set by inline auth overlay)
+    let s = JSON.parse(localStorage.getItem('inline_demo_session')||'null');
+    if(s) return s;
+    // Fall back to webqx_demo_session (set by main login page)
+    s = JSON.parse(localStorage.getItem('webqx_demo_session')||'null');
+    if(s) {
+      // Normalize and store in both places for consistency
+      localStorage.setItem('inline_demo_session', JSON.stringify(s));
+      return s;
+    }
+    return null;
+  }catch{return null;}
+}
+function setSess(s){
+  // Write to both keys for compatibility
+  localStorage.setItem('inline_demo_session',JSON.stringify(s));
+  localStorage.setItem('webqx_demo_session',JSON.stringify(s));
+}
+export function logoutInline(){
+  localStorage.removeItem('inline_demo_session');
+  localStorage.removeItem('webqx_demo_session');
+  location.reload();
+}
 export function ensureSession(onReady){const s=getSess();if(s){onReady(s);return;}if(document.getElementById('inlineAuthOverlay')){return;}renderLogin(onReady);} 
 export function ensureSessionRole(roles,onReady){roles=Array.isArray(roles)?roles:[roles];ensureSession(sess=>{if(!roles.includes(sess.role)){alert('Access restricted to: '+roles.join(', '));logoutInline();return;}onReady(sess);});}
 function renderLogin(onReady){if(document.getElementById('inlineAuthOverlay')) return;const wrap=document.createElement('div');wrap.id='inlineAuthOverlay';wrap.innerHTML=`<div style="position:fixed;inset:0;background:#0b1116;display:flex;align-items:center;justify-content:center;font-family:system-ui;z-index:9999">
