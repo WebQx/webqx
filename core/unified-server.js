@@ -53,6 +53,7 @@ class UnifiedHealthcareServer {
             djangoPort: process.env.DJANGO_PORT || 3001,
             openEMRPort: process.env.OPENEMR_PORT || 3002,
             telehealthPort: process.env.TELEHEALTH_PORT || 3003,
+            webqxEMRPort: process.env.WEBQX_EMR_PORT || 3100,
             environment: process.env.NODE_ENV || 'development',
             useRemoteOpenEMR: /^true$/i.test(process.env.USE_REMOTE_OPENEMR || ''),
             remoteOpenEMRUrl: process.env.OPENEMR_REMOTE_URL || '',
@@ -70,6 +71,7 @@ class UnifiedHealthcareServer {
             django: false,
             openemr: false,
             telehealth: false,
+            webqxEMR: false,
             main: false
         };
 
@@ -89,6 +91,7 @@ class UnifiedHealthcareServer {
                     this.config.openEMRPort = await this.portManager.reservePort('openemr', this.config.openEMRPort);
                 }
                 this.config.telehealthPort = await this.portManager.reservePort('telehealth', this.config.telehealthPort);
+                this.config.webqxEMRPort = await this.portManager.reservePort('webqxEMR', this.config.webqxEMRPort);
                 this.config.mainPort = await this.portManager.reservePort('main', this.config.mainPort);
             } catch (e) {
                 this.log('warn', `Port reservation issue: ${e.message}`);
@@ -106,7 +109,8 @@ class UnifiedHealthcareServer {
                 await Promise.all([
                     this.startDjangoAuth(),
                     // Skip local OpenEMR integration spawn
-                    this.startTelehealthServer()
+                    this.startTelehealthServer(),
+                    this.startWebQxEMR()
                 ]);
                 // Mark OpenEMR as healthy (remote assumption) after lightweight probe (optional)
                 this.serviceHealth.openemr = true;
@@ -115,7 +119,8 @@ class UnifiedHealthcareServer {
                 await Promise.all([
                     this.startDjangoAuth(),
                     this.startOpenEMRServer(),
-                    this.startTelehealthServer()
+                    this.startTelehealthServer(),
+                    this.startWebQxEMR()
                 ]);
             }
             
@@ -430,12 +435,15 @@ class UnifiedHealthcareServer {
                     main: this.config.mainPort,
                     django: this.config.djangoPort,
                     openemr: this.config.openEMRPort,
-                    telehealth: this.config.telehealthPort
+                    telehealth: this.config.telehealthPort,
+                    webqxEMR: this.config.webqxEMRPort
                 },
                 config: {
                     environment: this.config.environment,
                     useRemoteOpenEMR: this.config.useRemoteOpenEMR,
-                    transcriptionConfigured: !!(this.config.transcriptionBaseUrl && this.config.transcriptionBaseUrl.length > 0)
+                    transcriptionConfigured: !!(this.config.transcriptionBaseUrl && this.config.transcriptionBaseUrl.length > 0),
+                    webqxEMRConfigured: !!(process.env.MEDPLUM_API_URL || process.env.MEDPLUM_BASE_URL),
+                    transcriptionConfigured: !!(process.env.OPENAI_API_KEY || process.env.WHISPER_API_KEY)
                 }
             });
         });
@@ -756,6 +764,18 @@ class UnifiedHealthcareServer {
                 console.error('❌ WebSocket proxy error:', err.message);
             }
         }));
+
+        // WebQx EMR Service Proxy (Nextcloud + Medplum + Whisper)
+        this.app.use('/emr', createProxyMiddleware({
+            target: `http://localhost:${this.config.webqxEMRPort}`,
+            changeOrigin: true,
+            pathRewrite: { '^/emr': '/emr' },
+            onError: (err, req, res) => {
+                console.error('❌ WebQx EMR proxy error:', err.message);
+                if (!res.headersSent) res.status(503).json({ error: 'WebQx EMR service unavailable' });
+            }
+        }));
+        console.log('✅ WebQx EMR proxy configured at /emr/*');
 
         // DICOMweb (dcm4chee) Proxy to avoid CORS in browser
         // Configure with:
@@ -1171,6 +1191,105 @@ class UnifiedHealthcareServer {
     }
 
     /**
+     * Start WebQx EMR Service (Nextcloud + Medplum + Whisper integration)
+     */
+    async startWebQxEMR() {
+        return new Promise((resolve, reject) => {
+            console.log('🏥 Starting WebQx EMR Service (Nextcloud + Medplum + Whisper)...');
+            
+            const webqxEMRServerPath = path.join(__dirname, '..', 'light-emr-adapter', 'src', 'server.js');
+            
+            if (!fs.existsSync(webqxEMRServerPath)) {
+                console.warn('⚠️ WebQx EMR server not found at:', webqxEMRServerPath);
+                this.serviceHealth.webqxEMR = false;
+                return resolve(); // Don't block startup
+            }
+            
+            const launch = () => spawn('node', [webqxEMRServerPath], {
+                env: {
+                    ...process.env,
+                    PORT: this.config.webqxEMRPort,
+                    NODE_ENV: this.config.environment,
+                    // Pass through backend credentials
+                    MEDPLUM_API_URL: process.env.MEDPLUM_API_URL || process.env.MEDPLUM_BASE_URL || '',
+                    MEDPLUM_CLIENT_ID: process.env.MEDPLUM_CLIENT_ID || '',
+                    MEDPLUM_CLIENT_SECRET: process.env.MEDPLUM_CLIENT_SECRET || '',
+                    NEXTCLOUD_WEBDAV_URL: process.env.NEXTCLOUD_WEBDAV_URL || process.env.NEXTCLOUD_BASE_URL || '',
+                    NEXTCLOUD_USERNAME: process.env.NEXTCLOUD_USERNAME || '',
+                    NEXTCLOUD_PASSWORD: process.env.NEXTCLOUD_PASSWORD || '',
+                    OPENAI_API_KEY: process.env.OPENAI_API_KEY || process.env.WHISPER_API_KEY || '',
+                    WHISPER_API_KEY: process.env.WHISPER_API_KEY || process.env.OPENAI_API_KEY || '',
+                    WHISPER_BASE_URL: process.env.WHISPER_BASE_URL || 'https://api.openai.com/v1',
+                    WHISPER_MODEL: process.env.WHISPER_MODEL || 'whisper-1'
+                },
+                stdio: ['pipe', 'pipe', 'pipe']
+            });
+            
+            let attempts = 0;
+            const startChild = () => {
+                attempts++;
+                const webqxEMRProcess = launch();
+
+                webqxEMRProcess.stdout.on('data', (data) => {
+                    const line = data.toString().trim();
+                    console.log(`[WebQx EMR] ${line}`);
+                    if (!this.serviceHealth.webqxEMR && /(started|listening|Light EMR Adapter started)/i.test(line)) {
+                        this.serviceHealth.webqxEMR = true;
+                        resolve();
+                    }
+                });
+                
+                webqxEMRProcess.stderr.on('data', (data) => {
+                    const msg = data.toString().trim();
+                    console.error(`[WebQx EMR Error] ${msg}`);
+                    if (/EADDRINUSE/.test(msg) && attempts < 3) {
+                        console.warn('🔁 Retrying WebQx EMR server start due to port in use...');
+                        setTimeout(startChild, 1000 * attempts);
+                    }
+                });
+                
+                webqxEMRProcess.on('error', (error) => {
+                    if (error.code === 'EADDRINUSE' && attempts < 3) {
+                        console.warn('🔁 Retrying WebQx EMR server (error event)');
+                        return setTimeout(startChild, 1000 * attempts);
+                    }
+                    console.error('❌ Failed to start WebQx EMR server:', error);
+                    // Don't reject - allow other services to continue
+                    this.serviceHealth.webqxEMR = false;
+                    resolve();
+                });
+                
+                this.services.set('webqxEMR', webqxEMRProcess);
+            };
+            startChild();
+            
+            // Active probe to reduce false timeouts
+            const probeStart = Date.now();
+            const maxProbeMs = 8000;
+            const attemptProbe = () => {
+                if (this.serviceHealth.webqxEMR) return;
+                fetch(`http://localhost:${this.config.webqxEMRPort}/health`, { method: 'GET' })
+                    .then(r => r.ok ? r.json() : null)
+                    .then(() => {
+                        this.serviceHealth.webqxEMR = true;
+                        console.log('✅ WebQx EMR health probe succeeded');
+                        resolve();
+                    })
+                    .catch(() => {
+                        if (Date.now() - probeStart < maxProbeMs) {
+                            setTimeout(attemptProbe, 500);
+                        } else {
+                            console.log('⚠️ WebQx EMR probe timeout, marking as unavailable');
+                            this.serviceHealth.webqxEMR = false;
+                            resolve(); // Don't block startup
+                        }
+                    });
+            };
+            setTimeout(attemptProbe, 600);
+        });
+    }
+
+    /**
      * Print service status
      */
     printServiceStatus() {
@@ -1184,6 +1303,7 @@ class UnifiedHealthcareServer {
             console.log(`🏥 OpenEMR          : http://localhost:${this.config.openEMRPort} ${this.serviceHealth.openemr ? '✅' : '❌'}`);
         }
         console.log(`📹 Telehealth       : http://localhost:${this.config.telehealthPort} ${this.serviceHealth.telehealth ? '✅' : '❌'}`);
+        console.log(`🏥 WebQx EMR™       : http://localhost:${this.config.webqxEMRPort} ${this.serviceHealth.webqxEMR ? '✅' : '❌'}`);
         console.log('═══════════════════════════════════════════════════════════');
         console.log('\n🔗 Available Endpoints:');
         console.log(`   • Health Check    : http://localhost:${this.config.mainPort}/health`);
@@ -1191,6 +1311,7 @@ class UnifiedHealthcareServer {
     console.log(`   • OpenEMR/FHIR    : http://localhost:${this.config.mainPort}/api/openemr/* (remote=${this.config.useRemoteOpenEMR})`);
     console.log(`   • FHIR Direct     : http://localhost:${this.config.mainPort}/fhir/* (remote=${this.config.useRemoteOpenEMR})`);
         console.log(`   • Telehealth      : http://localhost:${this.config.mainPort}/api/telehealth/*`);
+        console.log(`   • WebQx EMR™      : http://localhost:${this.config.mainPort}/emr/* (Nextcloud+Medplum+Whisper)`);
         // AI Assist and FHIR Mock are removed in production
         console.log(`   • WebSocket       : ws://localhost:${this.config.mainPort}/ws`);
         if (this.config.transcriptionBaseUrl) {

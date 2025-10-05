@@ -6,6 +6,8 @@ import { logger } from './logger.js';
 import pinoHttp from 'pino-http';
 import statusRouter from './routes/status.js';
 import patientsRouter from './routes/patients.js';
+import transcribeRouter from './routes/transcribe.js';
+import healthRouter from './routes/health.js';
 import { requestId, auditLogger } from './middleware/audit.js';
 import { defaultLimiter, statusLimiter, patientsLimiter } from './middleware/rateLimits.js';
 import { metricsHandler, metricsMiddleware } from './metrics.js';
@@ -24,7 +26,7 @@ app.use(auditLogger);
 app.use(metricsMiddleware);
 app.use(defaultLimiter);
 
-// Health root
+// Simple health check (no rate limiting)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'light-emr-adapter', version: '0.1.0', uptime_s: process.uptime().toFixed(1) });
 });
@@ -32,9 +34,13 @@ app.get('/health', (req, res) => {
 // Metrics
 app.get('/metrics', metricsHandler);
 
+// Comprehensive health checks
+app.use('/emr', healthRouter);
+
 // Namespaced API
 app.use('/emr', statusLimiter, statusRouter);
 app.use('/emr', patientsLimiter, patientsRouter);
+app.use('/emr', transcribeRouter);
 
 // 404
 app.use((req, res) => {

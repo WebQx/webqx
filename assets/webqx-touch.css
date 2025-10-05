@@ -1,0 +1,618 @@
+/**
+ * WebQx EMR™ Touch-Optimized CSS
+ * Mobile-first, touch-friendly styles for healthcare interfaces
+ * 
+ * @version 1.0.0
+ * @author WebQx Health
+ */
+
+/* ============================================
+   TOUCH TARGET SIZES (WCAG 2.5.5 AAA)
+   ============================================ */
+
+/* Minimum 44px × 44px touch targets */
+.touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Recommended 48px × 48px touch targets */
+.touch-target-md {
+    min-width: 48px;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Large 56px × 56px for primary actions */
+.touch-target-lg {
+    min-width: 56px;
+    min-height: 56px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Extra large 64px × 64px for important actions */
+.touch-target-xl {
+    min-width: 64px;
+    min-height: 64px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================
+   BUTTONS - TOUCH OPTIMIZED
+   ============================================ */
+
+.btn-touch {
+    min-height: 48px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.btn-touch:active {
+    transform: scale(0.98);
+}
+
+/* Primary button */
+.btn-touch-primary {
+    background: #0d9488;
+    color: white;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+}
+
+.btn-touch-primary:hover {
+    background: #0f766e;
+}
+
+.btn-touch-primary:active {
+    background: #115e59;
+}
+
+/* Secondary button */
+.btn-touch-secondary {
+    background: #0891b2;
+    color: white;
+    box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+}
+
+.btn-touch-secondary:hover {
+    background: #0e7490;
+}
+
+/* Danger button */
+.btn-touch-danger {
+    background: #dc2626;
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.btn-touch-danger:hover {
+    background: #b91c1c;
+}
+
+/* Success button */
+.btn-touch-success {
+    background: #16a34a;
+    color: white;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+}
+
+.btn-touch-success:hover {
+    background: #15803d;
+}
+
+/* Large button */
+.btn-touch-lg {
+    min-height: 56px;
+    padding: 16px 32px;
+    font-size: 18px;
+}
+
+/* Full width button */
+.btn-touch-block {
+    width: 100%;
+    display: block;
+}
+
+/* ============================================
+   FORM INPUTS - TOUCH OPTIMIZED
+   ============================================ */
+
+.input-touch {
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: 16px; /* Prevents iOS zoom */
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: inherit;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.input-touch:focus {
+    outline: none;
+    border-color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.3);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.input-touch::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Large input */
+.input-touch-lg {
+    min-height: 56px;
+    padding: 16px 20px;
+    font-size: 18px;
+}
+
+/* Search input with icon */
+.input-search-touch {
+    padding-left: 48px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>');
+    background-repeat: no-repeat;
+    background-position: 12px center;
+    background-size: 24px 24px;
+}
+
+/* Select dropdown */
+.select-touch {
+    min-height: 48px;
+    padding: 12px 40px 12px 16px;
+    font-size: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: inherit;
+    width: 100%;
+    cursor: pointer;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px 20px;
+}
+
+/* Textarea */
+.textarea-touch {
+    min-height: 120px;
+    padding: 16px;
+    font-size: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: inherit;
+    width: 100%;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.textarea-touch:focus {
+    outline: none;
+    border-color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.3);
+}
+
+/* Checkbox/Radio - Large touch areas */
+.checkbox-touch,
+.radio-touch {
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+}
+
+/* ============================================
+   CARDS - TOUCH OPTIMIZED
+   ============================================ */
+
+.card-touch {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.card-touch:active {
+    transform: scale(0.98);
+}
+
+.card-touch-interactive {
+    cursor: pointer;
+}
+
+.card-touch-interactive:hover {
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Patient card */
+.patient-card-touch {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    min-height: 80px;
+}
+
+.patient-card-touch .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+/* ============================================
+   VOICE DICTATION BUTTON
+   ============================================ */
+
+.voice-btn-touch {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    border: none;
+    font-size: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4);
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.voice-btn-touch:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+}
+
+.voice-btn-touch:active {
+    transform: scale(0.95);
+}
+
+.voice-btn-touch.recording {
+    animation: pulse-red 1.5s infinite;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+@keyframes pulse-red {
+    0%, 100% {
+        box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 24px rgba(220, 38, 38, 0.8);
+    }
+}
+
+/* ============================================
+   FILE UPLOAD - TOUCH OPTIMIZED
+   ============================================ */
+
+.file-upload-touch {
+    position: relative;
+    display: inline-block;
+}
+
+.file-upload-touch input[type="file"] {
+    display: none;
+}
+
+.file-upload-btn-touch {
+    min-height: 56px;
+    padding: 16px 32px;
+    background: #0891b2;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.file-upload-btn-touch:hover {
+    background: #0e7490;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+}
+
+/* Drop zone */
+.drop-zone-touch {
+    border: 3px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.drop-zone-touch:hover,
+.drop-zone-touch.drag-over {
+    border-color: #0d9488;
+    background: rgba(13, 148, 136, 0.1);
+}
+
+/* ============================================
+   BOTTOM NAVIGATION - MOBILE
+   ============================================ */
+
+.bottom-nav-touch {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 118, 110, 0.95);
+    backdrop-filter: blur(10px);
+    height: 72px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav-item-touch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    min-height: 56px;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    gap: 4px;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-item-touch:active {
+    transform: scale(0.95);
+}
+
+.bottom-nav-item-touch.active {
+    color: white;
+}
+
+.bottom-nav-item-touch .icon {
+    font-size: 24px;
+}
+
+/* Hide on desktop */
+@media (min-width: 768px) {
+    .bottom-nav-touch {
+        display: none;
+    }
+}
+
+/* ============================================
+   SWIPE GESTURES
+   ============================================ */
+
+.swipeable-touch {
+    position: relative;
+    overflow: hidden;
+}
+
+.swipeable-touch.swiping {
+    transition: transform 0.1s ease-out;
+}
+
+.swipeable-touch.swipe-left {
+    transform: translateX(-100px);
+}
+
+.swipeable-touch.swipe-right {
+    transform: translateX(100px);
+}
+
+/* Swipe actions (revealed on swipe) */
+.swipe-actions-touch {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.spinner-touch {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-touch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 40px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+/* ============================================
+   MODALS & OVERLAYS - TOUCH OPTIMIZED
+   ============================================ */
+
+.modal-overlay-touch {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 16px;
+}
+
+.modal-content-touch {
+    background: linear-gradient(135deg, #0f766e, #0891b2);
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header-touch {
+    padding: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body-touch {
+    padding: 24px;
+}
+
+.modal-footer-touch {
+    padding: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.modal-close-touch {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.modal-close-touch:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Touch-friendly spacing */
+.touch-spacing {
+    padding: 16px;
+}
+
+.touch-spacing-lg {
+    padding: 24px;
+}
+
+/* Touch-friendly gaps */
+.touch-gap {
+    gap: 16px;
+}
+
+.touch-gap-sm {
+    gap: 8px;
+}
+
+.touch-gap-lg {
+    gap: 24px;
+}
+
+/* Disable text selection on interactive elements */
+.no-select {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Remove tap highlight on iOS */
+.no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area insets for notched devices */
+.safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+/* Show only on mobile */
+@media (min-width: 768px) {
+    .mobile-only-touch {
+        display: none !important;
+    }
+}
+
+/* Show only on tablet and desktop */
+@media (max-width: 767px) {
+    .desktop-only-touch {
+        display: none !important;
+    }
+}
+
+/* Responsive text sizes */
+@media (max-width: 767px) {
+    .text-responsive {
+        font-size: 14px;
+    }
+}
+
+@media (min-width: 768px) {
+    .text-responsive {
+        font-size: 16px;
+    }
+}
