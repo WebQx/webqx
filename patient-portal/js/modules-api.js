@@ -4,7 +4,7 @@
 
 class ModuleCardsAPI {
     constructor() {
-        this.baseURL = 'https://webqx.github.io/webqx';
+        this.baseURL = 'https://webqx.github.io/EMR';
     }
 
     async openAppointments() {

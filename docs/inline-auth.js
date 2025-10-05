@@ -6,8 +6,25 @@ const INLINE_DEMO_USERS=[
   {u:'physician@webqx.com',p:'demo123',r:'provider'},
   {u:'admin@webqx.com',p:'admin123',r:'admin'}
 ];
-function getSess(){try{return JSON.parse(localStorage.getItem('inline_demo_session')||'null');}catch{return null;}}
-function setSess(s){localStorage.setItem('inline_demo_session',JSON.stringify(s));}
+// Look for either inline or legacy main login session; normalize to inline key.
+function getSess(){
+  try {
+    const inline = localStorage.getItem('inline_demo_session');
+    if(inline) return JSON.parse(inline);
+    const legacy = localStorage.getItem('webqx_demo_session');
+    if(legacy){
+      const sess = JSON.parse(legacy);
+      try { localStorage.setItem('inline_demo_session', legacy); } catch {}
+      return sess;
+    }
+  } catch {}
+  return null;
+}
+function setSess(s){
+  const str=JSON.stringify(s);
+  try { localStorage.setItem('inline_demo_session',str); } catch {}
+  try { localStorage.setItem('webqx_demo_session',str); } catch {}
+}
 export function logoutInline(){localStorage.removeItem('inline_demo_session');location.reload();}
 export function ensureSession(onReady){const s=getSess();if(s){onReady(s);return;}if(document.getElementById('inlineAuthOverlay')){return;}renderLogin(onReady);} 
 export function ensureSessionRole(roles,onReady){roles=Array.isArray(roles)?roles:[roles];ensureSession(sess=>{if(!roles.includes(sess.role)){alert('Access restricted to: '+roles.join(', '));logoutInline();return;}onReady(sess);});}
@@ -24,4 +41,4 @@ function renderLogin(onReady){if(document.getElementById('inlineAuthOverlay')) r
     </form>
     <div style="margin-top:1rem;background:#0d1419;border:1px solid #27323d;padding:.55rem .65rem;border-radius:8px;font-size:.6rem;line-height:1rem" id="creds"></div>
   </div>
-</div>`;document.body.appendChild(wrap);const credsDiv=wrap.querySelector('#creds');credsDiv.innerHTML=INLINE_DEMO_USERS.map(c=>`<div><code>${c.u}</code> / <code>${c.p}</code> <span style='opacity:.6'>(${c.r})</span></div>`).join('');const form=wrap.querySelector('#f');const err=wrap.querySelector('#err');form.addEventListener('submit',e=>{e.preventDefault();err.style.display='none';const u=form.querySelector('#user').value.trim();const p=form.querySelector('#pass').value;const match=INLINE_DEMO_USERS.find(x=>x.u.toLowerCase()===u.toLowerCase()&&x.p===p)||(INLINE_DEMO_USERS.find(x=>x.u.split('@')[0]===u&&x.p===p));if(!match){err.textContent='Invalid credentials';err.style.display='block';return;}const sess={user:match.u,role:match.r,ts:Date.now()};setSess(sess);wrap.remove();onReady(sess);});}
+</div>`;document.body.appendChild(wrap);const credsDiv=wrap.querySelector('#creds');credsDiv.innerHTML=INLINE_DEMO_USERS.map(c=>`<div><code>${c.u}</code> / <code>${c.p}</code> <span style='opacity:.6'>(${c.r})</span></div>`).join('');const form=wrap.querySelector('#f');const err=wrap.querySelector('#err');form.addEventListener('submit',e=>{e.preventDefault();err.style.display='none';const u=form.querySelector('#user').value.trim();const p=form.querySelector('#pass').value.trim();const match=INLINE_DEMO_USERS.find(x=>x.u.toLowerCase()===u.toLowerCase()&&x.p===p)||(INLINE_DEMO_USERS.find(x=>x.u.split('@')[0]===u&&x.p===p));if(!match){err.textContent='Invalid credentials';err.style.display='block';return;}const sess={user:match.u,role:match.r,ts:Date.now()};setSess(sess);wrap.remove();onReady(sess);});}

@@ -12,7 +12,7 @@ export const BRAND = {
     transcriptionEngine: 'Whisper (planned)',
   },
   links: {
-    docs: 'https://webqx.github.io/webqx/',
+    docs: 'https://webqx.github.io/EMR/',
     support: 'https://github.com/WebQx/webqx/issues',
   }
 };

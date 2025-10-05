@@ -75,7 +75,7 @@ jobs:
 
 Your GitHub Pages deployment is working correctly and will:
 - Build automatically on every push to `main`
-- Deploy static demo site to `https://webqx.github.io/webqx/`
+- Deploy static demo site to `https://webqx.github.io/EMR/`
 - Include mock data for all demos
 - Handle missing files gracefully
 

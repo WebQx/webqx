@@ -886,7 +886,7 @@ class OpenEMRLauncher {
 
     getRedirectUri() {
         const isGitHubPages = window.location.hostname.includes('github.io');
-        const baseUrl = isGitHubPages ? 'https://webqx.github.io/webqx' : window.location.origin;
+        const baseUrl = isGitHubPages ? 'https://webqx.github.io/EMR' : window.location.origin;
         return `${baseUrl}/provider/openemr-callback.html`;
     }
 

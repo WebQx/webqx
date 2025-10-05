@@ -29,6 +29,7 @@
   </script>
 </head>
 <body>
+  <script type="module">import { injectPortalNav,currentDemoSession } from './assets/portal-shared.js'; injectPortalNav({current:'admin',session:currentDemoSession()});</script>
   <header>
     <h1>Admin Console <span style="opacity:.55">demo</span></h1>
     <div><span class="user-tag" id="userTag">(auth)</span><button class="logout-btn" onclick="logoutInline()">Logout</button></div>

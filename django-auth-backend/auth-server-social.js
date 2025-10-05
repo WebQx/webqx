@@ -46,7 +46,7 @@ const OAUTH_CONFIG = {
 };
 
 // GitHub Pages Configuration
-const GITHUB_PAGES_URL = process.env.GITHUB_PAGES_URL || 'https://webqx.github.io/webqx';
+const GITHUB_PAGES_URL = process.env.GITHUB_PAGES_URL || 'https://webqx.github.io/EMR';
 const LOCAL_FRONTEND_URL = process.env.LOCAL_FRONTEND_URL || 'http://localhost:3000';
 const LOCAL_BACKEND_URL = process.env.LOCAL_BACKEND_URL || 'http://localhost:3001';
 

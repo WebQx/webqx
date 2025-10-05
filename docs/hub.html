@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WebQX Technical Hub</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="./assets/demo.css" />
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto;background:#0d1216;color:#d9e4ec;margin:0;padding:0}
+    .wrap{max-width:1100px;margin:0 auto;padding:1.4rem 1.25rem 3rem}
+    h1{font-size:1.05rem;margin:0 0 1rem;letter-spacing:.6px;font-weight:600}
+    .grid{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));}
+    .card{background:#121b23;border:1px solid #1f2a33;border-radius:12px;padding:.85rem .9rem 1rem;font-size:.63rem;line-height:1rem;display:flex;flex-direction:column;gap:.55rem}
+    .card h2{margin:0;font-size:.75rem;letter-spacing:.5px;font-weight:600;color:#e8f3fd}
+    a.btn{align-self:flex-start;padding:.45rem .6rem;font-size:.58rem;border-radius:6px;text-decoration:none;background:#1e2d38;border:1px solid #2a3a46;color:#cfe2f2}
+    a.btn:hover{background:#274050}
+    footer{text-align:center;margin:2.5rem 0 1rem;font-size:.55rem;color:#56626d}
+  </style>
+  <script type="module">import { injectPortalNav,currentDemoSession } from './assets/portal-shared.js'; injectPortalNav({current:'hub',session:currentDemoSession()});</script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Technical & Observability Surfaces</h1>
+    <p style="font-size:.62rem;line-height:1.05rem;max-width:820px;margin:.2rem 0 1.2rem;opacity:.85">Live integration touchpoints, synthetic patient fallback, metrics, environment and network behavior surfaces used to validate the lightweight gateway + adapter architecture. These remain available alongside the simplified persona portals.</p>
+    <div class="grid">
+      <div class="card"><h2>Gateway Health</h2><div>Unified /health surface with status object.</div><a class="btn" href="index.html#health">Open Hub</a></div>
+      <div class="card"><h2>Adapter Status</h2><div>Fallback EMR adapter /emr/status diff.</div><a class="btn" href="index.html#adapter">Open Hub</a></div>
+      <div class="card"><h2>Patients</h2><div>Mock or live patient listing via adapter fallback.</div><a class="btn" href="index.html#patients">Open Hub</a></div>
+      <div class="card"><h2>System</h2><div>Runtime & non‑sensitive environment indicators.</div><a class="btn" href="system.html" >Open</a></div>
+      <div class="card"><h2>Environment</h2><div>Feature flag & region snapshot (no secrets).</div><a class="btn" href="env.html" >Open</a></div>
+      <div class="card"><h2>Security Headers</h2><div>CSP + key protective headers live fetch.</div><a class="btn" href="security.html" >Open</a></div>
+      <div class="card"><h2>FHIR Probe</h2><div>CapabilityStatement /metadata request fallback.</div><a class="btn" href="fhir.html" >Open</a></div>
+      <div class="card"><h2>Telehealth WS</h2><div>Latency echo channel + histogram parsing.</div><a class="btn" href="telehealth.html" >Open</a></div>
+      <div class="card"><h2>Transcription</h2><div>Placeholder streaming transcript mock data.</div><a class="btn" href="transcription.html" >Open</a></div>
+      <div class="card"><h2>Rate Limiter</h2><div>Probe illustrating request cap behavior.</div><a class="btn" href="rate-limit.html" >Open</a></div>
+    </div>
+  </div>
+  <footer>WebQX Demo • Technical Hub • v0.1.0</footer>
+</body>
+</html>

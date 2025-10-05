@@ -74,7 +74,7 @@ Stale session data is automatically removed when the finalize flow errors or whe
    - **Client Name**: `WebQX Provider Portal`
    - **Client Type**: `Public` (for browser-based authentication)
    - **Grant Types**: `authorization_code`
-   - **Redirect URI**: `https://webqx.github.io/webqx/provider/openemr-callback.html`
+   - **Redirect URI**: `https://webqx.github.io/EMR/provider/openemr-callback.html`
    - **Scopes**: Select all required scopes (see below)
 
 #### Required OAuth2 Scopes
