@@ -7,16 +7,16 @@ const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 // Import secure authentication routes
-const authRoutes = require('./auth/routes/auth.js');
+const authRoutes = require('../auth/routes/auth.js');
 
 // FHIR imports
-const patientRoutes = require('./fhir/routes/patient');
-const appointmentRoutes = require('./fhir/routes/appointment');
-const observationRoutes = require('./fhir/routes/observation');
-const existingFHIRAuth = require('./fhir/middleware/auth');
+const patientRoutes = require('../fhir/routes/patient');
+const appointmentRoutes = require('../fhir/routes/appointment');
+const observationRoutes = require('../fhir/routes/observation');
+const existingFHIRAuth = require('../fhir/middleware/auth');
 
 // OAuth2 imports
-const { createOAuth2Instance, enhanceFHIRAuth, createOAuth2Router } = require('./auth/oauth2');
+const { createOAuth2Instance, enhanceFHIRAuth, createOAuth2Router } = require('../auth/oauth2');
 
 // Initialize OAuth2
 let oauth2Instance;
@@ -42,19 +42,19 @@ const {
 } = enhancedAuth;
 
 // PostDICOM imports
-const postdicomRouter = require('./modules/postdicom/routes/dicom.js');
+const postdicomRouter = require('../modules/postdicom/routes/dicom.js');
 
 // openEHR imports
-const openEHREHRRoutes = require('./openehr/routes/ehr');
-const openEHRCompositionRoutes = require('./openehr/routes/composition');
-const openEHRQueryRoutes = require('./openehr/routes/query');
+const openEHREHRRoutes = require('../openehr/routes/ehr');
+const openEHRCompositionRoutes = require('../openehr/routes/composition');
+const openEHRQueryRoutes = require('../openehr/routes/query');
 
 // Patient Portal Authentication imports
-const patientPortalAuthRoutes = require('./patient-portal/auth/authRoutes');
+const patientPortalAuthRoutes = require('../patient-portal/auth/authRoutes');
 
 // Provider Portal Authentication imports
-const providerAuthRoutes = require('./auth/providers/routes');
-const providerSSORoutes = require('./auth/providers/sso-routes');
+const providerAuthRoutes = require('../auth/providers/routes');
+const providerSSORoutes = require('../auth/providers/sso-routes');
 
 // Ottehr Integration imports (removed)
 
@@ -217,8 +217,8 @@ app.use('/fhir/Appointment', authenticateToken, requireScopes(['user/*.read', 'u
 app.use('/fhir/Observation', authenticateToken, requireScopes(['patient/*.read', 'patient/*.write', 'user/*.read']), observationRoutes);
 
 // Telehealth API routes
-const TelehealthService = require('./modules/telehealth/TelehealthService');
-const createTelehealthRoutes = require('./modules/telehealth/routes/telehealth');
+const TelehealthService = require('../modules/telehealth/TelehealthService');
+const createTelehealthRoutes = require('../modules/telehealth/routes/telehealth');
 const telehealthService = new TelehealthService(oauth2Instance);
 app.use('/api/telehealth', createTelehealthRoutes(telehealthService, authenticateToken));
 
@@ -239,7 +239,7 @@ app.use('/api/auth/sso', providerSSORoutes);
 
 // OpenEvidence Authentication routes
 try {
-    const openEvidenceAuthRoutes = require('./auth/openevidence/routes');
+    const openEvidenceAuthRoutes = require('../auth/openevidence/routes');
     app.use('/auth/openevidence', openEvidenceAuthRoutes);
     console.log('✅ OpenEvidence authentication routes loaded');
 } catch (error) {
@@ -252,14 +252,18 @@ try {
 
 // Test routes (development only)
 if (process.env.NODE_ENV === 'development') {
-    const testRoutes = require('./routes/test');
-    app.use('/test', testRoutes);
-    console.log('✅ Test routes loaded for development');
+    try {
+        const testRoutes = require('../routes/test');
+        app.use('/test', testRoutes);
+        console.log('✅ Test routes loaded for development');
+    } catch (error) {
+        console.warn('⚠️ Test routes not available:', error.message);
+    }
 }
 
 // Telehealth API routes
 try {
-    const telehealthVideoRoutes = require('./telehealth/routes/video');
+    const telehealthVideoRoutes = require('../telehealth/routes/video');
     app.use('/telehealth/video', telehealthVideoRoutes);
     console.log('✅ Telehealth video routes loaded');
 } catch (error) {
