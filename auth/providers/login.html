@@ -710,7 +710,7 @@
     <!-- JavaScript -->
     <script src="/auth/js/post-login-router.js"></script>
     <script>
-        // Production mode only
+        // Production mode - uses real backend authentication
         const isGitHubPages = false;
         const urlParams = new URLSearchParams(window.location.search);
         const preselectRoleParam = urlParams.get('role');
@@ -786,8 +786,6 @@
                 this.handleServerLogin(credentials);
             }
 
-            /* Demo login removed for production */
-
             async handleServerLogin(credentials) {
                 try {
                     const response = await fetch('/api/auth/provider/login', {
@@ -817,8 +815,6 @@
                 storage.setItem('providerAuthToken', result.token);
                 storage.setItem('providerUser', JSON.stringify(result.user));
                 storage.setItem('providerLoginTime', Date.now().toString());
-
-                // Production: no demo flags stored
             }
 
             showRoleConfirmation(userRoles) {
@@ -1050,10 +1046,7 @@
             }
         }
 
-        // Helper methods added to prototype
-        GitHubPagesProviderAuth.prototype.forceDemoMode = function() { return false; };
-
-        GitHubPagesProviderAuth.prototype.applyDemoAutofillFromQuery = function() { /* disabled in production */ };
+        // No demo mode helpers in production
 
         // Initialize when DOM loads
         document.addEventListener('DOMContentLoaded', () => {
@@ -1092,6 +1085,12 @@
     </script>
     <script src="/auth/providers/js/sso.js"></script>
     
-    <!-- Production: no demo hints -->
+    <!-- Production Test Credentials -->
+    <div style="position:fixed;bottom:16px;left:16px;background:rgba(0,0,0,0.8);color:#7dd3fc;padding:8px 12px;border-radius:6px;font-size:11px;z-index:9999;line-height:1.4;max-width:280px;">
+        <strong style="display:block;margin-bottom:4px;">Test Accounts:</strong>
+        dr.smith@hospital.com / password123<br>
+        nurse.johnson@hospital.com / password123<br>
+        pharm.davis@hospital.com / password123
+    </div>
 </body>
 </html>
