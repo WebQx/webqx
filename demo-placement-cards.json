@@ -1,0 +1,101 @@
+[
+  {
+    "card_id": "patient-appointments",
+    "title": "My Appointments",
+    "description": "View and manage upcoming medical appointments",
+    "icon": "📅",
+    "category": "patient",
+    "refresh_interval": 25,
+    "demo": true
+  },
+  {
+    "card_id": "patient-records",
+    "title": "Health Records",
+    "description": "Access your medical history and documents",
+    "icon": "📋",
+    "category": "patient",
+    "refresh_interval": 45,
+    "demo": true
+  },
+  {
+    "card_id": "patient-prescriptions",
+    "title": "Prescriptions",
+    "description": "View active medications and request refills",
+    "icon": "💊",
+    "category": "patient",
+    "refresh_interval": 40,
+    "demo": true
+  },
+  {
+    "card_id": "patient-lab-results",
+    "title": "Lab Results",
+    "description": "Review recent test results and trends",
+    "icon": "🔬",
+    "category": "patient",
+    "refresh_interval": 50,
+    "demo": true
+  },
+  {
+    "card_id": "patient-messages",
+    "title": "Messages",
+    "description": "Secure messaging with your care team",
+    "icon": "💬",
+    "category": "patient",
+    "refresh_interval": 35,
+    "demo": true
+  },
+  {
+    "card_id": "provider-patients",
+    "title": "Patient Panel",
+    "description": "View and manage your patient roster",
+    "icon": "👥",
+    "category": "provider",
+    "refresh_interval": 50,
+    "demo": true
+  },
+  {
+    "card_id": "provider-schedule",
+    "title": "Today's Schedule",
+    "description": "View appointments and clinical workflow",
+    "icon": "🗓️",
+    "category": "provider",
+    "refresh_interval": 35,
+    "demo": true
+  },
+  {
+    "card_id": "provider-clinical-insights",
+    "title": "Clinical Insights",
+    "description": "AI-powered patient care recommendations",
+    "icon": "🧠",
+    "category": "provider",
+    "refresh_interval": 60,
+    "demo": true
+  },
+  {
+    "card_id": "provider-telehealth",
+    "title": "Telehealth Sessions",
+    "description": "Manage virtual consultations and visits",
+    "icon": "📹",
+    "category": "provider",
+    "refresh_interval": 55,
+    "demo": true
+  },
+  {
+    "card_id": "admin-system-status",
+    "title": "System Status",
+    "description": "Monitor platform health and performance",
+    "icon": "⚙️",
+    "category": "admin",
+    "refresh_interval": 70,
+    "demo": true
+  },
+  {
+    "card_id": "analytics-engagement",
+    "title": "Platform Analytics",
+    "description": "User engagement and system metrics",
+    "icon": "📊",
+    "category": "admin",
+    "refresh_interval": 30,
+    "demo": true
+  }
+]

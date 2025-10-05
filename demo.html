@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebQx EMR Interactive Demo - No Login Required</title>
+  <meta name="description" content="Experience the WebQx EMR platform with interactive demo cards showcasing patient, provider, and admin modules. No database or login required." />
+  <link rel="stylesheet" href="./demo-styles.css" />
+  <style>
+    /* Inline critical styles for fast initial render */
+    body { margin: 0; background: #0f172a; color: #e5e7eb; }
+    .loading { text-align: center; padding: 3rem; color: #9ca3af; }
+  </style>
+  <noscript>
+    <style>
+      .requires-js { display: none; }
+      .no-js-warning {
+        display: block;
+        max-width: 600px;
+        margin: 3rem auto;
+        padding: 2rem;
+        background: #fbbf24;
+        color: #78350f;
+        border-radius: 12px;
+        text-align: center;
+      }
+    </style>
+  </noscript>
+</head>
+<body>
+  <!-- No JS warning -->
+  <noscript>
+    <div class="no-js-warning">
+      <h2>JavaScript Required</h2>
+      <p>This interactive demo requires JavaScript to function. Please enable JavaScript in your browser or visit our production site:</p>
+      <p><a href="https://webqx.up.railway.app/" style="color: #1e3a8a; font-weight: bold;">Launch Production System</a></p>
+    </div>
+  </noscript>
+
+  <!-- Hero Section -->
+  <section class="demo-hero">
+    <div class="demo-badge">✨ Interactive Static Demo</div>
+    <h1>WebQx EMR Platform</h1>
+    <p>Experience our healthcare platform with live mock data. No login, no database, fully static.</p>
+    
+    <!-- Role Toggle -->
+    <div class="role-toggle requires-js">
+      <button class="role-btn active" data-role="patient" aria-pressed="true">
+        👤 Patient View
+      </button>
+      <button class="role-btn" data-role="provider" aria-pressed="false">
+        👨‍⚕️ Provider View
+      </button>
+      <button class="role-btn" data-role="admin" aria-pressed="false">
+        ⚙️ Admin View
+      </button>
+      <button class="role-btn" data-role="all" aria-pressed="false">
+        🌐 All Modules
+      </button>
+    </div>
+  </section>
+
+  <!-- Cards Grid -->
+  <main>
+    <div class="loading requires-js" id="loading-indicator">
+      Loading demo cards...
+    </div>
+    <div class="demo-cards-grid" id="demo-cards-container" role="region" aria-label="Demo module cards">
+      <!-- Cards will be dynamically inserted here -->
+    </div>
+  </main>
+
+  <!-- CTA Section -->
+  <section class="demo-cta" id="signup-section">
+    <h2>Ready for Production?</h2>
+    <p>Join our pilot program and get early access to the full WebQx EMR platform with real backend integration.</p>
+    
+    <form class="signup-form requires-js" id="signup-form">
+      <div class="form-group">
+        <label for="email">Email Address <span style="color: #ef4444;">*</span></label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          placeholder="your.email@example.com" 
+          required 
+          aria-required="true"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="role">Role Interest</label>
+        <select id="role" name="role">
+          <option value="">Select a role (optional)</option>
+          <option value="administrator">Administrator</option>
+          <option value="physician">Physician</option>
+          <option value="clinician">Clinician</option>
+          <option value="billing">Billing Specialist</option>
+          <option value="it">IT / Technical</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="message">Message (Optional)</label>
+        <textarea 
+          id="message" 
+          name="message" 
+          placeholder="Tell us about your organization or specific needs..."
+        ></textarea>
+        <small>Help us understand how we can best support you.</small>
+      </div>
+
+      <button type="submit" class="signup-submit">
+        Join Pilot Waitlist
+      </button>
+    </form>
+
+    <p class="fallback-link">
+      Problems? Email us directly at <a href="mailto:demo@webqx.com">demo@webqx.com</a>
+    </p>
+  </section>
+
+  <!-- Footer -->
+  <footer class="demo-footer">
+    <p>
+      <strong>WebQx Healthcare Platform</strong> • v1.0 Demo Mode<br />
+      Mock data only - No PHI • No backend required<br />
+      <a href="https://webqx.up.railway.app/">Production System</a> • 
+      <a href="https://github.com/WebQx/EMR">GitHub</a> • 
+      <a href="./README.md">Documentation</a>
+    </p>
+    <p style="margin-top: 1rem; font-size: 0.75rem; color: #6b7280;">
+      This demo showcases WebQx EMR capabilities using client-side mock data generation.<br />
+      Data refreshes automatically every 25-70 seconds depending on the module.<br />
+      All interactions are tracked locally for analytics (privacy-friendly, no external services).
+    </p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="./demo-analytics.js"></script>
+  <script src="./demo-signup.js"></script>
+  <script src="./demo-mode.js"></script>
+  <script>
+    'use strict';
+    
+    // Hide loading indicator once cards are ready
+    document.addEventListener('DOMContentLoaded', () => {
+      const loadingIndicator = document.getElementById('loading-indicator');
+      const cardsContainer = document.getElementById('demo-cards-container');
+      
+      // Check if cards loaded
+      const checkLoaded = setInterval(() => {
+        if (cardsContainer.children.length > 0) {
+          if (loadingIndicator) loadingIndicator.style.display = 'none';
+          clearInterval(checkLoaded);
+        }
+      }, 100);
+      
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        clearInterval(checkLoaded);
+      }, 5000);
+      
+      // Role toggle handlers
+      const roleButtons = document.querySelectorAll('.role-btn');
+      roleButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const role = btn.dataset.role;
+          
+          // Update active state
+          roleButtons.forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+          });
+          btn.classList.add('active');
+          btn.setAttribute('aria-pressed', 'true');
+          
+          // Update demo mode
+          if (window.WebQxDemoMode) {
+            window.WebQxDemoMode.setRole(role);
+          }
+          
+          // Log analytics
+          if (window.WebQxDemoAnalytics) {
+            window.WebQxDemoAnalytics.log('role_change', { role });
+          }
+        });
+      });
+      
+      // Signup form handler
+      const signupForm = document.getElementById('signup-form');
+      if (signupForm) {
+        signupForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const formData = {
+            email: document.getElementById('email').value,
+            role: document.getElementById('role').value,
+            message: document.getElementById('message').value
+          };
+          
+          if (window.WebQxDemoSignup) {
+            const success = await window.WebQxDemoSignup.handleSubmit(formData);
+            if (success) {
+              signupForm.reset();
+            }
+          }
+        });
+      }
+      
+      // Track initial role view
+      if (window.WebQxDemoAnalytics) {
+        window.WebQxDemoAnalytics.log('demo_page_load', { initial_role: 'patient' });
+      }
+    });
+    
+    // Graceful degradation check
+    if (!window.WebQxDemoMode) {
+      console.warn('Demo mode not loaded - check demo-mode.js');
+    }
+  </script>
+</body>
+</html>
