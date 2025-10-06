@@ -21,7 +21,7 @@ export const HeroWelcome: React.FC = () => {
         <div className="panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.75rem' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '.6rem' }}>
             <strong>Welcome</strong>
-            <span style={{ fontSize: '.75rem', color: 'var(--muted)' }}>Unified EMR Demo Portal {role ? `• viewing as ${role}` : ''}</span>
+            <span style={{ fontSize: '.75rem', color: 'var(--muted)' }}>WebQX Production Portal {role ? `• viewing as ${role}` : ''}</span>
           </div>
           <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
             <button className="btn" onClick={() => setCollapsed(false)}>Show Welcome</button>
@@ -33,12 +33,12 @@ export const HeroWelcome: React.FC = () => {
       ) : (
         <div className="panel" style={{ background: 'linear-gradient(135deg,#2563eb,#4f46e5)', color: '#fff', border: 'none', boxShadow: '0 6px 18px -4px rgba(0,0,0,.25)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-            <h1 style={{ margin: 0, fontSize: '1.9rem', letterSpacing: '.5px' }}>Unified EMR Demo Portal</h1>
+            <h1 style={{ margin: 0, fontSize: '1.9rem', letterSpacing: '.5px' }}>WebQX Production Portal</h1>
             <button onClick={() => setCollapsed(true)} style={{ background: 'rgba(255,255,255,.2)', color: '#fff', border: '1px solid rgba(255,255,255,.5)', padding: '.35rem .6rem', borderRadius: 8, cursor: 'pointer', fontSize: '.7rem' }}>Hide</button>
           </div>
           <p style={{ fontSize: '.9rem', lineHeight: 1.4, maxWidth: 780, margin: '.85rem 0 1.2rem', color: 'rgba(255,255,255,.92)' }}>
             Explore patient, provider, and admin perspectives in a single experience. Select a role below to load tailored modules.
-            This static deployment runs in <strong>Demo Mode</strong> — interactive examples use mock data (no live backend required).
+            This portal provides access to live healthcare services backed by actual API data.
           </p>
           <div style={{ fontSize: '.9rem', lineHeight: 1.5, maxWidth: 860, margin: '0 0 1.0rem', color: 'rgba(255,255,255,.95)' }}>
             <p style={{ margin: '0 0 .5rem' }}>
@@ -56,7 +56,7 @@ export const HeroWelcome: React.FC = () => {
               }}>{r.charAt(0).toUpperCase() + r.slice(1)} Role</button>
             ))}
           </div>
-          <p style={{ fontSize: '.6rem', margin: 0, opacity: .85 }}>Need real backend metrics? Deploy server stack locally or in cloud and disable demo mode.</p>
+          <p style={{ fontSize: '.6rem', margin: 0, opacity: .85 }}>Need live backend metrics? Deploy server stack locally or in cloud infrastructure.</p>
         </div>
       )}
     </section>
