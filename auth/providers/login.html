@@ -727,26 +727,26 @@
                         name: 'Physician',
                         description: 'Full access to patient records, prescribing, and clinical modules',
                         modules: ['patients', 'prescriptions', 'lab-results', 'imaging', 'scheduling', 'billing'],
-                        redirect: '/provider/dashboard/'
+                        redirect: '/provider/index.html'
                     },
                     'nurse': {
                         name: 'Nurse',
                         description: 'Access to patient care, medication administration, and vital signs',
                         modules: ['patients', 'vitals', 'medication-admin', 'scheduling', 'care-plans'],
-                        redirect: '/provider/dashboard/'
+                        redirect: '/provider/index.html'
                     },
                     'pharmacist': {
                         name: 'Pharmacist',
                         description: 'Access to prescription management and medication reconciliation',
                         modules: ['prescriptions', 'medication-reconciliation', 'drug-interactions', 'inventory'],
-                        redirect: '/provider/dashboard/'
+                        redirect: '/provider/index.html'
                     },
                     'administrator': {
                         name: 'Administrator',
                         description: 'Administrative access to system management and reporting',
                         modules: ['users', 'reporting', 'billing', 'system-config', 'audit-logs'],
                         // Default to admin console for administrators
-                        redirect: '/admin-console/'
+                        redirect: '/admin-console-clean.html'
                     }
                 };
                 this.init();
@@ -894,7 +894,8 @@
                         window.location.href = roleConfig.redirect;
                     }
                 } else {
-                    window.location.href = '/provider/dashboard';
+                    // Explicitly redirect to index.html instead of directory
+                    window.location.href = '/provider/index.html';
                 }
             }
 
