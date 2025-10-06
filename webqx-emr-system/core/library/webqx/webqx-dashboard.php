@@ -28,6 +28,15 @@ class WebQXDashboard {
         <body>
             <?php renderWebQXHeader('Dashboard'); ?>
             
+            <!-- Legacy Dashboard Banner -->
+            <div style="background: #ffe4b5; border: 2px solid #ffa500; padding: 1rem 1.5rem; margin: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <strong style="color: #d97706; font-size: 1.1rem;">⚠️ Legacy Dashboard Notice</strong>
+                <p style="margin: 0.5rem 0 0 0; color: #92400e;">
+                    This dashboard is deprecated and does not display live data. 
+                    Please use the <a href="/portal/" style="color: #0066cc; text-decoration: underline;">Production Portal</a> for real-time metrics and full functionality.
+                </p>
+            </div>
+            
             <div class="container-fluid" style="padding: 2rem;">
                 <h1 style="color: var(--webqx-dark); margin-bottom: 2rem;">
                     📊 Healthcare Dashboard
@@ -155,37 +164,73 @@ class WebQXDashboard {
         <?php
     }
     
+    /**
+     * Get patient count
+     * @deprecated This method returns hardcoded demo data. Use the Production Portal API instead.
+     * @return string Patient count or 'N/A'
+     */
     private function getPatientCount() {
         // Mock data for now - replace with actual database queries
-        return "1,247";
+        // Production Portal uses /api/dashboard/provider for live data
+        return "N/A";
     }
     
+    /**
+     * Get today's appointments count
+     * @deprecated This method returns hardcoded demo data. Use the Production Portal API instead.
+     * @return string Appointments count or 'N/A'
+     */
     private function getTodayAppointments() {
-        return "23";
+        // Production Portal uses /api/dashboard/provider for live data
+        return "N/A";
     }
     
+    /**
+     * Get pending tasks count
+     * @deprecated This method returns hardcoded demo data. Use the Production Portal API instead.
+     * @return string Tasks count or 'N/A'
+     */
     private function getPendingTasks() {
-        return "7";
+        // Production Portal uses /api/dashboard/provider for live data
+        return "N/A";
     }
     
+    /**
+     * Get active providers count
+     * @deprecated This method returns hardcoded demo data. Use the Production Portal API instead.
+     * @return string Providers count or 'N/A'
+     */
     private function getActiveProviders() {
-        return "12";
+        // Production Portal uses /api/dashboard/provider for live data
+        return "N/A";
     }
     
+    /**
+     * @deprecated Legacy method - not connected to real data
+     */
     private function getUnderservedPatients() {
-        return "892";
+        return "N/A";
     }
     
+    /**
+     * @deprecated Legacy method - not connected to real data
+     */
     private function getFreeServicesProvided() {
-        return "2,341";
+        return "N/A";
     }
     
+    /**
+     * @deprecated Legacy method - not connected to real data
+     */
     private function getMobileClinicVisits() {
-        return "156";
+        return "N/A";
     }
     
+    /**
+     * @deprecated Legacy method - not connected to real data
+     */
     private function getTelemedicineConsults() {
-        return "89";
+        return "N/A";
     }
     
     private function renderRecentActivity() {

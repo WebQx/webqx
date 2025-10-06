@@ -10,6 +10,7 @@ import { HeroWelcome } from './components/HeroWelcome';
 import { DiagnosticsSection } from './components/DiagnosticsSection';
 import { QuickStart } from './components/QuickStart';
 import { RoleGate } from './components/RoleGate';
+import { ProviderDashboard } from './components/ProviderDashboard';
 
 const AppInner: React.FC = () => {
   const [selected, setSelected] = useState<string | null>(null);
@@ -37,6 +38,8 @@ const AppInner: React.FC = () => {
       <div className="grid" style={{ gap: '1.25rem' }}>
         <HeroWelcome />
         <QuickStart onSelect={setSelected} scrollTo={scrollTo} />
+        {/* Provider Dashboard with live metrics */}
+        <ProviderDashboard />
         {/* Experiences & content are visible even before role; internal gating handles access notes */}
         <section id="experiences">
           <DashboardCards onSelect={setSelected} selectedId={selected} />
