@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX Provider Portal - Live System Status</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .user-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover { background: #b91c1c; }
+        
+        .services {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .service {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .service-info h3 { font-size: 1.125rem; margin-bottom: 0.25rem; }
+        .service-info p { opacity: 0.7; font-size: 0.875rem; }
+        .status { padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.875rem; }
+        .status-online { background: #10b981; }
+        .status-offline { background: #ef4444; }
+        .status-unknown { background: #6b7280; }
+        
+        .api-test {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .api-test h2 { margin-bottom: 1.5rem; }
+        .test-btn {
+            background: #3b82f6;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .test-btn:hover { background: #2563eb; }
+        .test-btn:disabled { background: #6b7280; cursor: not-allowed; }
+        
+        .result {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .warning {
+            background: rgba(245,158,11,0.1);
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .warning h3 { color: #fbbf24; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 WebQX Provider Portal</h1>
+            <p>Live System Status & API Testing</p>
+        </div>
+
+        <div class="user-card">
+            <div>
+                <strong id="userName">Loading...</strong><br>
+                <small id="userRole">Role: Loading...</small>
+            </div>
+            <a href="/auth/providers/login.html" class="btn">Logout</a>
+        </div>
+
+        <div class="warning">
+            <h3>⚠️ System Status</h3>
+            <p>This dashboard shows REAL system status. Services marked as "OFFLINE" are not functional. Only use features marked as "ONLINE".</p>
+        </div>
+
+        <div class="services" id="serviceList">
+            <div class="service">
+                <div class="service-info">
+                    <h3>🔍 Checking services...</h3>
+                    <p>Please wait...</p>
+                </div>
+                <span class="status status-unknown">CHECKING</span>
+            </div>
+        </div>
+
+        <div class="api-test">
+            <h2>🧪 API Testing Console</h2>
+            <p style="opacity: 0.8; margin-bottom: 1rem;">Test actual backend APIs in real-time. Only working endpoints will return data.</p>
+            
+            <div style="margin-bottom: 1rem;">
+                <button class="test-btn" onclick="testAPI('health')">Test Health Check</button>
+                <button class="test-btn" onclick="testAPI('auth')">Test Auth Status</button>
+                <button class="test-btn" onclick="testAPI('patients')">Test Patient API</button>
+                <button class="test-btn" onclick="testAPI('transcribe')">Test Transcription</button>
+            </div>
+            
+            <div id="testResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load user info
+        const userData = JSON.parse(localStorage.getItem('providerUser') || sessionStorage.getItem('providerUser') || '{}');
+        const token = localStorage.getItem('providerAuthToken') || sessionStorage.getItem('providerAuthToken');
+        
+        if (!token) {
+            window.location.href = '/auth/providers/login.html';
+        }
+
+        document.getElementById('userName').textContent = userData.name || userData.email || 'Provider';
+        document.getElementById('userRole').textContent = `Role: ${(userData.roles || ['provider'])[0]}`;
+
+        // Check ALL services
+        async function checkServices() {
+            const serviceList = document.getElementById('serviceList');
+            serviceList.innerHTML = '<div class="service"><div class="service-info"><h3>🔍 Checking services...</h3></div></div>';
+
+            try {
+                const response = await fetch('/health');
+                const health = await response.json();
+                
+                const services = [
+                    {
+                        name: 'Main Gateway',
+                        description: 'Core routing and proxy service',
+                        status: health.services.main,
+                        endpoint: '/health'
+                    },
+                    {
+                        name: 'Authentication Service',
+                        description: 'User login and JWT tokens',
+                        status: health.services.django,
+                        endpoint: '/api/auth/provider/login'
+                    },
+                    {
+                        name: 'Telehealth Service',
+                        description: 'Video consultations and messaging',
+                        status: health.services.telehealth,
+                        endpoint: '/api/telehealth'
+                    },
+                    {
+                        name: 'OpenEMR Integration',
+                        description: 'Legacy EMR system connector',
+                        status: health.services.openemr,
+                        endpoint: '/api/openemr'
+                    },
+                    {
+                        name: 'WebQx EMR Adapter',
+                        description: 'Medplum FHIR + Whisper + Nextcloud',
+                        status: health.services.webqxEMR,
+                        endpoint: '/emr'
+                    }
+                ];
+                
+                serviceList.innerHTML = services.map(s => `
+                    <div class="service">
+                        <div class="service-info">
+                            <h3>${s.name}</h3>
+                            <p>${s.description}</p>
+                            <small style="opacity: 0.6; font-family: monospace;">${s.endpoint}</small>
+                        </div>
+                        <span class="status status-${s.status ? 'online' : 'offline'}">
+                            ${s.status ? '✅ ONLINE' : '❌ OFFLINE'}
+                        </span>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                serviceList.innerHTML = `
+                    <div class="service">
+                        <div class="service-info">
+                            <h3>❌ Error</h3>
+                            <p>Could not connect to backend</p>
+                        </div>
+                        <span class="status status-offline">ERROR</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Test API endpoints
+        async function testAPI(endpoint) {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = `🔄 Testing ${endpoint}...\n\n`;
+            
+            try {
+                let url, options = {};
+                
+                switch(endpoint) {
+                    case 'health':
+                        url = '/health';
+                        break;
+                    case 'auth':
+                        url = '/api/auth/provider/verify';
+                        options = { headers: { 'Authorization': `Bearer ${token}` } };
+                        break;
+                    case 'patients':
+                        url = '/emr/patients';
+                        break;
+                    case 'transcribe':
+                        url = '/emr/health/full';
+                        break;
+                    default:
+                        throw new Error('Unknown endpoint');
+                }
+                
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                resultDiv.textContent = `✅ ${endpoint.toUpperCase()} API Response:\n\n` +
+                    `Status: ${response.status} ${response.statusText}\n\n` +
+                    JSON.stringify(data, null, 2);
+                    
+            } catch (error) {
+                resultDiv.textContent = `❌ ${endpoint.toUpperCase()} API Error:\n\n` +
+                    error.message + '\n\n' +
+                    'This service may be offline or not configured.';
+            }
+        }
+
+        // Load services on page load
+        checkServices();
+        
+        // Refresh every 30 seconds
+        setInterval(checkServices, 30000);
+    </script>
+</body>
+</html>
