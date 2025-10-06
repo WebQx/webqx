@@ -4,6 +4,7 @@
   "description": "WebQX™: Modular Healthcare Platform - A multilingual, specialty-aware, and privacy-first blueprint for global clinical care",
   "main": "server.js",
   "scripts": {
+    "postinstall": "cd light-emr-adapter && npm install || echo 'EMR adapter dependencies install failed'",
     "start": "node server.js",
     "start:railway": "node server.js",
     "start:production": "node api-proxy-server.js & node core/telehealth-server.js",
