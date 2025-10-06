@@ -1,8 +1,16 @@
 /**
- * Real OpenEMR Integration for WebQX™
+ * DEPRECATED: Real OpenEMR Integration for WebQX™
  * 
- * This integrates with actual OpenEMR instances and the OpenEMR GitHub repository
- * to provide real EHR functionality, not just demos.
+ * This file is deprecated. Please use the Production Portal (React-based)
+ * which provides live provider dashboard with real API data.
+ * 
+ * See: /api/dashboard/provider endpoint in unified-server.js
+ * React Portal: /portal directory
+ * 
+ * This file contains legacy static integration logic that has been replaced
+ * with server-side aggregation and React-based UI components.
+ * 
+ * @deprecated Use React Portal and /api/dashboard/provider instead
  */
 
 class RealOpenEMRIntegration {

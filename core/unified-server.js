@@ -527,6 +527,9 @@ class UnifiedHealthcareServer {
                 }
             });
 
+        // Provider Dashboard Aggregation Endpoint
+        this.setupProviderDashboard();
+
         // SPA HTML fallback for unknown GET routes (after all APIs and static)
         this.app.get('*', (req, res, next) => {
             // Root path handled by explicit handler above; just fall through here
@@ -847,6 +850,216 @@ class UnifiedHealthcareServer {
                 res.status(503).json({ error: 'TRANSCRIPTION_UNAVAILABLE', message: 'Transcription service not configured' });
             });
         }
+    }
+
+    /**
+     * Setup provider dashboard aggregation endpoint
+     */
+    setupProviderDashboard() {
+        // In-memory cache for dashboard data (TTL: 30s)
+        const dashboardCache = {
+            data: {},
+            timestamps: {}
+        };
+
+        const CACHE_TTL_MS = 30000; // 30 seconds
+
+        // Helper to check if cache is valid
+        const isCacheValid = (section) => {
+            const ts = dashboardCache.timestamps[section];
+            return ts && (Date.now() - ts < CACHE_TTL_MS);
+        };
+
+        // Helper to fetch with timeout
+        const fetchWithTimeout = async (url, timeoutMs = 5000) => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeout);
+                return response;
+            } catch (error) {
+                clearTimeout(timeout);
+                throw error;
+            }
+        };
+
+        // Rate limiting for dashboard endpoint
+        const dashboardLimiter = rateLimit({
+            windowMs: 1 * 60 * 1000, // 1 minute
+            max: 60, // 60 requests per minute per IP
+            message: { error: 'Too many dashboard requests', code: 'RATE_LIMIT_EXCEEDED' }
+        });
+
+        // Provider Dashboard Aggregation Endpoint
+        this.app.get('/api/dashboard/provider', dashboardLimiter, async (req, res) => {
+            const startTime = Date.now();
+            
+            // Authenticate and check provider role
+            try {
+                const authHeader = req.headers.authorization;
+                const cookieToken = req.cookies && req.cookies.provider_token;
+                const token = authHeader?.startsWith('Bearer ') 
+                    ? authHeader.substring(7) 
+                    : cookieToken;
+
+                if (!token) {
+                    return res.status(401).json({
+                        error: 'Authentication required',
+                        code: 'NO_TOKEN'
+                    });
+                }
+
+                // Verify JWT token
+                const secret = process.env.JWT_SECRET || 'webqx-provider-secret';
+                let decoded;
+                try {
+                    decoded = jwt.verify(token, secret);
+                } catch (err) {
+                    return res.status(401).json({
+                        error: 'Invalid token',
+                        code: 'INVALID_TOKEN'
+                    });
+                }
+
+                // Check provider role
+                const roles = decoded.roles || [];
+                if (!roles.includes('provider') && !roles.includes('physician') && !roles.includes('admin')) {
+                    return res.status(403).json({
+                        error: 'Provider role required',
+                        code: 'INSUFFICIENT_PERMISSIONS'
+                    });
+                }
+
+                // Aggregate dashboard data
+                const response = {
+                    updated_at: new Date().toISOString(),
+                    errors: []
+                };
+
+                // Base URLs for services
+                const baseUrl = process.env.API_BASE_URL || `http://localhost:${this.config.mainPort}`;
+                const emrBaseUrl = process.env.WEBQX_EMR_BASE_URL || `http://localhost:${this.config.webqxEMRPort}`;
+
+                // Fetch patients count
+                if (isCacheValid('patients')) {
+                    response.patients = dashboardCache.data.patients;
+                } else {
+                    try {
+                        const patientsResponse = await fetchWithTimeout(`${emrBaseUrl}/emr/patients`);
+                        if (patientsResponse.ok) {
+                            const data = await patientsResponse.json();
+                            const count = Array.isArray(data) ? data.length : (data.count || 0);
+                            response.patients = { count };
+                            dashboardCache.data.patients = response.patients;
+                            dashboardCache.timestamps.patients = Date.now();
+                        } else {
+                            throw new Error(`HTTP ${patientsResponse.status}`);
+                        }
+                    } catch (error) {
+                        response.errors.push({
+                            section: 'patients',
+                            error: error.message || 'Failed to fetch patients'
+                        });
+                    }
+                }
+
+                // Fetch telehealth sessions
+                if (isCacheValid('telehealth')) {
+                    response.telehealth = dashboardCache.data.telehealth;
+                } else {
+                    try {
+                        const telehealthResponse = await fetchWithTimeout(`${baseUrl}/api/telehealth/sessions`);
+                        if (telehealthResponse.ok) {
+                            const data = await telehealthResponse.json();
+                            const sessions = Array.isArray(data) ? data : (data.data || []);
+                            const active = sessions.filter(s => s.status === 'active' || s.status === 'in_progress').length;
+                            const waiting = sessions.filter(s => s.status === 'waiting' || s.status === 'scheduled').length;
+                            response.telehealth = { active, waiting };
+                            dashboardCache.data.telehealth = response.telehealth;
+                            dashboardCache.timestamps.telehealth = Date.now();
+                        } else {
+                            throw new Error(`HTTP ${telehealthResponse.status}`);
+                        }
+                    } catch (error) {
+                        response.errors.push({
+                            section: 'telehealth',
+                            error: error.message || 'Failed to fetch telehealth sessions'
+                        });
+                    }
+                }
+
+                // Fetch transcription jobs (limit to 5 newest)
+                if (isCacheValid('transcriptionJobs')) {
+                    response.transcriptionJobs = dashboardCache.data.transcriptionJobs;
+                } else {
+                    try {
+                        const transcribeResponse = await fetchWithTimeout(`${emrBaseUrl}/emr/transcribe?limit=5`);
+                        if (transcribeResponse.ok) {
+                            const data = await transcribeResponse.json();
+                            const jobs = Array.isArray(data) ? data : (data.jobs || []);
+                            response.transcriptionJobs = jobs.slice(0, 5).map(job => ({
+                                id: job.id,
+                                status: job.status,
+                                created_at: job.created_at || job.createdAt
+                            }));
+                            dashboardCache.data.transcriptionJobs = response.transcriptionJobs;
+                            dashboardCache.timestamps.transcriptionJobs = Date.now();
+                        } else {
+                            throw new Error(`HTTP ${transcribeResponse.status}`);
+                        }
+                    } catch (error) {
+                        response.errors.push({
+                            section: 'transcriptionJobs',
+                            error: error.message || 'Failed to fetch transcription jobs'
+                        });
+                    }
+                }
+
+                // Fetch files count
+                if (isCacheValid('files')) {
+                    response.files = dashboardCache.data.files;
+                } else {
+                    try {
+                        const filesResponse = await fetchWithTimeout(`${emrBaseUrl}/emr/files`);
+                        if (filesResponse.ok) {
+                            const data = await filesResponse.json();
+                            const total = Array.isArray(data) ? data.length : (data.count || data.total || 0);
+                            response.files = { total };
+                            dashboardCache.data.files = response.files;
+                            dashboardCache.timestamps.files = Date.now();
+                        } else {
+                            throw new Error(`HTTP ${filesResponse.status}`);
+                        }
+                    } catch (error) {
+                        response.errors.push({
+                            section: 'files',
+                            error: error.message || 'Failed to fetch files'
+                        });
+                    }
+                }
+
+                // Remove errors array if empty
+                if (response.errors.length === 0) {
+                    delete response.errors;
+                }
+
+                const duration = Date.now() - startTime;
+                this.log('info', `Provider dashboard aggregated in ${duration}ms. Sections: ${Object.keys(response).filter(k => k !== 'updated_at' && k !== 'errors').join(', ')}. Errors: ${response.errors?.length || 0}`);
+
+                return res.json(response);
+
+            } catch (error) {
+                this.log('error', `Provider dashboard error: ${error.message}`);
+                return res.status(500).json({
+                    error: 'Internal server error',
+                    code: 'DASHBOARD_ERROR',
+                    updated_at: new Date().toISOString()
+                });
+            }
+        });
+
+        this.log('info', '✅ Provider dashboard endpoint configured at /api/dashboard/provider');
     }
 
     /**

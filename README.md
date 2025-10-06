@@ -109,6 +109,51 @@ Upcoming (short-term roadmap): deeper FHIR operations, document sync, circuit br
 - Security: CSP, rate limiting, audit-style request logging, tokenized WS
 
 ---
+## 📊 Production Provider Dashboard
+The WebQX platform now includes a production-ready provider dashboard with live data integration:
+
+**Endpoint:** `GET /api/dashboard/provider`
+
+**Features:**
+- **Real-time Data Sources:**
+  - Patient count from `/emr/patients`
+  - Active/waiting telehealth sessions from `/api/telehealth/sessions`
+  - Recent transcription jobs from `/emr/transcribe` (5 newest)
+  - File storage count from `/emr/files`
+- **Refresh Interval:** 60 seconds (auto-pauses when tab hidden)
+- **Cache TTL:** 30 seconds per section (reduces upstream load)
+- **Partial Failure Handling:** Individual section errors reported in `errors[]` array; no fabricated fallback data
+- **Authentication:** Requires JWT token with `provider`, `physician`, or `admin` role
+- **Rate Limiting:** 60 requests/minute per IP
+
+**Response Schema:**
+```json
+{
+  "patients": { "count": 156 },
+  "telehealth": { "active": 2, "waiting": 5 },
+  "transcriptionJobs": [
+    { "id": "job-123", "status": "completed", "created_at": "2025-01-10T14:30:00Z" }
+  ],
+  "files": { "total": 342 },
+  "errors": [
+    { "section": "telehealth", "error": "Connection timeout" }
+  ],
+  "updated_at": "2025-01-10T15:45:32Z"
+}
+```
+
+**React Portal Integration:**
+- Hook: `useProviderDashboard()` in `portal/src/components/`
+- Component: `<ProviderMetrics />` with live badges and freshness indicators
+- Freshness colors: Green (<30s), Amber (<120s), Red (≥120s)
+- Manual refresh button with loading state
+- Tooltips showing data source for each metric
+
+**Legacy Systems:**
+- `provider/real-openemr-integration.js` is now deprecated in favor of the React portal
+- PHP-based dashboards should display a legacy banner directing users to the production portal
+
+---
 ## 🏗️ Architecture Overview
 ```plaintext
 [Browser / Portals]

@@ -10,6 +10,7 @@ import { HeroWelcome } from './components/HeroWelcome';
 import { DiagnosticsSection } from './components/DiagnosticsSection';
 import { QuickStart } from './components/QuickStart';
 import { RoleGate } from './components/RoleGate';
+import { ProviderMetrics } from './components/ProviderMetrics';
 
 const AppInner: React.FC = () => {
   const [selected, setSelected] = useState<string | null>(null);
@@ -20,6 +21,9 @@ const AppInner: React.FC = () => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  // Show provider metrics only for provider/admin roles
+  const showProviderMetrics = role === 'provider' || role === 'admin';
 
   return (
     <div className="portal-shell">
@@ -36,6 +40,7 @@ const AppInner: React.FC = () => {
       </header>
       <div className="grid" style={{ gap: '1.25rem' }}>
         <HeroWelcome />
+        {showProviderMetrics && <ProviderMetrics />}
         <QuickStart onSelect={setSelected} scrollTo={scrollTo} />
         {/* Experiences & content are visible even before role; internal gating handles access notes */}
         <section id="experiences">
