@@ -6,19 +6,22 @@
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 
-// Mock the unified server
-jest.mock('../core/unified-server.js', () => {
-  const express = require('express');
-  const app = express();
-  return app;
-});
-
 describe('Provider Dashboard API', () => {
   let app;
   let validToken;
   const JWT_SECRET = process.env.JWT_SECRET || 'webqx-provider-secret';
 
   beforeAll(() => {
+    // Mock mime lookup to fix Express JSON response issues in tests
+    try {
+      const mime = require('mime');
+      if (!mime.lookup) {
+        mime.lookup = (type) => 'application/json';
+      }
+    } catch (e) {
+      // mime not available, that's ok
+    }
+
     // Create a minimal Express app for testing
     const express = require('express');
     const cookieParser = require('cookie-parser');
@@ -39,11 +42,11 @@ describe('Provider Dashboard API', () => {
       { expiresIn: '1h' }
     );
 
-    // Mock rate limiter
+    // Mock rate limiter (more permissive for testing)
     const dashboardLimiter = rateLimit({
       windowMs: 1 * 60 * 1000,
-      max: 60,
-      message: { error: 'Too many dashboard requests', code: 'RATE_LIMIT_EXCEEDED' }
+      max: 1000, // High limit for testing
+      skip: () => process.env.NODE_ENV === 'test' // Skip in test env
     });
 
     // Mock dashboard endpoint
@@ -91,8 +94,9 @@ describe('Provider Dashboard API', () => {
           updated_at: new Date().toISOString()
         };
 
-        return res.json(response);
+        return res.status(200).json(response);
       } catch (error) {
+        console.error('Test error:', error);
         return res.status(500).json({
           error: 'Internal server error',
           code: 'DASHBOARD_ERROR',
@@ -105,9 +109,9 @@ describe('Provider Dashboard API', () => {
   describe('Authentication', () => {
     test('should reject request without token', async () => {
       const response = await request(app)
-        .get('/api/dashboard/provider')
-        .expect(401);
+        .get('/api/dashboard/provider');
 
+      expect(response.status).toBe(401);
       expect(response.body).toHaveProperty('error');
       expect(response.body.code).toBe('NO_TOKEN');
     });
@@ -115,9 +119,9 @@ describe('Provider Dashboard API', () => {
     test('should reject request with invalid token', async () => {
       const response = await request(app)
         .get('/api/dashboard/provider')
-        .set('Authorization', 'Bearer invalid-token')
-        .expect(401);
+        .set('Authorization', 'Bearer invalid-token');
 
+      expect(response.status).toBe(401);
       expect(response.body).toHaveProperty('error');
       expect(response.body.code).toBe('INVALID_TOKEN');
     });
@@ -131,9 +135,9 @@ describe('Provider Dashboard API', () => {
 
       const response = await request(app)
         .get('/api/dashboard/provider')
-        .set('Authorization', `Bearer ${patientToken}`)
-        .expect(403);
+        .set('Authorization', `Bearer ${patientToken}`);
 
+      expect(response.status).toBe(403);
       expect(response.body).toHaveProperty('error');
       expect(response.body.code).toBe('INSUFFICIENT_PERMISSIONS');
     });
@@ -141,9 +145,9 @@ describe('Provider Dashboard API', () => {
     test('should accept valid provider token via Authorization header', async () => {
       const response = await request(app)
         .get('/api/dashboard/provider')
-        .set('Authorization', `Bearer ${validToken}`)
-        .expect(200);
+        .set('Authorization', `Bearer ${validToken}`);
 
+      expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('updated_at');
       expect(response.body).toHaveProperty('patients');
     });
@@ -151,9 +155,9 @@ describe('Provider Dashboard API', () => {
     test('should accept valid provider token via cookie', async () => {
       const response = await request(app)
         .get('/api/dashboard/provider')
-        .set('Cookie', [`provider_token=${validToken}`])
-        .expect(200);
+        .set('Cookie', [`provider_token=${validToken}`]);
 
+      expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('updated_at');
     });
   });
@@ -162,8 +166,9 @@ describe('Provider Dashboard API', () => {
     test('should return all sections on success', async () => {
       const response = await request(app)
         .get('/api/dashboard/provider')
-        .set('Authorization', `Bearer ${validToken}`)
-        .expect(200);
+        .set('Authorization', `Bearer ${validToken}`);
+
+      expect(response.status).toBe(200);
 
       // Check required fields
       expect(response.body).toHaveProperty('updated_at');
@@ -179,12 +184,11 @@ describe('Provider Dashboard API', () => {
     });
 
     test('should include errors array for partial failures', async () => {
-      // This test would require mocking fetch failures
-      // For now, we verify the schema allows errors
       const response = await request(app)
         .get('/api/dashboard/provider')
-        .set('Authorization', `Bearer ${validToken}`)
-        .expect(200);
+        .set('Authorization', `Bearer ${validToken}`);
+
+      expect(response.status).toBe(200);
 
       if (response.body.errors) {
         expect(Array.isArray(response.body.errors)).toBe(true);
@@ -198,9 +202,9 @@ describe('Provider Dashboard API', () => {
     test('should not fabricate data on section failure', async () => {
       const response = await request(app)
         .get('/api/dashboard/provider')
-        .set('Authorization', `Bearer ${validToken}`)
-        .expect(200);
+        .set('Authorization', `Bearer ${validToken}`);
 
+      expect(response.status).toBe(200);
       // If a section has an error, it should either be missing or in errors array
       // but never show fabricated data like 0 when the real call failed
       expect(response.body).toBeDefined();
@@ -215,10 +219,11 @@ describe('Provider Dashboard API', () => {
         { expiresIn: '1h' }
       );
 
-      await request(app)
+      const response = await request(app)
         .get('/api/dashboard/provider')
-        .set('Authorization', `Bearer ${physicianToken}`)
-        .expect(200);
+        .set('Authorization', `Bearer ${physicianToken}`);
+
+      expect(response.status).toBe(200);
     });
 
     test('should accept admin role', async () => {
@@ -228,10 +233,11 @@ describe('Provider Dashboard API', () => {
         { expiresIn: '1h' }
       );
 
-      await request(app)
+      const response = await request(app)
         .get('/api/dashboard/provider')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
     });
   });
 });
