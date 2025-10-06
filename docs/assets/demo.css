@@ -1,0 +1,104 @@
+/* 
+ * Legacy demo.css stub
+ * Original demo scaffolding moved to /legacy/demo/
+ * These styles are preserved for documentation pages compatibility
+ */
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #0d1216;
+  color: #e2edf5;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.card {
+  background: #11181f;
+  border: 1px solid #1f2a33;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.card h2 {
+  margin-top: 0;
+  color: #f1f7fd;
+  font-size: 1.2rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+.badge.ok {
+  background: #065f46;
+  color: #6ee7b7;
+}
+
+header {
+  background: #141b22;
+  border-bottom: 1px solid #1f2a33;
+  padding: 1rem 1.5rem;
+}
+
+header h1 {
+  margin: 0;
+  color: #f1f7fd;
+  font-size: 1.4rem;
+}
+
+.links {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.links a, button {
+  color: #93c5fd;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border: 1px solid #1f2a33;
+  border-radius: 6px;
+  background: #11181f;
+  cursor: pointer;
+}
+
+.links a:hover, button:hover {
+  background: #1f2a33;
+}
+
+footer {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+pre {
+  background: #0a0e12;
+  border: 1px solid #1f2a33;
+  padding: 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  color: #d1d5db;
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 12px;
+  background: #374151;
+  color: #d1d5db;
+}
