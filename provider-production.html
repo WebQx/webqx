@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebQX Provider Portal - Production</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .header h1 {
+            color: #1f2937;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .header .subtitle {
+            color: #6b7280;
+            font-size: 1rem;
+        }
+        .user-info {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .status-online { background: #10b981; color: white; }
+        .status-offline { background: #ef4444; color: white; }
+        .status-checking { background: #f59e0b; color: white; }
+        
+        .modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .module {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            display: block;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .module:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+        }
+        .module h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        .module p {
+            opacity: 0.9;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        .module .status {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        .api-info {
+            background: #eff6ff;
+            border: 1px solid #3b82f6;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+        }
+        .api-info h3 {
+            color: #1e40af;
+            margin-bottom: 1rem;
+        }
+        .api-list {
+            list-style: none;
+            padding: 0;
+        }
+        .api-list li {
+            padding: 0.5rem 0;
+            color: #374151;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #ef4444;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 WebQX Provider Portal</h1>
+            <p class="subtitle">Production Environment - API-Driven Features Only</p>
+        </div>
+
+        <div class="user-info">
+            <div>
+                <strong id="userName">Loading...</strong><br>
+                <small id="userRole">Role: Loading...</small>
+            </div>
+            <div>
+                <span id="apiStatus" class="status-badge status-checking">🔄 Checking APIs...</span>
+                <a href="/auth/providers/login.html" class="btn" style="margin-left: 1rem;">Logout</a>
+            </div>
+        </div>
+
+        <div class="modules">
+            <!-- Patient Management (Medplum FHIR) -->
+            <a href="/emr/patients" class="module" id="module-patients">
+                <h3>👥 Patient Management</h3>
+                <p>Access patient records via Medplum FHIR API. List, search, create, and update patient information.</p>
+                <div class="status">API: <span class="api-endpoint">/emr/patients</span></div>
+            </a>
+
+            <!-- Medical Transcription (OpenAI Whisper) -->
+            <div class="module" onclick="openTranscription()">
+                <h3>🎤 Medical Transcription</h3>
+                <p>Convert audio recordings to text using OpenAI Whisper. Supports MP3, WAV, WebM, and more.</p>
+                <div class="status">API: <span class="api-endpoint">/emr/transcribe</span></div>
+            </div>
+
+            <!-- File Management (Nextcloud) -->
+            <div class="module" onclick="openFiles()">
+                <h3>📁 File Management</h3>
+                <p>Upload and manage medical documents via Nextcloud WebDAV integration.</p>
+                <div class="status">API: <span class="api-endpoint">/emr/files</span></div>
+            </div>
+
+            <!-- Telehealth -->
+            <div class="module" onclick="openTelehealth()">
+                <h3>📹 Telehealth</h3>
+                <p>Video consultations and secure messaging with patients.</p>
+                <div class="status">API: <span class="api-endpoint">/api/telehealth</span></div>
+            </div>
+
+            <!-- System Status -->
+            <div class="module" onclick="openHealth()">
+                <h3>🩺 System Health</h3>
+                <p>Monitor backend services and integration status.</p>
+                <div class="status">API: <span class="api-endpoint">/health</span></div>
+            </div>
+
+            <!-- API Documentation -->
+            <a href="/api-docs" class="module">
+                <h3>📚 API Documentation</h3>
+                <p>Complete API reference for all available endpoints and features.</p>
+                <div class="status">Documentation</div>
+            </a>
+        </div>
+
+        <div class="api-info">
+            <h3>🔌 Available Production APIs</h3>
+            <ul class="api-list">
+                <li><strong>Authentication:</strong> POST /api/auth/provider/login</li>
+                <li><strong>Patient List:</strong> GET /emr/patients</li>
+                <li><strong>Patient Details:</strong> GET /emr/patients/:id</li>
+                <li><strong>Create Patient:</strong> POST /emr/patients</li>
+                <li><strong>Update Patient:</strong> PUT /emr/patients/:id</li>
+                <li><strong>Search Patients:</strong> GET /emr/patients/search?name=...</li>
+                <li><strong>Transcribe Audio:</strong> POST /emr/transcribe (multipart/form-data)</li>
+                <li><strong>Health Check:</strong> GET /health</li>
+                <li><strong>Service Status:</strong> GET /emr/health/full</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Load user info from session
+        const userData = JSON.parse(localStorage.getItem('providerUser') || sessionStorage.getItem('providerUser') || '{}');
+        const token = localStorage.getItem('providerAuthToken') || sessionStorage.getItem('providerAuthToken');
+        
+        if (!token) {
+            window.location.href = '/auth/providers/login.html';
+        }
+
+        document.getElementById('userName').textContent = userData.name || userData.email || 'Provider';
+        document.getElementById('userRole').textContent = `Role: ${(userData.roles || ['provider'])[0]}`;
+
+        // Check API status
+        async function checkAPIs() {
+            try {
+                const response = await fetch('/health');
+                const health = await response.json();
+                
+                const statusEl = document.getElementById('apiStatus');
+                const allHealthy = health.services.django && health.services.main;
+                
+                if (allHealthy) {
+                    statusEl.textContent = '✅ All Systems Online';
+                    statusEl.className = 'status-badge status-online';
+                } else {
+                    statusEl.textContent = '⚠️ Some Services Offline';
+                    statusEl.className = 'status-badge status-offline';
+                }
+            } catch (error) {
+                document.getElementById('apiStatus').textContent = '❌ API Unavailable';
+                document.getElementById('apiStatus').className = 'status-badge status-offline';
+            }
+        }
+
+        checkAPIs();
+        
+        function openTranscription() {
+            alert('🎤 Medical Transcription\n\nUse the API to upload audio files:\n\nPOST /emr/transcribe\nContent-Type: multipart/form-data\n\nSupported formats: MP3, WAV, WebM, M4A, OGG, FLAC');
+        }
+
+        function openFiles() {
+            alert('📁 File Management\n\nNextcloud WebDAV integration available via:\n\nGET /emr/files\nPOST /emr/files/upload\n\nContact admin for WebDAV credentials.');
+        }
+
+        function openTelehealth() {
+            alert('📹 Telehealth Services\n\nVideo consultation features available via:\n\nPOST /api/telehealth/session/start\nGET /api/telehealth/sessions\n\nIntegration in progress.');
+        }
+
+        function openHealth() {
+            window.open('/health', '_blank');
+        }
+    </script>
+</body>
+</html>
