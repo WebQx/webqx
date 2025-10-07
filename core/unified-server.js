@@ -379,14 +379,23 @@ class UnifiedHealthcareServer {
         // Fallback to repo root for legacy static files (no auto index)
         this.app.use(express.static('.', { index: false }));
 
-        // Friendly redirects for legacy SPA paths
-        this.app.get(['/portal', '/portal/'], (req, res) => {
-            // Redirect to unified SPA with portal hash
+        // Provider Portal production entry: serve dedicated provider portal HTML
+        // Previous behavior redirected /portal -> /index.html#portal (legacy hash SPA)
+        // Now we deliver the standalone provider portal experience directly for cleaner prod URL.
+        this.app.get(['/portal', '/portal/', '/portal/index.html'], (req, res) => {
+            const portalPath = path.join(cwd, 'provider-portal-real.html');
+            if (fs.existsSync(portalPath)) return res.sendFile(portalPath);
+            // Fallback: maintain old redirect if file missing
             return res.redirect(302, '/index.html#portal');
         });
+        // Allow any nested path under /portal/* to still load the portal (client-side handles state)
         this.app.get('/portal/*', (req, res) => {
+            const portalPath = path.join(cwd, 'provider-portal-real.html');
+            if (fs.existsSync(portalPath)) return res.sendFile(portalPath);
             return res.redirect(302, '/index.html#portal');
         });
+        // Convenience aliases
+        this.app.get(['/provider', '/providers', '/providers/portal'], (req, res) => res.redirect(302, '/portal'));
 
         // Patient portal routes
         this.setupPatientPortalRoutes();
