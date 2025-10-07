@@ -105,6 +105,8 @@
         document.getElementById('sendMsgBtn').disabled = false;
         pushLog('system','Joined session');
         await fetchStatus();
+        initWebSocket();
+        loadMessageHistory();
       } catch (e) {
         pushLog('error','Join: '+e.message);
       }
@@ -147,8 +149,11 @@
         <span class="pill">Max: ${meta.maxParticipants}</span>
       </div>`;
       document.getElementById('rawJson').textContent = JSON.stringify(meta, null, 2);
-      // participants placeholder (server doesn't expose full list in status response currently)
-      document.getElementById('participantList').innerHTML = `<li class="participant">Participant count: ${meta.participantCount}</li>`;
+      if (meta.participants && meta.participants.length) {
+        document.getElementById('participantList').innerHTML = meta.participants.map(p=>`<li class="participant"><strong>${p.userId}</strong><br><span style=\"opacity:.65;\">${p.role} • ${p.status}</span></li>`).join('');
+      } else {
+        document.getElementById('participantList').innerHTML = `<li class="participant">No participants listed</li>`;
+      }
     }
 
     function pushLog(origin,msg){
@@ -162,15 +167,40 @@
 
     function escapeHtml(str){ return str.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
 
+    // WebSocket integration
+    let ws;
+    function initWebSocket(){
+      try {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(`${proto}://${location.host}`);
+        ws.addEventListener('open', ()=>{ pushLog('system','WS connected'); ws.send(JSON.stringify({ type:'auth', userId:'demo-user'})); setTimeout(()=>{ ws.send(JSON.stringify({ type:'join_session', sessionId }));},150); });
+        ws.addEventListener('message', evt => {
+          try { const msg = JSON.parse(evt.data); handleWS(msg); } catch { /* ignore */ }
+        });
+        ws.addEventListener('close', ()=> pushLog('system','WS closed'));
+        ws.addEventListener('error', ()=> pushLog('error','WS error'));
+      } catch (e){ pushLog('error','WS init failed'); }
+    }
+    function handleWS(msg){
+      switch(msg.type){
+        case 'participant_joined': pushLog('system',`Participant joined: ${msg.userId}`); fetchStatus(); break;
+        case 'participant_left': pushLog('system',`Participant left: ${msg.userId}`); fetchStatus(); break;
+        case 'new_message': if(msg.data?.sessionId===sessionId) pushLog(msg.data.senderId=== 'demo-user' ? 'me':'remote', msg.data.content); break;
+        case 'session_joined': pushLog('system','Realtime session updates active'); break;
+      }
+    }
+
+    async function loadMessageHistory(){
+      try { const res=await fetch(`/api/v1/telehealth/messaging/history/${encodeURIComponent(sessionId)}`, { headers:{ Authorization:`Bearer ${token}` }}); const data=await res.json(); if(data.success){ data.data.messages.forEach(m=> pushLog(m.senderId==='demo-user'?'me':'remote', m.content)); } } catch {/* ignore */}
+    }
+
     document.getElementById('refreshBtn').addEventListener('click', fetchStatus);
     document.getElementById('leaveBtn').addEventListener('click', leaveSession);
     document.getElementById('sendMsgBtn').addEventListener('click', sendMessage);
     document.getElementById('messageInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendMessage(); });
 
     // Auto-join on load then poll
-    joinSession().then(()=>{
-      setInterval(fetchStatus, 15000);
-    });
+    joinSession().then(()=>{ setInterval(fetchStatus, 20000); });
   </script>
 </body>
 </html>

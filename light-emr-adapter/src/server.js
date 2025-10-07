@@ -7,6 +7,7 @@ import pinoHttp from 'pino-http';
 import statusRouter from './routes/status.js';
 import patientsRouter from './routes/patients.js';
 import transcribeRouter from './routes/transcribe.js';
+import transcriptionsRouter from './routes/transcriptions.js';
 import healthRouter from './routes/health.js';
 import { requestId, auditLogger } from './middleware/audit.js';
 import { defaultLimiter, statusLimiter, patientsLimiter } from './middleware/rateLimits.js';
@@ -41,6 +42,7 @@ app.use('/emr', healthRouter);
 app.use('/emr', statusLimiter, statusRouter);
 app.use('/emr', patientsLimiter, patientsRouter);
 app.use('/emr', transcribeRouter);
+app.use('/emr', transcriptionsRouter);
 
 // 404
 app.use((req, res) => {

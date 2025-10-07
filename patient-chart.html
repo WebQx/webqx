@@ -63,6 +63,10 @@
       <summary style="cursor:pointer; font-weight:600;">Raw FHIR JSON</summary>
       <pre id="rawJson" class="loading">Loading…</pre>
     </details>
+    <div class="panel" id="transcriptsPanel" style="display:none;">
+      <h3 style="margin:0 0 .5rem; font-size:.9rem;">Transcriptions</h3>
+      <div id="transcriptsContent" class="loading">Loading…</div>
+    </div>
   </div>
 
   <script>
@@ -84,10 +88,36 @@
         const data = await res.json();
         if (!res.ok || data.status !== 'ok') throw new Error(data.error || 'Failed to load');
         renderPatient(data.patient);
+        fetchTranscriptions();
       } catch (e) {
         document.getElementById('alertRegion').innerHTML = `<div class="error">${e.message}</div>`;
       } finally {
         setLoading(false);
+      }
+    }
+
+    async function fetchTranscriptions(){
+      const panel = document.getElementById('transcriptsPanel');
+      const content = document.getElementById('transcriptsContent');
+      panel.style.display='block';
+      content.classList.add('loading');
+      content.textContent='Loading…';
+      try {
+        const res = await fetch(`/emr/patients/${encodeURIComponent(patientId)}/transcriptions?limit=10`);
+        const data = await res.json();
+        if(!res.ok || data.status!=='ok') throw new Error(data.error||'Failed');
+        if(!data.transcriptions.length){ content.classList.remove('loading'); content.innerHTML='<em style="opacity:.6;">No transcriptions</em>'; return; }
+        const list = `<ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.35rem; font-size:.7rem;">` +
+          data.transcriptions.map(t=>`<li style="background:rgba(255,255,255,0.04); padding:.5rem .6rem; border:1px solid rgba(255,255,255,0.07); border-radius:6px;">`+
+            `<strong>${t.date?new Date(t.date).toLocaleString():''}</strong><br>`+
+            `${t.description||'Transcript'}<br>`+
+            `<span style="opacity:.6;">${t.language||''} ${t.contentType||''}</span>`+
+          `</li>`).join('') + '</ul>';
+        content.classList.remove('loading');
+        content.innerHTML=list;
+      } catch(e){
+        content.classList.remove('loading');
+        content.innerHTML = `<span style='color:#f87171;'>Error loading transcriptions: ${e.message}</span>`;
       }
     }
 

@@ -334,6 +334,12 @@ class TelehealthServer {
                         type: session.type,
                         participantCount: session.participants.length,
                         maxParticipants: session.maxParticipants,
+                        participants: session.participants.map(p => ({
+                            userId: p.userId,
+                            role: p.role,
+                            status: p.status,
+                            joinedAt: p.joinedAt
+                        })),
                         createdAt: session.createdAt,
                         endedAt: session.endedAt || null
                     }
@@ -385,11 +391,20 @@ class TelehealthServer {
                 }
                 this.messageHistory.get(sessionId || 'general').push(messageData);
 
-                // Send via WebSocket if recipient is connected
-                this.sendMessageToUser(recipientId, {
-                    type: 'new_message',
-                    data: messageData
-                });
+                // Real-time delivery
+                if (sessionId) {
+                    // Broadcast to session participants (including sender)
+                    this.broadcastToSession(sessionId, {
+                        type: 'new_message',
+                        data: messageData
+                    });
+                } else if (recipientId) {
+                    // Direct message (no session specified)
+                    this.sendMessageToUser(recipientId, {
+                        type: 'new_message',
+                        data: messageData
+                    });
+                }
 
                 res.status(201).json({
                     success: true,

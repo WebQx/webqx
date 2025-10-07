@@ -285,6 +285,85 @@ export async function searchPatients(searchParams = {}) {
 }
 
 /**
+ * Create a FHIR DocumentReference for a transcript tied to a Patient
+ * @param {Object} params
+ * @param {string} params.patientId - FHIR Patient ID
+ * @param {string} params.text - Transcript plain text
+ * @param {Object} [params.meta] - Additional metadata (language, duration, model)
+ * @returns {Promise<Object|null>} Created DocumentReference or null
+ */
+export async function createTranscriptDocumentReference({ patientId, text, meta = {} }) {
+  if (!config.MEDPLUM_API_URL || !patientId || !text) return null;
+  try {
+    const medplumAxios = await getMedplumAxios();
+    const now = new Date().toISOString();
+    const docRef = {
+      resourceType: 'DocumentReference',
+      status: 'current',
+      docStatus: 'final',
+      type: { text: 'Clinical Audio Transcript' },
+      category: [{ text: 'transcription' }],
+      subject: { reference: `Patient/${patientId}` },
+      date: now,
+      content: [
+        {
+          attachment: {
+            contentType: 'text/plain',
+            language: meta.language || 'en',
+            data: Buffer.from(text, 'utf8').toString('base64'),
+            title: meta.title || `Transcript ${now}`
+          }
+        }
+      ],
+      description: meta.description || 'Automated speech-to-text transcript',
+      extension: [
+        meta.model ? { url: 'http://webqx.ai/fhir/StructureDefinition/transcript-model', valueString: meta.model } : null,
+        meta.duration ? { url: 'http://webqx.ai/fhir/StructureDefinition/transcript-duration-s', valueDecimal: meta.duration } : null
+      ].filter(Boolean)
+    };
+    const resp = await medplumAxios.post('/fhir/R4/DocumentReference', docRef);
+    logger.info({ msg: 'Created DocumentReference (transcript)', id: resp.data.id, patientId });
+    return resp.data;
+  } catch (e) {
+    logger.error({ msg: 'Failed to create transcript DocumentReference', patientId, err: e.message, response: e.response?.data });
+    return null;
+  }
+}
+
+/**
+ * List transcript DocumentReferences for a Patient
+ * @param {string} patientId
+ * @param {number} [limit]
+ * @returns {Promise<Array>} list of simplified transcript references
+ */
+export async function listTranscriptDocumentReferences(patientId, limit = 10) {
+  if (!config.MEDPLUM_API_URL || !patientId) return [];
+  try {
+    const medplumAxios = await getMedplumAxios();
+    const resp = await medplumAxios.get('/fhir/R4/DocumentReference', {
+      params: {
+        subject: `Patient/${patientId}`,
+        _count: limit,
+        _sort: '-date'
+      }
+    });
+    const bundle = resp.data;
+    const docs = Array.isArray(bundle.entry) ? bundle.entry.map(e => ({
+      id: e.resource?.id,
+      date: e.resource?.date,
+      description: e.resource?.description,
+      language: e.resource?.content?.[0]?.attachment?.language,
+      size: e.resource?.content?.[0]?.attachment?.size,
+      contentType: e.resource?.content?.[0]?.attachment?.contentType
+    })) : [];
+    return docs.filter(d => d.description?.toLowerCase().includes('transcript') || true);
+  } catch (e) {
+    logger.warn({ msg: 'Failed to list transcript DocumentReferences', patientId, err: e.message });
+    return [];
+  }
+}
+
+/**
  * Format patient name from FHIR HumanName structure
  * @param {Object} patient - FHIR Patient resource
  * @returns {string} Formatted name
