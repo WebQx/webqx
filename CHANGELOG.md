@@ -1,3 +1,8 @@
+## 0.3.0 (2025-10-07)
+
+* feat(portal): serve provider portal directly at /portal with nested path support ([059c6dd](https://github.com/WebQx/EMR/commit/059c6dd))
+* chore(adapter): add adapter package-lock to keep dependency tree consistent ([23a0a2b](https://github.com/WebQx/EMR/commit/23a0a2b))
+
 ## 0.2.0 (2025-10-07)
 
 * chore: refine secrets validation (core vs recommended, derivations for origins & fhir base) ([c377903](https://github.com/WebQx/EMR/commit/c377903))
