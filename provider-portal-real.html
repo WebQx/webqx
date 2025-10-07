@@ -135,6 +135,14 @@
         .json-preview { font-family: 'Courier New', monospace; font-size:.65rem; background:rgba(0,0,0,0.4); padding:.5rem .6rem; border-radius:6px; border:1px solid rgba(255,255,255,0.08); margin-top:.5rem; max-height:140px; overflow:auto; }
         .loading { opacity:.7; animation: pulse 1.6s infinite; }
         @keyframes pulse { 0%{opacity:.4;} 50%{opacity:1;} 100%{opacity:.4;} }
+        /* Inline patient chart panel */
+        #patientChartPanel { background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:1rem 1.25rem; margin-bottom:2rem; display:none; }
+        #patientChartPanel h2 { font-size:1rem; margin:0 0 .5rem; display:flex; gap:.4rem; align-items:center; }
+        #patientChartPanel .section { margin-top:.75rem; }
+        #patientChartPanel .kv { font-size:.7rem; line-height:1.2; opacity:.85; }
+        #patientChartPanel .kv strong { opacity:1; }
+        #patientChartPanelClose { position:absolute; top:.6rem; right:.6rem; background:#334155; border:none; color:#fff; font-size:.65rem; padding:.35rem .55rem; border-radius:6px; cursor:pointer; }
+        #patientTranscriptsList { font-family:'Courier New', monospace; font-size:.6rem; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.1); padding:.5rem .6rem; border-radius:6px; max-height:140px; overflow:auto; white-space:pre-wrap; }
     </style>
 </head>
 <body>
@@ -217,6 +225,24 @@
                 <footer>
                     <button class="small-btn secondary" id="clearTranscriptBtn" disabled>Clear</button>
                 </footer>
+            </div>
+        </div>
+
+        <div id="patientChartPanel">
+            <button id="patientChartPanelClose" title="Close">✕</button>
+            <h2>🩺 Patient Chart <span id="chartPatientId" style="opacity:.6; font-size:.65rem;"></span></h2>
+            <div id="chartPatientMeta" class="kv">Select a patient…</div>
+            <div class="section" id="chartDemographics" style="display:none;">
+                <h3 style="font-size:.75rem; margin:0 0 .3rem;">Demographics</h3>
+                <div id="chartDemoBody" class="kv"></div>
+            </div>
+            <div class="section" id="chartTranscripts" style="display:none;">
+                <h3 style="font-size:.75rem; margin:0 0 .3rem;">Recent Transcriptions</h3>
+                <div id="patientTranscriptsList" class="empty">None loaded</div>
+            </div>
+            <div class="section" id="chartRaw" style="display:none;">
+                <h3 style="font-size:.75rem; margin:0 0 .3rem;">Raw JSON</h3>
+                <div id="chartRawJson" class="json-preview" style="max-height:180px;"></div>
             </div>
         </div>
 
@@ -319,13 +345,59 @@
                 const name=p.name?.[0]?.text||p.name?.[0]?.family||p.fullName||'Unnamed Patient';
                 const id=p.id || (Array.isArray(p.identifier)?p.identifier[0]?.value: p.identifier?.value) || p._id || '';
                 const shortId = id || '—';
-                return `<li data-pid="${id}"><strong>${name}</strong><br><span style=\"opacity:.6;\">${shortId}</span>${id?`<br><button data-open-patient=\"${id}\" class=\"small-btn secondary\" style=\"margin-top:.3rem; font-size:.55rem;\">Open</button>`:''}</li>`;
+                return `<li data-pid="${id}"><strong>${name}</strong><br><span style=\"opacity:.6;\">${shortId}</span>${id?`<br><button data-open-patient=\"${id}\" class=\"small-btn secondary\" style=\"margin-top:.3rem; font-size:.55rem;\">Open</button> <button data-inline-chart=\"${id}\" class=\"small-btn\" style=\"margin-top:.3rem; font-size:.55rem;\">Chart</button>`:''}</li>`;
             }).join('');
             list.querySelectorAll('[data-open-patient]').forEach(btn=>btn.addEventListener('click', e=>{
                 const pid=e.currentTarget.getAttribute('data-open-patient');
                 if(pid) window.location.href=`/patient-chart.html?id=${encodeURIComponent(pid)}`;
             }));
+            list.querySelectorAll('[data-inline-chart]').forEach(btn=>btn.addEventListener('click', e=>{
+                const pid=e.currentTarget.getAttribute('data-inline-chart');
+                if(pid) loadInlinePatientChart(pid);
+            }));
         }
+
+        async function loadInlinePatientChart(patientId){
+            const panel=document.getElementById('patientChartPanel');
+            panel.style.display='block';
+            document.getElementById('chartPatientId').textContent=patientId;
+            document.getElementById('chartPatientMeta').textContent='Loading patient…';
+            document.getElementById('chartDemographics').style.display='none';
+            document.getElementById('chartTranscripts').style.display='none';
+            document.getElementById('chartRaw').style.display='none';
+            try {
+                const [pRes, tRes] = await Promise.all([
+                    fetch(`/emr/patients/${encodeURIComponent(patientId)}`, { headers:{ Authorization:`Bearer ${token}` }}),
+                    fetch(`/emr/patients/${encodeURIComponent(patientId)}/transcriptions`, { headers:{ Authorization:`Bearer ${token}` }})
+                ]);
+                const pData = await safeJSON(pRes);
+                const tData = await safeJSON(tRes);
+                if(!pRes.ok) throw new Error(pData.message||'Patient load failed');
+                document.getElementById('chartPatientMeta').textContent='Loaded';
+                // Demographics
+                const name = pData.name?.[0]?.text || [pData.name?.[0]?.given?.[0], pData.name?.[0]?.family].filter(Boolean).join(' ') || 'Unnamed';
+                const gender = pData.gender || '—';
+                const birthDate = pData.birthDate || '—';
+                const demoHtml = `<div class='kv'><strong>Name:</strong> ${name}<br><strong>Gender:</strong> ${gender}<br><strong>DOB:</strong> ${birthDate}</div>`;
+                document.getElementById('chartDemoBody').innerHTML=demoHtml;
+                document.getElementById('chartDemographics').style.display='block';
+                // Transcripts
+                const transcriptsArr = Array.isArray(tData.transcriptions)? tData.transcriptions : (tData.data?.transcriptions||[]);
+                const listEl = document.getElementById('patientTranscriptsList');
+                if(!transcriptsArr.length){ listEl.textContent='None'; }
+                else { listEl.textContent = transcriptsArr.slice(0,5).map(tr=>`[${tr.timestamp||tr.createdAt||''}] ${(tr.attachment?.data? '[Attachment]' : (tr.text || tr.content || ''))}` ).join('\n'); }
+                document.getElementById('chartTranscripts').style.display='block';
+                // Raw
+                document.getElementById('chartRawJson').textContent = JSON.stringify(pData,null,2);
+                document.getElementById('chartRaw').style.display='block';
+                // Prefill transcript patient ID entry
+                const pidInput=document.getElementById('transcriptPatientId'); if(pidInput){ pidInput.value=patientId; }
+            } catch(e){
+                document.getElementById('chartPatientMeta').textContent='Error: '+e.message;
+            }
+        }
+        document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ const p=document.getElementById('patientChartPanel'); if(p.style.display==='block') p.style.display='none'; }});
+        document.getElementById('patientChartPanelClose').addEventListener('click', ()=>{ document.getElementById('patientChartPanel').style.display='none'; });
 
         // Transcription
     async function uploadTranscription(){ if(!state.adapterOnline) return; const fileInput=document.getElementById('audioFileInput'); if(!fileInput.files.length){ alert('Select an audio file first'); return; } const btn=document.getElementById('uploadTranscriptBtn'); const resultDiv=document.getElementById('transcriptionResult'); const historyDiv=document.getElementById('transcriptsHistory'); const patientIdInput=document.getElementById('transcriptPatientId'); btn.disabled=true; btn.textContent='Uploading…'; resultDiv.style.display='block'; resultDiv.textContent='Processing…'; try { const form=new FormData(); form.append('file',fileInput.files[0]); const res=await fetch('/emr/transcribe',{method:'POST',headers:{Authorization:`Bearer ${token}`},body:form}); const data=await safeJSON(res); if(!res.ok) throw new Error(data.error||'Failed'); resultDiv.textContent=JSON.stringify(data,null,2); document.getElementById('transcribeMeta').textContent='Completed'; // track history
