@@ -23,6 +23,12 @@ import {
   ErrorState
 } from '../types';
 import { AuditLogger } from './auditLogger';
+import { 
+  DynamicSyncConfigurationService, 
+  DynamicSyncIntervalConfig,
+  SyncIntervalContext,
+  DataCriticality 
+} from './dynamicSyncConfigurationService';
 
 /**
  * Sync configuration options
@@ -46,6 +52,10 @@ export interface SyncConfiguration {
   enableConflictResolution: boolean;
   /** Conflict resolution strategy */
   conflictResolutionStrategy: 'source_wins' | 'target_wins' | 'most_recent' | 'manual';
+  /** Whether to enable dynamic sync intervals */
+  enableDynamicIntervals: boolean;
+  /** Dynamic sync interval configuration */
+  dynamicIntervalConfig?: Partial<DynamicSyncIntervalConfig>;
 }
 
 /**
@@ -144,6 +154,8 @@ export class DataSyncService {
   private syncProgress: Map<string, SyncProgress> = new Map();
   private conflicts: Map<string, SyncConflict[]> = new Map();
   private auditLogger: AuditLogger;
+  private dynamicSyncConfig: DynamicSyncConfigurationService;
+  private syncIntervals: Map<string, number> = new Map();
 
   /**
    * Constructor
@@ -159,12 +171,151 @@ export class DataSyncService {
       initialRetryDelayMs: config.initialRetryDelayMs || 1000,
       retryBackoffMultiplier: config.retryBackoffMultiplier || 2,
       enableConflictResolution: config.enableConflictResolution ?? true,
-      conflictResolutionStrategy: config.conflictResolutionStrategy || 'most_recent'
+      conflictResolutionStrategy: config.conflictResolutionStrategy || 'most_recent',
+      enableDynamicIntervals: config.enableDynamicIntervals ?? true,
+      dynamicIntervalConfig: config.dynamicIntervalConfig || {}
     };
 
     this.auditLogger = new AuditLogger();
+    
+    // Initialize dynamic sync configuration service
+    this.dynamicSyncConfig = new DynamicSyncConfigurationService(
+      this.config.dynamicIntervalConfig
+    );
 
-    this.logInfo('Data Sync Service initialized', { config: this.config });
+    this.logInfo('Data Sync Service initialized', { 
+      config: this.config,
+      dynamicIntervalsEnabled: this.config.enableDynamicIntervals
+    });
+  }
+
+  // ============================================================================
+  // Dynamic Sync Interval Management
+  // ============================================================================
+
+  /**
+   * Calculate dynamic sync interval for a data type
+   * @param dataType Data type to sync
+   * @param context Additional context for interval calculation
+   * @returns Calculated sync interval in milliseconds
+   */
+  calculateSyncInterval(
+    dataType: SyncDataType, 
+    context: Partial<SyncIntervalContext> = {}
+  ): number {
+    if (!this.config.enableDynamicIntervals) {
+      // Use default timeout if dynamic intervals are disabled
+      return this.config.syncTimeoutMs;
+    }
+
+    const intervalContext: SyncIntervalContext = {
+      dataType,
+      systemLoad: context.systemLoad || this.getCurrentSystemLoad(),
+      patientCriticality: context.patientCriticality,
+      timeSinceLastSync: context.timeSinceLastSync,
+      recentFailures: context.recentFailures || 0,
+      customParams: context.customParams
+    };
+
+    const result = this.dynamicSyncConfig.calculateSyncInterval(intervalContext);
+    
+    // Store the calculated interval for this data type
+    this.syncIntervals.set(dataType, result.intervalMs);
+    
+    // Log interval adjustment for audit purposes
+    this.auditLogger.log({
+      action: 'sync_interval_adjusted',
+      resourceType: 'sync_configuration',
+      resourceId: dataType,
+      success: true,
+      context: {
+        dataType,
+        intervalMs: result.intervalMs,
+        criticality: result.criticality,
+        adjustmentReason: result.adjustmentReason,
+        adjustmentFactors: result.adjustmentFactors
+      }
+    });
+
+    return result.intervalMs;
+  }
+
+  /**
+   * Get current sync interval for a data type
+   * @param dataType Data type
+   * @returns Current sync interval in milliseconds
+   */
+  getCurrentSyncInterval(dataType: SyncDataType): number {
+    if (!this.config.enableDynamicIntervals) {
+      return this.config.syncTimeoutMs;
+    }
+    
+    return this.syncIntervals.get(dataType) || this.calculateSyncInterval(dataType);
+  }
+
+  /**
+   * Update data type criticality mapping
+   * @param dataType Data type
+   * @param criticality New criticality level
+   */
+  updateDataTypeCriticality(dataType: string, criticality: DataCriticality): void {
+    this.dynamicSyncConfig.updateDataTypeCriticality(dataType, criticality);
+    
+    // Clear cached interval to force recalculation
+    this.syncIntervals.delete(dataType as SyncDataType);
+    
+    this.logInfo('Data type criticality updated', {
+      dataType,
+      criticality
+    });
+  }
+
+  /**
+   * Update base sync intervals for different criticality levels
+   * @param intervals New base intervals
+   */
+  updateBaseSyncIntervals(intervals: Partial<DynamicSyncIntervalConfig['baseIntervals']>): void {
+    this.dynamicSyncConfig.updateBaseIntervals(intervals);
+    
+    // Clear all cached intervals to force recalculation
+    this.syncIntervals.clear();
+    
+    this.logInfo('Base sync intervals updated', {
+      newIntervals: intervals
+    });
+  }
+
+  /**
+   * Enable or disable dynamic sync intervals
+   * @param enabled Whether to enable dynamic intervals
+   */
+  setDynamicIntervalsEnabled(enabled: boolean): void {
+    this.config.enableDynamicIntervals = enabled;
+    
+    if (!enabled) {
+      // Clear cached intervals when disabling dynamic intervals
+      this.syncIntervals.clear();
+    }
+    
+    this.logInfo('Dynamic sync intervals setting changed', { enabled });
+  }
+
+  /**
+   * Get sync interval history for a data type
+   * @param dataType Data type
+   * @param limit Maximum number of history entries
+   * @returns Interval adjustment history
+   */
+  getSyncIntervalHistory(dataType: SyncDataType, limit: number = 10) {
+    return this.dynamicSyncConfig.getIntervalHistory(dataType, limit);
+  }
+
+  /**
+   * Get dynamic sync configuration
+   * @returns Current dynamic sync configuration
+   */
+  getDynamicSyncConfiguration() {
+    return this.dynamicSyncConfig.getConfiguration();
   }
 
   // ============================================================================
@@ -177,13 +328,15 @@ export class DataSyncService {
    * @param patientMrn Patient medical record number
    * @param syncType Type of synchronization
    * @param dataTypes Data types to synchronize
+   * @param syncContext Additional context for sync interval calculation
    * @returns Promise resolving to sync operation
    */
   async startSync(
     ehrConfig: EHRConfiguration,
     patientMrn: string,
     syncType: 'full' | 'incremental' | 'targeted' = 'incremental',
-    dataTypes: SyncDataType[] = ['all']
+    dataTypes: SyncDataType[] = ['all'],
+    syncContext: Partial<SyncIntervalContext> = {}
   ): Promise<EHRApiResponse<SyncOperation>> {
     try {
       this.logInfo('Starting sync operation', { 
@@ -251,8 +404,8 @@ export class DataSyncService {
         }
       });
 
-      // Start async sync process
-      this.performSyncOperation(operation, ehrConfig).catch(error => {
+      // Start async sync process with dynamic interval consideration
+      this.performSyncOperation(operation, ehrConfig, syncContext).catch(error => {
         this.logError('Async sync operation failed', {
           code: 'SYNC_OPERATION_FAILED',
           message: error.message || 'Unknown sync error',
@@ -540,10 +693,12 @@ export class DataSyncService {
    * Perform the actual sync operation
    * @param operation Sync operation
    * @param ehrConfig EHR configuration
+   * @param syncContext Sync context for dynamic intervals
    */
   private async performSyncOperation(
     operation: SyncOperation,
-    ehrConfig: EHRConfiguration
+    ehrConfig: EHRConfiguration,
+    syncContext: Partial<SyncIntervalContext> = {}
   ): Promise<void> {
     const progress = this.syncProgress.get(operation.id)!;
     
@@ -560,13 +715,20 @@ export class DataSyncService {
       this.updateProgress(progress, 20, 'Fetching data from EHR system');
       const sourceData = await this.fetchSourceData(ehrConfig, operation);
 
-      // Phase 3: Process data types
+      // Phase 3: Process data types with dynamic intervals
       for (let i = 0; i < operation.dataTypes.length; i++) {
         const dataType = operation.dataTypes[i];
         const phaseProgress = 20 + (60 * (i + 1) / operation.dataTypes.length);
         
         this.updateProgress(progress, phaseProgress, `Processing ${dataType} data`);
-        await this.processSyncDataType(operation, ehrConfig, dataType, sourceData);
+        
+        // Calculate dynamic interval for this specific data type
+        const syncInterval = this.calculateSyncInterval(dataType, {
+          ...syncContext,
+          recentFailures: operation.errors.filter(e => e.dataType === dataType).length
+        });
+        
+        await this.processSyncDataType(operation, ehrConfig, dataType, sourceData, syncInterval);
       }
 
       // Phase 4: Conflict resolution
@@ -747,12 +909,14 @@ export class DataSyncService {
    * @param ehrConfig EHR configuration
    * @param dataType Data type to process
    * @param sourceData Source data
+   * @param syncIntervalMs Dynamic sync interval for this data type
    */
   private async processSyncDataType(
     operation: SyncOperation,
     ehrConfig: EHRConfiguration,
     dataType: SyncDataType,
-    sourceData: Record<SyncDataType, unknown[]>
+    sourceData: Record<SyncDataType, unknown[]>,
+    syncIntervalMs: number
   ): Promise<void> {
     const records = sourceData[dataType] || [];
     const progress = this.syncProgress.get(operation.id)!;
@@ -761,11 +925,21 @@ export class DataSyncService {
       const record = records[i];
       
       try {
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Use dynamic interval for processing delay
+        // For critical data, process faster; for non-essential data, add delay
+        const criticality = this.dynamicSyncConfig.getDataTypeCriticality(dataType);
+        let processingDelay = 50; // Default delay
+        
+        if (criticality === 'critical') {
+          processingDelay = 25; // Faster processing for critical data
+        } else if (criticality === 'non-essential') {
+          processingDelay = 100; // Slower processing for non-essential data
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, processingDelay));
 
-        // Process record (mock implementation)
-        await this.processRecord(operation, dataType, record);
+        // Process record with sync interval context
+        await this.processRecord(operation, dataType, record, syncIntervalMs);
         
         operation.recordsProcessed++;
         progress.recordsProcessed++;
@@ -804,11 +978,13 @@ export class DataSyncService {
    * @param operation Sync operation
    * @param dataType Data type
    * @param record Record to process
+   * @param syncIntervalMs Dynamic sync interval
    */
   private async processRecord(
     operation: SyncOperation,
     dataType: SyncDataType,
-    record: unknown
+    record: unknown,
+    syncIntervalMs: number
   ): Promise<void> {
     // Mock implementation - in real system, this would:
     // 1. Validate record
@@ -1009,6 +1185,27 @@ export class DataSyncService {
       return (record as { id: string }).id;
     }
     return `unknown_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  }
+
+  /**
+   * Get current system load (mock implementation)
+   * In a real system, this would check CPU, memory, network, etc.
+   * @returns System load factor (0.0 to 1.0)
+   */
+  private getCurrentSystemLoad(): number {
+    // Mock implementation - in real system, this would check:
+    // - CPU usage
+    // - Memory usage  
+    // - Network bandwidth
+    // - Disk I/O
+    // - Active sync operations
+    
+    const activeOperationsLoad = this.activeOperations.size / this.config.maxConcurrentSyncs;
+    
+    // Simulate some system variability
+    const randomVariation = Math.random() * 0.2; // 0-20% random variation
+    
+    return Math.min(1.0, activeOperationsLoad + randomVariation);
   }
 
   /**
