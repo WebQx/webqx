@@ -28,6 +28,21 @@ class WebQXDashboard {
         <body>
             <?php renderWebQXHeader('Dashboard'); ?>
             
+            <!-- LEGACY DASHBOARD BANNER -->
+            <div style="background: linear-gradient(135deg, #fbbf24, #f59e0b); padding: 1rem 2rem; border-bottom: 2px solid #d97706; margin: 0;">
+                <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-size: 2rem;">⚠️</span>
+                    <div>
+                        <h3 style="margin: 0 0 0.25rem 0; color: #78350f; font-size: 1.1rem;">Legacy Dashboard (Static)</h3>
+                        <p style="margin: 0; color: #92400e; font-size: 0.9rem;">
+                            This is a legacy static dashboard. For live production data, please use the 
+                            <a href="/portal" style="color: #78350f; font-weight: bold; text-decoration: underline;">Production Portal</a>
+                            with real-time provider metrics.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
             <div class="container-fluid" style="padding: 2rem;">
                 <h1 style="color: var(--webqx-dark); margin-bottom: 2rem;">
                     📊 Healthcare Dashboard

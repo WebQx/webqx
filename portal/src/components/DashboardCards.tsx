@@ -33,7 +33,7 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({ onSelect, select
 
   return (
     <div className="panel" style={{ gridColumn: '1 / -1' }}>
-  <h2 style={{ marginTop: 0 }}>Experience & Demo Surfaces {role && <span style={{ fontSize: '.6rem', color: 'var(--muted)', fontWeight: 400 }}>({role} view)</span>}</h2>
+  <h2 style={{ marginTop: 0 }}>Healthcare Modules {role && <span style={{ fontSize: '.6rem', color: 'var(--muted)', fontWeight: 400 }}>({role} view)</span>}</h2>
       <div className="cards">
         {links.map(l => {
           const active = l.id === selectedId;
@@ -59,7 +59,7 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({ onSelect, select
               {l.href && (
                 <div className="card-actions" style={{ display: 'flex', gap: '.4rem', marginTop: '.6rem' }}>
                   <button className="btn secondary small" onClick={(e) => { e.stopPropagation(); onSelect(l.id); }}>Details</button>
-                  <a className="btn small" href={l.href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Open demo ↗</a>
+                  <a className="btn small" href={l.href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Open module ↗</a>
                 </div>
               )}
             </div>

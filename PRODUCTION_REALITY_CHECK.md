@@ -41,6 +41,23 @@
   - OAuth2/SSO support
   - User profiles
 
+### 5. Provider Dashboard Aggregation ✅ (Partial Live)
+- **Location**: `/api/dashboard/provider`
+- **Status**: PRODUCTION READY with Live Data
+- **Features**:
+  - Real patient counts from Medplum via `/emr/patients`
+  - Live telehealth session stats (active/waiting) from `/api/telehealth/sessions`
+  - Recent transcription jobs from `/emr/transcribe`
+  - File counts from Nextcloud via `/emr/files`
+  - Per-section error handling (no fake fallback data)
+  - 30-second cache per section
+  - 60-second auto-refresh in React portal
+  - JWT authentication with provider role check
+  - Rate limiting (60 req/min per IP)
+- **React Component**: `<ProviderMetrics />` in `/portal/src/components/`
+- **Hook**: `useProviderDashboard()` with polling and freshness indicators
+- **Note**: Sections that fail return errors in the response; no fabricated numbers
+
 ---
 
 ## ❌ DEMO/FAKE Features (NOT Production Ready)
@@ -50,13 +67,28 @@
 - **Files**: Most pages in `/provider/`, `/webqx-emr-system/provider/`
 - **Status**: DEMO ONLY - requires local OpenEMR installation
 
-### 2. Hardcoded Stats ❌
-- **Issue**: All the dashboard numbers are hardcoded, not from real database
+### 2. Legacy PHP Dashboards ❌ (DEPRECATED)
+- **Issue**: Hardcoded stats not from real database
 - **Examples**: "23 Today's Patients", "7 Pending Reviews" - all fake
+- **Status**: DEPRECATED - Use Production Portal (React) instead
+- **Files**: `/webqx-emr-system/**/webqx-dashboard.php`
+- **Recommendation**: Add banner: "Legacy dashboard (static). Use the Production Portal."
 
-### 3. Button onClick Handlers ❌
-- **Issue**: Functions like `openEMR()`, `startTelehealth()` just show alerts or open broken paths
-- **Status**: UI mockups, not connected to backend APIs
+### 3. Static OpenEMR Integration Template ❌ (DEPRECATED)
+- **File**: `/provider/real-openemr-integration.js`
+- **Status**: DEPRECATED - Replaced by React Portal and `/api/dashboard/provider`
+- **Issue**: Static logic with random increment intervals (not real data)
+- **Migration**: Use `<ProviderMetrics />` component and `useProviderDashboard()` hook
+
+### 4. Demo Files ❌ (REMOVED)
+- **Status**: DELETED from production
+- **Removed Files**:
+  - `/provider/demo-auth.js`
+  - `/provider/webqx-emr-demo.html`
+  - `/provider/openemr-launch-demo.html`
+  - `/docs/assets/demo.js`
+  - `/docs/assets/demo.css`
+  - `/public/integration-demo.html`
 
 ---
 
