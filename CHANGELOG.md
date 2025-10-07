@@ -1,3 +1,7 @@
+## <small>0.4.1 (2025-10-07)</small>
+
+* fix(db): parse Railway MYSQL_URL connection strings and sanitize database names ([9bca1d7](https://github.com/WebQx/EMR/commit/9bca1d7))
+
 ## 0.4.0 (2025-10-07)
 
 * feat(portal): route production login and root to new provider entry ([aebc849](https://github.com/WebQx/EMR/commit/aebc849))
