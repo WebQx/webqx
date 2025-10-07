@@ -55,9 +55,6 @@ Thumbs.db
 dist/
 build/
 
-# Demo and temporary files
-demo-*.js
-
 # Lambda deployment artifacts
 webqx-lambda.zip
 .serverless/

@@ -100,6 +100,144 @@ Foundational production hardening completed:
 Upcoming (short-term roadmap): deeper FHIR operations, document sync, circuit breakers, authenticated patient data flows.
 
 ---
+## 🎭 Interactive Static Demo Mode
+
+WebQx now features a **frictionless static demo experience** at https://webqx.github.io/EMR/demo.html that showcases v1.0 EMR module cards without requiring any backend, database, or login.
+
+### Purpose
+- Drive engagement and conversions for pilot program signups
+- Showcase patient, provider, and admin module capabilities
+- Demonstrate platform features with believable rotating mock data
+- Provide immediate value to visitors before committing to production
+
+### How It Works
+The demo system consists of four main components:
+
+1. **demo.html** - Standalone landing page with:
+   - Hero section with role toggle (Patient / Provider / Admin / All)
+   - Interactive card grid showing module capabilities
+   - Email capture form for pilot waitlist
+   - Graceful degradation (shows static content without JS)
+
+2. **demo-mode.js** - Core demo engine:
+   - Auto-detects demo mode (github.io domain or ?demo=1 query param)
+   - Loads card definitions from `demo-placement-cards.json`
+   - Generates deterministic mock data using session-seeded randomness
+   - Auto-refreshes cards every 25-70 seconds (configurable per card)
+   - Opens accessible modal dialogs with expanded details
+   - Provides "Request Production Access" and "Launch Full System" CTAs
+
+3. **demo-placement-cards.json** - Card metadata:
+   - 11 cards covering patient, provider, and admin modules
+   - Each card includes: id, title, description, icon, category, refresh interval
+   - Easily extensible by adding new card definitions
+
+4. **demo-analytics.js** - Privacy-friendly tracking:
+   - Stores events in localStorage (no external services)
+   - Tracks: page loads, card views, clicks, modal opens, signups, session duration
+   - Debug mode (?debug=1) shows floating analytics panel
+   - Export button downloads session data as JSON
+
+5. **demo-signup.js** - Waitlist form handler:
+   - Validates email format
+   - Stores submissions to localStorage
+   - Shows success toast notifications
+   - Falls back to mailto link on errors
+
+### Running Locally
+```bash
+# Open the demo directly in your browser
+open demo.html
+
+# Or with query parameter to force demo mode
+open demo.html?demo=1
+
+# Enable debug analytics panel
+open demo.html?debug=1
+```
+
+On GitHub Pages, demo mode is automatically enabled.
+
+### Adding New Cards
+To add a new demo card:
+
+1. Add card definition to `demo-placement-cards.json`:
+```json
+{
+  "card_id": "my-new-card",
+  "title": "My Feature",
+  "description": "Description of the feature",
+  "icon": "🎯",
+  "category": "patient",
+  "refresh_interval": 30,
+  "demo": true
+}
+```
+
+2. Add mock data generator in `demo-mode.js`:
+```javascript
+case 'my-new-card':
+  return {
+    metric1: randomInt(1, 100),
+    metric2: randomChoice(['Active', 'Pending', 'Complete']),
+    last_update: getRecentDate(7)
+  };
+```
+
+3. (Optional) Add detailed modal data generator:
+```javascript
+function generateMyNewCardDetails() {
+  return [
+    { field1: 'value1', field2: 'value2' },
+    { field1: 'value3', field2: 'value4' }
+  ];
+}
+```
+
+### Analytics & Privacy
+- All analytics data stored **locally** in browser localStorage
+- No cookies, no external tracking pixels, no third-party services
+- Data never leaves user's browser unless they export it
+- Session IDs are temporary and not personally identifiable
+- Debug mode shows real-time event counts and allows JSON export
+
+### Configuration
+Edit constants at the top of `demo-mode.js`:
+```javascript
+const DEMO_PRODUCTION_URL = 'https://webqx.up.railway.app/';
+const DEMO_SIGNUP_POST_ENDPOINT = null; // Set to real endpoint when ready
+```
+
+### Extending or Disabling
+- **Disable demo mode**: Remove or rename demo.html
+- **Customize styling**: Edit demo-styles.css
+- **Change mock data patterns**: Modify generators in demo-mode.js
+- **Add custom cards**: Use `window.WEBQX_DEMO_CARDS = [...]` before loading demo-mode.js
+
+### Testing Signup Flow
+Signups are stored in localStorage under key `webqx_demo_signups`. To view:
+```javascript
+// In browser console
+const signups = JSON.parse(localStorage.getItem('webqx_demo_signups'));
+console.log(signups);
+```
+
+To clear all demo data (analytics and signups):
+```javascript
+// In browser console
+localStorage.removeItem('webqx_demo_signups');
+localStorage.removeItem('webqx_demo_analytics');
+sessionStorage.removeItem('webqx_demo_session');
+```
+
+### Accessibility Features
+- All cards are keyboard navigable (Tab, Enter, Space)
+- Modal dialogs include focus trapping and ESC key support
+- ARIA labels and roles for screen reader compatibility
+- High contrast colors meet WCAG 2.1 AA standards
+- Mobile responsive design (works on phones and tablets)
+
+---
 ## ✨ Key Capabilities
 - Patient & Provider Portals (interactive demo surfaces)
 - Telehealth WebSocket channel (latency + auto‑ping demo)
