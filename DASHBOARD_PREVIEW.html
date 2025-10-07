@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provider Dashboard - WebQX Production Portal Preview</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1216;
+      color: #e2edf5;
+      padding: 2rem;
+    }
+    .portal-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .portal-header {
+      background: #141b22;
+      border: 1px solid #1f2a33;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .portal-header h1 {
+      margin: 0;
+      color: #f1f7fd;
+      font-size: 1.5rem;
+    }
+    .panel {
+      background: #11181f;
+      border: 1px solid #1f2a33;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+    }
+    .panel h2 {
+      margin-top: 0;
+      color: #f1f7fd;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .freshness-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+    }
+    .freshness-dot.stale {
+      background: #6b7280;
+    }
+    .btn {
+      background: #1e3a5f;
+      color: #93c5fd;
+      border: 1px solid #2d4a6f;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .btn:hover {
+      background: #2d4a6f;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .card-link {
+      background: #141b22;
+      border: 1px solid #1f2a33;
+      padding: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .card-link:hover {
+      border-color: #2d4a6f;
+      background: #1a2129;
+    }
+    .card-link h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.9rem;
+      color: #93c5fd;
+    }
+    .metric-value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 0.5rem 0;
+      color: #f1f7fd;
+    }
+    .metric-label {
+      font-size: 0.7rem;
+      color: #9ca3af;
+      margin: 0;
+    }
+    .split-metric {
+      display: flex;
+      gap: 1rem;
+      margin: 0.5rem 0;
+    }
+    .split-metric > div {
+      flex: 1;
+    }
+    .split-metric .metric-value {
+      font-size: 1.5rem;
+    }
+    .unavailable-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 0.4rem 0.6rem;
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      color: #374151;
+      border-radius: 4px;
+      margin-top: 0.5rem;
+    }
+    .alert {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      font-size: 0.8rem;
+    }
+    .error-details {
+      margin-top: 1rem;
+      font-size: 0.75rem;
+    }
+    .error-details summary {
+      cursor: pointer;
+      color: #9ca3af;
+    }
+    .error-details ul {
+      margin-top: 0.5rem;
+      padding-left: 1.5rem;
+      color: #9ca3af;
+    }
+    .badge {
+      background: #1e3a5f;
+      color: #93c5fd;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spinning {
+      animation: spin 1s linear infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="portal-shell">
+    <header class="portal-header">
+      <h1>WebQX Portal</h1>
+      <nav>
+        <button class="btn">Dashboard</button>
+      </nav>
+    </header>
+
+    <div class="panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <h2 style="margin: 0;">Provider Dashboard</h2>
+          <span class="freshness-dot" title="Last updated: Just now"></span>
+        </div>
+        <button class="btn">
+          <span>↻</span>
+          Refresh
+        </button>
+      </div>
+
+      <div class="cards">
+        <!-- Patients Card -->
+        <div class="card-link" title="Source: /emr/patients">
+          <h3>Patients</h3>
+          <div class="metric-value">156</div>
+          <p class="metric-label">Total patients</p>
+        </div>
+
+        <!-- Telehealth Card -->
+        <div class="card-link" title="Source: /api/telehealth/sessions">
+          <h3>Telehealth</h3>
+          <div class="split-metric">
+            <div>
+              <div class="metric-value">2</div>
+              <p class="metric-label">Active</p>
+            </div>
+            <div>
+              <div class="metric-value">5</div>
+              <p class="metric-label">Waiting</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transcriptions Card -->
+        <div class="card-link" title="Source: /emr/transcribe">
+          <h3>Transcriptions</h3>
+          <div class="metric-value">3</div>
+          <p class="metric-label">Recent jobs</p>
+        </div>
+
+        <!-- Files Card - Unavailable -->
+        <div class="card-link" style="opacity: 0.6;">
+          <h3>Files</h3>
+          <div class="unavailable-badge">Unavailable</div>
+        </div>
+      </div>
+
+      <!-- Error Details -->
+      <details class="error-details">
+        <summary>1 service error</summary>
+        <ul>
+          <li><strong>files:</strong> NOT_IMPLEMENTED</li>
+        </ul>
+      </details>
+
+      <p style="font-size: 0.65rem; color: #6b7280; margin-top: 0.5rem;">
+        Cached data (refreshes every 30s)
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>Before Phase 1 <span class="badge">Legacy</span></h2>
+      <div class="alert">
+        <strong>⚠️ Issues with old implementation:</strong>
+        <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+          <li>Hardcoded numbers (e.g., "156 patients" was static)</li>
+          <li>No connection to real APIs</li>
+          <li>Demo files scattered throughout codebase</li>
+          <li>PHP dashboard with fake getters</li>
+          <li>No error handling for unavailable services</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>After Phase 1 <span class="badge" style="background: #065f46; color: #6ee7b7;">✓ Production</span></h2>
+      <ul style="color: #9ca3af; line-height: 1.8;">
+        <li>✅ Real-time data from Medplum, Telehealth, Whisper APIs</li>
+        <li>✅ 30-second caching reduces backend load</li>
+        <li>✅ JWT authentication with role-based access</li>
+        <li>✅ Graceful error handling (partial failures OK)</li>
+        <li>✅ Freshness indicators (green < 60s)</li>
+        <li>✅ "Unavailable" badges instead of fake numbers</li>
+        <li>✅ Demo files moved to /legacy/demo/</li>
+        <li>✅ PHP dashboard shows deprecation banner</li>
+      </ul>
+    </div>
+
+    <footer style="text-align: center; padding: 2rem; color: #6b7280; font-size: 0.875rem;">
+      WebQX Healthcare Platform © 2024 • Phase 1 Production Dashboard Preview
+    </footer>
+  </div>
+</body>
+</html>

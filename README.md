@@ -100,6 +100,78 @@ Foundational production hardening completed:
 Upcoming (short-term roadmap): deeper FHIR operations, document sync, circuit breakers, authenticated patient data flows.
 
 ---
+## 🏥 Production Provider Dashboard
+
+### Overview
+The WebQX platform now includes a **production-ready provider dashboard** that aggregates live data from multiple backend APIs. This replaces legacy demo scaffolding with real, API-driven metrics.
+
+### Architecture
+```
+┌─────────────────────┐
+│  React Portal UI    │
+│  (portal/src)       │
+└──────────┬──────────┘
+           │ HTTP GET /api/dashboard/provider
+           │ (JWT Auth Required)
+           v
+┌─────────────────────┐
+│  Dashboard Route    │  ← Aggregator with 30s cache
+│  (routes/dashboard) │
+└──────────┬──────────┘
+           │ Parallel fetches (5s timeout each)
+           ├──→ /emr/patients         (Medplum)
+           ├──→ /api/telehealth/sessions
+           ├──→ /emr/transcribe/status (Whisper)
+           └──→ /emr/files (future)
+```
+
+### Features
+- **Live Metrics**: Real patient counts, telehealth session status, transcription jobs
+- **Error Handling**: Partial failures reported in `errors[]` array; missing sections show "Unavailable"
+- **Caching**: 30-second TTL reduces backend load
+- **Freshness Indicator**: Green dot (< 60s old) / Gray dot (older)
+- **Authentication**: Requires valid provider or admin JWT token
+- **No Fake Data**: Missing endpoints return explicit unavailable status instead of placeholder numbers
+
+### API Response Format
+```json
+{
+  "patients": { "count": 156 },
+  "telehealth": { "active": 2, "waiting": 5 },
+  "transcriptionJobs": [
+    { "id": "job-123", "status": "completed", "created_at": "2024-01-15T10:30:00Z" }
+  ],
+  "errors": [
+    { "section": "files", "error": "NOT_IMPLEMENTED" }
+  ],
+  "updated_at": "2024-01-15T14:25:30.000Z",
+  "cached": false
+}
+```
+
+### Data Freshness
+- **Cache TTL**: 30 seconds (configurable via `TTL_MS` constant)
+- **Source Timeout**: 5 seconds per upstream API call
+- **Indicator**: UI shows green dot if data < 60s old
+
+### Error Behavior
+When an upstream service fails:
+- The aggregator continues processing other services
+- Failed section is omitted from response
+- Error details added to `errors[]` array
+- HTTP 200 returned with partial data + errors
+
+### Access the Dashboard
+- **Production Portal**: https://webqx-production.up.railway.app/portal/
+- **Local Development**: http://localhost:3000/portal/
+- **Endpoint**: `GET /api/dashboard/provider` (requires auth)
+
+### Migration from Legacy
+- ⚠️ Legacy PHP dashboard (`webqx-emr-system/core/library/webqx/webqx-dashboard.php`) shows deprecation banner
+- Hardcoded getter methods return "N/A" with `@deprecated` docblocks
+- All demo files moved to `/legacy/demo/` directory
+
+---
 ## ✨ Key Capabilities
 - Patient & Provider Portals (interactive demo surfaces)
 - Telehealth WebSocket channel (latency + auto‑ping demo)

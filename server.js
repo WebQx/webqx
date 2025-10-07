@@ -179,6 +179,12 @@ if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
   } catch (e) { 
     console.warn('UI routes not available:', e.message);
   }
+  try {
+    const dashboardRoutes = require('./routes/dashboard');
+    app.use('/api/dashboard', dashboardRoutes);
+  } catch (e) {
+    console.warn('Dashboard routes not available:', e.message);
+  }
 
   module.exports = app;
 } else {

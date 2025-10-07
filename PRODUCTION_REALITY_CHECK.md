@@ -43,16 +43,28 @@
 
 ---
 
-## ❌ DEMO/FAKE Features (NOT Production Ready)
+## ❌ DEMO/FAKE Features (NOT Production Ready) → ✅ MIGRATED TO PRODUCTION
 
-### 1. Local OpenEMR Integration ❌
+### 1. Provider Dashboard ✅ (FIXED - Phase 1)
+- **Previous Issue**: Hardcoded demo data in PHP dashboard and JavaScript files
+- **Current Status**: PRODUCTION READY
+- **Implementation**:
+  - New endpoint: `GET /api/dashboard/provider`
+  - React portal component with live metrics
+  - Real data from Medplum, Telehealth, Whisper APIs
+  - 30-second caching, error handling, JWT auth
+  - Legacy PHP dashboard shows deprecation banner
+- **Demo Files**: Moved to `/legacy/demo/` directory
+  - `provider/demo-auth.js`
+  - `provider/webqx-emr-demo.html`
+  - `provider/openemr-launch-demo.html`
+  - `integrations/provider-portal-emr-integration.js`
+  - `docs/assets/demo.js` and `demo.css`
+
+### 2. Local OpenEMR Integration ❌
 - **Issue**: Points to `../core/interface/` paths that don't exist on Railway
 - **Files**: Most pages in `/provider/`, `/webqx-emr-system/provider/`
 - **Status**: DEMO ONLY - requires local OpenEMR installation
-
-### 2. Hardcoded Stats ❌
-- **Issue**: All the dashboard numbers are hardcoded, not from real database
-- **Examples**: "23 Today's Patients", "7 Pending Reviews" - all fake
 
 ### 3. Button onClick Handlers ❌
 - **Issue**: Functions like `openEMR()`, `startTelehealth()` just show alerts or open broken paths
@@ -60,27 +72,36 @@
 
 ---
 
-## 🎯 What Should Production Portal Look Like?
+## 🎯 Production Portal Status
 
-### Option 1: API-Driven SPA (Recommended)
-Create a new production portal that ONLY uses the working APIs:
+### ✅ IMPLEMENTED: API-Driven Provider Dashboard (Phase 1)
+The production portal now includes a real provider dashboard with live data:
 
-```javascript
-// Real API calls
-fetch('https://webqx-production.up.railway.app/emr/patients')
-fetch('https://webqx-production.up.railway.app/api/telehealth/sessions')
-fetch('https://webqx-production.up.railway.app/emr/transcribe')
+**Architecture:**
+```
+React Portal UI → /api/dashboard/provider → Real APIs (Medplum, Telehealth, Whisper)
 ```
 
-### Option 2: Redirect to API Documentation
-Since most "portals" are demos, redirect to API documentation showing what actually works.
+**Features:**
+- Live patient counts from Medplum
+- Real telehealth session status
+- Recent transcription jobs
+- Error handling for unavailable services
+- 30-second caching
+- Freshness indicators
+- JWT authentication
 
-### Option 3: Simple Dashboard with Real Data
-Build minimal dashboard that shows:
-- List of ACTUAL patients from Medplum
-- ACTUAL transcription jobs from Whisper
-- ACTUAL files from Nextcloud
-- Links to working features only
+**Access:**
+- Production: https://webqx-production.up.railway.app/portal/
+- Endpoint: `GET /api/dashboard/provider`
+
+### 🚧 Future Enhancements (Phase 2+)
+- Patient-facing dashboard variant
+- Admin analytics dashboard
+- Real-time WebSocket updates
+- Message counts integration
+- Lab results detail view
+- Multi-tenant analytics
 
 ---
 
