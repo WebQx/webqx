@@ -1,20 +1,27 @@
 /**
  * Telepsychiatry Workflow Routes
- * Handles triage queue and care planning workflows
+ * Handles triage queue and care planning workflows with priority queue support
  */
 
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
+const { PriorityTriageService } = require('../services/priorityTriageService');
 const router = express.Router();
 
-// In-memory storage for demo purposes (use database in production)
-const triageQueue = new Map();
+// Initialize priority-aware triage service
+const priorityTriageService = new PriorityTriageService({
+  maxQueueSize: 1000,
+  enableMetrics: true,
+  enableLogging: process.env.NODE_ENV === 'development'
+});
+
+// Legacy storage for non-triage data
 const carePlans = new Map();
 const culturalAdaptations = new Map();
 
 /**
  * GET /workflow/triage
- * Triage Queue - Displays culturally adapted prompts for patient triage
+ * Priority-aware Triage Queue - Displays culturally adapted prompts with priority processing
  */
 router.get('/triage', (req, res) => {
     try {
@@ -27,43 +34,25 @@ router.get('/triage', (req, res) => {
             limit = 50
         } = req.query;
 
-        let filteredTriage = [];
-
-        // Filter triage entries based on query parameters
-        for (const [triageId, triage] of triageQueue.entries()) {
-            let matches = true;
-
-            if (status && triage.status !== status) matches = false;
-            if (priority && triage.priority !== priority) matches = false;
-            if (clinicianId && triage.assignedClinician !== clinicianId) matches = false;
-            if (culturalContext && triage.culturalContext !== culturalContext) matches = false;
-
-            if (matches) {
-                // Adapt prompts based on language and cultural context
-                const adaptedTriage = adaptTriageForCulture(triage, language, culturalContext);
-                filteredTriage.push(adaptedTriage);
-            }
-        }
-
-        // Sort by priority and timestamp
-        filteredTriage.sort((a, b) => {
-            const priorityOrder = { 'urgent': 3, 'high': 2, 'medium': 1, 'low': 0 };
-            const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
-            if (priorityDiff !== 0) return priorityDiff;
-            
-            return new Date(a.createdAt) - new Date(b.createdAt);
+        // Use priority triage service for filtered results
+        const filteredTriage = priorityTriageService.getFilteredTriageEntries({
+            status,
+            priority,
+            language,
+            culturalContext,
+            clinicianId,
+            limit
         });
 
-        // Apply limit
-        if (limit && filteredTriage.length > parseInt(limit)) {
-            filteredTriage = filteredTriage.slice(0, parseInt(limit));
-        }
+        // Get queue metrics for monitoring
+        const queueMetrics = priorityTriageService.getQueueMetrics();
 
         res.json({
             success: true,
             data: {
                 triageQueue: filteredTriage,
                 totalCount: filteredTriage.length,
+                queueMetrics: queueMetrics,
                 filters: {
                     status,
                     priority,
@@ -123,12 +112,14 @@ router.post('/triage', (req, res) => {
             culturallyAdaptedPrompts: generateCulturalPrompts(symptoms, culturalContext, language)
         };
 
-        triageQueue.set(triageId, triageEntry);
+        // Add to priority queue
+        const queueItemId = priorityTriageService.addTriageEntry(triageEntry);
 
         res.json({
             success: true,
             data: {
                 triageId,
+                queueItemId,
                 priority,
                 estimatedWaitTime: triageEntry.estimatedWaitTime,
                 culturallyAdaptedPrompts: triageEntry.culturallyAdaptedPrompts,
@@ -497,11 +488,128 @@ function initializeSampleTriage() {
             culturallyAdaptedPrompts: generateCulturalPrompts(entry.symptoms, entry.culturalContext, entry.language)
         };
         
-        triageQueue.set(triageId, triageEntry);
+        priorityTriageService.addTriageEntry(triageEntry);
     });
 }
 
+/**
+ * GET /workflow/triage/next
+ * Get next highest priority triage entry for processing
+ */
+router.get('/triage/next', (req, res) => {
+    try {
+        const nextEntry = priorityTriageService.getNextTriageEntry();
+        
+        if (!nextEntry) {
+            return res.json({
+                success: true,
+                data: null,
+                message: 'No pending triage entries'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: nextEntry
+        });
+    } catch (error) {
+        console.error('Error getting next triage entry:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to get next triage entry'
+        });
+    }
+});
+
+/**
+ * PUT /workflow/triage/:queueItemId/complete
+ * Mark triage entry as completed
+ */
+router.put('/triage/:queueItemId/complete', (req, res) => {
+    try {
+        const { queueItemId } = req.params;
+        const { completionData } = req.body;
+
+        const success = priorityTriageService.markTriageCompleted(queueItemId, completionData);
+        
+        if (!success) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Triage entry not found or not in processing state'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Triage entry marked as completed'
+        });
+    } catch (error) {
+        console.error('Error completing triage entry:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to complete triage entry'
+        });
+    }
+});
+
+/**
+ * PUT /workflow/triage/:queueItemId/fail
+ * Mark triage entry as failed and optionally requeue
+ */
+router.put('/triage/:queueItemId/fail', (req, res) => {
+    try {
+        const { queueItemId } = req.params;
+        const { requeue = false, adjustedPriority } = req.body;
+
+        const success = priorityTriageService.markTriageFailed(queueItemId, requeue, adjustedPriority);
+        
+        if (!success) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Triage entry not found or not in processing state'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `Triage entry marked as failed${requeue ? ' and requeued' : ''}`
+        });
+    } catch (error) {
+        console.error('Error failing triage entry:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to mark triage entry as failed'
+        });
+    }
+});
+
+/**
+ * GET /workflow/triage/metrics
+ * Get priority queue metrics and performance data
+ */
+router.get('/triage/metrics', (req, res) => {
+    try {
+        const metrics = priorityTriageService.getQueueMetrics();
+        
+        res.json({
+            success: true,
+            data: {
+                metrics,
+                timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('Error getting triage metrics:', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to get triage metrics'
+        });
+    }
+});
+
 // Initialize sample data
 initializeSampleTriage();
+
+module.exports = router;
 
 module.exports = router;
