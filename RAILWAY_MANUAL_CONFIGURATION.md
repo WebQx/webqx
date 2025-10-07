@@ -10,6 +10,33 @@
 
 Since the Railway API token has limited permissions, please **manually add these variables** to Railway:
 
+### **0. Core Database (MySQL/MariaDB)**
+
+Add these first so the portal can persist data. If you attached Railway's MySQL plugin, you can reference it directly.
+
+```bash
+# Recommended: use the managed connection string
+# Variable Name: DB_URL
+# Value: ${{ MySQL.MYSQL_URL }}
+
+# Optional: Override individual fields if you prefer explicit host/port variables
+# DB_HOST=${{ MySQL.HOST }}
+# DB_PORT=${{ MySQL.PORT }}
+# DB_USER=${{ MySQL.USER }}
+# DB_PASSWORD=${{ MySQL.PASSWORD }}
+# DB_NAME=${{ MySQL.DATABASE }}
+```
+
+> ℹ️ The application now auto-detects `DB_URL`, `DATABASE_URL`, or `MYSQL_URL`, including SSL flags such as `?ssl=true`. If your provider requires custom certificates, set `DB_SSL_CA`, `DB_SSL_CERT`, and `DB_SSL_KEY` as additional variables.
+
+After saving the variable, trigger a redeploy (Railway usually does this automatically) so the server restarts and the new connection string is parsed. Watch the deployment logs for:
+
+```
+ℹ️ MariaDB connector configured via connection string (...)
+```
+
+If you see `Unknown database 'railway.'`, double-check that your URL doesn't have a trailing dot—Railway sometimes shows this when copying. The connector now strips trailing dots automatically, but confirming the dashboard value helps avoid typos.
+
 ### **Step-by-Step Instructions:**
 
 1. **Go to Railway Dashboard:**  

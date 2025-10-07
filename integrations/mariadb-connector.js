@@ -3,20 +3,66 @@
  * Handles database connections and queries for all modules
  */
 
+const pickEnvValue = (keys = [], fallback) => {
+    for (const key of keys) {
+        const value = process.env[key];
+        if (value !== undefined && value !== '') {
+            return value;
+        }
+    }
+    return fallback;
+};
+
+const pickEnvInt = (keys = [], fallback) => {
+    const raw = pickEnvValue(keys);
+    if (raw === undefined || raw === null || raw === '') {
+        return fallback;
+    }
+    const parsed = parseInt(raw, 10);
+    return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const isExplicitlyFalse = (value) => {
+    if (typeof value !== 'string') return false;
+    return /^(0|false|off|no|disable|disabled)$/i.test(value.trim());
+};
+
+const isExplicitlyTrue = (value) => {
+    if (typeof value !== 'string') return false;
+    return /^(1|true|on|yes|enable|enabled|required|require|verify_ca|verify_full)$/i.test(value.trim());
+};
+
 class MariaDBConnector {
     constructor() {
         this.connectionPool = null;
+
+        const defaultReconnect = pickEnvValue(['DB_AUTO_RECONNECT', 'MYSQL_AUTO_RECONNECT'], 'true');
+
         this.config = {
-            host: process.env.DB_HOST || 'localhost',
-            port: process.env.DB_PORT || 3306,
-            user: process.env.DB_USER || 'webqx_user',
-            password: process.env.DB_PASSWORD || 'webqx_secure_2024',
-            database: process.env.DB_NAME || 'openemr',
-            connectionLimit: 10,
-            acquireTimeout: 60000,
-            timeout: 60000,
-            reconnect: true
+            host: pickEnvValue(['DB_HOST', 'MYSQLHOST', 'MYSQL_HOST'], 'localhost'),
+            port: pickEnvInt(['DB_PORT', 'MYSQLPORT', 'MYSQL_PORT'], 3306),
+            user: pickEnvValue(['DB_USER', 'MYSQLUSER', 'MYSQL_USER'], 'webqx_user'),
+            password: pickEnvValue(['DB_PASSWORD', 'MYSQLPASSWORD', 'MYSQL_PASSWORD'], 'webqx_secure_2024'),
+            database: pickEnvValue(['DB_NAME', 'MYSQLDATABASE', 'MYSQL_DATABASE'], 'openemr'),
+            connectionLimit: pickEnvInt(['DB_CONNECTION_LIMIT', 'MYSQL_CONNECTION_LIMIT'], 10),
+            acquireTimeout: pickEnvInt(['DB_ACQUIRE_TIMEOUT', 'MYSQL_ACQUIRE_TIMEOUT'], 60000),
+            timeout: pickEnvInt(['DB_TIMEOUT', 'MYSQL_TIMEOUT'], 60000),
+            reconnect: !isExplicitlyFalse(defaultReconnect)
         };
+
+        const connectionString = pickEnvValue([
+            'WEBQX_DB_URL',
+            'DB_URL',
+            'DATABASE_URL',
+            'MYSQL_URL',
+            'JAWSDB_URL'
+        ], null);
+
+        if (connectionString) {
+            this.applyConnectionString(connectionString);
+        } else {
+            this.applySslFromEnv();
+        }
         
         this.schemas = {
             webqx_sessions: `
@@ -98,6 +144,147 @@ class MariaDBConnector {
         };
         
         this.init();
+    }
+
+    applyConnectionString(connectionString) {
+        if (!connectionString) return;
+
+        try {
+            const url = new URL(connectionString);
+
+            if (url.hostname) {
+                this.config.host = url.hostname;
+            }
+
+            if (url.port) {
+                const port = parseInt(url.port, 10);
+                if (!Number.isNaN(port)) {
+                    this.config.port = port;
+                }
+            }
+
+            if (url.username) {
+                this.config.user = decodeURIComponent(url.username);
+            }
+
+            if (url.password) {
+                this.config.password = decodeURIComponent(url.password);
+            }
+
+            const dbName = url.pathname ? url.pathname.replace(/^\//, '') : '';
+            if (dbName) {
+                const decoded = decodeURIComponent(dbName);
+                const cleaned = decoded.replace(/^\.+/, '').replace(/\.+$/, '');
+                if (cleaned) {
+                    this.config.database = cleaned;
+                }
+            }
+
+            const params = url.searchParams;
+
+            const numericParams = [
+                ['connectionLimit', 'connectionLimit'],
+                ['acquireTimeout', 'acquireTimeout'],
+                ['timeout', 'timeout']
+            ];
+
+            for (const [paramKey, configKey] of numericParams) {
+                if (params.has(paramKey)) {
+                    const value = parseInt(params.get(paramKey), 10);
+                    if (!Number.isNaN(value) && value > 0) {
+                        this.config[configKey] = value;
+                    }
+                }
+            }
+
+            if (params.has('reconnect')) {
+                const reconnectValue = params.get('reconnect');
+                this.config.reconnect = !isExplicitlyFalse(reconnectValue);
+            }
+
+            if (params.has('socketPath')) {
+                this.config.socketPath = params.get('socketPath');
+            }
+
+            if (params.has('charset')) {
+                this.config.charset = params.get('charset');
+            }
+
+            if (params.has('timezone')) {
+                this.config.timezone = params.get('timezone');
+            }
+
+            // SSL configuration honors both query params and environment overrides
+            this.applySslFromEnv(params);
+
+            console.log(`ℹ️ MariaDB connector configured via connection string (${this.config.host}:${this.config.port}/${this.config.database})`);
+        } catch (error) {
+            console.warn(`⚠️ Failed to parse database connection string: ${error.message}`);
+            this.applySslFromEnv();
+        }
+    }
+
+    applySslFromEnv(searchParams) {
+        const sslEnvValue = pickEnvValue(['DB_SSL', 'MYSQL_SSL', 'MYSQL_USE_SSL']);
+        const envIndicatesDisable = isExplicitlyFalse(sslEnvValue);
+        const envIndicatesEnable = isExplicitlyTrue(sslEnvValue);
+
+        let shouldEnable = envIndicatesEnable;
+
+        if (!shouldEnable && !envIndicatesDisable) {
+            const paramValue = searchParams?.get('ssl') || searchParams?.get('sslmode');
+            if (paramValue !== null && paramValue !== undefined) {
+                if (isExplicitlyFalse(paramValue)) {
+                    shouldEnable = false;
+                } else if (isExplicitlyTrue(paramValue)) {
+                    shouldEnable = true;
+                } else if (/^(require|required)$/i.test(paramValue)) {
+                    shouldEnable = true;
+                }
+            }
+        }
+
+        if (!shouldEnable && !envIndicatesDisable) {
+            // Enable SSL automatically if certificate material is provided
+            const hasCertMaterial = Boolean(
+                pickEnvValue(['DB_SSL_CA', 'MYSQL_SSL_CA', 'MYSQL_CA_CERT']) ||
+                pickEnvValue(['DB_SSL_CERT', 'MYSQL_SSL_CERT']) ||
+                pickEnvValue(['DB_SSL_KEY', 'MYSQL_SSL_KEY'])
+            );
+            if (hasCertMaterial) {
+                shouldEnable = true;
+            }
+        }
+
+        if (!shouldEnable) {
+            delete this.config.ssl;
+            return;
+        }
+
+        const sslConfig = {};
+
+        const ca = pickEnvValue(['DB_SSL_CA', 'MYSQL_SSL_CA', 'MYSQL_CA_CERT']);
+        if (ca) sslConfig.ca = ca;
+
+        const cert = pickEnvValue(['DB_SSL_CERT', 'MYSQL_SSL_CERT']);
+        if (cert) sslConfig.cert = cert;
+
+        const key = pickEnvValue(['DB_SSL_KEY', 'MYSQL_SSL_KEY']);
+        if (key) sslConfig.key = key;
+
+        const rejectEnv = pickEnvValue(['DB_SSL_REJECT_UNAUTHORIZED', 'MYSQL_SSL_REJECT_UNAUTHORIZED']);
+        const rejectParam = searchParams?.get('rejectUnauthorized');
+
+        if (rejectEnv !== undefined) {
+            sslConfig.rejectUnauthorized = !isExplicitlyFalse(rejectEnv);
+        } else if (rejectParam !== null && rejectParam !== undefined) {
+            sslConfig.rejectUnauthorized = !isExplicitlyFalse(rejectParam);
+        } else if (!sslConfig.ca && !sslConfig.cert && !sslConfig.key) {
+            // When no certificates are provided, default to non-strict mode to support managed services
+            sslConfig.rejectUnauthorized = false;
+        }
+
+        this.config.ssl = sslConfig;
     }
 
     async init() {
