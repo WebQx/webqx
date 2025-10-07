@@ -167,31 +167,57 @@
 
     function escapeHtml(str){ return str.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
 
-    // WebSocket integration
-    let ws;
-    function initWebSocket(){
+    // WebSocket integration with reconnect + incremental sync
+    let ws; let reconnectAttempts = 0; let intentionalClose = false; let lastMessageTimestamp = null; const maxReconnectDelay = 15000;
+    function initWebSocket(initial=true){
       try {
         const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-        ws = new WebSocket(`${proto}://${location.host}`);
-        ws.addEventListener('open', ()=>{ pushLog('system','WS connected'); ws.send(JSON.stringify({ type:'auth', userId:'demo-user'})); setTimeout(()=>{ ws.send(JSON.stringify({ type:'join_session', sessionId }));},150); });
-        ws.addEventListener('message', evt => {
-          try { const msg = JSON.parse(evt.data); handleWS(msg); } catch { /* ignore */ }
+        const url = `${proto}://${location.host}?token=${encodeURIComponent(token)}`;
+        ws = new WebSocket(url);
+        ws.addEventListener('open', ()=>{
+          reconnectAttempts = 0;
+          pushLog('system','WS connected');
+          // Join after connection (server uses query token for auth)
+          setTimeout(()=>{ try { ws.send(JSON.stringify({ type:'join_session', sessionId })); } catch{} }, 120);
         });
-        ws.addEventListener('close', ()=> pushLog('system','WS closed'));
+        ws.addEventListener('message', evt => { try { const msg = JSON.parse(evt.data); handleWS(msg); } catch {} });
+        ws.addEventListener('close', ()=>{ if(!intentionalClose){ scheduleReconnect(); } pushLog('system','WS closed'); });
         ws.addEventListener('error', ()=> pushLog('error','WS error'));
-      } catch (e){ pushLog('error','WS init failed'); }
+      } catch (e){ pushLog('error','WS init failed'); scheduleReconnect(); }
+    }
+    function scheduleReconnect(){
+      reconnectAttempts++;
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts-1), maxReconnectDelay);
+      pushLog('system',`Reconnecting in ${Math.round(delay/1000)}s…`);
+      setTimeout(()=> initWebSocket(false), delay);
     }
     function handleWS(msg){
       switch(msg.type){
         case 'participant_joined': pushLog('system',`Participant joined: ${msg.userId}`); fetchStatus(); break;
         case 'participant_left': pushLog('system',`Participant left: ${msg.userId}`); fetchStatus(); break;
-        case 'new_message': if(msg.data?.sessionId===sessionId) pushLog(msg.data.senderId=== 'demo-user' ? 'me':'remote', msg.data.content); break;
-        case 'session_joined': pushLog('system','Realtime session updates active'); break;
+        case 'new_message':
+          if(msg.data?.sessionId===sessionId){
+            lastMessageTimestamp = msg.data.timestamp;
+            const origin = msg.data.senderId === currentUserId() ? 'me':'remote';
+            pushLog(origin, msg.data.content);
+          }
+          break;
+        case 'session_joined': pushLog('system','Realtime session updates active'); // After join pull any missed messages since last timestamp
+          if(lastMessageTimestamp){ incrementalSync(); }
+          break;
       }
     }
-
+    function currentUserId(){
+      // Basic derivation from token (demo) – if JWT-like, parse payload; else fallback stored id
+      try { if(token.split('.').length===3){ const p=JSON.parse(atob(token.split('.')[1])); return p.sub || p.userId || p.email || 'me'; } } catch{}
+      return 'demo-user';
+    }
     async function loadMessageHistory(){
-      try { const res=await fetch(`/api/v1/telehealth/messaging/history/${encodeURIComponent(sessionId)}`, { headers:{ Authorization:`Bearer ${token}` }}); const data=await res.json(); if(data.success){ data.data.messages.forEach(m=> pushLog(m.senderId==='demo-user'?'me':'remote', m.content)); } } catch {/* ignore */}
+      try { const res=await fetch(`/api/v1/telehealth/messaging/history/${encodeURIComponent(sessionId)}`, { headers:{ Authorization:`Bearer ${token}` }}); const data=await res.json(); if(data.success){ data.data.messages.forEach(m=> { lastMessageTimestamp = m.timestamp; pushLog(m.senderId===currentUserId()?'me':'remote', m.content); }); } } catch {/* ignore */ }
+    }
+    async function incrementalSync(){
+      if(!lastMessageTimestamp) return;
+      try { const res=await fetch(`/api/v1/telehealth/messaging/history/${encodeURIComponent(sessionId)}?since=${encodeURIComponent(lastMessageTimestamp)}`, { headers:{ Authorization:`Bearer ${token}` }}); const data=await res.json(); if(data.success){ data.data.messages.forEach(m=> { lastMessageTimestamp = m.timestamp; pushLog(m.senderId===currentUserId()?'me':'remote', m.content); }); } } catch{}
     }
 
     document.getElementById('refreshBtn').addEventListener('click', fetchStatus);

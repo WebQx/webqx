@@ -159,10 +159,33 @@
                 <div class="body" id="telehealthBody">
                     <div class="loading">Loading sessions…</div>
                 </div>
-                <footer>
-                    <button class="small-btn" id="startSessionBtn">Start Session</button>
-                    <button class="small-btn secondary" id="refreshSessionsBtn">Refresh</button>
-                </footer>
+                <details style="margin-top:.6rem;" id="createSessionPanel">
+                    <summary style="cursor:pointer; font-weight:600; font-size:.7rem; letter-spacing:.5px;">➕ Create Session</summary>
+                    <div style="margin-top:.5rem;">
+                        <label style="display:block; font-size:.55rem; opacity:.65; text-transform:uppercase; letter-spacing:.5px;">Session Type</label>
+                        <select id="sessionTypeInput" class="inline-input" style="padding:.4rem .5rem; font-size:.7rem;">
+                            <option value="consultation">Consultation</option>
+                            <option value="followup">Follow-up</option>
+                            <option value="triage">Triage</option>
+                        </select>
+                        <label style="display:block; font-size:.55rem; opacity:.65; text-transform:uppercase; letter-spacing:.5px; margin-top:.4rem;">Allowed Participants (comma-separated user IDs)</label>
+                        <textarea id="allowedParticipantsInput" class="inline-input" placeholder="user123, nurseA" style="min-height:60px;"></textarea>
+                        <div style="display:flex; gap:.4rem; flex-wrap:wrap; margin-top:.4rem;">
+                            <button class="small-btn" id="startSessionBtn">Start Session</button>
+                            <button class="small-btn secondary" id="refreshSessionsBtn">Refresh</button>
+                        </div>
+                        <div id="sessionCreateFeedback" style="font-size:.6rem; margin-top:.4rem; opacity:.75;"></div>
+                    </div>
+                </details>
+                <details style="margin-top:.6rem;" id="invitePanel" open>
+                    <summary style="cursor:pointer; font-weight:600; font-size:.7rem; letter-spacing:.5px;">📨 Invite Participant</summary>
+                    <div style="margin-top:.4rem;">
+                        <input id="inviteSessionId" class="inline-input" placeholder="Session ID" />
+                        <input id="inviteUserId" class="inline-input" placeholder="User ID to invite" />
+                        <button class="small-btn" id="inviteBtn" disabled>Invite</button>
+                        <div id="inviteFeedback" style="font-size:.6rem; margin-top:.3rem; opacity:.75;"></div>
+                    </div>
+                </details>
             </div>
 
             <div class="card" id="patientsCard">
@@ -265,15 +288,17 @@
         async function loadTelehealthSessions(){
             if(!state.telehealthOnline){ document.getElementById('telehealthBody').innerHTML='<div class="empty">Telehealth offline</div>'; return; }
             if(state.loadingSessions) return; state.loadingSessions=true; const body=document.getElementById('telehealthBody'); body.innerHTML='<div class="loading">Loading sessions…</div>';
-            try { const res=await fetch('/api/v1/telehealth/sessions',{headers:{Authorization:`Bearer ${token}`}}); const data=await safeJSON(res); if(!data.success) throw new Error('Failed to load'); state.telehealthSessions=data.data.sessions; if(!state.telehealthSessions.length) body.innerHTML='<div class="empty">No active sessions</div>'; else body.innerHTML='<ul class="list">'+state.telehealthSessions.map(s=>`<li data-sid="${s.id}"><strong>${s.id}</strong><br><span style=\"opacity:.65;\">${s.type} • ${s.participantCount} participant(s)</span><br><div style=\"margin-top:.3rem; display:flex; gap:.3rem;\"><button class=\"small-btn secondary\" data-open="${s.id}" style=\"font-size:.6rem;\">Open</button><button class=\"small-btn\" data-copy="${s.id}" style=\"font-size:.6rem;\">Copy ID</button></div></li>`).join('')+'</ul>'; document.getElementById('telehealthMeta').textContent='Updated '+new Date().toLocaleTimeString(); setPill(document.getElementById('telehealthStatusPill'),'online');
+            try { const res=await fetch('/api/v1/telehealth/sessions',{headers:{Authorization:`Bearer ${token}`}}); const data=await safeJSON(res); if(!data.success) throw new Error('Failed to load'); state.telehealthSessions=data.data.sessions; if(!state.telehealthSessions.length) body.innerHTML='<div class="empty">No active sessions</div>'; else body.innerHTML='<ul class="list">'+state.telehealthSessions.map(s=>{ const restricted = s.allowed==='restricted'; return `<li data-sid="${s.id}"><strong>${s.id}</strong><br><span style=\"opacity:.65;\">${s.type} • ${s.participantCount} participant(s) • ${restricted?'ACL':'Open'}</span><br><div style=\"margin-top:.3rem; display:flex; gap:.3rem; flex-wrap:wrap;\"><button class=\"small-btn secondary\" data-open="${s.id}" style=\"font-size:.55rem;\">Open</button><button class=\"small-btn\" data-copy="${s.id}" style=\"font-size:.55rem;\">Copy ID</button><button class=\"small-btn\" data-fill-invite="${s.id}" style=\"font-size:.55rem;\">Invite+</button></div></li>`; }).join('')+'</ul>'; document.getElementById('telehealthMeta').textContent='Updated '+new Date().toLocaleTimeString(); setPill(document.getElementById('telehealthStatusPill'),'online');
                 // Attach click handlers
                 body.querySelectorAll('button[data-open]').forEach(btn=>btn.addEventListener('click', e=>{ const sid=e.currentTarget.getAttribute('data-open'); window.location.href = `/telehealth-session.html?id=${encodeURIComponent(sid)}`; }));
                 body.querySelectorAll('button[data-copy]').forEach(btn=>btn.addEventListener('click', async e=>{ const sid=e.currentTarget.getAttribute('data-copy'); try { await navigator.clipboard.writeText(sid); btn.textContent='Copied'; setTimeout(()=>btn.textContent='Copy ID',1200); } catch { btn.textContent='Fail'; setTimeout(()=>btn.textContent='Copy ID',1200);} }));
+                body.querySelectorAll('button[data-fill-invite]').forEach(btn=>btn.addEventListener('click', e=>{ const sid=e.currentTarget.getAttribute('data-fill-invite'); const inviteSessionInput=document.getElementById('inviteSessionId'); if(inviteSessionInput){ inviteSessionInput.value=sid; document.getElementById('invitePanel').open=true; document.getElementById('inviteUserId').focus(); } }));
             }
             catch(e){ body.innerHTML='<div class="empty">Error loading sessions</div>'; setPill(document.getElementById('telehealthStatusPill'),'offline'); }
             finally { state.loadingSessions=false; }
         }
-        async function startTelehealthSession(){ if(!state.telehealthOnline) return; const btn=document.getElementById('startSessionBtn'); btn.disabled=true; btn.textContent='Starting…'; try { const res=await fetch('/api/v1/telehealth/video/session/start',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({sessionType:'consultation'})}); const data=await safeJSON(res); if(!res.ok) throw new Error(data.message||'Failed'); await loadTelehealthSessions(); } catch(e){ alert('Failed to start session: '+e.message); } finally { btn.disabled=false; btn.textContent='Start Session'; } }
+        async function startTelehealthSession(){ if(!state.telehealthOnline) return; const btn=document.getElementById('startSessionBtn'); btn.disabled=true; btn.textContent='Starting…'; const feedback=document.getElementById('sessionCreateFeedback'); feedback.textContent='Creating...'; try { const type=document.getElementById('sessionTypeInput').value; const rawAllowed=document.getElementById('allowedParticipantsInput').value; const allowed=rawAllowed.split(',').map(s=>s.trim()).filter(Boolean); const payload={ sessionType:type, allowedParticipants:allowed }; const res=await fetch('/api/v1/telehealth/video/session/start',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(payload)}); const data=await safeJSON(res); if(!res.ok || !data.success) throw new Error(data.message||'Failed'); feedback.textContent=`Session created: ${data.data.sessionId}`; await loadTelehealthSessions(); } catch(e){ feedback.textContent='Error: '+e.message; } finally { btn.disabled=false; btn.textContent='Start Session'; setTimeout(()=>{ if(feedback.textContent.startsWith('Session created')) feedback.textContent=''; },4500); } }
+        async function inviteParticipant(){ const sessionId=document.getElementById('inviteSessionId').value.trim(); const userId=document.getElementById('inviteUserId').value.trim(); const btn=document.getElementById('inviteBtn'); const feedback=document.getElementById('inviteFeedback'); if(!sessionId||!userId){ feedback.textContent='Enter session and user IDs'; return; } btn.disabled=true; feedback.textContent='Inviting...'; try { const res=await fetch(`/api/v1/telehealth/video/session/${encodeURIComponent(sessionId)}/invite`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({userId})}); const data=await safeJSON(res); if(!res.ok || !data.success) throw new Error(data.message||'Invite failed'); feedback.textContent='Invited '+userId; document.getElementById('inviteUserId').value=''; await loadTelehealthSessions(); } catch(e){ feedback.textContent='Error: '+e.message; } finally { btn.disabled=false; setTimeout(()=>{ if(feedback.textContent.startsWith('Invited')) feedback.textContent=''; },3500); } }
 
         // Patients
         async function loadPatients(){ if(!state.adapterOnline) return; if(state.loadingPatients)return; state.loadingPatients=true; const list=document.getElementById('patientList'); list.innerHTML='<li class="loading">Loading…</li>'; try { const res=await fetch('/emr/patients'); const data=await safeJSON(res); const patients=Array.isArray(data)?data:(data.patients||data.data||[]); state.patients=patients.slice(0,25); renderPatients(); document.getElementById('patientsMeta').textContent='Loaded '+state.patients.length; setPill(document.getElementById('patientsStatusPill'),'online'); } catch(e){ list.innerHTML='<li class="empty">Failed to load patients</li>'; setPill(document.getElementById('patientsStatusPill'),'offline'); } finally { state.loadingPatients=false; } }
@@ -317,7 +342,9 @@
         }
 
         // Event bindings
-        document.getElementById('startSessionBtn').addEventListener('click', startTelehealthSession);
+    document.getElementById('startSessionBtn').addEventListener('click', startTelehealthSession);
+    document.getElementById('inviteBtn').addEventListener('click', inviteParticipant);
+    ['inviteSessionId','inviteUserId'].forEach(id=>{ const el=document.getElementById(id); el.addEventListener('input',()=>{ const s=document.getElementById('inviteSessionId').value.trim(); const u=document.getElementById('inviteUserId').value.trim(); document.getElementById('inviteBtn').disabled=!(s&&u); }); });
         document.getElementById('refreshSessionsBtn').addEventListener('click', loadTelehealthSessions);
         document.getElementById('loadPatientsBtn').addEventListener('click', loadPatients);
     document.getElementById('searchPatientsBtn').addEventListener('click', searchPatients);

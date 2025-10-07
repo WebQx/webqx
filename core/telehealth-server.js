@@ -19,10 +19,13 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
+const { URL } = require('url');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 class TelehealthServer {
@@ -58,6 +61,8 @@ class TelehealthServer {
         this.connections = new Map();
         this.messageHistory = new Map();
         this.userSessions = new Map();
+        this.persistencePath = process.env.TELEHEALTH_DATA_PATH || path.join(process.cwd(), 'telehealth-data.json');
+        this.dirty = false;
         
         this.initializeServer();
     }
@@ -107,6 +112,10 @@ class TelehealthServer {
         
         // Setup WebSocket handlers
         this.setupWebSocket();
+        // Load persisted state
+        this.loadPersistedState();
+        // Periodic flush
+        setInterval(()=>{ if(this.dirty) this.persistState(); }, 10000).unref();
         
         console.log('✅ Telehealth Server initialized');
     }
@@ -150,10 +159,15 @@ class TelehealthServer {
         // Start video session
         this.app.post('/api/v1/telehealth/video/session/start', this.authenticateRequest.bind(this), (req, res) => {
             try {
-                const { sessionType = 'consultation', maxParticipants = 2, recordingEnabled = false } = req.body;
+                const { sessionType = 'consultation', maxParticipants = 2, recordingEnabled = false, allowedParticipants = [] } = req.body;
                 
                 const sessionId = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                 
+                // Normalize allowedParticipants (ensure array of unique strings excluding creator if present twice)
+                const normalizedAllowed = Array.isArray(allowedParticipants)
+                    ? [...new Set(allowedParticipants.filter(p => typeof p === 'string' && p.trim() && p !== req.user.id))]
+                    : [];
+
                 const session = {
                     id: sessionId,
                     type: sessionType,
@@ -163,6 +177,7 @@ class TelehealthServer {
                     participants: [],
                     maxParticipants,
                     recordingEnabled,
+                    allowedParticipants: normalizedAllowed, // Access control list (empty => open only to creator until invites)
                     settings: {
                         quality: this.config.video.defaultQuality,
                         maxBitrate: this.config.video.maxBitrate,
@@ -171,6 +186,7 @@ class TelehealthServer {
                 };
 
                 this.activeSessions.set(sessionId, session);
+                this.dirty = true;
                 
                 // Add creator as participant
                 session.participants.push({
@@ -179,6 +195,7 @@ class TelehealthServer {
                     joinedAt: new Date().toISOString(),
                     status: 'connected'
                 });
+                this.dirty = true;
 
                 res.status(201).json({
                     success: true,
@@ -218,6 +235,16 @@ class TelehealthServer {
                     });
                 }
 
+                // Access control: only creator or explicitly allowed users may join (if ACL defined)
+                const aclDefined = Array.isArray(session.allowedParticipants);
+                if (aclDefined && session.allowedParticipants.length > 0 && session.createdBy !== req.user.id && !session.allowedParticipants.includes(req.user.id)) {
+                    this.logAuditEvent('VIDEO_SESSION_ACCESS_DENIED', { sessionId, userId: req.user.id, reason: 'not_in_allowed_participants' });
+                    return res.status(403).json({
+                        error: 'Access Denied',
+                        message: 'You are not allowed to join this session'
+                    });
+                }
+
                 if (session.participants.length >= session.maxParticipants) {
                     return res.status(403).json({
                         error: 'Session Full',
@@ -232,6 +259,7 @@ class TelehealthServer {
                     joinedAt: new Date().toISOString(),
                     status: 'connected'
                 });
+                this.dirty = true;
 
                 res.json({
                     success: true,
@@ -240,7 +268,8 @@ class TelehealthServer {
                         sessionId,
                         role: 'participant',
                         settings: session.settings,
-                        participants: session.participants.length
+                        participants: session.participants.length,
+                        allowedParticipants: session.allowedParticipants
                     }
                 });
 
@@ -280,11 +309,13 @@ class TelehealthServer {
 
                 // Remove participant
                 session.participants = session.participants.filter(p => p.userId !== req.user.id);
+                this.dirty = true;
 
                 // End session if no participants left
                 if (session.participants.length === 0) {
                     session.status = 'ended';
                     session.endedAt = new Date().toISOString();
+                    this.dirty = true;
                 }
 
                 res.json({
@@ -340,6 +371,7 @@ class TelehealthServer {
                             status: p.status,
                             joinedAt: p.joinedAt
                         })),
+                        allowedParticipants: session.allowedParticipants || [],
                         createdAt: session.createdAt,
                         endedAt: session.endedAt || null
                     }
@@ -351,6 +383,34 @@ class TelehealthServer {
                     error: 'Internal Server Error',
                     message: 'Failed to get session status'
                 });
+            }
+        });
+
+        // Invite (add allowed participant)
+        this.app.post('/api/v1/telehealth/video/session/:sessionId/invite', this.authenticateRequest.bind(this), (req, res) => {
+            try {
+                const { sessionId } = req.params;
+                const { userId } = req.body;
+                const session = this.activeSessions.get(sessionId);
+                if (!session) {
+                    return res.status(404).json({ error: 'Session Not Found', message: 'Video session not found' });
+                }
+                if (session.createdBy !== req.user.id) {
+                    return res.status(403).json({ error: 'Forbidden', message: 'Only session creator can invite' });
+                }
+                if (!userId || typeof userId !== 'string') {
+                    return res.status(400).json({ error: 'Invalid userId', message: 'userId required' });
+                }
+                if (!Array.isArray(session.allowedParticipants)) session.allowedParticipants = [];
+                if (!session.allowedParticipants.includes(userId)) {
+                    session.allowedParticipants.push(userId);
+                    this.dirty = true;
+                }
+                this.logAuditEvent('VIDEO_SESSION_INVITE', { sessionId, invited: userId, by: req.user.id });
+                res.json({ success: true, data: { sessionId, allowedParticipants: session.allowedParticipants } });
+            } catch (error) {
+                console.error('❌ Failed to invite participant:', error);
+                res.status(500).json({ error: 'Internal Server Error', message: 'Failed to invite participant' });
             }
         });
     }
@@ -390,6 +450,7 @@ class TelehealthServer {
                     this.messageHistory.set(sessionId || 'general', []);
                 }
                 this.messageHistory.get(sessionId || 'general').push(messageData);
+                this.dirty = true;
 
                 // Real-time delivery
                 if (sessionId) {
@@ -432,22 +493,31 @@ class TelehealthServer {
         this.app.get('/api/v1/telehealth/messaging/history/:sessionId', this.authenticateRequest.bind(this), (req, res) => {
             try {
                 const { sessionId } = req.params;
-                const { limit = 50, offset = 0 } = req.query;
+                const { limit = 50, offset = 0, since } = req.query;
 
-                const messages = this.messageHistory.get(sessionId) || [];
-                const paginatedMessages = messages
+                let messages = this.messageHistory.get(sessionId) || [];
+                // Filter by since timestamp if provided
+                if (since) {
+                    const sinceDate = new Date(since);
+                    if (!isNaN(sinceDate.getTime())) {
+                        messages = messages.filter(m => new Date(m.timestamp) > sinceDate);
+                    }
+                }
+                const total = messages.length;
+                const paginated = messages
                     .slice(parseInt(offset), parseInt(offset) + parseInt(limit))
                     .map(msg => ({
                         ...msg,
-                        content: msg.encrypted ? '[Encrypted]' : msg.content // Decrypt in production
+                        content: msg.encrypted ? '[Encrypted]' : msg.content
                     }));
 
+                this.logAuditEvent('MESSAGE_HISTORY_FETCH', { sessionId, count: paginated.length, since: since || null, userId: req.user.id });
                 res.json({
                     success: true,
                     data: {
-                        messages: paginatedMessages,
-                        total: messages.length,
-                        hasMore: (parseInt(offset) + parseInt(limit)) < messages.length
+                        messages: paginated,
+                        total,
+                        hasMore: (parseInt(offset) + parseInt(limit)) < total
                     }
                 });
 
@@ -478,7 +548,8 @@ class TelehealthServer {
                         type: session.type,
                         status: session.status,
                         participantCount: session.participants.length,
-                        createdAt: session.createdAt
+                        createdAt: session.createdAt,
+                        allowed: session.allowedParticipants && session.allowedParticipants.length > 0 ? 'restricted' : 'open'
                     }));
 
                 res.json({
@@ -503,13 +574,32 @@ class TelehealthServer {
         this.wss.on('connection', (ws, req) => {
             const connectionId = uuidv4();
             console.log(`📡 New WebSocket connection: ${connectionId}`);
+            // Attempt token extraction from query param (?token=) for early auth
+            let initialUserId = null;
+            let authenticated = false;
+            try {
+                const fullUrl = new URL(req.url, 'http://localhost');
+                const token = fullUrl.searchParams.get('token');
+                if (token) {
+                    const parsed = this.parseToken(token);
+                    if (parsed && parsed.userId) {
+                        initialUserId = parsed.userId;
+                        authenticated = true;
+                        this.logAuditEvent('WS_AUTH_QUERY_SUCCESS', { userId: initialUserId, connectionId });
+                    } else {
+                        this.logAuditEvent('WS_AUTH_QUERY_FAILED', { reason: 'parse_failed', connectionId });
+                    }
+                }
+            } catch (e) {
+                console.warn('WS query parse failed:', e.message);
+            }
 
-            // Store connection
             this.connections.set(connectionId, {
                 ws,
-                userId: null,
+                userId: initialUserId,
                 sessionId: null,
-                connectedAt: new Date().toISOString()
+                connectedAt: new Date().toISOString(),
+                authenticated
             });
 
             ws.on('message', (data) => {
@@ -539,6 +629,8 @@ class TelehealthServer {
             ws.send(JSON.stringify({
                 type: 'connected',
                 connectionId,
+                authenticated,
+                userId: initialUserId,
                 timestamp: new Date().toISOString()
             }));
         });
@@ -555,21 +647,66 @@ class TelehealthServer {
 
         switch (message.type) {
             case 'auth':
-                // Authenticate WebSocket connection
-                connection.userId = message.userId; // Validate token in production
-                connection.ws.send(JSON.stringify({
-                    type: 'auth_success',
-                    userId: message.userId
-                }));
+                if (connection.authenticated) {
+                    // Already auth via query
+                    connection.ws.send(JSON.stringify({ type: 'auth_success', userId: connection.userId, already:true }));
+                    return;
+                }
+                if (!message.token) {
+                    connection.ws.send(JSON.stringify({ type: 'error', message: 'Missing token' }));
+                    return;
+                }
+                const parsed = this.parseToken(message.token);
+                if (!parsed || !parsed.userId) {
+                    connection.ws.send(JSON.stringify({ type: 'error', message: 'Invalid token' }));
+                    this.logAuditEvent('WS_AUTH_FAILED', { connectionId });
+                    try { connection.ws.close(); } catch {}
+                    return;
+                }
+                connection.userId = parsed.userId;
+                connection.authenticated = true;
+                this.logAuditEvent('WS_AUTH_SUCCESS', { userId: parsed.userId, connectionId });
+                connection.ws.send(JSON.stringify({ type: 'auth_success', userId: parsed.userId }));
                 break;
 
             case 'join_session':
-                // Join a session for real-time updates
-                connection.sessionId = message.sessionId;
-                connection.ws.send(JSON.stringify({
-                    type: 'session_joined',
-                    sessionId: message.sessionId
-                }));
+                if (!connection.authenticated) {
+                    connection.ws.send(JSON.stringify({ type: 'error', message: 'Authenticate first' }));
+                    return;
+                }
+                if (!message.sessionId) {
+                    connection.ws.send(JSON.stringify({ type: 'error', message: 'sessionId required' }));
+                    return;
+                }
+                const session = this.activeSessions.get(message.sessionId);
+                if (!session) {
+                    connection.ws.send(JSON.stringify({ type: 'error', message: 'Session not found' }));
+                    return;
+                }
+                // Enforce ACL: user must be creator or in allowedParticipants
+                const aclDefined = Array.isArray(session.allowedParticipants) && session.allowedParticipants.length > 0;
+                if (aclDefined && session.createdBy !== connection.userId && !session.allowedParticipants.includes(connection.userId)) {
+                    this.logAuditEvent('WS_SESSION_ACCESS_DENIED', { sessionId: session.id, userId: connection.userId });
+                    connection.ws.send(JSON.stringify({ type: 'error', message: 'Access denied to session' }));
+                    return;
+                }
+                // Ensure participant exists or add
+                if (!session.participants.some(p => p.userId === connection.userId)) {
+                    if (session.participants.length >= session.maxParticipants) {
+                        connection.ws.send(JSON.stringify({ type: 'error', message: 'Session full' }));
+                        return;
+                    }
+                    session.participants.push({
+                        userId: connection.userId,
+                        role: 'participant',
+                        joinedAt: new Date().toISOString(),
+                        status: 'connected'
+                    });
+                    this.dirty = true;
+                    this.broadcastToSession(session.id, { type: 'participant_joined', userId: connection.userId, participantCount: session.participants.length });
+                }
+                connection.sessionId = session.id;
+                connection.ws.send(JSON.stringify({ type: 'session_joined', sessionId: session.id }));
                 break;
 
             case 'webrtc_signal':
@@ -610,9 +747,9 @@ class TelehealthServer {
      * Broadcast message to all participants in a session
      */
     broadcastToSession(sessionId, message) {
-        for (const [id, connection] of this.connections) {
-            if (connection.sessionId === sessionId) {
-                connection.ws.send(JSON.stringify(message));
+        for (const [, connection] of this.connections) {
+            if (connection.sessionId === sessionId && connection.authenticated) {
+                try { connection.ws.send(JSON.stringify(message)); } catch {}
             }
         }
     }
@@ -660,8 +797,26 @@ class TelehealthServer {
      * Validate token
      */
     isValidToken(token) {
-        // In production, validate against JWT or session store
-        return token.length > 10; // Simple validation for demo
+        // In production, validate JWT signature; here basic length check
+        return token && token.length > 20;
+    }
+
+    /**
+     * Parse a bearer/JWT-like token into a minimal identity (demo only)
+     */
+    parseToken(token) {
+        if (!this.isValidToken(token)) return null;
+        // Attempt JWT decode (no signature verify in demo)
+        try {
+            if (token.split('.').length === 3) {
+                const payloadB64 = token.split('.')[1];
+                const json = JSON.parse(Buffer.from(payloadB64, 'base64').toString('utf8'));
+                const userId = json.sub || json.userId || json.email || json.preferred_username || 'user';
+                return { userId };
+            }
+        } catch { /* ignore decode errors */ }
+        // Fallback: derive pseudo id from prefix of hash
+        return { userId: 'user_' + token.slice(0,8) };
     }
 
     /**
@@ -677,6 +832,29 @@ class TelehealthServer {
         
         console.log('📋 Audit:', JSON.stringify(auditLog));
         // In production, save to secure audit log storage
+    }
+
+    /** Persist sessions and messages to disk (simplistic JSON) */
+    persistState(){
+        try {
+            const data = {
+                sessions: Array.from(this.activeSessions.values()),
+                messages: Array.from(this.messageHistory.entries()).map(([k,v])=>({ key:k, messages:v }))
+            };
+            fs.writeFileSync(this.persistencePath, JSON.stringify(data,null,2));
+            this.dirty = false;
+            this.logAuditEvent('STATE_PERSISTED', { sessions: data.sessions.length, buckets: data.messages.length });
+        } catch(e){ console.warn('Persist failed:', e.message); }
+    }
+    loadPersistedState(){
+        try {
+            if(!fs.existsSync(this.persistencePath)) return;
+            const raw = fs.readFileSync(this.persistencePath,'utf8');
+            const data = JSON.parse(raw);
+            (data.sessions||[]).forEach(s=> this.activeSessions.set(s.id, s));
+            (data.messages||[]).forEach(bucket=> this.messageHistory.set(bucket.key, bucket.messages));
+            this.logAuditEvent('STATE_LOADED', { sessions: this.activeSessions.size, buckets: this.messageHistory.size });
+        } catch(e){ console.warn('Load persisted state failed:', e.message); }
     }
 
     /**
