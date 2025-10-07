@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Patient Chart • WebQX</title>
+  <style>
+    body { font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#0f172a; color:#f1f5f9; margin:0; padding:1.5rem; }
+    a { color:#3b82f6; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .wrap { max-width:1000px; margin:0 auto; }
+    header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; }
+    header h1 { font-size:1.25rem; margin:0; }
+    .panel { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1rem; }
+    .row { display:flex; flex-wrap:wrap; gap:1rem; }
+    .chip { background:#1e293b; padding:.35rem .7rem; border-radius:999px; font-size:.65rem; letter-spacing:.5px; text-transform:uppercase; }
+    pre { background:rgba(0,0,0,0.4); padding:1rem; border-radius:8px; font-size:.7rem; overflow:auto; max-height:400px; }
+    .loading { opacity:.65; animation:pulse 1.4s infinite; }
+    @keyframes pulse { 0%{opacity:.4;} 50%{opacity:1;} 100%{opacity:.4;} }
+    .btn { background:#3b82f6; border:none; color:#fff; padding:.55rem 1rem; border-radius:8px; font-weight:600; cursor:pointer; font-size:.75rem; }
+    .btn.secondary { background:#475569; }
+    .btn.danger { background:#dc2626; }
+    .grid { display:grid; gap:1rem; }
+    @media (min-width: 850px){ .grid { grid-template-columns: 1fr 1fr; } }
+    dl { margin:0; display:grid; grid-template-columns: 140px 1fr; row-gap:.35rem; column-gap:.75rem; font-size:.8rem; }
+    dt { opacity:.6; font-weight:500; }
+    dd { margin:0; }
+    .error { background:rgba(220,38,38,.15); border:1px solid #dc2626; padding:.75rem 1rem; border-radius:8px; font-size:.8rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1 id="patientTitle">Patient Chart</h1>
+        <small id="patientId" style="opacity:.6;">Loading…</small>
+      </div>
+      <nav style="display:flex; gap:.5rem; flex-wrap:wrap;">
+        <a href="/provider-portal-real.html" class="btn secondary">← Back Portal</a>
+        <button id="refreshBtn" class="btn secondary">Refresh</button>
+      </nav>
+    </header>
+
+    <div id="alertRegion"></div>
+
+    <div class="panel" id="summaryPanel">
+      <h2 style="margin:0 0 .75rem; font-size:1rem;">Summary</h2>
+      <div id="summaryContent" class="loading">Loading patient…</div>
+    </div>
+
+    <div class="grid">
+      <div class="panel" id="demographicsPanel">
+        <h3 style="margin:0 0 .5rem; font-size:.9rem;">Demographics</h3>
+        <div id="demographicsContent" class="loading">Loading…</div>
+      </div>
+      <div class="panel" id="contactPanel">
+        <h3 style="margin:0 0 .5rem; font-size:.9rem;">Contact</h3>
+        <div id="contactContent" class="loading">Loading…</div>
+      </div>
+    </div>
+
+    <details class="panel" open>
+      <summary style="cursor:pointer; font-weight:600;">Raw FHIR JSON</summary>
+      <pre id="rawJson" class="loading">Loading…</pre>
+    </details>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const patientId = params.get('id');
+    const token = localStorage.getItem('providerAuthToken') || sessionStorage.getItem('providerAuthToken');
+    if (!token) {
+      location.href = '/auth/providers/login.html';
+    }
+    if (!patientId) {
+      document.getElementById('alertRegion').innerHTML = '<div class="error">Missing patient id parameter (?id=)</div>';
+    }
+
+    async function fetchPatient() {
+      if (!patientId) return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/emr/patients/${encodeURIComponent(patientId)}`);
+        const data = await res.json();
+        if (!res.ok || data.status !== 'ok') throw new Error(data.error || 'Failed to load');
+        renderPatient(data.patient);
+      } catch (e) {
+        document.getElementById('alertRegion').innerHTML = `<div class="error">${e.message}</div>`;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function setLoading(is) {
+      ['summaryContent','demographicsContent','contactContent','rawJson'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (is) el.classList.add('loading'); else el.classList.remove('loading');
+      });
+    }
+
+    function renderPatient(p) {
+      document.getElementById('patientTitle').textContent = extractName(p) || 'Patient';
+      document.getElementById('patientId').textContent = p.id || '—';
+
+      // Summary
+      const gender = p.gender || '—';
+      const dob = p.birthDate || '—';
+      const active = p.active === false ? 'Inactive' : 'Active';
+      document.getElementById('summaryContent').innerHTML = `
+        <div class="row" style="gap:.75rem;">
+          <span class="chip">${active}</span>
+          <span class="chip">Gender: ${gender}</span>
+          <span class="chip">DOB: ${dob}</span>
+          <span class="chip">Resource: Patient</span>
+        </div>`;
+
+      // Demographics
+      const demoHtml = `<dl>
+        <dt>Full Name</dt><dd>${escapeHtml(extractName(p) || '—')}</dd>
+        <dt>Given Names</dt><dd>${(p.name?.[0]?.given||[]).join(' ') || '—'}</dd>
+        <dt>Family Name</dt><dd>${p.name?.[0]?.family || '—'}</dd>
+        <dt>Gender</dt><dd>${gender}</dd>
+        <dt>DOB</dt><dd>${dob}</dd>
+        <dt>Language(s)</dt><dd>${(p.communication||[]).map(c=>c.language?.text||'').filter(Boolean).join(', ') || '—'}</dd>
+        <dt>Marital Status</dt><dd>${p.maritalStatus?.text || '—'}</dd>
+      </dl>`;
+      document.getElementById('demographicsContent').innerHTML = demoHtml;
+
+      // Contact
+      const telecom = (p.telecom||[]).map(t=>`${t.system||''}: ${t.value||''}`).filter(Boolean);
+      const address = (p.address||[])[0];
+      const addressStr = address ? [address.line?.join(' '), address.city, address.state, address.postalCode].filter(Boolean).join(', ') : '—';
+      const contactHtml = `<dl>
+        <dt>Telecom</dt><dd>${telecom.length?telecom.join('<br>'):'—'}</dd>
+        <dt>Address</dt><dd>${escapeHtml(addressStr)}</dd>
+      </dl>`;
+      document.getElementById('contactContent').innerHTML = contactHtml;
+
+      // Raw JSON
+      document.getElementById('rawJson').textContent = JSON.stringify(p, null, 2);
+    }
+
+    function extractName(p) {
+      try {
+        if (p.name && p.name.length) {
+          if (p.name[0].text) return p.name[0].text;
+          const parts = [...(p.name[0].given||[]), p.name[0].family].filter(Boolean);
+          return parts.join(' ');
+        }
+      } catch { /* ignore */ }
+      return null;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', fetchPatient);
+    fetchPatient();
+  </script>
+</body>
+</html>

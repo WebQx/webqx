@@ -182,9 +182,12 @@
                 <h3>📝 Transcription <span class="pill" id="transcribeStatusPill">...</span></h3>
                 <small class="meta" id="transcribeMeta">Adapter check…</small>
                 <div class="body">
-                    <input type="file" id="audioFileInput" accept="audio/*" disabled style="margin-bottom:.5rem;" />
+                    <label style="display:block; font-size:.6rem; opacity:.65; letter-spacing:.5px; margin-bottom:.25rem;">(Optional) Associate Patient ID</label>
+                    <input class="inline-input" id="transcriptPatientId" placeholder="Patient ID (for link)" disabled />
+                    <input type="file" id="audioFileInput" accept="audio/*" disabled style="margin:.4rem 0 .5rem;" />
                     <button class="small-btn" id="uploadTranscriptBtn" disabled>Upload & Transcribe</button>
                     <div id="transcriptionResult" class="json-preview" style="display:none;"></div>
+                    <div id="transcriptsHistory" class="json-preview" style="display:none; margin-top:.6rem;"></div>
                 </div>
                 <footer>
                     <button class="small-btn secondary" id="clearTranscriptBtn" disabled>Clear</button>
@@ -260,7 +263,11 @@
         async function loadTelehealthSessions(){
             if(!state.telehealthOnline){ document.getElementById('telehealthBody').innerHTML='<div class="empty">Telehealth offline</div>'; return; }
             if(state.loadingSessions) return; state.loadingSessions=true; const body=document.getElementById('telehealthBody'); body.innerHTML='<div class="loading">Loading sessions…</div>';
-            try { const res=await fetch('/api/v1/telehealth/sessions',{headers:{Authorization:`Bearer ${token}`}}); const data=await safeJSON(res); if(!data.success) throw new Error('Failed to load'); state.telehealthSessions=data.data.sessions; if(!state.telehealthSessions.length) body.innerHTML='<div class="empty">No active sessions</div>'; else body.innerHTML='<ul class="list">'+state.telehealthSessions.map(s=>`<li><strong>${s.id}</strong><br><span style="opacity:.65;">${s.type} • ${s.participantCount} participant(s)</span></li>`).join('')+'</ul>'; document.getElementById('telehealthMeta').textContent='Updated '+new Date().toLocaleTimeString(); setPill(document.getElementById('telehealthStatusPill'),'online'); }
+            try { const res=await fetch('/api/v1/telehealth/sessions',{headers:{Authorization:`Bearer ${token}`}}); const data=await safeJSON(res); if(!data.success) throw new Error('Failed to load'); state.telehealthSessions=data.data.sessions; if(!state.telehealthSessions.length) body.innerHTML='<div class="empty">No active sessions</div>'; else body.innerHTML='<ul class="list">'+state.telehealthSessions.map(s=>`<li data-sid="${s.id}"><strong>${s.id}</strong><br><span style=\"opacity:.65;\">${s.type} • ${s.participantCount} participant(s)</span><br><div style=\"margin-top:.3rem; display:flex; gap:.3rem;\"><button class=\"small-btn secondary\" data-open="${s.id}" style=\"font-size:.6rem;\">Open</button><button class=\"small-btn\" data-copy="${s.id}" style=\"font-size:.6rem;\">Copy ID</button></div></li>`).join('')+'</ul>'; document.getElementById('telehealthMeta').textContent='Updated '+new Date().toLocaleTimeString(); setPill(document.getElementById('telehealthStatusPill'),'online');
+                // Attach click handlers
+                body.querySelectorAll('button[data-open]').forEach(btn=>btn.addEventListener('click', e=>{ const sid=e.currentTarget.getAttribute('data-open'); window.location.href = `/telehealth-session.html?id=${encodeURIComponent(sid)}`; }));
+                body.querySelectorAll('button[data-copy]').forEach(btn=>btn.addEventListener('click', async e=>{ const sid=e.currentTarget.getAttribute('data-copy'); try { await navigator.clipboard.writeText(sid); btn.textContent='Copied'; setTimeout(()=>btn.textContent='Copy ID',1200); } catch { btn.textContent='Fail'; setTimeout(()=>btn.textContent='Copy ID',1200);} }));
+            }
             catch(e){ body.innerHTML='<div class="empty">Error loading sessions</div>'; setPill(document.getElementById('telehealthStatusPill'),'offline'); }
             finally { state.loadingSessions=false; }
         }
@@ -268,10 +275,28 @@
 
         // Patients
         async function loadPatients(){ if(!state.adapterOnline) return; if(state.loadingPatients)return; state.loadingPatients=true; const list=document.getElementById('patientList'); list.innerHTML='<li class="loading">Loading…</li>'; try { const res=await fetch('/emr/patients'); const data=await safeJSON(res); const patients=Array.isArray(data)?data:(data.patients||data.data||[]); state.patients=patients.slice(0,25); renderPatients(); document.getElementById('patientsMeta').textContent='Loaded '+state.patients.length; setPill(document.getElementById('patientsStatusPill'),'online'); } catch(e){ list.innerHTML='<li class="empty">Failed to load patients</li>'; setPill(document.getElementById('patientsStatusPill'),'offline'); } finally { state.loadingPatients=false; } }
-        function renderPatients(){ const term=(document.getElementById('patientSearchInput').value||'').trim().toLowerCase(); const list=document.getElementById('patientList'); let items=state.patients; if(term) items=items.filter(p=>JSON.stringify(p).toLowerCase().includes(term)); if(!items.length){ list.innerHTML='<li class="empty">No matches</li>'; return; } list.innerHTML=items.map(p=>{ const name=p.name?.[0]?.text||p.name?.[0]?.family||p.fullName||'Unnamed Patient'; const id=p.id||p.identifier||p._id||'—'; return `<li><strong>${name}</strong><br><span style="opacity:.6;">${id}</span></li>`; }).join(''); }
+        function renderPatients(){
+            const term=(document.getElementById('patientSearchInput').value||'').trim().toLowerCase();
+            const list=document.getElementById('patientList');
+            let items=state.patients;
+            if(term) items=items.filter(p=>JSON.stringify(p).toLowerCase().includes(term));
+            if(!items.length){ list.innerHTML='<li class="empty">No matches</li>'; return; }
+            list.innerHTML=items.map(p=>{
+                const name=p.name?.[0]?.text||p.name?.[0]?.family||p.fullName||'Unnamed Patient';
+                const id=p.id || (Array.isArray(p.identifier)?p.identifier[0]?.value: p.identifier?.value) || p._id || '';
+                const shortId = id || '—';
+                return `<li data-pid="${id}"><strong>${name}</strong><br><span style=\"opacity:.6;\">${shortId}</span>${id?`<br><button data-open-patient=\"${id}\" class=\"small-btn secondary\" style=\"margin-top:.3rem; font-size:.55rem;\">Open</button>`:''}</li>`;
+            }).join('');
+            list.querySelectorAll('[data-open-patient]').forEach(btn=>btn.addEventListener('click', e=>{
+                const pid=e.currentTarget.getAttribute('data-open-patient');
+                if(pid) window.location.href=`/patient-chart.html?id=${encodeURIComponent(pid)}`;
+            }));
+        }
 
         // Transcription
-        async function uploadTranscription(){ if(!state.adapterOnline) return; const fileInput=document.getElementById('audioFileInput'); if(!fileInput.files.length){ alert('Select an audio file first'); return; } const btn=document.getElementById('uploadTranscriptBtn'); const resultDiv=document.getElementById('transcriptionResult'); btn.disabled=true; btn.textContent='Uploading…'; resultDiv.style.display='block'; resultDiv.textContent='Processing…'; try { const form=new FormData(); form.append('file',fileInput.files[0]); const res=await fetch('/emr/transcribe',{method:'POST',body:form}); const data=await safeJSON(res); if(!res.ok) throw new Error(data.error||'Failed'); resultDiv.textContent=JSON.stringify(data,null,2); document.getElementById('transcribeMeta').textContent='Completed'; } catch(e){ resultDiv.textContent='Error: '+e.message; document.getElementById('transcribeMeta').textContent='Error'; } finally { btn.disabled=false; btn.textContent='Upload & Transcribe'; document.getElementById('clearTranscriptBtn').disabled=false; } }
+    async function uploadTranscription(){ if(!state.adapterOnline) return; const fileInput=document.getElementById('audioFileInput'); if(!fileInput.files.length){ alert('Select an audio file first'); return; } const btn=document.getElementById('uploadTranscriptBtn'); const resultDiv=document.getElementById('transcriptionResult'); const historyDiv=document.getElementById('transcriptsHistory'); const patientIdInput=document.getElementById('transcriptPatientId'); btn.disabled=true; btn.textContent='Uploading…'; resultDiv.style.display='block'; resultDiv.textContent='Processing…'; try { const form=new FormData(); form.append('file',fileInput.files[0]); const res=await fetch('/emr/transcribe',{method:'POST',body:form}); const data=await safeJSON(res); if(!res.ok) throw new Error(data.error||'Failed'); resultDiv.textContent=JSON.stringify(data,null,2); document.getElementById('transcribeMeta').textContent='Completed'; // track history
+        if(!state.transcripts) state.transcripts=[]; const entry={ ts:new Date().toISOString(), patientId:patientIdInput.value.trim()||null, response:data }; state.transcripts.unshift(entry); renderTranscriptHistory(); } catch(e){ resultDiv.textContent='Error: '+e.message; document.getElementById('transcribeMeta').textContent='Error'; } finally { btn.disabled=false; btn.textContent='Upload & Transcribe'; document.getElementById('clearTranscriptBtn').disabled=false; } }
+    function renderTranscriptHistory(){ const historyDiv=document.getElementById('transcriptsHistory'); if(!state.transcripts||!state.transcripts.length){ historyDiv.style.display='none'; return; } historyDiv.style.display='block'; historyDiv.textContent = state.transcripts.slice(0,5).map(t=>{ const link = t.patientId?` (patient: ${t.patientId})`:''; return `${t.ts}${link}`; }).join('\n'); }
         function clearTranscription(){ document.getElementById('audioFileInput').value=''; const resultDiv=document.getElementById('transcriptionResult'); resultDiv.style.display='none'; resultDiv.textContent=''; document.getElementById('clearTranscriptBtn').disabled=true; }
 
         // Developer test console
@@ -279,7 +304,7 @@
 
         // Card service status update
         function updateCardServiceStatus(){ if(state.telehealthOnline){ setPill(document.getElementById('telehealthStatusPill'),'online'); document.getElementById('startSessionBtn').disabled=false; document.getElementById('refreshSessionsBtn').disabled=false; loadTelehealthSessions(); } else { setPill(document.getElementById('telehealthStatusPill'),'offline'); document.getElementById('telehealthBody').innerHTML='<div class="empty">Offline</div>'; document.getElementById('startSessionBtn').disabled=true; document.getElementById('refreshSessionsBtn').disabled=true; }
-            if(state.adapterOnline){ setPill(document.getElementById('patientsStatusPill'),'online'); setPill(document.getElementById('transcribeStatusPill'),'online'); document.getElementById('loadPatientsBtn').disabled=false; document.getElementById('clearPatientsBtn').disabled=false; document.getElementById('audioFileInput').disabled=false; document.getElementById('uploadTranscriptBtn').disabled=false; document.getElementById('patientsMeta').textContent='Ready'; document.getElementById('transcribeMeta').textContent='Ready'; } else { setPill(document.getElementById('patientsStatusPill'),'offline'); setPill(document.getElementById('transcribeStatusPill'),'offline'); document.getElementById('patientsMeta').textContent='Adapter offline'; document.getElementById('transcribeMeta').textContent='Adapter offline'; }
+            if(state.adapterOnline){ setPill(document.getElementById('patientsStatusPill'),'online'); setPill(document.getElementById('transcribeStatusPill'),'online'); document.getElementById('loadPatientsBtn').disabled=false; document.getElementById('clearPatientsBtn').disabled=false; document.getElementById('audioFileInput').disabled=false; document.getElementById('uploadTranscriptBtn').disabled=false; const pidInput=document.getElementById('transcriptPatientId'); if(pidInput) pidInput.disabled=false; document.getElementById('patientsMeta').textContent='Ready'; document.getElementById('transcribeMeta').textContent='Ready'; } else { setPill(document.getElementById('patientsStatusPill'),'offline'); setPill(document.getElementById('transcribeStatusPill'),'offline'); document.getElementById('patientsMeta').textContent='Adapter offline'; document.getElementById('transcribeMeta').textContent='Adapter offline'; }
         }
 
         // Event bindings
