@@ -1,3 +1,7 @@
+## 0.4.0 (2025-10-07)
+
+* feat(portal): route production login and root to new provider entry ([aebc849](https://github.com/WebQx/EMR/commit/aebc849))
+
 ## 0.3.0 (2025-10-07)
 
 * feat(portal): serve provider portal directly at /portal with nested path support ([059c6dd](https://github.com/WebQx/EMR/commit/059c6dd))
