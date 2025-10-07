@@ -17,10 +17,110 @@
             background: linear-gradient(135deg, #0f766e 0%, #0891b2 50%, #164e63 100%);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            justify-content: flex-start;
+            padding: 140px 20px 60px;
             color: white;
+            position: relative;
+        }
+
+        .top-nav {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(960px, calc(100% - 32px));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 20px;
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.25);
+            z-index: 10;
+        }
+
+        .top-nav .brand {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .env-pill {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.18);
+            border: 1px solid rgba(16, 185, 129, 0.6);
+            color: #bbf7d0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .env-pill::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.75);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .nav-links a {
+            color: rgba(224, 242, 254, 0.9);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: all 0.25s ease;
+        }
+
+        .nav-links a:hover,
+        .nav-links a:focus {
+            border-color: rgba(148, 163, 184, 0.5);
+            background: rgba(148, 163, 184, 0.18);
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding-top: 120px;
+            }
+
+            .top-nav {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .nav-links {
+                width: 100%;
+                gap: 6px;
+            }
+
+            .nav-links a {
+                padding: 8px 10px;
+                flex: 1 1 auto;
+                text-align: center;
+            }
         }
         
         /* Glass morphism effect */
@@ -147,6 +247,28 @@
             background: rgba(34, 197, 94, 0.2);
             color: #86efac;
             border: 1px solid #22c55e;
+        }
+
+        .deployment-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            letter-spacing: 0.4px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(15, 118, 110, 0.35);
+            border: 1px solid rgba(45, 212, 191, 0.45);
+            color: #ccfbf1;
+            text-transform: uppercase;
+        }
+
+        .deployment-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #2dd4bf;
+            box-shadow: 0 0 10px rgba(45, 212, 191, 0.6);
         }
         
         .login-form {
@@ -511,6 +633,19 @@
     </style>
 </head>
 <body>
+    <nav class="top-nav" aria-label="WebQX production shortcuts">
+        <div class="brand">
+            <span>WebQX Provider Access</span>
+            <span class="env-pill">Production</span>
+        </div>
+        <div class="nav-links">
+            <a href="/portal">Provider Portal</a>
+            <a href="/portal#systemStatusPanel">System Health</a>
+            <a href="/portal#devToolsPanel">Developer Console</a>
+            <a href="mailto:support@webqx.health">Support</a>
+        </div>
+    </nav>
+
     <!-- Background Animation -->
     <div class="bg-animation">
         <div class="bg-circle bg-circle-1"></div>
@@ -541,6 +676,10 @@
                 </div>
                 <h1 class="title" data-i18n="provider.title">WebQX™ Provider Portal</h1>
                 <p class="subtitle" data-i18n="provider.subtitle">Secure Healthcare Professional Access</p>
+                <div class="deployment-badge">
+                    <span class="dot"></span>
+                    Production environment access verified
+                </div>
                 
                 <!-- Language Selector -->
                 <div class="language-selector" id="langSelector">
@@ -727,26 +866,26 @@
                         name: 'Physician',
                         description: 'Full access to patient records, prescribing, and clinical modules',
                         modules: ['patients', 'prescriptions', 'lab-results', 'imaging', 'scheduling', 'billing'],
-                        redirect: '/provider-portal-real.html'
+                        redirect: '/portal'
                     },
                     'nurse': {
                         name: 'Nurse',
                         description: 'Access to patient care, medication administration, and vital signs',
                         modules: ['patients', 'vitals', 'medication-admin', 'scheduling', 'care-plans'],
-                        redirect: '/provider-portal-real.html'
+                        redirect: '/portal'
                     },
                     'pharmacist': {
                         name: 'Pharmacist',
                         description: 'Access to prescription management and medication reconciliation',
                         modules: ['prescriptions', 'medication-reconciliation', 'drug-interactions', 'inventory'],
-                        redirect: '/provider-portal-real.html'
+                        redirect: '/portal'
                     },
                     'administrator': {
                         name: 'Administrator',
                         description: 'Administrative access to system management and reporting',
                         modules: ['users', 'reporting', 'billing', 'system-config', 'audit-logs'],
                         // Real system status dashboard - shows what actually works
-                        redirect: '/provider-portal-real.html'
+                        redirect: '/portal'
                     }
                 };
                 this.init();
@@ -882,7 +1021,7 @@
                           : roleConfig.redirect;
                         // Preserve any deep-link params for provider dashboard only
                         let target = dest;
-                        if (dest.startsWith('/provider')) {
+                        if (dest.startsWith('/provider') || dest.startsWith('/portal')) {
                           const qp = new URLSearchParams();
                           if (launchParam) qp.set('launch', launchParam);
                           if (actionParam) qp.set('action', actionParam);
@@ -895,7 +1034,7 @@
                     }
                 } else {
                     // Redirect to real system status dashboard - shows actual working services
-                    window.location.href = '/provider-portal-real.html';
+                    window.location.href = '/portal';
                 }
             }
 

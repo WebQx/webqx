@@ -30,7 +30,7 @@
 
   function computeRedirect(role, defaults) {
     const d = Object.assign({
-      defaultProvider: '/provider/dashboard/',
+      defaultProvider: '/portal',
       defaultAdmin: '/admin-console/',
       defaultPatient: '/patient-portal'
     }, defaults || {});
@@ -77,8 +77,11 @@
         const href = a.getAttribute('href') || '';
         if (!href || /^https?:\/\//i.test(href)) return;
         // Only track known area prefixes
-        const wantPrefix = areaKey === 'patient' ? '/patient-portal' : (areaKey === 'admin' ? '/admin-console' : '/provider');
-        if (href.startsWith(wantPrefix)) {
+        const wantPrefix = areaKey === 'patient'
+          ? '/patient-portal'
+          : (areaKey === 'admin' ? '/admin-console' : '/portal');
+        const allowLegacyProvider = areaKey !== 'patient' && areaKey !== 'admin' && href.startsWith('/provider');
+        if (href.startsWith(wantPrefix) || allowLegacyProvider) {
           try {
             const url = new URL(href, window.location.origin);
             const val = url.pathname + (url.search || '');

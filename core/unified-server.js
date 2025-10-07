@@ -342,9 +342,9 @@ class UnifiedHealthcareServer {
             this.log('warn', '⚠️ ChatEHR routes not found; conversational care APIs disabled');
         }
 
-        // Serve homepage as login (redirect root/index explicitly to provider login)
+        // Serve homepage as provider portal entry (portal handles auth redirect if needed)
         this.app.get(['/', '/index.html'], (req, res) => {
-            return res.redirect(302, '/auth/providers/login.html');
+            return res.redirect(302, '/portal');
         });
 
         // Serve static files (prefer built artifacts if present) without auto index
